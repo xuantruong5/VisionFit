@@ -7,6 +7,9 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { notificationEmitter } from "./src/general/notification";
 import MemberHome from "./src/page/member/MemberHome";
 import Homepage from "./src/page/trainners/HomePage";
+import AuthScreen from "./src/page/member/AuthScreen";
+import Login from "./src/page/login";
+import TrainerAuthScreen from "./src/page/trainners/TrainerAuthScreen";
 
 
 
@@ -133,15 +136,15 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="MemberHome"
+        initialRouteName="Login"
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} />
         <Stack.Screen name="MemberHome" component={MemberHome} />
-        
-        
-
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="AuthScreen" component={AuthScreen}/>
+        <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen}/>
       </Stack.Navigator>
 
     </NavigationContainer>

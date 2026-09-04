@@ -1,6 +1,8 @@
+import { Text } from "react-native";
+
 const MemberHome = ({ navigation }: any) => {
     return (
-        <h2>hello</h2>
+        <Text>hello</Text>
     )
 
 }
