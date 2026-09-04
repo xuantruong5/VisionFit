@@ -10,6 +10,14 @@ import Homepage from "./src/page/trainners/HomePage";
 import AuthScreen from "./src/page/member/AuthScreen";
 import Login from "./src/page/login";
 import TrainerAuthScreen from "./src/page/trainners/TrainerAuthScreen";
+import Dashboard from "./src/page/trainners/Dashboard";
+import Income from "./src/page/trainners/Income";
+import MemberDetail from "./src/page/trainners/MemberDetail";
+import Profile from "./src/page/trainners/Profile";
+import Schedule from "./src/page/trainners/Schedule";
+import SessionHistory from "./src/page/trainners/SessionHistory";
+import SessionReview from "./src/page/trainners/SessionReview";
+import Members from "./src/page/trainners/Members";
 
 
 
@@ -136,7 +144,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName="Login"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -144,7 +152,17 @@ const App = () => {
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="AuthScreen" component={AuthScreen}/>
+
+        {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen}/>
+        <Stack.Screen name="Dashboard" component={Dashboard}/>
+        <Stack.Screen name="Income" component={Income}/>
+        <Stack.Screen name="MemberDetail" component={MemberDetail}/>
+        <Stack.Screen name="Members" component={Members}/>
+        <Stack.Screen name="Profile" component={Profile}/>
+        <Stack.Screen name="Schedule" component={Schedule}/>
+        <Stack.Screen name="SessionHistory" component={SessionHistory}/>
+        <Stack.Screen name="SessionReview" component={SessionReview}/>
       </Stack.Navigator>
 
     </NavigationContainer>
