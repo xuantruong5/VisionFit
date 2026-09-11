@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
 
   addHeaderText: {
-    color: "#FFFFFF",
+    
     fontSize: 26,
     lineHeight: 27,
     fontWeight: "400",
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   },
 
   selectedDateText: {
-    color: "#FFFFFF",
+    
   },
 
   otherMonthText: {
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   },
 
   createButtonText: {
-    color: "#FFFFFF",
+    
     fontSize: 14,
     fontWeight: "700",
   },

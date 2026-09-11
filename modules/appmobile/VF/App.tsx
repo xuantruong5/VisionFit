@@ -9,6 +9,8 @@ import MemberHome from "./src/page/member/MemberHome";
 import Homepage from "./src/page/trainners/HomePage";
 import AuthScreen from "./src/page/member/AuthScreen";
 import Login from "./src/page/login";
+import GenderSelection from "./src/page/member/GenderSelection";
+import BodyMetrics from "./src/page/member/BodyMetrics";
 import TrainerAuthScreen from "./src/page/trainners/TrainerAuthScreen";
 import Dashboard from "./src/page/trainners/Dashboard";
 import Income from "./src/page/trainners/Income";
@@ -62,8 +64,8 @@ function MainTabs() {
             />
           );
         },
-        tabBarActiveTintColor: "black",
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: "#0D7F8D",
+        tabBarInactiveTintColor: "#71949A",
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "bold"
@@ -101,8 +103,8 @@ function MemberTabs() {
           />
         );
       },
-      tabBarActiveTintColor: "black",
-      tabBarInactiveTintColor: "gray",
+      tabBarActiveTintColor: "#0D7F8D",
+      tabBarInactiveTintColor: "#71949A",
       tabBarLabelStyle: {
         fontSize: 12,
         fontWeight: "bold"
@@ -144,7 +146,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Schedule"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="GenderSelection"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -152,6 +154,9 @@ const App = () => {
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="AuthScreen" component={AuthScreen}/>
+        {/* cua member */}
+        <Stack.Screen name="GenderSelection" component={GenderSelection} />
+        <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen}/>

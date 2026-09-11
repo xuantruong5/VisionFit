@@ -16,13 +16,13 @@ const Login = ({ navigation }: any) => {
                         Đăng nhập bằng
                     </Text>
                     <TouchableOpacity style={[ styles.loginButton, styles.appleButton, ]} >
-                        <MaterialCommunityIcons name="google" size={wp("7.5%")} color="#fff" />
+                        <MaterialCommunityIcons name="google" size={wp("7.5%")} color="#11343A" />
                         <Text style={styles.buttonText}>
                             Đăng nhập bằng Google
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={[ styles.loginButton, styles.facebookButton, ]} >
-                        <Ionicons name="logo-facebook" size={wp("7.5%")} color="#fff" />
+                        <Ionicons name="logo-facebook" size={wp("7.5%")} color="#11343A" />
                         <Text style={styles.buttonText}>
                             Đăng nhập bằng Facebook
                         </Text>
@@ -73,7 +73,7 @@ const Login = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: "#EAF9FB",
     },
     background: {
         flex: 1,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        color: "#fff",
+        
         fontSize: wp("10%"),
         fontWeight: "900",
         letterSpacing: 0.5,
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     },
 
     loginBy: {
-        color: "#fff",
+        
         fontSize: wp("6.5%"),
         fontWeight: "700",
         marginTop: hp("3%"),
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     },
 
     buttonText: {
-        color: "#fff",
+        
         fontSize: wp("5.3%"),
         fontWeight: "700",
     },
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     },
 
     emailText: {
-        color: "#fff",
+        
         fontSize: wp("5%"),
         fontWeight: "600",
         textDecorationLine: "underline",
@@ -167,14 +167,14 @@ const styles = StyleSheet.create({
     },
 
     trainerQuestion: {
-        color: "#fff",
+        
         fontSize: wp("5%"),
         fontWeight: "700",
         textAlign: "center",
     },
 
     trainerLink: {
-        color: "#fff",
+        
         fontSize: wp("5.2%"),
         fontWeight: "600",
         textDecorationLine: "underline",
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     },
 
     policyText: {
-        color: "#fff",
+        
         fontSize: wp("3.4%"),
         textAlign: "center",
         lineHeight: hp("2.5%"),
@@ -203,14 +203,14 @@ const styles = StyleSheet.create({
     },
 
     policyLink: {
-        color: "#fff",
+        
         fontSize: wp("3.4%"),
         fontWeight: "700",
         textDecorationLine: "underline",
     },
 
     policyAnd: {
-        color: "#fff",
+        
         fontSize: wp("3.4%"),
     },
 });

@@ -56,14 +56,14 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[ styles.socialButton, styles.appleButton, ]} >
-                            <MaterialCommunityIcons name="google" size={wp("7%")} color="#fff" />
+                            <MaterialCommunityIcons name="google" size={wp("7%")} color="#11343A" />
                             <Text style={styles.socialText}>
                                 Đăng nhập bằng Google
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.socialButton,styles.facebookButton,]} >
-                            <Ionicons name="logo-facebook" size={wp("7%")} color="#FFFFFF"/>
+                            <Ionicons name="logo-facebook" size={wp("7%")} color="#11343A"/>
                             <Text style={styles.socialText}>
                                 Đăng nhập bằng Facebook
                             </Text>
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     },
 
     activeTabText: {
-        color: "#FFFFFF",
+        
         fontWeight: "700",
     },
 
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     },
 
     socialText: {
-        color: "#FFFFFF",
+        
         fontSize: wp("4.6%"),
         fontWeight: "700",
         marginLeft: wp("5%"),

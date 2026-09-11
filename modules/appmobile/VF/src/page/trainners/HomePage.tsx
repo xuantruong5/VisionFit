@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
 
   avatarText: {
-    color: '#FFFFFF',
+    
     fontSize: 19,
     fontWeight: '700',
   },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   searchBox: {
     height: 50,
     borderRadius: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 15,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
 
   summaryTitle: {
-    color: '#FFFFFF',
+    
     fontSize: 20,
     fontWeight: '700',
     maxWidth: 220,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
 
   statCard: {
     width: '31.5%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 14,
   },
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
 
   sessionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 17,
     flexDirection: 'row',
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
 
   actionCard: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   },
 
   memberCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 17,
     padding: 14,
     flexDirection: 'row',

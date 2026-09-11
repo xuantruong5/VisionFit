@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     avatarText: {
         fontSize: 38,
         fontWeight: "800",
-        color: "#FFFFFF",
+        
     },
 
     cameraButton: {
