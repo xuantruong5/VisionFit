@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
-import { Alert, Animated } from "react-native";
+import { Alert, Animated, View, Text } from "react-native";
 import React, { useEffect, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { notificationEmitter } from "./src/general/notification";
@@ -18,6 +18,7 @@ import Schedule from "./src/page/trainners/Schedule";
 import SessionHistory from "./src/page/trainners/SessionHistory";
 import SessionReview from "./src/page/trainners/SessionReview";
 import Members from "./src/page/trainners/Members";
+import SportFeed from "./src/page/member/SportFeed";
 
 
 
@@ -81,6 +82,7 @@ function MainTabs() {
   );
 }
 
+
 function MemberTabs() {
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
@@ -88,6 +90,7 @@ function MemberTabs() {
       tabBarIcon: ({ focused, color, size }) => {
         let name_icon = "";
         if (route.name === "Home") name_icon = focused ? "home" : "home-outline";
+        else if (route.name === "Feed") name_icon = focused ? "people-sharp" : "people-outline";
         // else if (route.name === "Trainer") name_icon = focused ? "people-sharp" : "people-outline";
         // else if (route.name === "Calendar") name_icon = focused ? "calendar" : "calendar-outline";
         // else if (route.name === "ChatBot") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
@@ -101,14 +104,15 @@ function MemberTabs() {
           />
         );
       },
-      tabBarActiveTintColor: "black",
-      tabBarInactiveTintColor: "gray",
+      tabBarActiveTintColor: "#0D7F8D",
+      tabBarInactiveTintColor: "#71949A",
       tabBarLabelStyle: {
         fontSize: 12,
         fontWeight: "bold"
       }
     })}>
-      <Tab.Screen name= "Home" component={MemberHome} />
+      <Tab.Screen name="Home" component={MemberHome} />
+      <Tab.Screen name="Feed" component={SportFeed} />
       {/* <Tab.Screen name="Trainer" component={CurrentTrainer} />
       <Tab.Screen name="Calendar" component={MemberSchedule} />
       <Tab.Screen name="Profile" component={MemberProfile} /> */}
@@ -144,25 +148,25 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Schedule"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} />
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="AuthScreen" component={AuthScreen}/>
+        <Stack.Screen name="AuthScreen" component={AuthScreen} />
 
         {/* cua trainner  */}
-        <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen}/>
-        <Stack.Screen name="Dashboard" component={Dashboard}/>
-        <Stack.Screen name="Income" component={Income}/>
-        <Stack.Screen name="MemberDetail" component={MemberDetail}/>
-        <Stack.Screen name="Members" component={Members}/>
-        <Stack.Screen name="Profile" component={Profile}/>
-        <Stack.Screen name="Schedule" component={Schedule}/>
-        <Stack.Screen name="SessionHistory" component={SessionHistory}/>
-        <Stack.Screen name="SessionReview" component={SessionReview}/>
+        <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
+        <Stack.Screen name="Dashboard" component={Dashboard} />
+        <Stack.Screen name="Income" component={Income} />
+        <Stack.Screen name="MemberDetail" component={MemberDetail} />
+        <Stack.Screen name="Members" component={Members} />
+        <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="Schedule" component={Schedule} />
+        <Stack.Screen name="SessionHistory" component={SessionHistory} />
+        <Stack.Screen name="SessionReview" component={SessionReview} />
       </Stack.Navigator>
 
     </NavigationContainer>
