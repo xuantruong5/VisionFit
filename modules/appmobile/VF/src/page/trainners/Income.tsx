@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   incomeAmount: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#FFFFFF",
+    
     marginTop: 10,
   },
 
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
 
   growthIcon: {
     fontSize: 18,
-    color: "#FFFFFF",
+    
     marginRight: 6,
   },
 

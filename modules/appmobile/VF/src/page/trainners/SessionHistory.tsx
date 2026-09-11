@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
 
   filterTextActive: {
-    color: "#FFFFFF",
+    
   },
 
   summaryCard: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   },
 
   summaryValue: {
-    color: "#FFFFFF",
+    
     fontSize: 22,
     fontWeight: "800",
   },

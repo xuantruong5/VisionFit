@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
 
   filterTextActive: {
-    color: "#FFFFFF",
+    
   },
 
   countRow: {
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
 
   avatarText: {
-    color: "#FFFFFF",
+    
     fontSize: 21,
     fontWeight: "700",
   },

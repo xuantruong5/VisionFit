@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 2,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   },
 
   trainerName: {
-    color: '#FFFFFF',
+    
     fontSize: 18,
     fontWeight: '700',
   },
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
 
   rating: {
-    color: '#FFFFFF',
+    
     fontWeight: '600',
     marginLeft: 4,
   },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   },
 
   profileButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 10,
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
 
   statCard: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   },
 
   scheduleCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
 
   actionCard: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,

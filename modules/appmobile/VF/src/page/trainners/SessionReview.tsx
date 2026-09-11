@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 23,
     fontWeight: "800",
-    color: "#FFFFFF",
+    
   },
 
   memberInfo: {
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   },
 
   difficultyTextActive: {
-    color: "#FFFFFF",
+    
   },
 
   commentCard: {
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   },
 
   saveButtonText: {
-    color: "#FFFFFF",
+    
     fontSize: 14,
     fontWeight: "800",
   },

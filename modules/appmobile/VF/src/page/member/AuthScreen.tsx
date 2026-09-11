@@ -14,7 +14,7 @@ const AuthScreen = ({ navigation }: any) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={25} color="#333" />
+                        <Ionicons name="arrow-back" size={25} color="#11343A" />
                     </TouchableOpacity>
                     <Text style={styles.title}>
                         Đăng nhập/Đăng ký
@@ -42,7 +42,7 @@ const AuthScreen = ({ navigation }: any) => {
                     <TextInput
                         style={styles.input}
                         placeholder="Nhập địa chỉ email của bạn"
-                        placeholderTextColor="#b7b7b7"
+                        placeholderTextColor="#71949A"
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
@@ -56,13 +56,13 @@ const AuthScreen = ({ navigation }: any) => {
                         <TextInput
                             style={styles.passwordInput}
                             placeholder="Nhập mật khẩu của bạn"
-                            placeholderTextColor="#b7b7b7"
+                            placeholderTextColor="#71949A"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword} />
                         <TouchableOpacity onPress={() => setShowPassword(!showPassword) } style={styles.eyeButton} >
                             <Ionicons
-                                name={ showPassword  ? "eye-outline" : "eye-off-outline" } size={25} color="#a8a8a8" />
+                                name={ showPassword  ? "eye-outline" : "eye-off-outline" } size={25} color="#71949A" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -74,7 +74,7 @@ const AuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhập tên của bạn"
-                                placeholderTextColor="#b7b7b7"
+                                placeholderTextColor="#71949A"
                                 value={firstName}
                                 onChangeText={setFirstName}
                             />
@@ -84,7 +84,7 @@ const AuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhập họ của bạn"
-                                placeholderTextColor="#b7b7b7"
+                                placeholderTextColor="#71949A"
                                 value={lastName}
                                 onChangeText={setLastName}
                             />
@@ -137,7 +137,7 @@ const AuthScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: "#FFFFFF",
     },
 
     content: {
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
         width: 46,
         height: 46,
         borderRadius: 23,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#EAF9FB",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -168,14 +168,14 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: "700",
-        color: "#222",
+        
     },
 
     
 
     tabContainer: {
         height: 56,
-        backgroundColor: "#e3e6e8",
+        backgroundColor: "#FFFFFF",
         borderRadius: 30,
         flexDirection: "row",
         padding: 3,
@@ -191,17 +191,17 @@ const styles = StyleSheet.create({
     },
 
     activeTab: {
-        backgroundColor: "#314d68",
+        backgroundColor: "#0D7F8D",
     },
 
     tabText: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#71808d",
+        color: "#71949A",
     },
 
     activeTabText: {
-        color: "#fff",
+        
     },
 
     
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 17,
         fontWeight: "500",
-        color: "#333",
+        
         marginBottom: 9,
     },
 
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#dedede",
         fontSize: 17,
-        color: "#333",
+        
         paddingHorizontal: 0,
     },
 
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 55,
         fontSize: 17,
-        color: "#333",
+        
         paddingHorizontal: 0,
     },
 
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     policyText: {
         fontSize: 14,
         lineHeight: 21,
-        color: "#555",
+        color: "#71949A",
         textAlign: "center",
     },
 
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     mainButton: {
         height: 56,
         borderRadius: 8,
-        backgroundColor: "#e5e5e5",
+        backgroundColor: "#0D7F8D",
         alignItems: "center",
         justifyContent: "center",
         marginTop: 5,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     mainButtonText: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#aaa",
+        color: "#71949A",
     },
 
     
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     forgotText: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#3ba6a6",
+        color: "#075E68",
     },
 });
 

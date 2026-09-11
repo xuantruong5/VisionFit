@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
 
   avatarText: {
-    color: "#FFFFFF",
+    
     fontSize: 32,
     fontWeight: "700",
   },
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonText: {
-    color: "#FFFFFF",
+    
     fontSize: 15,
     fontWeight: "700",
   },
