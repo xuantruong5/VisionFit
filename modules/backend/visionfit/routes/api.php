@@ -2,7 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BaiDangController;
+use App\Http\Controllers\MembersController;
 
+
+// member 
 Route::get('/bai-dang', [BaiDangController::class, 'index']);
 Route::post('/bai-dang', [BaiDangController::class, 'store']);
 Route::post('/bai-dang/{id}/like', [BaiDangController::class, 'like']);
@@ -19,5 +22,9 @@ Route::delete('/binh-luan/{id}', [BaiDangController::class, 'deleteComment']);
 Route::put('/binh-luan/{id}', [BaiDangController::class, 'updateComment']);
 Route::post('/binh-luan/{id}/like', [BaiDangController::class, 'likeComment']);
 Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']);
+
+// dashboard
+Route::get('/tong-quan', [MembersController::class, 'tongQuan']);
+
 
 

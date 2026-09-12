@@ -22,6 +22,10 @@ class DatabaseSeeder extends Seeder
             PhongTapSeeder::class,
             TrainerSeeder::class,
             AdminSeeder::class,
+            ChuongTrinhBaiTapSeeder::class,
+            ChuongTrinhTapSeeder::class,
+            BaiTapSeeder::class,
+            DangKyChuongTrinhSeeder::class,
        ]);
     }
 }

@@ -16,8 +16,9 @@ return new class extends Migration
             $table->string('ten_chuong_trinh');
             $table->string('mo_ta')->nullable();
             $table->string('muc_tieu', 50)->nullable();
+            $table->integer('nhom_muc_tieu')->default(0)->comment('0: không mục tiêu , 1: mục tiêu ');
             $table->string('cap_do', 50)->nullable();
-            $table->string('gioi_tinh_ap_dung', 20)->nullable(); // nam nữ hay cả hai 
+            $table->integer('gioi_tinh_ap_dung')->default(0)->comment('0: Nam, 1: Nu, 2: cả hai');
             $table->string('noi_tap', 30)->nullable();
             $table->integer('so_ngay')->default(0);
             $table->integer('so_buoi_moi_tuan')->default(0);
