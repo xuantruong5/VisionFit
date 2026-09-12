@@ -27,4 +27,9 @@ Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']
 Route::get('/tong-quan', [MembersController::class, 'tongQuan']);
 
 
+// member
+Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
+Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+
+
 

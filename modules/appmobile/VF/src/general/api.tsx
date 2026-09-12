@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
-const API_URL = "http://192.168.1.228:8000/api"; 
+const API_URL = "http://192.168.1.228:8000/api";
 var is_auth_alert_shown = false;
 
 const apiFitlife = axios.create({
