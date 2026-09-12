@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     cardOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill as any,
         backgroundColor: 'rgba(255,255,255,0.75)',
         borderRadius: 12,
     },
