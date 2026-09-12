@@ -26,6 +26,9 @@ import headerPage from "./src/page/member/TrainingPlan/Header/page";
 import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
 import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
+import WorkoutPage from "./src/page/member/Member/WorkoutPage";
+import ReportPage from  "./src/page/member/Member/ReportPage";
+import NotebookPage from  "./src/page/member/Member/NotebookPage";
 
 
 const Stack = createNativeStackNavigator();
@@ -196,6 +199,10 @@ const App = () => {
         <Stack.Screen name="DashboardScreen" component={DashboardScreen}/>
         <Stack.Screen name="DietScreen" component={DietScreen}/>
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
+        <Stack.Screen name="WorkoutPage" component={WorkoutPage}/>
+        <Stack.Screen name="ReportPage" component={ReportPage}/>
+        <Stack.Screen name="NotebookPage" component={NotebookPage}/>
+        
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
