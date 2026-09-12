@@ -33,16 +33,15 @@ const MetricCard = ({ title, imageSource, data, value, onValueChange, suffix }: 
         <ImageBackground source={imageSource} style={styles.card} imageStyle={styles.cardBg}>
             <View style={styles.cardOverlay} />
             <Text style={styles.cardTitle}>{title}</Text>
-            <View style={styles.pickerContainer}>
-                <WheelPicker
-                    data={pickerData}
-                    value={value}
-                    onValueChanged={({ item }) => onValueChange(item.value as number)}
-                    itemTextStyle={styles.pickerItemText}
-                    overlayItemStyle={styles.highlightBar}
-                    style={{ flex: 1, width: '100%' }}
-                />
-            </View>
+            <WheelPicker
+                data={pickerData}
+                value={value}
+                onValueChanged={({ item }) => onValueChange(item.value as number)}
+                itemTextStyle={styles.pickerItemText}
+                overlayItemStyle={styles.highlightBar}
+                itemHeight={30}
+                style={{ width: '100%', height: 100 }}
+            />
         </ImageBackground>
     );
 };
@@ -150,11 +149,11 @@ const styles = StyleSheet.create({
         padding: 15,
         marginBottom: 15,
         alignItems: "center",
-        height: 160,
+        height: 200, // Tăng chiều cao thẻ để picker có không gian
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#9ED9DF',
-        elevation: 5, // shadow for android
+        elevation: 5,
         shadowColor: '#D9D7FF',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -165,7 +164,7 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     cardOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill as any,
         backgroundColor: 'rgba(255,255,255,0.75)',
         borderRadius: 12,
     },
@@ -176,19 +175,19 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     pickerContainer: {
-        height: 100,
+        height: 120, // Tăng chiều cao để chứa trọn vẹn 3 dòng (40x3)
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
     },
     highlightBar: {
-        backgroundColor: 'rgba(13,127,141,0.1)',
+        backgroundColor: 'rgba(13,127,141,0.15)',
         borderRadius: 8,
     },
     pickerItemText: {
         fontSize: 24,
-        color: '#000',
-        fontWeight: 'bold',
+        color: '#000000', // Màu đen đậm
+        fontWeight: '900',
     },
     continueButton: {
         backgroundColor: "#0D7F8D",

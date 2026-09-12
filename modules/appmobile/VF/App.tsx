@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { notificationEmitter } from "./src/general/notification";
 import MemberHome from "./src/page/member/MemberHome";
+import WorkoutPlanScreen from "./src/page/member/WorkoutPlanScreen";
 import Homepage from "./src/page/trainners/HomePage";
 import AuthScreen from "./src/page/member/AuthScreen";
 import Login from "./src/page/login";
@@ -25,7 +26,6 @@ import headerPage from "./src/page/member/TrainingPlan/Header/page";
 import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
 import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
-
 
 
 const Stack = createNativeStackNavigator();
@@ -196,7 +196,7 @@ const App = () => {
         <Stack.Screen name="DashboardScreen" component={DashboardScreen}/>
         <Stack.Screen name="DietScreen" component={DietScreen}/>
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
-        
+
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
         <Stack.Screen name="Dashboard" component={Dashboard} />
