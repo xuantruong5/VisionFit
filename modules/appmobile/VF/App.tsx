@@ -21,6 +21,10 @@ import SessionHistory from "./src/page/trainners/SessionHistory";
 import SessionReview from "./src/page/trainners/SessionReview";
 import Members from "./src/page/trainners/Members";
 import SportFeed from "./src/page/member/SportFeed";
+import headerPage from "./src/page/member/TrainingPlan/Header/page";
+import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
+import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
+import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
 
 
 
@@ -177,7 +181,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="headerPage"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -188,6 +192,10 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
+        <Stack.Screen name="headerPage" component={headerPage}/>
+        <Stack.Screen name="DashboardScreen" component={DashboardScreen}/>
+        <Stack.Screen name="DietScreen" component={DietScreen}/>
+        <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
         
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
