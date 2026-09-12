@@ -181,7 +181,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="headerPage"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="WorkoutPlan"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -195,7 +195,7 @@ const App = () => {
         <Stack.Screen name="headerPage" component={headerPage}/>
         <Stack.Screen name="DashboardScreen" component={DashboardScreen}/>
         <Stack.Screen name="DietScreen" component={DietScreen}/>
-        <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
+        <Stack.Screen name="WorkoutPlan" component={WorkoutPlanScreen}/>
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
