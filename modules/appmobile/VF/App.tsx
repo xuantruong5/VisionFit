@@ -144,7 +144,7 @@ function MemberTabs() {
           paddingBottom: 5,
       },
     })}>
-      <Tab.Screen name="Kế Hoạch Tập" component={WorkoutPlanScreen}/>
+      <Tab.Screen name="Kế Hoạch Tập" component={MemberHome}/>
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Tin Nhắn" component={SportFeed} />
       <Tab.Screen name="Sổ Tay" component={MemberHome} />
