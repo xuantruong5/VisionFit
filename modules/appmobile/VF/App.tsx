@@ -150,7 +150,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="GenderSelection"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -161,8 +161,6 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
-
-        <Stack.Screen name="AuthScreen" component={AuthScreen} />
 
 
         {/* cua trainner  */}
