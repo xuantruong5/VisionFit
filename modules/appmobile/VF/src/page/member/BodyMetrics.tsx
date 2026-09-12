@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, NativeSyntheticEvent, NativeScrollEvent, ImageBackground } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ImageBackground } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import WheelPicker from '@quidone/react-native-wheel-picker';
 
 const ITEM_HEIGHT = 50;
 
@@ -14,66 +15,35 @@ const WEIGHTS = generateRange(30, 150);
 const HEIGHTS = generateRange(120, 220);
 const AGES = generateRange(10, 80);
 
-interface WheelPickerProps {
+
+
+interface MetricCardProps {
+    title: string;
+    imageSource: any;
     data: number[];
     value: number;
     onValueChange: (val: number) => void;
     suffix: string;
 }
 
-const WheelPicker = ({ data, value, onValueChange, suffix }: WheelPickerProps) => {
-    const flatListRef = useRef<FlatList>(null);
-
-    const initialIndex = data.findIndex(item => item === value);
-
-    useEffect(() => {
-        if (flatListRef.current && initialIndex >= 0) {
-            setTimeout(() => {
-                flatListRef.current?.scrollToOffset({
-                    offset: initialIndex * ITEM_HEIGHT,
-                    animated: false
-                });
-            }, 100);
-        }
-    }, [initialIndex]);
-
-    const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const y = event.nativeEvent.contentOffset.y;
-        const index = Math.round(y / ITEM_HEIGHT);
-        if (data[index] !== undefined) {
-            onValueChange(data[index]);
-        }
-    };
+const MetricCard = ({ title, imageSource, data, value, onValueChange, suffix }: MetricCardProps) => {
+    const pickerData = React.useMemo(() => data.map(v => ({ value: v, label: `${v} ${suffix}` })), [data, suffix]);
 
     return (
-        <View style={styles.pickerContainer}>
-            <View style={styles.highlightBar} />
-            <FlatList
-                ref={flatListRef}
-                data={data}
-                keyExtractor={(_, index) => index.toString()}
-                showsVerticalScrollIndicator={false}
-                snapToInterval={ITEM_HEIGHT}
-                decelerationRate="fast"
-                onMomentumScrollEnd={handleMomentumScrollEnd}
-                getItemLayout={(_, index) => ({
-                    length: ITEM_HEIGHT,
-                    offset: ITEM_HEIGHT * index,
-                    index,
-                })}
-                contentContainerStyle={{ paddingVertical: 25, paddingHorizontal: 20 }}
-                renderItem={({ item }) => {
-                    const isSelected = item === value;
-                    return (
-                        <View style={styles.pickerItem}>
-                            <Text style={[styles.pickerItemText, isSelected && styles.pickerItemTextSelected]}>
-                                {item} {isSelected && <Text style={styles.pickerSuffix}>{suffix}</Text>}
-                            </Text>
-                        </View>
-                    );
-                }}
-            />
-        </View>
+        <ImageBackground source={imageSource} style={styles.card} imageStyle={styles.cardBg}>
+            <View style={styles.cardOverlay} />
+            <Text style={styles.cardTitle}>{title}</Text>
+            <View style={styles.pickerContainer}>
+                <WheelPicker
+                    data={pickerData}
+                    value={value}
+                    onValueChanged={({ item }) => onValueChange(item.value as number)}
+                    itemTextStyle={styles.pickerItemText}
+                    overlayItemStyle={styles.highlightBar}
+                    style={{ flex: 1, width: '100%' }}
+                />
+            </View>
+        </ImageBackground>
     );
 };
 
@@ -115,23 +85,23 @@ const BodyMetrics = ({ navigation, route }: any) => {
                     Để lựa chọn chính xác mức tạ, vui lòng điền dữ liệu sau:
                 </Text>
 
-                <ImageBackground source={getBgImage('weight')} style={styles.card} imageStyle={styles.cardBg}>
-                    <View style={styles.cardOverlay} />
-                    <Text style={styles.cardTitle}>Cân nặng của bạn:</Text>
-                    <WheelPicker data={WEIGHTS} value={weight} onValueChange={setWeight} suffix="kg" />
-                </ImageBackground>
+                <MetricCard 
+                    title="Cân nặng của bạn:" 
+                    imageSource={getBgImage('weight')} 
+                    data={WEIGHTS} value={weight} onValueChange={setWeight} suffix="kg" 
+                />
 
-                <ImageBackground source={getBgImage('height')} style={styles.card} imageStyle={styles.cardBg}>
-                    <View style={styles.cardOverlay} />
-                    <Text style={styles.cardTitle}>Chiều cao của bạn:</Text>
-                    <WheelPicker data={HEIGHTS} value={height} onValueChange={setHeight} suffix="cm" />
-                </ImageBackground>
+                <MetricCard 
+                    title="Chiều cao của bạn:" 
+                    imageSource={getBgImage('height')} 
+                    data={HEIGHTS} value={height} onValueChange={setHeight} suffix="cm" 
+                />
 
-                <ImageBackground source={getBgImage('age')} style={styles.card} imageStyle={styles.cardBg}>
-                    <View style={styles.cardOverlay} />
-                    <Text style={styles.cardTitle}>Tuổi của bạn:</Text>
-                    <WheelPicker data={AGES} value={age} onValueChange={setAge} suffix="tuổi" />
-                </ImageBackground>
+                <MetricCard 
+                    title="Tuổi của bạn:" 
+                    imageSource={getBgImage('age')} 
+                    data={AGES} value={age} onValueChange={setAge} suffix="tuổi" 
+                />
 
                 <View style={{ flex: 1 }} />
 
@@ -210,35 +180,15 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        position: 'relative',
     },
     highlightBar: {
-        position: 'absolute',
-        top: '50%',
-        marginTop: -ITEM_HEIGHT / 2,
-        height: ITEM_HEIGHT,
-        width: '50%',
         backgroundColor: 'rgba(13,127,141,0.1)',
         borderRadius: 8,
     },
-    pickerItem: {
-        height: ITEM_HEIGHT,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     pickerItemText: {
         fontSize: 24,
-        color: '#555',
+        color: '#000',
         fontWeight: 'bold',
-    },
-    pickerItemTextSelected: {
-        fontSize: 32,
-        color: '#000',
-    },
-    pickerSuffix: {
-        fontSize: 16,
-        color: '#000',
-        fontWeight: 'normal',
     },
     continueButton: {
         backgroundColor: "#0D7F8D",
