@@ -53,19 +53,27 @@ const BodyMetrics = ({ navigation, route }: any) => {
     const [age, setAge] = useState(25);
 
     const handleContinue = () => {
-        // Go to MemberHome or whatever next screen is
-        navigation.navigate("MemberHome");
+        // Calculate an approximate birth date based on age
+        const currentYear = new Date().getFullYear();
+        const ngay_sinh = `${currentYear - age}-01-01`;
+
+        navigation.navigate("WorkoutPlanScreen", { 
+            gioi_tinh: gender === 'Nam' ? 0 : 1, // 0: Nam, 1: Nữ theo ClientSeeder
+            can_nang_kg: weight, 
+            chieu_cao_cm: height, 
+            ngay_sinh: ngay_sinh 
+        });
     };
 
     const getBgImage = (type: string) => {
         if (gender === 'Nam') {
-            if (type === 'weight') return require('../../assets/members/nam_weight.png');
-            if (type === 'height') return require('../../assets/members/nam_height.png');
-            if (type === 'age') return require('../../assets/members/nam_age.png');
+            if (type === 'weight') return { uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRp2Hi3klp9sEdZElWZKjeXloDklfVoNKxGGJ9xgaF8g_kzchg7RLn1dow&s=10' };
+            if (type === 'height') return { uri: 'https://www.wheystore.vn/upload/news_optimize/wst_1603871227_tap_gym_co_tang_chieu_cao_khong__cac_bai_tap_giup_tang_chieu_cao_hieu_qua__image_1603871227_2.jpg' };
+            if (type === 'age') return { uri: 'https://4men.com.vn/images/2017/12/20171227_3efb50f643811f1ccddb60bb884eacae_1514364937.jpg' };
         } else {
-            if (type === 'weight') return require('../../assets/members/nu_weight.png');
-            if (type === 'height') return require('../../assets/members/nu_height.png');
-            if (type === 'age') return require('../../assets/members/nu_age.png');
+            if (type === 'weight') return { uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRp2Hi3klp9sEdZElWZKjeXloDklfVoNKxGGJ9xgaF8g_kzchg7RLn1dow&s=10' };
+            if (type === 'height') return { uri: 'https://www.tvbuy.vn/public/upload/tap-gym-giup-tang-chieu-cao.jpg' };
+            if (type === 'age') return { uri: 'https://vcdn1-thethao.vnecdn.net/2025/06/03/503604187-3153370114828506-291-7938-2645-1748914666.jpg?w=500&h=300&q=100&dpr=1&fit=crop&s=AN2CakXy9amL4xYaHnKXlg' };
         }
     };
 
@@ -161,11 +169,11 @@ const styles = StyleSheet.create({
     },
     cardBg: {
         borderRadius: 12,
-        opacity: 0.7,
+        opacity: 1,
     },
     cardOverlay: {
         ...StyleSheet.absoluteFill as any,
-        backgroundColor: 'rgba(255,255,255,0.75)',
+        backgroundColor: 'rgba(225, 243, 250, 0.75)',
         borderRadius: 12,
     },
     cardTitle: {

@@ -28,8 +28,9 @@ import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
 
 import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
-//import ChatList from "./src/page/chat/ChatList";
-//import ChatRoom from "./src/page/chat/ChatRoom";
+import WorkoutLocationScreen from "./src/page/member/WorkoutLocationScreen";
+import ChatList from "./src/page/chat/ChatList";
+import ChatRoom from "./src/page/chat/ChatRoom";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -85,7 +86,7 @@ function MainTabs() {
       {/* <Tab.Screen name="ScanQR" component={ScanQR} />
       <Tab.Screen name="ChatBot" component={ChatBot} /> */}
       {/* <Tab.Screen name="Profile" component={Profile} /> */}
-
+      
     </Tab.Navigator>
 
   );
@@ -95,24 +96,24 @@ function MainTabs() {
 function MemberTabs() {
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarIcon: ({ focused, color, size }) => {
-        let name_icon = "";
+        headerShown: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          let name_icon = "";
         if (route.name === "Kế Hoạch Tập") name_icon = focused ? "barbell-sharp" : "barbell";
         else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
         else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
         else if (route.name === "Sổ Tay") name_icon = focused ? "book-sharp" : "book-outline";
         else if (route.name === "Thêm") name_icon = focused ? "ellipsis-horizontal-circle-sharp" : "ellipsis-horizontal-outline";
         // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
-        return (
-          <AnimatIcon
-            name_icon={name_icon}
-            focused={focused}
-            color={color}
-            size={size}
-          />
-        );
-      },
+          return (
+            <AnimatIcon
+              name_icon={name_icon}
+              focused={focused}
+              color={color}
+              size={size}
+            />
+          );
+        },
       tabBarActiveTintColor: "#0D7F8D",
       tabBarInactiveTintColor: "#71949A",
       tabBarLabelStyle: {
@@ -120,8 +121,8 @@ function MemberTabs() {
         fontWeight: "bold",
         marginBottom: 5,
       },
-      tabBarStyle: {
-        position: "absolute",
+        tabBarStyle: {
+          position: "absolute",
           // Cách trái + phải
           marginHorizontal: 13,
           // Cách đáy
@@ -142,7 +143,6 @@ function MemberTabs() {
           },
           shadowOpacity: 0.15,
           shadowRadius: 8,
-          // Không bị dính sát icon
           paddingTop: 5,
           paddingBottom: 5,
       },
@@ -168,13 +168,13 @@ const App = () => {
       }
     }
     notificationEmitter.on("thong_bao", sub);
-
+    
     return () => {
       notificationEmitter.off("thong_bao", sub);
     };
   }, []);
   return (
-    <NavigationContainer
+    <NavigationContainer 
       ref={navigationRef}
       onReady={() => {
         if (pendingRoute) {
@@ -184,7 +184,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="WorkoutPlanScreen"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="headerPage"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -201,6 +201,7 @@ const App = () => {
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
         <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen}/>
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan}/>
+        <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen}/>
 
 
         {/* cua trainner  */}

@@ -5,7 +5,7 @@ import apiFitlife, { BASE_URL } from '../../general/api';
 
 type Gender = 'male' | 'female';
 
-const WorkoutPlan = ({ navigation }: any) => {
+const WorkoutPlan = ({ navigation, route }: any) => {
   const [selectedGender, setSelectedGender] = useState<Gender>('male');
   const [goals, setGoals] = useState<any[]>([]);
   const [isGoalLoading, setIsGoalLoading] = useState(true);
@@ -59,7 +59,21 @@ const WorkoutPlan = ({ navigation }: any) => {
           <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
         ) : (
           currentGoals.map((goal) => (
-            <TouchableOpacity key={goal.id_chuong_trinh} style={styles.goalCard} onPress={() => {}} activeOpacity={0.8}>
+            <TouchableOpacity 
+              key={goal.id_chuong_trinh} 
+              style={styles.goalCard} 
+              onPress={() => {
+                // Pass all previous params along with goalId, goalName, and the resolved gender string for images
+                const existingParams = route?.params || {};
+                navigation.navigate('WorkoutLocationScreen', { 
+                  ...existingParams,
+                  goalId: goal.id_chuong_trinh, 
+                  goalName: goal.ten_chuong_trinh,
+                  gender: selectedGender === 'male' ? 'Nam' : 'Nữ' // Keep this for WorkoutLocationScreen's internal logic
+                });
+              }}
+              activeOpacity={0.8}
+            >
               <ImageBackground source={{ uri: getImageUrl(goal.anh_dai_dien) }} style={styles.goalImage} imageStyle={styles.goalImageStyle}>
                 <View style={styles.goalCardContent}>
                   <Text style={styles.goalTitle}>{goal.ten_chuong_trinh}</Text>
