@@ -1,0 +1,148 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class MonAnSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        DB::table('mon_an')->truncate();
+        DB::table('mon_an')->insert([
+            [
+                'ten_mon_an' => 'Ức gà áp chảo rau củ',
+                'mo_ta' => 'Ức gà áp chảo kết hợp rau củ, phù hợp cho chế độ ăn giàu protein.',
+                'anh_dai_dien' => 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpOArE1LGMkbUPE0F8A8yrZwrUoMQszk4u9ETemTkRlrbmGFfl22WHGPu6&s=10',
+                'khoi_luong_gram' => 350,
+                'calo' => 420,
+                'thoi_gian_nau' => 10,
+                'protein' => 48,
+                'carb' => 22,
+                'fat' => 15,
+                'nguyen_lieu' => 'Ức gà, bông cải xanh, cà rốt, dầu oliu, tiêu, muối, tỏi.',
+                'huong_dan_nau' => 'Ướp ức gà với muối, tiêu và tỏi. Áp chảo hai mặt đến khi chín vàng. Rau củ luộc hoặc áp chảo nhẹ.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Cơm gạo lứt cá hồi',
+                'mo_ta' => 'Cơm gạo lứt kết hợp cá hồi giàu protein và chất béo tốt.',
+                'anh_dai_dien' => 'https://www.vinhphat.net/_next/static/media/com-gao-lut-ca-hoi-img.f21fef04.png',
+                'khoi_luong_gram' => 400,
+                'calo' => 520,
+                'thoi_gian_nau' => 20, 
+                'protein' => 38,
+                'carb' => 48,
+                'fat' => 18,
+                'nguyen_lieu' => 'Cá hồi, gạo lứt, bông cải xanh, dầu oliu, tiêu, muối, chanh.',
+                'huong_dan_nau' => 'Nấu cơm gạo lứt. Cá hồi ướp gia vị rồi áp chảo hoặc nướng. Dùng cùng rau củ.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Salad ức gà',
+                'mo_ta' => 'Salad rau xanh kết hợp ức gà, phù hợp cho bữa ăn ít calo.',
+                'anh_dai_dien' => 'https://cdn-i.vtcnews.vn/resize/th/upload/2024/11/27/cach-lam-salad-uc-ga-13193321.png',
+                'khoi_luong_gram' => 300,
+                'calo' => 320,
+                'thoi_gian_nau' => 10, 
+                'protein' => 36,
+                'carb' => 18,
+                'fat' => 11,
+                'nguyen_lieu' => 'Ức gà, xà lách, cà chua, dưa leo, bắp ngọt, dầu oliu, chanh.',
+                'huong_dan_nau' => 'Luộc hoặc áp chảo ức gà. Cắt nhỏ rau củ, trộn cùng ức gà và nước sốt chanh dầu oliu.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Trứng luộc và bánh mì nguyên cám',
+                'mo_ta' => 'Bữa sáng đơn giản giàu protein và tinh bột hấp thu chậm.',
+                'anh_dai_dien' => 'https://giadinh.mediacdn.vn/296230595582509056/2023/4/13/banh-mi-den-voi-bo-16813607173642113048516.jpg',
+                'khoi_luong_gram' => 220,
+                'calo' => 310,
+                'thoi_gian_nau' => 10, 
+                'protein' => 19,
+                'carb' => 35,
+                'fat' => 10,
+                'nguyen_lieu' => 'Trứng gà, bánh mì nguyên cám, cà chua, dưa leo.',
+                'huong_dan_nau' => 'Luộc trứng khoảng 7-9 phút. Dùng cùng bánh mì nguyên cám và rau củ.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Yến mạch chuối sữa chua',
+                'mo_ta' => 'Bữa sáng giàu chất xơ và năng lượng.',
+                'anh_dai_dien' => 'https://morinagadinhduong.com.vn/wp-content/uploads/2025/11/yen-mach-sua-chua-3.jpg',
+                'khoi_luong_gram' => 300,
+                'calo' => 350,
+                'thoi_gian_nau' => 10, 
+                'protein' => 16,
+                'carb' => 55,
+                'fat' => 8,
+                'nguyen_lieu' => 'Yến mạch, chuối, sữa chua không đường, hạt chia, mật ong.',
+                'huong_dan_nau' => 'Ngâm yến mạch với sữa chua. Thêm chuối cắt lát, hạt chia và một ít mật ong.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Bò xào rau củ',
+                'mo_ta' => 'Thịt bò xào rau củ giàu protein, phù hợp bữa trưa hoặc tối.',
+                'anh_dai_dien' => 'https://cdn.tgdd.vn/2021/05/CookProduct/bong-cai-xao-thit-bo-thumbnail-1200x676.jpg',
+                'khoi_luong_gram' => 350,
+                'calo' => 460,
+                'thoi_gian_nau' => 15, 
+                'protein' => 42,
+                'carb' => 30,
+                'fat' => 17,
+                'nguyen_lieu' => 'Thịt bò, ớt chuông, hành tây, bông cải xanh, dầu oliu, tỏi, tiêu.',
+                'huong_dan_nau' => 'Thái mỏng thịt bò, ướp gia vị. Xào nhanh thịt bò với rau củ trên lửa lớn.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Cá basa hấp gừng',
+                'mo_ta' => 'Cá hấp thanh nhẹ, ít dầu mỡ.',
+                'anh_dai_dien' => 'https://cdn.tgdd.vn/2021/02/CookRecipe/GalleryStep/thanh-pham-46.png',
+                'khoi_luong_gram' => 300,
+                'calo' => 280,
+                'thoi_gian_nau' => 25, 
+                'protein' => 35,
+                'carb' => 8,
+                'fat' => 12,
+                'nguyen_lieu' => 'Cá basa, gừng, hành lá, tiêu, nước tương, chanh.',
+                'huong_dan_nau' => 'Làm sạch cá, ướp gia vị. Cho gừng và hành lên cá rồi hấp khoảng 15-20 phút.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'ten_mon_an' => 'Khoai lang và sữa chua',
+                'mo_ta' => 'Bữa phụ giàu chất xơ, phù hợp trước hoặc sau khi tập luyện.',
+                'anh_dai_dien' => 'https://afamilycdn.com/Images/Uploaded/Share/2010/11/25/khoai12.jpg',
+                'khoi_luong_gram' => 250,
+                'calo' => 230,
+                'thoi_gian_nau' => 10, 
+                'protein' => 9,
+                'carb' => 42,
+                'fat' => 4,
+                'nguyen_lieu' => 'Khoai lang, sữa chua không đường.',
+                'huong_dan_nau' => 'Hấp hoặc luộc khoai lang. Dùng cùng sữa chua không đường.',
+                'tinh_trang' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+    }
+}
