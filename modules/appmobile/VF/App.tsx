@@ -100,7 +100,7 @@ function MemberTabs() {
         let name_icon = "";
         if (route.name === "Kế Hoạch Tập") name_icon = focused ? "barbell-sharp" : "barbell";
         else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
-        else if (route.name === "Tin Nhắn") name_icon = focused ? "chatbubble-ellipses-sharp" : "chatbubble-ellipses-outline";
+        else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
         else if (route.name === "Sổ Tay") name_icon = focused ? "book-sharp" : "book-outline";
         else if (route.name === "Thêm") name_icon = focused ? "ellipsis-horizontal-circle-sharp" : "ellipsis-horizontal-outline";
         // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
@@ -149,7 +149,7 @@ function MemberTabs() {
     })}>
       <Tab.Screen name="Kế Hoạch Tập" component={MemberHome}/>
       <Tab.Screen name="Feed" component={SportFeed} />
-      <Tab.Screen name="Tin Nhắn" component={SportFeed} />
+      <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
       <Tab.Screen name="Sổ Tay" component={MemberHome} />
       <Tab.Screen name="Thêm" component={SportFeed} />
     </Tab.Navigator>
@@ -213,6 +213,11 @@ const App = () => {
         <Stack.Screen name="Schedule" component={Schedule} />
         <Stack.Screen name="SessionHistory" component={SessionHistory} />
         <Stack.Screen name="SessionReview" component={SessionReview} />
+
+
+         {/* cua chat */}
+         <Stack.Screen name="ChatList" component={ChatList} />
+        <Stack.Screen name="ChatRoom" component={ChatRoom} />
       </Stack.Navigator>
 
     </NavigationContainer>
