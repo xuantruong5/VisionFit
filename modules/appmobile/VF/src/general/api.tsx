@@ -2,7 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
-const API_URL = "http://192.168.1.228:8000/api";
+export const BASE_URL = "http://192.168.1.69:8000";
+export const API_URL = `${BASE_URL}/api`;
 var is_auth_alert_shown = false;
 
 const apiFitlife = axios.create({
@@ -39,7 +40,7 @@ apiFitlife.interceptors.response.use(
         setTimeout(() => {
             is_auth_alert_shown = false;
         }, 3000);
-        return Promise.reject(error.response);
+        return Promise.reject(error.response || error);
     }
 );
 
