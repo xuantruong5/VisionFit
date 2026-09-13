@@ -4,7 +4,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import WorkoutPlan from './WorkoutPlan';
 import WorkoutUnPlan from './WorkoutUnPlan';
 
-const WorkoutPlanScreen = ({ navigation }: any) => {
+const WorkoutPlanScreen = ({ navigation, route }: any) => {
   const [goalModeEnabled, setGoalModeEnabled] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -32,9 +32,9 @@ const WorkoutPlanScreen = ({ navigation }: any) => {
 
         <View style={styles.modeContainer}>
           {goalModeEnabled ? (
-            isExpanded ? <WorkoutPlan navigation={navigation} /> : null
+            isExpanded ? <WorkoutPlan navigation={navigation} route={route} /> : null
           ) : (
-            <WorkoutUnPlan navigation={navigation} />
+            <WorkoutUnPlan navigation={navigation} route={route} />
           )}
         </View>
       </View>
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 45, // Đẩy xuống thêm giống màn hình trước
     paddingBottom: 15,
   },
   title: {
