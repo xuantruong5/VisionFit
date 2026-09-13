@@ -28,7 +28,8 @@ import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
 
 import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
-
+//import ChatList from "./src/page/chat/ChatList";
+//import ChatRoom from "./src/page/chat/ChatRoom";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
