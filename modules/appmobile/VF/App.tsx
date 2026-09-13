@@ -27,6 +27,8 @@ import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen"
 import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
 
+import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -181,7 +183,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="headerPage"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="WorkoutPlanScreen"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -196,6 +198,9 @@ const App = () => {
         <Stack.Screen name="DashboardScreen" component={DashboardScreen}/>
         <Stack.Screen name="DietScreen" component={DietScreen}/>
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
+        <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen}/>
+        <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan}/>
+
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
