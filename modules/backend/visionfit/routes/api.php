@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BaiDangController;
 use App\Http\Controllers\MembersController;
-
+use App\Http\Controllers\KeHoachAnController;
 
 // member 
 Route::get('/bai-dang', [BaiDangController::class, 'index']);
@@ -27,9 +27,14 @@ Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']
 Route::get('/tong-quan', [MembersController::class, 'tongQuan']);
 
 
+Route::get('/ke-hoach-an', [KeHoachAnController::class, 'keHoachAn']);
+
+
 // member
 Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
 Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+
+
 
 
 
