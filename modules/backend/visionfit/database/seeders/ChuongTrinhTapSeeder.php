@@ -336,7 +336,6 @@ class ChuongTrinhTapSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
             [
                 'id_chuong_trinh' => 20,
                 'ten_chuong_trinh' => 'Tập toàn thân 45 phút',
