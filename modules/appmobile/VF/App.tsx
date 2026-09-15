@@ -31,6 +31,8 @@ import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
 import WorkoutLocationScreen from "./src/page/member/WorkoutLocationScreen";
 import ChatList from "./src/page/chat/ChatList";
 import ChatRoom from "./src/page/chat/ChatRoom";
+import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
+import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -130,7 +132,7 @@ function MemberTabs() {
           height: 70,
           // Bo tròn
           borderRadius: 40,
-          backgroundColor: "rgba(255,255,255,0.3)",
+          backgroundColor: "rgba(255,255,255,0.80)",
           // Xóa đường viền mặc định
           borderTopWidth: 0,
           // Shadow Android
@@ -147,7 +149,7 @@ function MemberTabs() {
           paddingBottom: 5,
       },
     })}>
-      <Tab.Screen name="Kế Hoạch Tập" component={MemberHome}/>
+      <Tab.Screen name="Kế Hoạch Tập" component={WorkoutPlanScreen}/>
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
       <Tab.Screen name="Sổ Tay" component={MemberHome} />
@@ -184,7 +186,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="headerPage"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -202,6 +204,10 @@ const App = () => {
         <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen}/>
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan}/>
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen}/>
+        <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen}/>
+        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen}/>
+        
+
 
 
         {/* cua trainner  */}
@@ -220,13 +226,7 @@ const App = () => {
          <Stack.Screen name="ChatList" component={ChatList} />
         <Stack.Screen name="ChatRoom" component={ChatRoom} />
       </Stack.Navigator>
-
     </NavigationContainer>
   )
 }
-
-
-
-
-
 export default App;

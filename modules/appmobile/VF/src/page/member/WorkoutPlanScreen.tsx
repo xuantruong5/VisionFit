@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Switch } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Switch
+} from 'react-native';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WorkoutPlan from './WorkoutPlan';
 import WorkoutUnPlan from './WorkoutUnPlan';
@@ -9,10 +17,16 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+
       <View style={styles.header}>
-        <Text style={styles.title}>Lựa chọn kế hoạch tập của bạn</Text>
+        <View style={styles.headerPlaceholder} />
+
+        <Text style={styles.headerTitle}>Chọn kế hoạch tập luyện của bạn</Text>
+
+        <View style={styles.headerPlaceholder} />
       </View>
+
       <View style={styles.content}>
         <View style={styles.goalModeHeader}>
           <View style={styles.goalModeTitleRow}>
@@ -45,52 +59,77 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EAF9FB',
+    backgroundColor: '#F4FAFB',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 45, // Đẩy xuống thêm giống màn hình trước
-    paddingBottom: 15,
+    height: 72,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8F0F1',
   },
-  title: {
-    color: '#075E68',
-    fontSize: 24,
-    fontWeight: 'bold',
+
+  headerTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#11343A',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  headerPlaceholder: {
+    width: 44,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 14,
   },
+
   goalModeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+
     backgroundColor: '#FFFFFF',
-    padding: 15,
-    borderRadius: 12,
+    paddingHorizontal: 18,
+    height: 64,
+
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#9ED9DF',
-    elevation: 5,
-    shadowColor: '#D9D7FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    borderColor: '#B9E5E9',
+
+    marginBottom: 18,
+
+    elevation: 2,
+    shadowColor: '#78959A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
     shadowRadius: 5,
   },
+
   goalModeTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 14,
   },
+
   goalModeTitle: {
     color: '#11343A',
     fontSize: 16,
-    fontWeight: '600',
-    marginRight: 10,
+    fontWeight: '700',
   },
+
   expandButton: {
-    padding: 5,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+
   modeContainer: {
     flex: 1,
   },
