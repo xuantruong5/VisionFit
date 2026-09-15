@@ -33,6 +33,7 @@ import ChatList from "./src/page/chat/ChatList";
 import ChatRoom from "./src/page/chat/ChatRoom";
 import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
 import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
+import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -204,10 +205,11 @@ const App = () => {
         <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen}/>
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan}/>
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen}/>
+
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen}/>
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen}/>
         
-
+        <Stack.Screen name="DietDetail" component={DietDetail}/>
 
 
         {/* cua trainner  */}
