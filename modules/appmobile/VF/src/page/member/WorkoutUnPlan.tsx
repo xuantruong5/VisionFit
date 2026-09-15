@@ -22,6 +22,27 @@ const WorkoutUnPlan = ({ navigation }: any) => {
   const [selectedLocation, setSelectedLocation] = useState<string>('Tất cả');
   const [selectedGeneralPlanId, setSelectedGeneralPlanId] = useState<number | null>(null);
 
+  const levelOptions = [
+    { label: 'Tất cả', value: 'Tất cả' },
+    { label: 'Chưa có kinh nghiệm', value: 'CHUA_CO_KINH_NGHIEM' },
+    { label: 'Người bắt đầu', value: 'NGUOI_BAT_DAU' },
+    { label: 'Nâng cao', value: 'NANG_CAO' },
+    { label: 'Chuyên gia', value: 'CHUYEN_GIA' },
+    { label: 'Pro', value: 'PRO' },
+  ];
+
+  const locationOptions = [
+    'Tất cả',
+    'Phòng gym',
+    'Tại nhà',
+  ];
+
+  const getLevelLabel = (value: string) => {
+    return levelOptions.find(item => item.value === value)?.label || value;
+  };
+
+  const [showLevel, setShowLevel] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
   useEffect(() => {
     fetchGeneralPlans();
   }, []);
@@ -47,19 +68,22 @@ const WorkoutUnPlan = ({ navigation }: any) => {
   };
 
   const filteredGeneralPlans = generalPlans.filter((plan) => {
-    const matchesSearch = plan.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (plan.description && plan.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                          (plan.location && plan.location.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesLevel = selectedLevel === 'Tất cả' || plan.difficulty === selectedLevel;
-    const matchesLocation = selectedLocation === 'Tất cả' || 
-                            (plan.location && plan.location.toLowerCase().includes(selectedLocation.toLowerCase())) ||
-                            (plan.location === 'Mọi nơi');
+    const matchesSearch = plan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (plan.description && plan.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (plan.location && plan.location.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesLevel =
+      selectedLevel === 'Tất cả' ||
+      plan.difficulty === selectedLevel;
+
+    const matchesLocation =
+      selectedLocation === 'Tất cả' ||
+      plan.location === selectedLocation;
     return matchesSearch && matchesLevel && matchesLocation;
   });
 
   const handleUsePlan = () => {
     if (selectedGeneralPlanId) {
-       // navigation logic
+      // navigation logic
     }
   };
 
@@ -72,7 +96,11 @@ const WorkoutUnPlan = ({ navigation }: any) => {
           <Text style={styles.generalCardTitle} numberOfLines={1}>{item.name}</Text>
           <Text style={styles.generalCardDesc} numberOfLines={2}>{item.description}</Text>
           <View style={styles.generalCardMeta}>
-            <View style={styles.badgeLevel}><Text style={styles.badgeLevelText}>{item.difficulty}</Text></View>
+            <View style={styles.badgeLevel}>
+              <Text style={styles.badgeLevelText}>
+                {getLevelLabel(item.difficulty)}
+              </Text>
+            </View>
             <Text style={styles.metaText}> • {item.location}</Text>
           </View>
           <Text style={styles.metaText}>{item.durationDays} ngày • {item.sessionsPerWeek} buổi/tuần</Text>
@@ -91,27 +119,96 @@ const WorkoutUnPlan = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionTitle}>Tất cả kế hoạch tập</Text>
         <Text style={styles.sectionDesc}>Chương trình tập luyện phù hợp cho cả Nam và Nữ</Text>
-        
+
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#71949A" />
           <TextInput style={styles.searchInput} placeholder="Tìm kế hoạch tập..." placeholderTextColor="#71949A" value={searchQuery} onChangeText={setSearchQuery} />
         </View>
+        <View style={styles.selectRow}>
+          <TouchableOpacity
+            style={styles.selectBox}
+            onPress={() => {
+              setShowLevel(!showLevel);
+              setShowLocation(false);
+            }}>
+            <View>
+              <Text style={styles.selectLabel}>Cấp độ</Text>
+              <Text style={styles.selectValue} numberOfLines={1}>
+                {getLevelLabel(selectedLevel)}
+              </Text>
+            </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-          {['Tất cả', 'Cơ bản', 'Trung cấp', 'Nâng cao'].map((level) => (
-            <TouchableOpacity key={level} style={[styles.filterPill, selectedLevel === level && styles.filterPillActive]} onPress={() => setSelectedLevel(level)}>
-              <Text style={[styles.filterPillText, selectedLevel === level && styles.filterPillTextActive]}>{level}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+            <Ionicons
+              name={showLevel ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color="#0D7F8D"
+            />
+          </TouchableOpacity>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filterScroll, { marginBottom: 20 }]}>
-          {['Tất cả', 'Phòng gym', 'Tại nhà', 'Mọi nơi'].map((loc) => (
-            <TouchableOpacity key={loc} style={[styles.filterPill, selectedLocation === loc && styles.filterPillActive]} onPress={() => setSelectedLocation(loc)}>
-              <Text style={[styles.filterPillText, selectedLocation === loc && styles.filterPillTextActive]}>{loc}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <TouchableOpacity
+            style={styles.selectBox}
+            onPress={() => {
+              setShowLocation(!showLocation);
+              setShowLevel(false);
+            }}>
+            <View>
+              <Text style={styles.selectLabel}>Nơi tập</Text>
+              <Text style={styles.selectValue} numberOfLines={1}>
+                {selectedLocation}
+              </Text>
+            </View>
+
+            <Ionicons
+              name={showLocation ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color="#0D7F8D"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {showLevel && (
+          <View style={styles.optionBox}>
+            {levelOptions.map(item => (
+              <TouchableOpacity
+                key={item.value}
+                style={styles.optionItem}
+                onPress={() => {
+                  setSelectedLevel(item.value);
+                  setShowLevel(false);
+                }}>
+                <Text style={styles.optionText}>
+                  {item.label}
+                </Text>
+
+                {selectedLevel === item.value && (
+                  <Ionicons name="checkmark" size={18} color="#0D7F8D" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {showLocation && (
+          <View style={styles.optionBox}>
+            {locationOptions.map(item => (
+              <TouchableOpacity
+                key={item}
+                style={styles.optionItem}
+                onPress={() => {
+                  setSelectedLocation(item);
+                  setShowLocation(false);
+                }}>
+                <Text style={styles.optionText}>
+                  {item}
+                </Text>
+
+                {selectedLocation === item && (
+                  <Ionicons name="checkmark" size={18} color="#0D7F8D" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {isGeneralLoading ? (
           <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
@@ -170,33 +267,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 14,
     color: '#11343A',
-  },
-  filterScroll: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    flexGrow: 0,
-  },
-  filterPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#9ED9DF',
-    marginRight: 10,
-  },
-  filterPillActive: {
-    backgroundColor: '#0D7F8D',
-    borderColor: '#0D7F8D',
-  },
-  filterPillText: {
-    fontSize: 14,
-    color: '#71949A',
-    fontWeight: '500',
-  },
-  filterPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
   },
   generalCard: {
     backgroundColor: '#FFFFFF',
@@ -308,6 +378,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  selectRow: {
+  flexDirection: 'row',
+  gap: 10,
+  marginBottom: 14,
+},
+
+selectBox: {
+  flex: 1,
+  height: 50,
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: '#C7E8EB',
+  borderRadius: 14,
+  paddingHorizontal: 14,
+
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+
+  elevation: 1,
+  shadowColor: '#000',
+  shadowOffset: {width: 0, height: 1},
+  shadowOpacity: 0.06,
+  shadowRadius: 3,
+},
+
+selectLabel: {
+  fontSize: 10,
+  color: '#71949A',
+  marginBottom: 1,
+},
+
+selectValue: {
+  fontSize: 13,
+  fontWeight: '700',
+  color: '#11343A',
+  maxWidth: 125,
+},
+
+optionBox: {
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: '#9ED9DF',
+  borderRadius: 12,
+  padding: 5,
+  marginBottom: 12,
+},
+
+optionItem: {
+  height: 40,
+  paddingHorizontal: 12,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+
+optionText: {
+  fontSize: 14,
+  color: '#11343A',
+},
 });
 
 export default WorkoutUnPlan;

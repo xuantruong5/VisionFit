@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife, { BASE_URL } from '../../general/api';
+import ImageTextGradient from '../../components/ImageTextGradient';
 
 type Gender = 'male' | 'female';
 
@@ -74,7 +75,8 @@ const WorkoutPlan = ({ navigation, route }: any) => {
               }}
               activeOpacity={0.8}
             >
-              <ImageBackground source={{ uri: getImageUrl(goal.anh_dai_dien) }} style={styles.goalImage} imageStyle={styles.goalImageStyle}>
+              <ImageBackground source={{ uri: getImageUrl(goal.anh_dai_dien) }} style={styles.goalImage} imageStyle={styles.goalImageStyle} >
+                <ImageTextGradient />
                 <View style={styles.goalCardContent}>
                   <Text style={styles.goalTitle}>{goal.ten_chuong_trinh}</Text>
                   <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
