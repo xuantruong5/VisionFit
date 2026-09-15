@@ -13,6 +13,7 @@ class ChuongTrinhTap extends Model
         'muc_tieu',
         'nhom_muc_tieu',
         'cap_do',
+        'so_sao',
         'gioi_tinh_ap_dung',
         'noi_tap',
         'so_ngay',

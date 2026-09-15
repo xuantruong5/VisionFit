@@ -26,10 +26,14 @@ import headerPage from "./src/page/member/TrainingPlan/Header/page";
 import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
 import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
-import WorkoutPage from "./src/page/member/Member/WorkoutPage";
-import ReportPage from  "./src/page/member/Member/ReportPage";
-import NotebookPage from  "./src/page/member/Member/NotebookPage";
 
+import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
+import WorkoutLocationScreen from "./src/page/member/WorkoutLocationScreen";
+import ChatList from "./src/page/chat/ChatList";
+import ChatRoom from "./src/page/chat/ChatRoom";
+import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
+import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
+import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -85,7 +89,7 @@ function MainTabs() {
       {/* <Tab.Screen name="ScanQR" component={ScanQR} />
       <Tab.Screen name="ChatBot" component={ChatBot} /> */}
       {/* <Tab.Screen name="Profile" component={Profile} /> */}
-
+      
     </Tab.Navigator>
 
   );
@@ -95,24 +99,24 @@ function MainTabs() {
 function MemberTabs() {
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarIcon: ({ focused, color, size }) => {
-        let name_icon = "";
+        headerShown: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          let name_icon = "";
         if (route.name === "Kế Hoạch Tập") name_icon = focused ? "barbell-sharp" : "barbell";
         else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
-        else if (route.name === "Tin Nhắn") name_icon = focused ? "chatbubble-ellipses-sharp" : "chatbubble-ellipses-outline";
+        else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
         else if (route.name === "Sổ Tay") name_icon = focused ? "book-sharp" : "book-outline";
         else if (route.name === "Thêm") name_icon = focused ? "ellipsis-horizontal-circle-sharp" : "ellipsis-horizontal-outline";
         // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
-        return (
-          <AnimatIcon
-            name_icon={name_icon}
-            focused={focused}
-            color={color}
-            size={size}
-          />
-        );
-      },
+          return (
+            <AnimatIcon
+              name_icon={name_icon}
+              focused={focused}
+              color={color}
+              size={size}
+            />
+          );
+        },
       tabBarActiveTintColor: "#0D7F8D",
       tabBarInactiveTintColor: "#71949A",
       tabBarLabelStyle: {
@@ -120,8 +124,8 @@ function MemberTabs() {
         fontWeight: "bold",
         marginBottom: 5,
       },
-      tabBarStyle: {
-        position: "absolute",
+        tabBarStyle: {
+          position: "absolute",
           // Cách trái + phải
           marginHorizontal: 13,
           // Cách đáy
@@ -129,7 +133,7 @@ function MemberTabs() {
           height: 70,
           // Bo tròn
           borderRadius: 40,
-          backgroundColor: "rgba(255,255,255,0.3)",
+          backgroundColor: "rgba(255,255,255,0.80)",
           // Xóa đường viền mặc định
           borderTopWidth: 0,
           // Shadow Android
@@ -142,14 +146,13 @@ function MemberTabs() {
           },
           shadowOpacity: 0.15,
           shadowRadius: 8,
-          // Không bị dính sát icon
           paddingTop: 5,
           paddingBottom: 5,
       },
     })}>
-      <Tab.Screen name="Kế Hoạch Tập" component={MemberHome}/>
+      <Tab.Screen name="Kế Hoạch Tập" component={WorkoutPlanScreen}/>
       <Tab.Screen name="Feed" component={SportFeed} />
-      <Tab.Screen name="Tin Nhắn" component={SportFeed} />
+      <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
       <Tab.Screen name="Sổ Tay" component={MemberHome} />
       <Tab.Screen name="Thêm" component={SportFeed} />
     </Tab.Navigator>
@@ -168,13 +171,13 @@ const App = () => {
       }
     }
     notificationEmitter.on("thong_bao", sub);
-
+    
     return () => {
       notificationEmitter.off("thong_bao", sub);
     };
   }, []);
   return (
-    <NavigationContainer
+    <NavigationContainer 
       ref={navigationRef}
       onReady={() => {
         if (pendingRoute) {
@@ -184,7 +187,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="headerPage"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -199,10 +202,15 @@ const App = () => {
         <Stack.Screen name="DashboardScreen" component={DashboardScreen}/>
         <Stack.Screen name="DietScreen" component={DietScreen}/>
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan}/>
-        <Stack.Screen name="WorkoutPage" component={WorkoutPage}/>
-        <Stack.Screen name="ReportPage" component={ReportPage}/>
-        <Stack.Screen name="NotebookPage" component={NotebookPage}/>
+        <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen}/>
+        <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan}/>
+        <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen}/>
+
+        <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen}/>
+        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen}/>
         
+        <Stack.Screen name="DietDetail" component={DietDetail}/>
+
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
@@ -214,14 +222,13 @@ const App = () => {
         <Stack.Screen name="Schedule" component={Schedule} />
         <Stack.Screen name="SessionHistory" component={SessionHistory} />
         <Stack.Screen name="SessionReview" component={SessionReview} />
-      </Stack.Navigator>
 
+
+         {/* cua chat */}
+         <Stack.Screen name="ChatList" component={ChatList} />
+        <Stack.Screen name="ChatRoom" component={ChatRoom} />
+      </Stack.Navigator>
     </NavigationContainer>
   )
 }
-
-
-
-
-
 export default App;

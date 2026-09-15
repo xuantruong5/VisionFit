@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BaiDangController;
 use App\Http\Controllers\MembersController;
+use App\Http\Controllers\KeHoachAnController;
 
-
-// member 
+// member
 Route::get('/bai-dang', [BaiDangController::class, 'index']);
 Route::post('/bai-dang', [BaiDangController::class, 'store']);
 Route::post('/bai-dang/{id}/like', [BaiDangController::class, 'like']);
@@ -25,6 +25,18 @@ Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']
 
 // dashboard
 Route::get('/tong-quan', [MembersController::class, 'tongQuan']);
+
+
+Route::get('/ke-hoach-an', [KeHoachAnController::class, 'keHoachAn']);
+
+
+// member
+Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
+Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
+Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap'])->whereNumber('id');
+
+
 
 
 

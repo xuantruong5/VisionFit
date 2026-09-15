@@ -12,7 +12,7 @@ const GenderSelection = ({ navigation }: any) => {
                     onPress={() => navigation.navigate("BodyMetrics", { gender: 'Nam' })}
                 >
                     <ImageBackground 
-                        source={require("../../assets/members/nam.png")} 
+                        source={{ uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNuB_QDKBARCY2QZO8WhpIX__437nOqfTeXGKgdcYBufqJ0IhE1coHO-M&s=10" }} 
                         style={styles.cardImage}
                         imageStyle={styles.cardImageStyle}
                     >
@@ -27,7 +27,7 @@ const GenderSelection = ({ navigation }: any) => {
                     onPress={() => navigation.navigate("BodyMetrics", { gender: 'Nữ' })}
                 >
                     <ImageBackground 
-                        source={require("../../assets/members/nu.png")} 
+                        source={{ uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlNSC1DVC-dcI9xg_G6Vcb9yyAMBlwpiiPwDlDkQSore-lm2ZcuSVxf9w&s=10" }} 
                         style={styles.cardImage}
                         imageStyle={styles.cardImageStyle}
                     >
@@ -71,11 +71,11 @@ const styles = StyleSheet.create({
     },
     cardImageStyle: {
         borderRadius: 12,
-        opacity: 0.7,
+        opacity: 1,
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 30, 40, 0.4)',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
         paddingLeft: 30,
     },
