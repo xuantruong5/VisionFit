@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
     StyleSheet,
     Text,
@@ -12,9 +12,11 @@ import {
     Modal,
     Alert,
     StatusBar,
+    ActivityIndicator,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import apiFitlife, { BASE_URL } from "../../general/api";
 
 // Dữ liệu người dùng hiện tại (Hội viên VisionFit)
 const CURRENT_USER = {
@@ -25,173 +27,111 @@ const CURRENT_USER = {
     online: true,
 };
 
-// Danh bạ Huấn luyện viên & Hội viên
-const CONTACTS = [
-    {
-        id_nguoi_dung: 2,
-        ho_ten: "HLV Tuấn Anh",
-        chuyen_mon: "Chuyên gia Tăng cơ & Thể hình cá nhân",
-        anh_dai_dien: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&auto=format&fit=crop&q=80",
-        vai_tro: "HUAN_LUYEN_VIEN",
-        online: true,
-    },
-    {
-        id_nguoi_dung: 3,
-        ho_ten: "HLV Mai Phương",
-        chuyen_mon: "HLV Dinh dưỡng & Giảm mỡ SIRE",
-        anh_dai_dien: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80",
-        vai_tro: "HUAN_LUYEN_VIEN",
-        online: true,
-    },
-    {
-        id_nguoi_dung: 4,
-        ho_ten: "HLV Đức Thắng",
-        chuyen_mon: "Chuyên gia Sức bền & Cardio HIIT",
-        anh_dai_dien: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80",
-        vai_tro: "HUAN_LUYEN_VIEN",
-        online: false,
-    },
-    {
-        id_nguoi_dung: 5,
-        ho_ten: "Nguyễn Bảo Anh",
-        chuyen_mon: "Hội viên VF Gold",
-        anh_dai_dien: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&auto=format&fit=crop&q=80",
-        vai_tro: "HOI_VIEN",
-        online: true,
-    },
-    {
-        id_nguoi_dung: 6,
-        ho_ten: "Trần Quốc Tuấn",
-        chuyen_mon: "Hội viên Gym",
-        anh_dai_dien: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
-        vai_tro: "HOI_VIEN",
-        online: false,
-    },
-];
-
-// Danh sách Story / Đang hoạt động chuẩn Messenger Notes
-const ACTIVE_STORIES = [
-    {
-        id: 1,
-        isSelf: true,
-        ho_ten: "Ghi chú",
-        anh_dai_dien: CURRENT_USER.anh_dai_dien,
-        note: "Ghi chú: Đang siết cơ 💪",
-    },
-    {
-        id: 2,
-        isSelf: false,
-        ho_ten: "Tuấn Anh",
-        anh_dai_dien: CONTACTS[0].anh_dai_dien,
-        note: "Buổi Squat 18h 🔥",
-    },
-    {
-        id: 3,
-        isSelf: false,
-        ho_ten: "Mai Phương",
-        anh_dai_dien: CONTACTS[1].anh_dai_dien,
-        note: "Menu tuần mới 🥑",
-    },
-    {
-        id: 4,
-        isSelf: false,
-        ho_ten: "Bảo Anh",
-        anh_dai_dien: CONTACTS[3].anh_dai_dien,
-        note: "Chiều nay tập vai 🏋️",
-    },
-    {
-        id: 5,
-        isSelf: false,
-        ho_ten: "Đức Thắng",
-        anh_dai_dien: CONTACTS[2].anh_dai_dien,
-        note: "Cardio 5km 🏃",
-    },
-];
-
-// Danh sách cuộc trò chuyện ban đầu
-const INITIAL_CONVERSATIONS = [
-    {
-        id_cuoc_tro_chuyen: 1,
-        loai: "TRUC_TIEP",
-        doi_phuong: CONTACTS[0],
-        thoi_gian_tin_nhan_cuoi: "10:42",
-        noi_dung_cuoi: "HLV Tuấn Anh đã gửi đề xuất lịch tập: Thứ 4 (18:00) - Ngực & Tay sau",
-        so_tin_chua_doc: 2,
-        ghim: true,
-        da_tat_thong_bao: false,
-        da_xem: false,
-    },
-    {
-        id_cuoc_tro_chuyen: 2,
-        loai: "NHOM",
-        ten_nhom: "🔥 Nhóm Siết Cơ 30 Ngày - VF Center",
-        anh_nhom: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80",
-        thoi_gian_tin_nhan_cuoi: "09:15",
-        noi_dung_cuoi: "Bảo Anh đã gửi 1 ảnh bữa sáng 350 calo 🥗",
-        so_tin_chua_doc: 0,
-        ghim: true,
-        da_tat_thong_bao: false,
-        da_xem: true,
-    },
-    {
-        id_cuoc_tro_chuyen: 3,
-        loai: "TRUC_TIEP",
-        doi_phuong: CONTACTS[1],
-        thoi_gian_tin_nhan_cuoi: "Hôm qua",
-        noi_dung_cuoi: "Em vừa cập nhật cân nặng sáng nay xuống 68.2kg rồi chị nhé!",
-        so_tin_chua_doc: 0,
-        ghim: false,
-        da_tat_thong_bao: false,
-        da_xem: true,
-    },
-    {
-        id_cuoc_tro_chuyen: 4,
-        loai: "TRUC_TIEP",
-        doi_phuong: CONTACTS[3],
-        thoi_gian_tin_nhan_cuoi: "Hôm qua",
-        noi_dung_cuoi: "Tối nay 19h ra gym check form Bench Press cùng mình không?",
-        so_tin_chua_doc: 1,
-        ghim: false,
-        da_tat_thong_bao: false,
-        da_xem: false,
-    },
-    {
-        id_cuoc_tro_chuyen: 5,
-        loai: "TRUC_TIEP",
-        doi_phuong: CONTACTS[2],
-        thoi_gian_tin_nhan_cuoi: "Thứ 2",
-        noi_dung_cuoi: "Video AI phân tích nhịp thở bài chạy của em đã có kết quả nhé.",
-        so_tin_chua_doc: 0,
-        ghim: false,
-        da_tat_thong_bao: true,
-        da_xem: true,
-    },
-];
+const getImageUrl = (url: string | null) => {
+    if (!url) return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${BASE_URL}${url}`;
+};
 
 const ChatList = ({ navigation }: any) => {
-    const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
+    const [conversations, setConversations] = useState<any[]>([]);
+    const [contacts, setContacts] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("ALL");
     const [showNewChatModal, setShowNewChatModal] = useState(false);
     const [selectedConv, setSelectedConv] = useState<any>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchRooms();
+        fetchContacts();
+
+        const unsubscribe = navigation.addListener?.("focus", () => {
+            fetchRooms();
+        });
+        return unsubscribe;
+    }, []);
+
+    // Tải danh sách phòng chat từ Backend
+    const fetchRooms = async () => {
+        try {
+            setIsLoading(true);
+            const response = await apiFitlife.get("/chat/rooms");
+            if (response.data && response.data.status) {
+                setConversations(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching chat rooms:", error);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    };
+
+    // Tải danh bạ HLV và Hội viên từ Backend
+    const fetchContacts = async () => {
+        try {
+            const response = await apiFitlife.get("/chat/contacts");
+            if (response.data && response.data.status && response.data.data) {
+                const allList = response.data.data.all || [
+                    ...(response.data.data.trainers || []),
+                    ...(response.data.data.members || []),
+                ];
+                setContacts(allList);
+            }
+        } catch (error) {
+            console.error("Error fetching contacts:", error);
+        }
+    };
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        fetchRooms();
+        fetchContacts();
+    };
+
+    // Danh sách Story / Đang hoạt động tạo động từ danh bạ Backend
+    const activeStories = useMemo(() => {
+        const list: any[] = [
+            {
+                id: 'self',
+                isSelf: true,
+                ho_ten: "Ghi chú",
+                anh_dai_dien: CURRENT_USER.anh_dai_dien,
+                note: "Ghi chú: Tập luyện 💪",
+            }
+        ];
+        contacts.slice(0, 10).forEach((c: any, index: number) => {
+            list.push({
+                id: `${c.vai_tro || 'contact'}_${c.id_nguoi_dung}_${index}`,
+                isSelf: false,
+                ho_ten: c.ho_ten,
+                anh_dai_dien: getImageUrl(c.anh_dai_dien),
+                note: c.vai_tro === "HUAN_LUYEN_VIEN" ? (c.chuyen_mon || "HLV") : "Đang hoạt động",
+                contact: c,
+            });
+        });
+        return list;
+    }, [contacts]);
 
     // Tính tổng số tin nhắn chưa đọc
     const totalUnread = useMemo(() => {
-        return conversations.reduce((acc, curr) => acc + curr.so_tin_chua_doc, 0);
+        return conversations.reduce((acc, curr) => acc + (curr.so_tin_chua_doc || 0), 0);
     }, [conversations]);
 
     // Lọc danh sách hội thoại
     const filteredConversations = useMemo(() => {
         return conversations.filter((item: any) => {
             const name = item.loai === "NHOM" ? item.ten_nhom : item.doi_phuong?.ho_ten;
-            const matchQuery = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.noi_dung_cuoi.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchQuery = (name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.noi_dung_cuoi || "").toLowerCase().includes(searchQuery.toLowerCase());
 
             if (!matchQuery) return false;
 
             if (selectedFilter === "PT") return item.doi_phuong?.vai_tro === "HUAN_LUYEN_VIEN";
             if (selectedFilter === "GROUP") return item.loai === "NHOM";
-            if (selectedFilter === "UNREAD") return item.so_tin_chua_doc > 0;
+            if (selectedFilter === "UNREAD") return (item.so_tin_chua_doc || 0) > 0;
 
             return true;
         });
@@ -200,39 +140,75 @@ const ChatList = ({ navigation }: any) => {
     // Mở phòng chat
     const handleOpenChat = (item: any) => {
         setConversations(prev =>
-            prev.map(c => c.id_cuoc_tro_chuyen === item.id_cuoc_tro_chuyen ? { ...c, so_tin_chua_doc: 0 } : c)
+            prev.map(c => c.id_cuoc_tro_chuyen === item.id_cuoc_tro_chuyen ? { ...c, so_tin_chua_doc: 0, da_xem: true } : c)
         );
         navigation.navigate("ChatRoom", { conversation: item, currentUser: CURRENT_USER });
     };
 
     // Bắt đầu chat với một người trong danh bạ
-    const handleStartChat = (contact: any) => {
+    const handleStartChat = async (contact: any) => {
         setShowNewChatModal(false);
-        const existing = conversations.find(c => c.loai === "TRUC_TIEP" && c.doi_phuong?.id_nguoi_dung === contact.id_nguoi_dung);
-        if (existing) {
-            handleOpenChat(existing);
-        } else {
-            const newConv = {
-                id_cuoc_tro_chuyen: Date.now(),
-                loai: "TRUC_TIEP",
-                doi_phuong: contact,
-                thoi_gian_tin_nhan_cuoi: "Vừa xong",
-                noi_dung_cuoi: "Đã bắt đầu cuộc trò chuyện mới",
-                so_tin_chua_doc: 0,
-                ghim: false,
-                da_tat_thong_bao: false,
-                da_xem: false,
-            };
-            setConversations([newConv, ...conversations]);
-            handleOpenChat(newConv);
+
+        try {
+            const response = await apiFitlife.get(`/chat/room/${contact.id_nguoi_dung}`);
+            if (response.data && response.data.status && response.data.data) {
+                const room = response.data.data;
+                const newConv = {
+                    id_cuoc_tro_chuyen: room.id,
+                    room_uuid: room.uuid,
+                    loai: room.type === 2 ? "NHOM" : "TRUC_TIEP",
+                    doi_phuong: contact,
+                    thoi_gian_tin_nhan_cuoi: "Vừa xong",
+                    noi_dung_cuoi: "Đã bắt đầu cuộc trò chuyện mới",
+                    so_tin_chua_doc: 0,
+                    ghim: false,
+                    da_tat_thong_bao: false,
+                    da_xem: true,
+                };
+                setConversations(prev => {
+                    const exists = prev.find(c => c.id_cuoc_tro_chuyen === room.id || c.room_uuid === room.uuid);
+                    if (exists) return prev;
+                    return [newConv, ...prev];
+                });
+                handleOpenChat(newConv);
+            }
+        } catch (error) {
+            console.error("Error starting chat:", error);
+            Alert.alert("Lỗi", "Không thể kết nối đến server để tạo phòng chat.");
         }
+    };
+
+    // Ghim cuộc trò chuyện
+    const handleTogglePin = async (conv: any) => {
+        if (!conv) return;
+        const targetId = conv.room_uuid || conv.id_cuoc_tro_chuyen;
+        try {
+            await apiFitlife.post(`/chat/room/${targetId}/pin`);
+        } catch (e) {
+            console.log("Lỗi khi ghim đoạn chat:", e);
+        }
+        setConversations(prev => prev.map(c => c.id_cuoc_tro_chuyen === conv.id_cuoc_tro_chuyen ? { ...c, ghim: !c.ghim } : c));
+        setSelectedConv(null);
+    };
+
+    // Tắt/bật thông báo
+    const handleToggleMute = async (conv: any) => {
+        if (!conv) return;
+        const targetId = conv.room_uuid || conv.id_cuoc_tro_chuyen;
+        try {
+            await apiFitlife.post(`/chat/room/${targetId}/mute`);
+        } catch (e) {
+            console.log("Lỗi khi đổi thông báo:", e);
+        }
+        setConversations(prev => prev.map(c => c.id_cuoc_tro_chuyen === conv.id_cuoc_tro_chuyen ? { ...c, da_tat_thong_bao: !c.da_tat_thong_bao } : c));
+        setSelectedConv(null);
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
 
-            
+
 
             {/* Thanh tìm kiếm */}
             <View style={styles.searchBox}>
@@ -252,171 +228,178 @@ const ChatList = ({ navigation }: any) => {
             </View>
 
             {/* Danh sách chính */}
-            <FlatList
-                data={filteredConversations}
-                keyExtractor={(item) => item.id_cuoc_tro_chuyen.toString()}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContainer}
-                ListHeaderComponent={
-                    <>
-                        {/* Thanh Story Notes "Đang hoạt động" */}
-                        {searchQuery.trim() === "" && (
-                            <View style={styles.storiesContainer}>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesScroll}>
-                                    {ACTIVE_STORIES.map((item) => (
-                                        <TouchableOpacity
-                                            key={item.id}
-                                            style={styles.storyCard}
-                                            activeOpacity={0.8}
-                                            onPress={() => {
-                                                if (item.isSelf) {
-                                                    Alert.alert("Ghi chú của bạn", "Chia sẻ cảm nghĩ hoặc trạng thái tập luyện hôm nay");
-                                                } else {
-                                                    const existing = conversations.find((c: any) => c.doi_phuong?.ho_ten.includes(item.ho_ten));
-                                                    if (existing) handleOpenChat(existing);
-                                                }
-                                            }}
-                                        >
-                                            <View style={styles.noteBubble}>
-                                                <Text style={styles.noteBubbleText} numberOfLines={1}>
-                                                    {item.note}
+            {isLoading ? (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <ActivityIndicator size="large" color="#0D7F8D" />
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredConversations}
+                    keyExtractor={(item, index) => (item.room_uuid || item.id_cuoc_tro_chuyen ? `${item.room_uuid || item.id_cuoc_tro_chuyen}` : `conv_${index}`)}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={isRefreshing}
+                    onRefresh={handleRefresh}
+                    contentContainerStyle={styles.listContainer}
+                    ListHeaderComponent={
+                        <>
+                            {/* Thanh Story Notes "Đang hoạt động" */}
+                            {searchQuery.trim() === "" && (
+                                <View style={styles.storiesContainer}>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesScroll}>
+                                        {activeStories.map((item) => (
+                                            <TouchableOpacity
+                                                key={item.id}
+                                                style={styles.storyCard}
+                                                activeOpacity={0.8}
+                                                onPress={() => {
+                                                    if (item.isSelf) {
+                                                        Alert.alert("Ghi chú của bạn", "Chia sẻ cảm nghĩ hoặc trạng thái tập luyện hôm nay");
+                                                    } else if (item.contact) {
+                                                        handleStartChat(item.contact);
+                                                    }
+                                                }}
+                                            >
+                                                <View style={styles.noteBubble}>
+                                                    <Text style={styles.noteBubbleText} numberOfLines={1}>
+                                                        {item.note}
+                                                    </Text>
+                                                </View>
+                                                <View style={[styles.storyAvatarWrap, item.isSelf ? styles.selfStoryRing : styles.onlineStoryRing]}>
+                                                    <Image source={{ uri: item.anh_dai_dien }} style={styles.storyAvatar} />
+                                                    {item.isSelf ? (
+                                                        <View style={styles.plusBadge}>
+                                                            <Ionicons name="add" size={12} color="#FFFFFF" />
+                                                        </View>
+                                                    ) : (
+                                                        <View style={styles.onlineDotStory} />
+                                                    )}
+                                                </View>
+                                                <Text style={styles.storyNameText} numberOfLines={1}>
+                                                    {item.ho_ten}
                                                 </Text>
-                                            </View>
-                                            <View style={[styles.storyAvatarWrap, item.isSelf ? styles.selfStoryRing : styles.onlineStoryRing]}>
-                                                <Image source={{ uri: item.anh_dai_dien }} style={styles.storyAvatar} />
-                                                {item.isSelf ? (
-                                                    <View style={styles.plusBadge}>
-                                                        <Ionicons name="add" size={12} color="#FFFFFF" />
-                                                    </View>
-                                                ) : (
-                                                    <View style={styles.onlineDotStory} />
-                                                )}
-                                            </View>
-                                            <Text style={styles.storyNameText} numberOfLines={1}>
-                                                {item.ho_ten}
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
+
+                            {/* Bộ lọc theo Tabs */}
+                            <View style={styles.filterTabs}>
+                                <TouchableOpacity
+                                    style={[styles.filterTabBtn, selectedFilter === "ALL" && styles.filterTabBtnActive]}
+                                    onPress={() => setSelectedFilter("ALL")}
+                                >
+                                    <Text style={[styles.filterTabText, selectedFilter === "ALL" && styles.filterTabTextActive]}>Tất cả</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.filterTabBtn, selectedFilter === "PT" && styles.filterTabBtnActive]}
+                                    onPress={() => setSelectedFilter("PT")}
+                                >
+                                    <Ionicons name="fitness-outline" size={14} color={selectedFilter === "PT" ? "#FFFFFF" : "#0D7F8D"} style={{ marginRight: 4 }} />
+                                    <Text style={[styles.filterTabText, selectedFilter === "PT" && styles.filterTabTextActive]}>HLV / PT</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.filterTabBtn, selectedFilter === "GROUP" && styles.filterTabBtnActive]}
+                                    onPress={() => setSelectedFilter("GROUP")}
+                                >
+                                    <Ionicons name="people-outline" size={14} color={selectedFilter === "GROUP" ? "#FFFFFF" : "#0D7F8D"} style={{ marginRight: 4 }} />
+                                    <Text style={[styles.filterTabText, selectedFilter === "GROUP" && styles.filterTabTextActive]}>Nhóm tập</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.filterTabBtn, selectedFilter === "UNREAD" && styles.filterTabBtnActive]}
+                                    onPress={() => setSelectedFilter("UNREAD")}
+                                >
+                                    <Text style={[styles.filterTabText, selectedFilter === "UNREAD" && styles.filterTabTextActive]}>Chưa đọc</Text>
+                                    {totalUnread > 0 && (
+                                        <View style={styles.filterBadge}>
+                                            <Text style={styles.filterBadgeText}>{totalUnread}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    }
+                    renderItem={({ item }) => {
+                        const isGroup = item.loai === "NHOM";
+                        const isUnread = item.so_tin_chua_doc > 0;
+                        const isCoach = !isGroup && item.doi_phuong?.vai_tro === "HUAN_LUYEN_VIEN";
+                        const name = isGroup ? item.ten_nhom : item.doi_phuong?.ho_ten;
+                        const avatar = isGroup ? getImageUrl(item.anh_nhom) : getImageUrl(item.doi_phuong?.anh_dai_dien);
+
+                        return (
+                            <TouchableOpacity
+                                style={[styles.chatCard, isUnread && styles.chatCardUnread]}
+                                activeOpacity={0.7}
+                                onPress={() => handleOpenChat(item)}
+                                onLongPress={() => setSelectedConv(item)}
+                            >
+                                {/* Avatar */}
+                                <View style={styles.chatAvatarWrap}>
+                                    <Image source={{ uri: avatar }} style={styles.chatAvatar} />
+                                    {!isGroup && item.doi_phuong?.online && <View style={styles.chatOnlineDot} />}
+                                    {isGroup && (
+                                        <View style={styles.chatGroupBadge}>
+                                            <Ionicons name="people" size={10} color="#FFFFFF" />
+                                        </View>
+                                    )}
+                                </View>
+
+                                {/* Thông tin cuộc hội thoại */}
+                                <View style={styles.chatInfo}>
+                                    <View style={styles.chatInfoTop}>
+                                        <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
+                                            <Text style={[styles.chatName, isUnread && styles.chatNameUnread]} numberOfLines={1}>
+                                                {name}
                                             </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
-                        )}
-
-                        {/* Bộ lọc theo Tabs */}
-                        <View style={styles.filterTabs}>
-                            <TouchableOpacity
-                                style={[styles.filterTabBtn, selectedFilter === "ALL" && styles.filterTabBtnActive]}
-                                onPress={() => setSelectedFilter("ALL")}
-                            >
-                                <Text style={[styles.filterTabText, selectedFilter === "ALL" && styles.filterTabTextActive]}>Tất cả</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.filterTabBtn, selectedFilter === "PT" && styles.filterTabBtnActive]}
-                                onPress={() => setSelectedFilter("PT")}
-                            >
-                                <Ionicons name="fitness-outline" size={14} color={selectedFilter === "PT" ? "#FFFFFF" : "#0D7F8D"} style={{ marginRight: 4 }} />
-                                <Text style={[styles.filterTabText, selectedFilter === "PT" && styles.filterTabTextActive]}>HLV / PT</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.filterTabBtn, selectedFilter === "GROUP" && styles.filterTabBtnActive]}
-                                onPress={() => setSelectedFilter("GROUP")}
-                            >
-                                <Ionicons name="people-outline" size={14} color={selectedFilter === "GROUP" ? "#FFFFFF" : "#0D7F8D"} style={{ marginRight: 4 }} />
-                                <Text style={[styles.filterTabText, selectedFilter === "GROUP" && styles.filterTabTextActive]}>Nhóm tập</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.filterTabBtn, selectedFilter === "UNREAD" && styles.filterTabBtnActive]}
-                                onPress={() => setSelectedFilter("UNREAD")}
-                            >
-                                <Text style={[styles.filterTabText, selectedFilter === "UNREAD" && styles.filterTabTextActive]}>Chưa đọc</Text>
-                                {totalUnread > 0 && (
-                                    <View style={styles.filterBadge}>
-                                        <Text style={styles.filterBadgeText}>{totalUnread}</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </>
-                }
-                renderItem={({ item }) => {
-                    const isGroup = item.loai === "NHOM";
-                    const isUnread = item.so_tin_chua_doc > 0;
-                    const isCoach = !isGroup && item.doi_phuong?.vai_tro === "HUAN_LUYEN_VIEN";
-                    const name = isGroup ? item.ten_nhom : item.doi_phuong?.ho_ten;
-                    const avatar = isGroup ? item.anh_nhom : item.doi_phuong?.anh_dai_dien;
-
-                    return (
-                        <TouchableOpacity
-                            style={[styles.chatCard, isUnread && styles.chatCardUnread]}
-                            activeOpacity={0.7}
-                            onPress={() => handleOpenChat(item)}
-                            onLongPress={() => setSelectedConv(item)}
-                        >
-                            {/* Avatar */}
-                            <View style={styles.chatAvatarWrap}>
-                                <Image source={{ uri: avatar }} style={styles.chatAvatar} />
-                                {!isGroup && item.doi_phuong?.online && <View style={styles.chatOnlineDot} />}
-                                {isGroup && (
-                                    <View style={styles.chatGroupBadge}>
-                                        <Ionicons name="people" size={10} color="#FFFFFF" />
-                                    </View>
-                                )}
-                            </View>
-
-                            {/* Thông tin cuộc hội thoại */}
-                            <View style={styles.chatInfo}>
-                                <View style={styles.chatInfoTop}>
-                                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
-                                        <Text style={[styles.chatName, isUnread && styles.chatNameUnread]} numberOfLines={1}>
-                                            {name}
+                                            {isCoach && (
+                                                <View style={styles.ptBadge}>
+                                                    <Text style={styles.ptBadgeText}>PT</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <Text style={[styles.chatTime, isUnread && styles.chatTimeUnread]}>
+                                            {item.thoi_gian_tin_nhan_cuoi}
                                         </Text>
-                                        {isCoach && (
-                                            <View style={styles.ptBadge}>
-                                                <Text style={styles.ptBadgeText}>PT</Text>
-                                            </View>
-                                        )}
                                     </View>
-                                    <Text style={[styles.chatTime, isUnread && styles.chatTimeUnread]}>
-                                        {item.thoi_gian_tin_nhan_cuoi}
-                                    </Text>
-                                </View>
 
-                                <View style={styles.chatInfoBottom}>
-                                    <Text style={[styles.chatSnippet, isUnread && styles.chatSnippetUnread]} numberOfLines={1}>
-                                        {item.noi_dung_cuoi}
-                                    </Text>
-                                    <View style={styles.chatStatusIcons}>
-                                        {item.da_tat_thong_bao && (
-                                            <Ionicons name="notifications-off" size={14} color="#71949A" style={{ marginRight: 5 }} />
-                                        )}
-                                        {item.ghim && (
-                                            <MaterialCommunityIcons name="pin" size={14} color="#0D7F8D" style={{ marginRight: 5 }} />
-                                        )}
-                                        {isUnread ? (
-                                            <View style={styles.unreadCounter}>
-                                                <Text style={styles.unreadCounterText}>{item.so_tin_chua_doc}</Text>
-                                            </View>
-                                        ) : (
-                                            item.da_xem && <Ionicons name="checkmark-done" size={16} color="#0D7F8D" />
-                                        )}
+                                    <View style={styles.chatInfoBottom}>
+                                        <Text style={[styles.chatSnippet, isUnread && styles.chatSnippetUnread]} numberOfLines={1}>
+                                            {item.noi_dung_cuoi}
+                                        </Text>
+                                        <View style={styles.chatStatusIcons}>
+                                            {item.da_tat_thong_bao && (
+                                                <Ionicons name="notifications-off" size={14} color="#71949A" style={{ marginRight: 5 }} />
+                                            )}
+                                            {item.ghim && (
+                                                <MaterialCommunityIcons name="pin" size={14} color="#0D7F8D" style={{ marginRight: 5 }} />
+                                            )}
+                                            {isUnread ? (
+                                                <View style={styles.unreadCounter}>
+                                                    <Text style={styles.unreadCounterText}>{item.so_tin_chua_doc}</Text>
+                                                </View>
+                                            ) : (
+                                                item.da_xem && <Ionicons name="checkmark-done" size={16} color="#0D7F8D" />
+                                            )}
+                                        </View>
                                     </View>
                                 </View>
+                            </TouchableOpacity>
+                        );
+                    }}
+                    ListEmptyComponent={
+                        <View style={styles.emptyWrap}>
+                            <View style={styles.emptyIconCircle}>
+                                <Ionicons name="chatbubbles-outline" size={38} color="#0D7F8D" />
                             </View>
-                        </TouchableOpacity>
-                    );
-                }}
-                ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <View style={styles.emptyIconCircle}>
-                            <Ionicons name="chatbubbles-outline" size={38} color="#0D7F8D" />
+                            <Text style={styles.emptyTitle}>Chưa có cuộc trò chuyện nào</Text>
+                            <Text style={styles.emptyText}>Nhấn vào nút bên dưới để bắt đầu cuộc trò chuyện mới!</Text>
                         </View>
-                        <Text style={styles.emptyTitle}>Không tìm thấy đoạn chat</Text>
-                        <Text style={styles.emptyText}>Bắt đầu cuộc trò chuyện mới cùng Huấn luyện viên thể hình!</Text>
-                    </View>
-                }
-            />
+                    }
+                />
+            )}
 
             {/* Nút FAB Soạn tin nhắn mới */}
             <TouchableOpacity
@@ -457,13 +440,13 @@ const ChatList = ({ navigation }: any) => {
                         <Text style={styles.modalSectionTitle}>GỢI Ý HUẤN LUYỆN VIÊN & HỘI VIÊN</Text>
 
                         <FlatList
-                            data={CONTACTS}
-                            keyExtractor={(item) => item.id_nguoi_dung.toString()}
+                            data={contacts}
+                            keyExtractor={(item, index) => `${item.vai_tro || 'contact'}_${item.id_nguoi_dung}_${index}`}
                             showsVerticalScrollIndicator={false}
                             renderItem={({ item }) => (
                                 <TouchableOpacity style={styles.contactRow} onPress={() => handleStartChat(item)}>
                                     <View style={styles.contactAvatarWrap}>
-                                        <Image source={{ uri: item.anh_dai_dien }} style={styles.contactAvatar} />
+                                        <Image source={{ uri: getImageUrl(item.anh_dai_dien) }} style={styles.contactAvatar} />
                                         {item.online && <View style={styles.contactOnlineDot} />}
                                     </View>
                                     <View style={{ flex: 1 }}>
@@ -493,10 +476,7 @@ const ChatList = ({ navigation }: any) => {
                         </Text>
                         <TouchableOpacity
                             style={styles.sheetRow}
-                            onPress={() => {
-                                setConversations(prev => prev.map(c => c.id_cuoc_tro_chuyen === selectedConv?.id_cuoc_tro_chuyen ? { ...c, ghim: !c.ghim } : c));
-                                setSelectedConv(null);
-                            }}
+                            onPress={() => handleTogglePin(selectedConv)}
                         >
                             <MaterialCommunityIcons name={selectedConv?.ghim ? "pin-off-outline" : "pin-outline"} size={22} color="#0D7F8D" />
                             <Text style={styles.sheetRowText}>{selectedConv?.ghim ? "Bỏ ghim" : "Ghim lên đầu"}</Text>
@@ -504,10 +484,7 @@ const ChatList = ({ navigation }: any) => {
 
                         <TouchableOpacity
                             style={styles.sheetRow}
-                            onPress={() => {
-                                setConversations(prev => prev.map(c => c.id_cuoc_tro_chuyen === selectedConv?.id_cuoc_tro_chuyen ? { ...c, da_tat_thong_bao: !c.da_tat_thong_bao } : c));
-                                setSelectedConv(null);
-                            }}
+                            onPress={() => handleToggleMute(selectedConv)}
                         >
                             <Ionicons name={selectedConv?.da_tat_thong_bao ? "notifications-outline" : "notifications-off-outline"} size={22} color="#0D7F8D" />
                             <Text style={styles.sheetRowText}>{selectedConv?.da_tat_thong_bao ? "Bật thông báo" : "Tắt thông báo"}</Text>

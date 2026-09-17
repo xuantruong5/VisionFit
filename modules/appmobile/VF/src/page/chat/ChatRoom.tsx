@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
     StyleSheet,
     Text,
@@ -13,92 +13,24 @@ import {
     StatusBar,
     KeyboardAvoidingView,
     Platform,
+    ActivityIndicator,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { launchImageLibrary } from "react-native-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import apiFitlife, { BASE_URL } from "../../general/api";
 
 const EMOJI_LIST = ["❤️", "👍", "🔥", "😂", "😮", "😢"];
 
-// Dữ liệu tin nhắn khởi tạo
-const DEFAULT_MESSAGES = [
-    {
-        id_tin_nhan: 1,
-        id_nguoi_gui: 2, // HLV Tuấn Anh
-        loai_tin_nhan: "VAN_BAN",
-        noi_dung: "Chào Nam! Thầy vừa xem video bài Squat hôm qua hệ thống VisionFit AI chấm điểm.",
-        trang_thai: "DA_GUI",
-        thoi_gian_gui: "09:25",
-        reactions: ["🔥"],
-    },
-    {
-        id_tin_nhan: 2,
-        id_nguoi_gui: 2,
-        loai_tin_nhan: "HINH_ANH",
-        noi_dung: "Góc nghiêng lưng dưới ở Rep 4 và 5 hơi cong khoảng 8 độ. Thầy khoanh tròn chỗ này nhé:",
-        media_url: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=600&auto=format&fit=crop&q=80",
-        trang_thai: "DA_GUI",
-        thoi_gian_gui: "09:26",
-    },
-    {
-        id_tin_nhan: 3,
-        id_nguoi_gui: 1, // Nam (Current user)
-        id_tin_nhan_tra_loi: 2,
-        tra_loi_noi_dung: "Góc nghiêng lưng dưới ở Rep 4 và 5 hơi cong...",
-        tra_loi_nguoi_gui: "HLV Tuấn Anh",
-        loai_tin_nhan: "VAN_BAN",
-        noi_dung: "Dạ em cảm ơn thầy! Đến rep cuối em hơi đuối nên gồng bụng chưa đủ chặt.",
-        trang_thai: "DA_GUI",
-        thoi_gian_gui: "09:30",
-        reactions: ["👍"],
-    },
-    {
-        id_tin_nhan: 4,
-        id_nguoi_gui: 2,
-        loai_tin_nhan: "VAN_BAN",
-        noi_dung: "Tin nhắn đã được thu hồi",
-        trang_thai: "DA_THU_HOI",
-        thoi_gian_gui: "09:35",
-    },
-    {
-        id_tin_nhan: 5,
-        id_nguoi_gui: 2,
-        loai_tin_nhan: "LICH_TAP",
-        noi_dung: "Đề xuất buổi tập PT 1:1 cùng HLV Tuấn Anh",
-        workout: {
-            ten_bai_tap: "Ngực vát trên & Tay sau (Chest & Triceps)",
-            ngay_tap: "Thứ Tư, 16/09/2026",
-            gio_tap: "18:00 - 19:15",
-            calo_muc_tieu: 480,
-        },
-        trang_thai: "DA_GUI",
-        thoi_gian_gui: "10:41",
-        reactions: ["❤️"],
-    },
-    {
-        id_tin_nhan: 6,
-        id_nguoi_gui: 2,
-        loai_tin_nhan: "VAN_BAN",
-        noi_dung: "Em bấm Xác nhận lịch tập trên thẻ ở trên để hệ thống giữ máy tập nhé!",
-        trang_thai: "DA_GUI",
-        thoi_gian_gui: "10:42",
-    },
-];
+const getImageUrl = (url: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${BASE_URL}${url}`;
+};
 
 const ChatRoom = ({ navigation, route }: any) => {
-    const conversation = route?.params?.conversation || {
-        id_cuoc_tro_chuyen: 1,
-        loai: "TRUC_TIEP",
-        doi_phuong: {
-            id_nguoi_dung: 2,
-            ho_ten: "HLV Tuấn Anh",
-            chuyen_mon: "Chuyên gia Tăng cơ & Thể hình cá nhân",
-            anh_dai_dien: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&auto=format&fit=crop&q=80",
-            vai_tro: "HUAN_LUYEN_VIEN",
-            online: true,
-        },
-    };
+    const conversation = route?.params?.conversation || {};
     const currentUser = route?.params?.currentUser || {
         id_nguoi_dung: 1,
         ho_ten: "Lê Hoàng Nam",
@@ -106,12 +38,13 @@ const ChatRoom = ({ navigation, route }: any) => {
 
     const isGroup = conversation.loai === "NHOM";
     const partner = conversation.doi_phuong;
-    const displayName = isGroup ? conversation.ten_nhom : partner?.ho_ten || "HLV Tuấn Anh";
+    const displayName = isGroup ? conversation.ten_nhom : (partner?.ho_ten || "Cuộc trò chuyện");
     const displayAvatar = isGroup
-        ? conversation.anh_nhom || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80"
-        : partner?.anh_dai_dien || "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&auto=format&fit=crop&q=80";
+        ? getImageUrl(conversation.anh_nhom || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80")
+        : getImageUrl(partner?.anh_dai_dien || "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&auto=format&fit=crop&q=80");
 
-    const [messages, setMessages] = useState<any[]>(DEFAULT_MESSAGES);
+    const [messages, setMessages] = useState<any[]>([]);
+    const [isMessagesLoading, setIsMessagesLoading] = useState<boolean>(true);
     const [inputText, setInputText] = useState("");
     const [replyingTo, setReplyingTo] = useState<any>(null);
     const [isTyping, setIsTyping] = useState(false);
@@ -123,15 +56,62 @@ const ChatRoom = ({ navigation, route }: any) => {
 
     const flatListRef = useRef<FlatList>(null);
 
+    useEffect(() => {
+        fetchMessages();
+
+        // Polling định kỳ mỗi 3.5s để cập nhật tin nhắn mới
+        const interval = setInterval(() => {
+            const roomUuid = conversation?.room_uuid;
+            const roomId = conversation?.id_cuoc_tro_chuyen;
+            apiFitlife.get("/chat/history-message", {
+                params: {
+                    room_uuid: roomUuid,
+                    room_id: roomId,
+                },
+            }).then((res) => {
+                if (res.data && res.data.status && Array.isArray(res.data.data)) {
+                    setMessages(res.data.data);
+                }
+            }).catch((err) => {
+                console.error("Polling error:", err);
+            });
+        }, 3500);
+
+        return () => clearInterval(interval);
+    }, [conversation?.room_uuid, conversation?.id_cuoc_tro_chuyen]);
+
+    // Tải lịch sử tin nhắn từ Backend theo phong cách WorkoutPlanScreen
+    const fetchMessages = async () => {
+        try {
+            setIsMessagesLoading(true);
+            const roomUuid = conversation?.room_uuid;
+            const roomId = conversation?.id_cuoc_tro_chuyen;
+            const response = await apiFitlife.get("/chat/history-message", {
+                params: {
+                    room_uuid: roomUuid,
+                    room_id: roomId,
+                },
+            });
+            if (response.data && response.data.status) {
+                setMessages(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching chat history:", error);
+        } finally {
+            setIsMessagesLoading(false);
+        }
+    };
+
     // Gửi tin nhắn mới
-    const handleSend = (text: string, type: string = "VAN_BAN", mediaUrl?: string, workoutData?: any) => {
+    const handleSend = async (text: string, type: string = "VAN_BAN", mediaUrl?: string, workoutData?: any) => {
         if (!text.trim() && !mediaUrl && type === "VAN_BAN") return;
 
         const now = new Date();
         const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
+        const tempId = Date.now();
         const newMsg: any = {
-            id_tin_nhan: Date.now(),
+            id_tin_nhan: tempId,
             id_nguoi_gui: currentUser.id_nguoi_dung,
             loai_tin_nhan: type,
             noi_dung: text,
@@ -156,22 +136,26 @@ const ChatRoom = ({ navigation, route }: any) => {
             flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
 
-        // Giả lập HLV phản hồi sau 2s
-        if (!isGroup && type === "VAN_BAN") {
-            setTimeout(() => setIsTyping(true), 800);
-            setTimeout(() => {
-                setIsTyping(false);
-                const reply = {
-                    id_tin_nhan: Date.now() + 1,
-                    id_nguoi_gui: partner?.id_nguoi_dung || 2,
-                    loai_tin_nhan: "VAN_BAN",
-                    noi_dung: "HLV đã nhận được tin nhắn của Nam, cố gắng duy trì phong độ nhé! 💪",
-                    trang_thai: "DA_GUI",
-                    thoi_gian_gui: time,
-                };
-                setMessages((prev) => [...prev, reply]);
-                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-            }, 2500);
+        // Gửi lên Backend
+        try {
+            const res = await apiFitlife.post("/chat/send-message", {
+                room_uuid: conversation.room_uuid,
+                room_id: conversation.id_cuoc_tro_chuyen,
+                message: text,
+                message_type: type,
+                media_url: mediaUrl,
+                workout: workoutData,
+                id_tin_nhan_tra_loi: replyingTo?.id_tin_nhan,
+            });
+
+            if (res.data && res.data.status && res.data.data) {
+                const savedMsg = res.data.data;
+                setMessages((prev) =>
+                    prev.map((m) => (m.id_tin_nhan === tempId ? { ...m, ...savedMsg, id_tin_nhan: savedMsg.id_tin_nhan || savedMsg.id } : m))
+                );
+            }
+        } catch (err) {
+            console.log("Lỗi khi gửi tin nhắn lên Backend:", err);
         }
     };
 
@@ -180,20 +164,38 @@ const ChatRoom = ({ navigation, route }: any) => {
         try {
             const result = await launchImageLibrary({ mediaType: "photo", quality: 0.8 });
             if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
-                handleSend("Đã gửi một hình ảnh", "HINH_ANH", result.assets[0].uri);
+                const asset = result.assets[0];
+
+                // Upload lên server backend
+                try {
+                    const formData = new FormData();
+                    formData.append("file", {
+                        uri: asset.uri,
+                        type: asset.type || "image/jpeg",
+                        name: asset.fileName || `chat_${Date.now()}.jpg`,
+                    } as any);
+
+                    const uploadRes = await apiFitlife.post("/chat/upload", formData, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                    });
+
+                    if (uploadRes.data && uploadRes.data.status && uploadRes.data.url) {
+                        handleSend("Đã gửi một hình ảnh", "HINH_ANH", uploadRes.data.url);
+                        return;
+                    }
+                } catch (uploadError) {
+                    console.log("Upload ảnh lên Backend thất bại, dùng ảnh local:", uploadError);
+                }
+
+                handleSend("Đã gửi một hình ảnh", "HINH_ANH", asset.uri);
             }
         } catch (e) {
-            // Dùng ảnh mẫu nếu thiết bị không hỗ trợ picker
-            handleSend(
-                "Em gửi ảnh bữa ăn trưa theo chế độ đạm cao:",
-                "HINH_ANH",
-                "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80"
-            );
+            console.log("Lỗi khi chọn ảnh:", e);
         }
     };
 
     // Thả reaction
-    const handleAddReaction = (msgId: number, emoji: string) => {
+    const handleAddReaction = async (msgId: number, emoji: string) => {
         setMessages((prev) =>
             prev.map((m) => {
                 if (m.id_tin_nhan !== msgId) return m;
@@ -206,10 +208,16 @@ const ChatRoom = ({ navigation, route }: any) => {
             })
         );
         setSelectedMsgForReaction(null);
+
+        try {
+            await apiFitlife.post(`/chat/message/${msgId}/reaction`, { emoji });
+        } catch (e) {
+            console.log("Lỗi gửi reaction lên Backend:", e);
+        }
     };
 
     // Thu hồi tin nhắn
-    const handleRecall = (msgId: number) => {
+    const handleRecall = async (msgId: number) => {
         setMessages((prev) =>
             prev.map((m) =>
                 m.id_tin_nhan === msgId
@@ -218,11 +226,17 @@ const ChatRoom = ({ navigation, route }: any) => {
             )
         );
         setSelectedMsgForReaction(null);
+
+        try {
+            await apiFitlife.post(`/chat/message/${msgId}/recall`);
+        } catch (e) {
+            console.log("Lỗi thu hồi tin nhắn trên Backend:", e);
+        }
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-                    <StatusBar barStyle="dark-content" backgroundColor="#EAF9FB" translucent={false}/>
+            <StatusBar barStyle="dark-content" {...({ backgroundColor: "#EAF9FB", translucent: false } as any)} />
 
             {/* Header phòng chat */}
             <View style={styles.header}>
@@ -269,152 +283,165 @@ const ChatRoom = ({ navigation, route }: any) => {
 
             {/* Khung tin nhắn */}
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-                <FlatList
-                    ref={flatListRef}
-                    data={messages}
-                    keyExtractor={(item) => item.id_tin_nhan.toString()}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.messagesList}
-                    onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-                    renderItem={({ item }) => {
-                        const isSender = item.id_nguoi_gui === currentUser.id_nguoi_dung;
-                        const isRecalled = item.trang_thai === "DA_THU_HOI";
+                {isMessagesLoading ? (
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                        <ActivityIndicator size="large" color="#0D7F8D" />
+                    </View>
+                ) : (
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        keyExtractor={(item, index) => (item.id_tin_nhan || item.id ? `${item.id_tin_nhan || item.id}` : `msg_${index}`)}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={[styles.messagesList, messages.length === 0 && { flexGrow: 1, justifyContent: "center", alignItems: "center" }]}
+                        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+                        ListEmptyComponent={
+                            <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>
+                                <Ionicons name="chatbubbles-outline" size={48} color="#71949A" style={{ marginBottom: 12 }} />
+                                <Text style={{ fontSize: 16, fontWeight: "600", color: "#193B40" }}>Chưa có tin nhắn nào</Text>
+                                <Text style={{ fontSize: 13, color: "#71949A", marginTop: 4 }}>Hãy gửi lời chào để bắt đầu cuộc trò chuyện!</Text>
+                            </View>
+                        }
+                        renderItem={({ item }) => {
+                            const isSender = item.id_nguoi_gui === currentUser.id_nguoi_dung;
+                            const isRecalled = item.trang_thai === "DA_THU_HOI";
 
-                        return (
-                            <View style={[styles.msgRow, isSender ? styles.msgRowSender : styles.msgRowReceiver]}>
-                                {!isSender && <Image source={{ uri: displayAvatar }} style={styles.msgAvatar} />}
+                            return (
+                                <View style={[styles.msgRow, isSender ? styles.msgRowSender : styles.msgRowReceiver]}>
+                                    {!isSender && <Image source={{ uri: displayAvatar }} style={styles.msgAvatar} />}
 
-                                <View style={styles.msgBubbleWrap}>
-                                    {/* Trích dẫn trả lời */}
-                                    {item.tra_loi_noi_dung && (
-                                        <View style={[styles.replyBox, isSender ? styles.replyBoxSender : styles.replyBoxReceiver]}>
-                                            <View style={styles.replyLine} />
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={styles.replyAuthor}>{item.tra_loi_nguoi_gui}</Text>
-                                                <Text style={styles.replyText} numberOfLines={1}>
-                                                    {item.tra_loi_noi_dung}
-                                                </Text>
+                                    <View style={styles.msgBubbleWrap}>
+                                        {/* Trích dẫn trả lời */}
+                                        {item.tra_loi_noi_dung && (
+                                            <View style={[styles.replyBox, isSender ? styles.replyBoxSender : styles.replyBoxReceiver]}>
+                                                <View style={styles.replyLine} />
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={styles.replyAuthor}>{item.tra_loi_nguoi_gui}</Text>
+                                                    <Text style={styles.replyText} numberOfLines={1}>
+                                                        {item.tra_loi_noi_dung}
+                                                    </Text>
+                                                </View>
                                             </View>
-                                        </View>
-                                    )}
+                                        )}
 
-                                    {/* Bong bóng tin nhắn */}
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.bubble,
-                                            isSender ? styles.bubbleSender : styles.bubbleReceiver,
-                                            isRecalled && styles.bubbleRecalled,
-                                        ]}
-                                        activeOpacity={0.85}
-                                        onLongPress={() => setSelectedMsgForReaction(item)}
-                                    >
-                                        {isRecalled ? (
-                                            <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                                <Ionicons name="ban" size={16} color="#71949A" style={{ marginRight: 6 }} />
-                                                <Text style={styles.recalledText}>Tin nhắn đã được thu hồi</Text>
-                                            </View>
-                                        ) : (
-                                            <>
-                                                {/* Ảnh */}
-                                                {item.media_url && (
-                                                    <TouchableOpacity activeOpacity={0.9} onPress={() => setPreviewImage(item.media_url)}>
-                                                        <Image source={{ uri: item.media_url }} style={styles.bubbleImage} />
-                                                    </TouchableOpacity>
-                                                )}
-
-                                                {/* Thẻ lịch tập thể hình */}
-                                                {item.loai_tin_nhan === "LICH_TAP" && item.workout && (
-                                                    <View style={styles.workoutCard}>
-                                                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                                            <View style={styles.workoutIconWrap}>
-                                                                <Ionicons name="barbell" size={18} color="#FFFFFF" />
-                                                            </View>
-                                                            <View style={{ flex: 1, marginLeft: 8 }}>
-                                                                <Text style={styles.workoutTag}>BUỔI TẬP VISIONFIT</Text>
-                                                                <Text style={styles.workoutTitle}>{item.workout.ten_bai_tap}</Text>
-                                                            </View>
-                                                        </View>
-
-                                                        <View style={styles.workoutDivider} />
-
-                                                        <View style={{ marginBottom: 10 }}>
-                                                            <View style={styles.workoutDetailRow}>
-                                                                <Ionicons name="calendar-outline" size={14} color="#0D7F8D" />
-                                                                <Text style={styles.workoutDetailText}>{item.workout.ngay_tap}</Text>
-                                                            </View>
-                                                            <View style={styles.workoutDetailRow}>
-                                                                <Ionicons name="time-outline" size={14} color="#0D7F8D" />
-                                                                <Text style={styles.workoutDetailText}>{item.workout.gio_tap}</Text>
-                                                            </View>
-                                                            <View style={styles.workoutDetailRow}>
-                                                                <Ionicons name="flame-outline" size={14} color="#FA3E3E" />
-                                                                <Text style={styles.workoutDetailText}>Mục tiêu: {item.workout.calo_muc_tieu} kcal</Text>
-                                                            </View>
-                                                        </View>
-
-                                                        <TouchableOpacity
-                                                            style={[styles.confirmBtn, confirmedWorkout && styles.confirmedBtn]}
-                                                            onPress={() => {
-                                                                setConfirmedWorkout(true);
-                                                                Alert.alert("Thành công", "Đã lưu lịch tập vào Lịch tập luyện cá nhân của bạn!");
-                                                            }}
-                                                        >
-                                                            <Ionicons name={confirmedWorkout ? "checkmark-circle" : "calendar"} size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                                                            <Text style={styles.confirmBtnText}>{confirmedWorkout ? "Đã xác nhận lịch" : "Xác nhận lịch tập"}</Text>
+                                        {/* Bong bóng tin nhắn */}
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.bubble,
+                                                isSender ? styles.bubbleSender : styles.bubbleReceiver,
+                                                isRecalled && styles.bubbleRecalled,
+                                            ]}
+                                            activeOpacity={0.85}
+                                            onLongPress={() => setSelectedMsgForReaction(item)}
+                                        >
+                                            {isRecalled ? (
+                                                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                                    <Ionicons name="ban" size={16} color="#71949A" style={{ marginRight: 6 }} />
+                                                    <Text style={styles.recalledText}>Tin nhắn đã được thu hồi</Text>
+                                                </View>
+                                            ) : (
+                                                <>
+                                                    {/* Ảnh */}
+                                                    {item.media_url && (
+                                                        <TouchableOpacity activeOpacity={0.9} onPress={() => setPreviewImage(getImageUrl(item.media_url))}>
+                                                            <Image source={{ uri: getImageUrl(item.media_url) }} style={styles.bubbleImage} />
                                                         </TouchableOpacity>
-                                                    </View>
-                                                )}
+                                                    )}
 
-                                                {/* Text */}
-                                                {item.noi_dung ? (
-                                                    <Text style={[styles.bubbleText, isSender ? styles.bubbleTextSender : styles.bubbleTextReceiver]}>
-                                                        {item.noi_dung}
-                                                    </Text>
-                                                ) : null}
-                                            </>
-                                        )}
+                                                    {/* Thẻ lịch tập thể hình */}
+                                                    {item.loai_tin_nhan === "LICH_TAP" && item.workout && (
+                                                        <View style={styles.workoutCard}>
+                                                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                                                <View style={styles.workoutIconWrap}>
+                                                                    <Ionicons name="barbell" size={18} color="#FFFFFF" />
+                                                                </View>
+                                                                <View style={{ flex: 1, marginLeft: 8 }}>
+                                                                    <Text style={styles.workoutTag}>BUỔI TẬP VISIONFIT</Text>
+                                                                    <Text style={styles.workoutTitle}>{item.workout.ten_bai_tap}</Text>
+                                                                </View>
+                                                            </View>
 
-                                        {/* Reactions */}
-                                        {item.reactions && item.reactions.length > 0 && (
-                                            <View style={[styles.reactionBadge, isSender ? { right: 8 } : { left: 8 }]}>
-                                                {item.reactions.map((r: string, idx: number) => (
-                                                    <Text key={idx} style={{ fontSize: 12 }}>
-                                                        {r}
-                                                    </Text>
-                                                ))}
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
+                                                            <View style={styles.workoutDivider} />
 
-                                    {/* Thời gian */}
-                                    <View style={[styles.timeRow, isSender ? { justifyContent: "flex-end" } : { justifyContent: "flex-start" }]}>
-                                        <Text style={styles.timeText}>{item.thoi_gian_gui}</Text>
-                                        {isSender && (
-                                            <Ionicons
-                                                name={item.da_xem ? "checkmark-done" : "checkmark"}
-                                                size={13}
-                                                color={item.da_xem ? "#0D7F8D" : "#71949A"}
-                                                style={{ marginLeft: 4 }}
-                                            />
-                                        )}
+                                                            <View style={{ marginBottom: 10 }}>
+                                                                <View style={styles.workoutDetailRow}>
+                                                                    <Ionicons name="calendar-outline" size={14} color="#0D7F8D" />
+                                                                    <Text style={styles.workoutDetailText}>{item.workout.ngay_tap}</Text>
+                                                                </View>
+                                                                <View style={styles.workoutDetailRow}>
+                                                                    <Ionicons name="time-outline" size={14} color="#0D7F8D" />
+                                                                    <Text style={styles.workoutDetailText}>{item.workout.gio_tap}</Text>
+                                                                </View>
+                                                                <View style={styles.workoutDetailRow}>
+                                                                    <Ionicons name="flame-outline" size={14} color="#FA3E3E" />
+                                                                    <Text style={styles.workoutDetailText}>Mục tiêu: {item.workout.calo_muc_tieu} kcal</Text>
+                                                                </View>
+                                                            </View>
+
+                                                            <TouchableOpacity
+                                                                style={[styles.confirmBtn, confirmedWorkout && styles.confirmedBtn]}
+                                                                onPress={() => {
+                                                                    setConfirmedWorkout(true);
+                                                                    Alert.alert("Thành công", "Đã lưu lịch tập vào Lịch tập luyện cá nhân của bạn!");
+                                                                }}
+                                                            >
+                                                                <Ionicons name={confirmedWorkout ? "checkmark-circle" : "calendar"} size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                                                                <Text style={styles.confirmBtnText}>{confirmedWorkout ? "Đã xác nhận lịch" : "Xác nhận lịch tập"}</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    )}
+
+                                                    {/* Text */}
+                                                    {item.noi_dung ? (
+                                                        <Text style={[styles.bubbleText, isSender ? styles.bubbleTextSender : styles.bubbleTextReceiver]}>
+                                                            {item.noi_dung}
+                                                        </Text>
+                                                    ) : null}
+                                                </>
+                                            )}
+
+                                            {/* Reactions */}
+                                            {item.reactions && (Array.isArray(item.reactions) ? item.reactions.length > 0 : Boolean(item.reactions)) && (
+                                                <View style={[styles.reactionBadge, isSender ? { right: 8 } : { left: 8 }]}>
+                                                    {(Array.isArray(item.reactions) ? item.reactions : [item.reactions]).map((r: string, idx: number) => (
+                                                        <Text key={`reaction_${idx}_${r}`} style={{ fontSize: 12 }}>
+                                                            {r}
+                                                        </Text>
+                                                    ))}
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
+
+                                        {/* Thời gian */}
+                                        <View style={[styles.timeRow, isSender ? { justifyContent: "flex-end" } : { justifyContent: "flex-start" }]}>
+                                            <Text style={styles.timeText}>{item.thoi_gian_gui}</Text>
+                                            {isSender && (
+                                                <Ionicons
+                                                    name={item.da_xem ? "checkmark-done" : "checkmark"}
+                                                    size={13}
+                                                    color={item.da_xem ? "#0D7F8D" : "#71949A"}
+                                                    style={{ marginLeft: 4 }}
+                                                />
+                                            )}
+                                        </View>
                                     </View>
                                 </View>
-                            </View>
-                        );
-                    }}
-                    ListFooterComponent={
-                        isTyping ? (
-                            <View style={[styles.msgRow, styles.msgRowReceiver, { marginBottom: 12 }]}>
-                                <Image source={{ uri: displayAvatar }} style={styles.msgAvatar} />
-                                <View style={[styles.bubble, styles.bubbleReceiver, styles.typingBubble]}>
-                                    <View style={styles.typingDot} />
-                                    <View style={[styles.typingDot, { opacity: 0.7 }]} />
-                                    <View style={[styles.typingDot, { opacity: 0.4 }]} />
+                            );
+                        }}
+                        ListFooterComponent={
+                            isTyping ? (
+                                <View style={[styles.msgRow, styles.msgRowReceiver, { marginBottom: 12 }]}>
+                                    <Image source={{ uri: displayAvatar }} style={styles.msgAvatar} />
+                                    <View style={[styles.bubble, styles.bubbleReceiver, styles.typingBubble]}>
+                                        <View style={styles.typingDot} />
+                                        <View style={[styles.typingDot, { opacity: 0.7 }]} />
+                                        <View style={[styles.typingDot, { opacity: 0.4 }]} />
+                                    </View>
                                 </View>
-                            </View>
-                        ) : undefined
-                    }
-                />
+                            ) : undefined
+                        }
+                    />
+                )}
 
                 {/* Thanh nhập tin nhắn Messenger */}
                 <View style={styles.toolbar}>
