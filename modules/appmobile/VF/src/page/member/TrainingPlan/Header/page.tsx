@@ -4,7 +4,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import DashboardScreen from "../Tab/DashboardScreen";
 import DietScreen from "../Tab/DietScreen";
-import WorkoutPlan from "../../WorkoutPlan";
+import WorkoutExercisePlan from "../Tab/WorkoutExercisePlan";
 const HeaderPage = () => {
     const [activeTab, setActiveTab] = useState("Trang tổng quan");
     return (
@@ -52,7 +52,7 @@ const HeaderPage = () => {
                 <DashboardScreen />
             )}
             {activeTab === "Kế hoạch tập" && (
-                <WorkoutPlan />
+                <WorkoutExercisePlan />
             )}
             {activeTab === "Chế độ ăn" && (
                 <DietScreen />
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         width: "100%",
+        backgroundColor: "#FFFFFF",
         paddingTop: hp("2%"),
     },
     headerTop: {
