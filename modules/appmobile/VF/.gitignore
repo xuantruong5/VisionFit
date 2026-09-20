@@ -73,3 +73,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+# IntelliJ / Android Studio
+.idea/
+
+# Java / JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Android crash logs
+**/hs_err_pid*.log
+**/replay_pid*.log

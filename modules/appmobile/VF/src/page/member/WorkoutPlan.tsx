@@ -35,9 +35,10 @@ const WorkoutPlan = ({ navigation, route }: any) => {
     return `${BASE_URL}${url}`;
   };
 
-  const currentGoals = goals.filter((goal) => 
-    selectedGender === 'male' ? goal.gioi_tinh_ap_dung === 0 : goal.gioi_tinh_ap_dung === 1
-  );
+  const currentGoals = goals.filter((goal) => {
+    const g = Number(goal.gioi_tinh_ap_dung);
+    return selectedGender === 'male' ? (g === 0 || g === 2) : (g === 1 || g === 2);
+  });
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

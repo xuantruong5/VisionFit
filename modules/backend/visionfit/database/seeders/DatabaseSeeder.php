@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             KeHoachAnSeeder::class,
             KhauPhanAnSeeder::class,
             ChatSeeder::class,
+            BachKhoaToanThuSeeder::class,
        ]);
     }
 }

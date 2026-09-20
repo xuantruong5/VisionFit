@@ -2,7 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
-export const BASE_URL = "http://192.168.10.251:8000";
+export const BASE_URL = "http://192.168.1.10:8000";
+
 export const API_URL = `${BASE_URL}/api`;
 var is_auth_alert_shown = false;
 
@@ -15,7 +16,7 @@ apiFitlife.defaults.headers.common['Content-Type'] = 'application/json';
 apiFitlife.interceptors.request.use(
     async (config) => {
         const token = await AsyncStorage.getItem('token');
-        if(token){
+        if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;

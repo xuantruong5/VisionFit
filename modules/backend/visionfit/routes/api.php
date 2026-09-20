@@ -5,6 +5,17 @@ use App\Http\Controllers\BaiDangController;
 use App\Http\Controllers\MembersController;
 use App\Http\Controllers\KeHoachAnController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\BachKhoaToanThuController;
+use App\Http\Controllers\DinhDuongTheThaoController;
+
+// Sổ tay - Bách khoa toàn thư
+Route::get('/bach-khoa-toan-thu', [BachKhoaToanThuController::class, 'index']);
+Route::get('/bach-khoa-toan-thu/{id}', [BachKhoaToanThuController::class, 'show'])->whereNumber('id');
+
+// Sổ tay - Dinh dưỡng thể thao
+Route::get('/dinh-duong-the-thao/categories', [DinhDuongTheThaoController::class, 'getCategories']);
+Route::get('/dinh-duong-the-thao', [DinhDuongTheThaoController::class, 'index']);
+Route::get('/dinh-duong-the-thao/{id}', [DinhDuongTheThaoController::class, 'show'])->whereNumber('id');
 
 // member
 Route::get('/bai-dang', [BaiDangController::class, 'index']);
