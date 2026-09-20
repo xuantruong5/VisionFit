@@ -4,7 +4,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import DashboardScreen from "../Tab/DashboardScreen";
 import DietScreen from "../Tab/DietScreen";
-import WorkoutPlan from "../Tab/WorkoutPlan";
+import WorkoutPlan from "../../WorkoutPlan";
 const HeaderPage = () => {
     const [activeTab, setActiveTab] = useState("Trang tổng quan");
     return (
