@@ -35,6 +35,11 @@ import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
 import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
 import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
 
+
+import ExercisePage from "./src/page/member/TrainingPlan/Tab/ExercisePage";
+import ReportPage from "./src/page/member/TrainingPlan/Tab/ReportPage";
+import WorkoutPage from "./src/page/member/TrainingPlan/Tab/WorkoutPage";
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -210,6 +215,11 @@ const App = () => {
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen}/>
         
         <Stack.Screen name="DietDetail" component={DietDetail}/>
+
+
+        <Stack.Screen name="ExercisePage" component={ExercisePage}/>
+        <Stack.Screen name="ReportPage" component={ReportPage}/>
+        <Stack.Screen name="WorkoutPage" component={WorkoutPage}/>
 
 
         {/* cua trainner  */}

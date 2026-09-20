@@ -231,7 +231,7 @@ const ReportPage = ({ navigation, route }: any) => {
                         source={
                             exercise?.image
                                 ? exercise.image
-                                : require("../assets/running-man.png")
+                                : require("../../../../assets/fitness-bg.png")
                         }
                         style={styles.exerciseImage}
                         resizeMode="contain"

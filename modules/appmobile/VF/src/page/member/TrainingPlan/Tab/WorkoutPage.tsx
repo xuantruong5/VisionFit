@@ -32,37 +32,37 @@ const exercises: ExerciseType[] = [
         id: 1,
         name: "Bài tập chạy tại chỗ",
         sets: "3x20",
-        image: require("../assets/run.png"),
+        image: require("../../../../assets/fitness-bg.png"),
     },
     {
         id: 2,
         name: "Bài tập hít đất với đầu gối chống xuống sàn",
         sets: "2x10",
-        image: require("../assets/push-up.png"),
+        image: require("../../../../assets/fitness-bg.png"),
     },
     {
         id: 3,
         name: "Bài tập kéo giãn cơ superman",
         sets: "2x15",
-        image: require("../assets/superman.png"),
+        image: require("../../../../assets/fitness-bg.png"),
     },
     {
         id: 4,
         name: "Bài tập squat truyền thống không sử dụng tạ",
         sets: "2x15",
-        image: require("../assets/squat.png"),
+        image: require("../../../../assets/fitness-bg.png"),
     },
     {
         id: 5,
         name: "Bài tập mông đùi nâng hông lên khi nằm ngửa trên sàn",
         sets: "2x10",
-        image: require("../assets/bridge.png"),
+        image: require("../../../../assets/fitness-bg.png"),
     },
     {
         id: 6,
         name: "Bài tập nhảy jack chéo",
         sets: "2x20",
-        image: require("../assets/jumping-jack.png"),
+        image: require("../../../../assets/fitness-bg.png"),
     },
 ];
 
