@@ -36,6 +36,7 @@ import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
 import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
 import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
 import MemberProfile from "./src/page/member/MemberProfile";
+import SoTayStack from "./src/page/member/SoTay";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -155,7 +156,7 @@ function MemberTabs() {
       <Tab.Screen name="Kế Hoạch Tập" component={WorkoutPlanScreen}/>
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
-      <Tab.Screen name="Sổ Tay" component={MemberHome} />
+      <Tab.Screen name="Sổ Tay" component={SoTayStack} />
       <Tab.Screen name="Thêm" component={MemberProfile} />
     </Tab.Navigator>
   );
