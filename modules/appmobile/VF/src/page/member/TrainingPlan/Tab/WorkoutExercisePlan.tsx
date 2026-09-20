@@ -70,14 +70,6 @@ const WorkoutExercisePlan = ({ navigation, route }: any) => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabsHeader}>
-        <Text style={styles.tabText}>Trang tổng quan</Text>
-        <View style={styles.activeTabWrapper}>
-          <Text style={styles.activeTabText}>Kế hoạch tập</Text>
-        </View>
-        <Text style={styles.tabText}>Chế độ ăn</Text>
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
