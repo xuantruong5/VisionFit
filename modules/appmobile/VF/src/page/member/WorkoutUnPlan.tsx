@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, FlatList, Image, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, ImageBackground, ScrollView, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife, { BASE_URL } from '../../general/api';
 
@@ -12,37 +12,46 @@ export interface WorkoutPlanType {
   durationDays: number;
   sessionsPerWeek: number;
   coverUrl: string | null;
+  stars: number;
 }
+
+const levelOptions = [
+  { label: 'Chưa có kinh nghiệm', value: 'CHUA_CO_KINH_NGHIEM' },
+  { label: 'Người bắt đầu', value: 'NGUOI_BAT_DAU' },
+  { label: 'Nâng cao', value: 'NANG_CAO' },
+  { label: 'Chuyên gia', value: 'CHUYEN_GIA' },
+  { label: 'Pro', value: 'PRO' },
+];
+
+const getLevelLabel = (value: string) => {
+  return levelOptions.find(item => item.value === value)?.label || value;
+};
+
+const getImageUrl = (url: string | null) => {
+  if (!url) return 'https://i.ibb.co/3s64nKV/placeholder.png';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${BASE_URL}${url}`;
+};
+
+const renderStars = (filled: number) => (
+  <View style={styles.starRow}>
+    {[1, 2, 3, 4].map(star => (
+      <Ionicons
+        key={star}
+        name={star <= filled ? 'star' : 'star-outline'}
+        size={12}
+        color="#08BAC2"
+        style={styles.star}
+      />
+    ))}
+  </View>
+);
 
 const WorkoutUnPlan = ({ navigation }: any) => {
   const [generalPlans, setGeneralPlans] = useState<WorkoutPlanType[]>([]);
   const [isGeneralLoading, setIsGeneralLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState<string>('Tất cả');
-  const [selectedLocation, setSelectedLocation] = useState<string>('Tất cả');
-  const [selectedGeneralPlanId, setSelectedGeneralPlanId] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string>('Tại nhà');
 
-  const levelOptions = [
-    { label: 'Tất cả', value: 'Tất cả' },
-    { label: 'Chưa có kinh nghiệm', value: 'CHUA_CO_KINH_NGHIEM' },
-    { label: 'Người bắt đầu', value: 'NGUOI_BAT_DAU' },
-    { label: 'Nâng cao', value: 'NANG_CAO' },
-    { label: 'Chuyên gia', value: 'CHUYEN_GIA' },
-    { label: 'Pro', value: 'PRO' },
-  ];
-
-  const locationOptions = [
-    'Tất cả',
-    'Phòng gym',
-    'Tại nhà',
-  ];
-
-  const getLevelLabel = (value: string) => {
-    return levelOptions.find(item => item.value === value)?.label || value;
-  };
-
-  const [showLevel, setShowLevel] = useState(false);
-  const [showLocation, setShowLocation] = useState(false);
   useEffect(() => {
     fetchGeneralPlans();
   }, []);
@@ -61,174 +70,107 @@ const WorkoutUnPlan = ({ navigation }: any) => {
     }
   };
 
-  const getImageUrl = (url: string | null) => {
-    if (!url) return 'https://i.ibb.co/3s64nKV/placeholder.png';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${BASE_URL}${url}`;
+  const handleSelectLevel = (levelItem: WorkoutPlanType) => {
+    navigation.navigate('WorkoutProgramDetailScreen', {
+      goalId: levelItem.id,
+      goalName: levelItem.name,
+      capDo: levelItem.difficulty,
+      capDoName: getLevelLabel(levelItem.difficulty),
+      noitap: selectedLocation,
+      goalMode: false,
+    });
   };
 
-  const filteredGeneralPlans = generalPlans.filter((plan) => {
-    const matchesSearch = plan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (plan.description && plan.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (plan.location && plan.location.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesLevel =
-      selectedLevel === 'Tất cả' ||
-      plan.difficulty === selectedLevel;
+  const filteredGeneralPlans = generalPlans.filter(
+    (plan) => plan.location === selectedLocation
+  );
 
-    const matchesLocation =
-      selectedLocation === 'Tất cả' ||
-      plan.location === selectedLocation;
-    return matchesSearch && matchesLevel && matchesLocation;
-  });
+  const groupedPlans = Object.values(
+    filteredGeneralPlans.reduce((acc, plan) => {
+      if (!acc[plan.name]) {
+        acc[plan.name] = {
+          name: plan.name,
+          description: plan.description,
+          coverUrl: plan.coverUrl,
+          levels: [],
+        };
+      }
+      acc[plan.name].levels.push(plan);
+      return acc;
+    }, {} as Record<string, { name: string; description: string | null; coverUrl: string | null; levels: WorkoutPlanType[] }>)
+  );
 
-  const handleUsePlan = () => {
-    if (selectedGeneralPlanId) {
-      // navigation logic
-    }
-  };
+  const renderGroup = ({ item }: { item: any }) => {
+    // Sort levels by stars
+    const sortedLevels = [...item.levels].sort((a, b) => a.stars - b.stars);
 
-  const renderGeneralPlan = ({ item }: { item: WorkoutPlanType }) => {
-    const isSelected = selectedGeneralPlanId === item.id;
     return (
-      <TouchableOpacity style={[styles.generalCard, isSelected && styles.generalCardSelected]} activeOpacity={0.8} onPress={() => setSelectedGeneralPlanId(item.id)}>
-        <Image source={{ uri: getImageUrl(item.coverUrl) }} style={styles.generalCardImage} />
-        <View style={styles.generalCardContent}>
-          <Text style={styles.generalCardTitle} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.generalCardDesc} numberOfLines={2}>{item.description}</Text>
-          <View style={styles.generalCardMeta}>
-            <View style={styles.badgeLevel}>
-              <Text style={styles.badgeLevelText}>
-                {getLevelLabel(item.difficulty)}
-              </Text>
-            </View>
-            <Text style={styles.metaText}> • {item.location}</Text>
+      <View style={styles.groupCard}>
+        <ImageBackground source={{ uri: getImageUrl(item.coverUrl) }} style={styles.groupHeader} imageStyle={styles.groupHeaderImage}>
+          <View style={[styles.blueGradient, { backgroundColor: 'rgba(0, 35, 55, 0.65)' }]} />
+          <View style={styles.groupHeaderContent}>
+            <Text style={styles.groupTitle}>{item.name}</Text>
+            <Text style={styles.groupDesc} numberOfLines={2}>{item.description}</Text>
           </View>
-          <Text style={styles.metaText}>{item.durationDays} ngày • {item.sessionsPerWeek} buổi/tuần</Text>
+        </ImageBackground>
+
+        <View style={styles.levelsContainer}>
+          <Text style={styles.levelsTitle}>Chọn cấp độ:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.levelsScroll}>
+            {sortedLevels.map((level: WorkoutPlanType) => (
+              <TouchableOpacity key={level.id} style={styles.levelBox} activeOpacity={0.8} onPress={() => handleSelectLevel(level)}>
+                {renderStars(level.stars)}
+                <Text style={styles.levelName}>{getLevelLabel(level.difficulty)}</Text>
+                <View style={styles.levelMetaRow}>
+                  <Ionicons name="time-outline" size={12} color="#71949A" />
+                  <Text style={styles.levelMeta}>{level.durationDays} ngày</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
-        {isSelected && (
-          <View style={styles.checkIconContainer}>
-            <Ionicons name="checkmark-circle" size={28} color="#0D7F8D" />
-          </View>
-        )}
-      </TouchableOpacity>
+      </View>
     );
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>Tất cả kế hoạch tập</Text>
-        <Text style={styles.sectionDesc}>Chương trình tập luyện phù hợp cho cả Nam và Nữ</Text>
+      {/* Location Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabBtn, selectedLocation === 'Tại nhà' && styles.tabBtnActive]}
+          onPress={() => setSelectedLocation('Tại nhà')}>
+          <Ionicons name="home-outline" size={18} color={selectedLocation === 'Tại nhà' ? '#FFFFFF' : '#71949A'} />
+          <Text style={[styles.tabText, selectedLocation === 'Tại nhà' && styles.tabTextActive]}>Tại nhà</Text>
+        </TouchableOpacity>
 
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#71949A" />
-          <TextInput style={styles.searchInput} placeholder="Tìm kế hoạch tập..." placeholderTextColor="#71949A" value={searchQuery} onChangeText={setSearchQuery} />
-        </View>
-        <View style={styles.selectRow}>
-          <TouchableOpacity
-            style={styles.selectBox}
-            onPress={() => {
-              setShowLevel(!showLevel);
-              setShowLocation(false);
-            }}>
-            <View>
-              <Text style={styles.selectLabel}>Cấp độ</Text>
-              <Text style={styles.selectValue} numberOfLines={1}>
-                {getLevelLabel(selectedLevel)}
-              </Text>
-            </View>
-
-            <Ionicons
-              name={showLevel ? 'chevron-up' : 'chevron-down'}
-              size={18}
-              color="#0D7F8D"
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.selectBox}
-            onPress={() => {
-              setShowLocation(!showLocation);
-              setShowLevel(false);
-            }}>
-            <View>
-              <Text style={styles.selectLabel}>Nơi tập</Text>
-              <Text style={styles.selectValue} numberOfLines={1}>
-                {selectedLocation}
-              </Text>
-            </View>
-
-            <Ionicons
-              name={showLocation ? 'chevron-up' : 'chevron-down'}
-              size={18}
-              color="#0D7F8D"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {showLevel && (
-          <View style={styles.optionBox}>
-            {levelOptions.map(item => (
-              <TouchableOpacity
-                key={item.value}
-                style={styles.optionItem}
-                onPress={() => {
-                  setSelectedLevel(item.value);
-                  setShowLevel(false);
-                }}>
-                <Text style={styles.optionText}>
-                  {item.label}
-                </Text>
-
-                {selectedLevel === item.value && (
-                  <Ionicons name="checkmark" size={18} color="#0D7F8D" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {showLocation && (
-          <View style={styles.optionBox}>
-            {locationOptions.map(item => (
-              <TouchableOpacity
-                key={item}
-                style={styles.optionItem}
-                onPress={() => {
-                  setSelectedLocation(item);
-                  setShowLocation(false);
-                }}>
-                <Text style={styles.optionText}>
-                  {item}
-                </Text>
-
-                {selectedLocation === item && (
-                  <Ionicons name="checkmark" size={18} color="#0D7F8D" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {isGeneralLoading ? (
-          <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
-        ) : filteredGeneralPlans.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Chưa có kế hoạch tập phù hợp</Text>
-            <TouchableOpacity style={styles.reloadBtn} onPress={fetchGeneralPlans}>
-              <Text style={styles.reloadBtnText}>Thử tải lại</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList data={filteredGeneralPlans} keyExtractor={(item) => item.id.toString()} renderItem={renderGeneralPlan} scrollEnabled={false} ItemSeparatorComponent={() => <View style={{ height: 15 }} />} />
-        )}
-      </ScrollView>
-
-      <View style={styles.bottomAction}>
-        <TouchableOpacity style={[styles.actionButton, !selectedGeneralPlanId && styles.actionButtonDisabled]} disabled={!selectedGeneralPlanId} onPress={handleUsePlan}>
-          <Text style={styles.actionButtonText}>SỬ DỤNG KẾ HOẠCH NÀY</Text>
+        <TouchableOpacity
+          style={[styles.tabBtn, selectedLocation === 'Phòng gym' && styles.tabBtnActive]}
+          onPress={() => setSelectedLocation('Phòng gym')}>
+          <Ionicons name="barbell-outline" size={18} color={selectedLocation === 'Phòng gym' ? '#FFFFFF' : '#71949A'} />
+          <Text style={[styles.tabText, selectedLocation === 'Phòng gym' && styles.tabTextActive]}>Phòng gym</Text>
         </TouchableOpacity>
       </View>
+
+      {isGeneralLoading ? (
+        <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
+      ) : groupedPlans.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Chưa có kế hoạch tập phù hợp</Text>
+          <TouchableOpacity style={styles.reloadBtn} onPress={fetchGeneralPlans}>
+            <Text style={styles.reloadBtnText}>Thử tải lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList 
+          data={groupedPlans} 
+          keyExtractor={(item) => item.name} 
+          renderItem={renderGroup} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{ height: 20 }} />} 
+        />
+      )}
     </View>
   );
 };
@@ -236,103 +178,129 @@ const WorkoutUnPlan = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F4FAFB',
   },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#11343A',
-    marginBottom: 5,
-  },
-  sectionDesc: {
-    fontSize: 14,
-    color: '#71949A',
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 18,
+    marginTop: 10,
     marginBottom: 15,
+    gap: 10,
   },
-  searchContainer: {
+  tabBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#9ED9DF',
-    height: 45,
+    borderColor: '#C7E8EB',
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 6,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    color: '#11343A',
-  },
-  generalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#9ED9DF',
-    overflow: 'hidden',
-    elevation: 5,
-    shadowColor: '#D9D7FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-  },
-  generalCardSelected: {
+  tabBtnActive: {
+    backgroundColor: '#0D7F8D',
     borderColor: '#0D7F8D',
   },
-  generalCardImage: {
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#71949A',
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingBottom: 40,
+  },
+  groupCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#8FAEB2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+  },
+  groupHeader: {
     width: '100%',
     height: 120,
-    resizeMode: 'cover',
+    justifyContent: 'flex-end',
   },
-  generalCardContent: {
+  groupHeaderImage: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  blueGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  groupHeaderContent: {
     padding: 15,
   },
-  generalCardTitle: {
-    fontSize: 16,
+  groupTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#11343A',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
-  generalCardDesc: {
-    fontSize: 13,
-    color: '#71949A',
-    marginBottom: 10,
-    lineHeight: 18,
+  groupDesc: {
+    fontSize: 12,
+    color: '#DFF6F8',
+    lineHeight: 16,
   },
-  generalCardMeta: {
+  levelsContainer: {
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  levelsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#11343A',
+    marginLeft: 15,
+    marginBottom: 10,
+  },
+  levelsScroll: {
+    paddingHorizontal: 15,
+    gap: 12,
+  },
+  levelBox: {
+    width: 130,
+    backgroundColor: '#F4FAFB',
+    borderWidth: 1,
+    borderColor: '#D9EFF1',
+    borderRadius: 10,
+    padding: 10,
+    marginRight: 12,
+  },
+  starRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  star: {
+    marginRight: 2,
+  },
+  levelName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0D7F8D',
+    marginBottom: 6,
+  },
+  levelMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    gap: 4,
   },
-  badgeLevel: {
-    backgroundColor: '#DFF6F8',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  badgeLevelText: {
-    fontSize: 12,
-    color: '#075E68',
-    fontWeight: 'bold',
-  },
-  metaText: {
-    fontSize: 13,
+  levelMeta: {
+    fontSize: 11,
     color: '#71949A',
-  },
-  checkIconContainer: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    fontWeight: '500',
   },
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 60,
   },
   emptyText: {
     fontSize: 15,
@@ -349,96 +317,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  bottomAction: {
-    position: 'absolute',
-    bottom: 25,
-    left: 0,
-    right: 0,
-    backgroundColor: 'transparent',
-  },
-  actionButton: {
-    backgroundColor: '#0D7F8D',
-    borderRadius: 12,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#0D7F8D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-  },
-  actionButtonDisabled: {
-    backgroundColor: '#9ED9DF',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
-  selectRow: {
-  flexDirection: 'row',
-  gap: 10,
-  marginBottom: 14,
-},
-
-selectBox: {
-  flex: 1,
-  height: 50,
-  backgroundColor: '#FFFFFF',
-  borderWidth: 1,
-  borderColor: '#C7E8EB',
-  borderRadius: 14,
-  paddingHorizontal: 14,
-
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-
-  elevation: 1,
-  shadowColor: '#000',
-  shadowOffset: {width: 0, height: 1},
-  shadowOpacity: 0.06,
-  shadowRadius: 3,
-},
-
-selectLabel: {
-  fontSize: 10,
-  color: '#71949A',
-  marginBottom: 1,
-},
-
-selectValue: {
-  fontSize: 13,
-  fontWeight: '700',
-  color: '#11343A',
-  maxWidth: 125,
-},
-
-optionBox: {
-  backgroundColor: '#FFFFFF',
-  borderWidth: 1,
-  borderColor: '#9ED9DF',
-  borderRadius: 12,
-  padding: 5,
-  marginBottom: 12,
-},
-
-optionItem: {
-  height: 40,
-  paddingHorizontal: 12,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-},
-
-optionText: {
-  fontSize: 14,
-  color: '#11343A',
-},
 });
 
 export default WorkoutUnPlan;

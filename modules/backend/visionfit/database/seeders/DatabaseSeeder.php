@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             MonAnSeeder::class,
             KeHoachAnSeeder::class,
             KhauPhanAnSeeder::class,
+            ChatSeeder::class,
        ]);
     }
 }

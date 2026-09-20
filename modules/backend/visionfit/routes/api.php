@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BaiDangController;
 use App\Http\Controllers\MembersController;
 use App\Http\Controllers\KeHoachAnController;
+use App\Http\Controllers\ChatController;
 
 // member
 Route::get('/bai-dang', [BaiDangController::class, 'index']);
@@ -26,17 +27,31 @@ Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']
 // dashboard
 Route::get('/tong-quan', [MembersController::class, 'tongQuan']);
 
-
 Route::get('/ke-hoach-an', [KeHoachAnController::class, 'keHoachAn']);
 
-
 // member
+Route::get('/ho-so', [MembersController::class, 'getProfile']);
+Route::post('/ho-so/cap-nhat', [MembersController::class, 'updateProfile']);
+Route::post('/ho-so/avatar', [MembersController::class, 'uploadAvatar']);
 Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
 Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
 Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
 Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap'])->whereNumber('id');
 
+// Chat routes
+Route::prefix('chat')->group(function () {
+    Route::get('/rooms', [ChatController::class, 'getListRooms']);
+    Route::get('/contacts', [ChatController::class, 'getContacts']);
+    Route::get('/room/{id}', [ChatController::class, 'getRoom']);
+    Route::get('/get-room/{id}', [ChatController::class, 'getRoom']);
+    Route::post('/room/group', [ChatController::class, 'createGroupRoom']);
+    Route::post('/room/{id}/pin', [ChatController::class, 'togglePinRoom']);
+    Route::post('/room/{id}/mute', [ChatController::class, 'toggleMuteRoom']);
+    Route::post('/room/{id}/read', [ChatController::class, 'markAsRead']);
 
-
-
-
+    Route::post('/send-message', [ChatController::class, 'sentMessage']);
+    Route::match(['get', 'post'], '/history-message', [ChatController::class, 'historyMessage']);
+    Route::post('/message/{id}/recall', [ChatController::class, 'recallMessage']);
+    Route::post('/message/{id}/reaction', [ChatController::class, 'reactMessage']);
+    Route::post('/upload', [ChatController::class, 'uploadMedia']);
+});

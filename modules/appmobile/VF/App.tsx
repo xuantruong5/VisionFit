@@ -27,6 +27,7 @@ import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen"
 import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/TrainingPlan/Tab/WorkoutPlan";
 
+
 import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
 import WorkoutLocationScreen from "./src/page/member/WorkoutLocationScreen";
 import ChatList from "./src/page/chat/ChatList";
@@ -34,6 +35,7 @@ import ChatRoom from "./src/page/chat/ChatRoom";
 import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
 import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
 import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
+import MemberProfile from "./src/page/member/MemberProfile";
 
 
 import ExercisePage from "./src/page/member/TrainingPlan/Tab/ExercisePage";
@@ -159,7 +161,7 @@ function MemberTabs() {
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
       <Tab.Screen name="Sổ Tay" component={MemberHome} />
-      <Tab.Screen name="Thêm" component={SportFeed} />
+      <Tab.Screen name="Thêm" component={MemberProfile} />
     </Tab.Navigator>
   );
 }
@@ -232,6 +234,7 @@ const App = () => {
         <Stack.Screen name="Schedule" component={Schedule} />
         <Stack.Screen name="SessionHistory" component={SessionHistory} />
         <Stack.Screen name="SessionReview" component={SessionReview} />
+        <Stack.Screen name="MemberProfile" component={MemberProfile} />
 
 
          {/* cua chat */}

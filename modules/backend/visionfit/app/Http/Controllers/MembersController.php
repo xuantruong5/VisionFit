@@ -136,4 +136,132 @@ class MembersController extends Controller
             'data' => $data
         ]);
     }
+
+    // Lấy thông tin hồ sơ cá nhân của hội viên
+    public function getProfile(Request $request)
+    {
+        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+
+        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
+
+        if (!$client) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy thông tin hội viên'
+            ], 404);
+        }
+
+        $data = [
+            'id' => $client->id,
+            'ho_ten' => $client->ho_ten ?? 'Lê Hoàng Nam',
+            'email' => $client->email ?? 'nam.le@visionfit.vn',
+            'so_dien_thoai' => $client->so_dien_thoai ?? '0901 234 567',
+            'anh_dai_dien' => $client->anh_dai_dien,
+            'ngay_sinh' => $client->ngay_sinh ?? '15/08/1998',
+            'gioi_tinh' => ((int)$client->gioi_tinh === 1) ? 'Nữ' : 'Nam',
+            'chieu_cao_cm' => $client->chieu_cao_cm ?? 175,
+            'can_nang_kg' => $client->can_nang_kg ?? 68,
+            'dang_nguoi' => $client->dang_nguoi ?? 'Cân đối',
+            'muc_tieu_hien_tai' => $client->muc_tieu_hien_tai ?? 'Tăng cơ & Giảm mỡ',
+            'cap_do_hien_tai' => $client->cap_do_hien_tai ?? 'Trung cấp',
+            'noi_tap_uu_tien' => $client->noi_tap_uu_tien ?? 'Phòng gym',
+            'hang_thanh_vien' => 'Hội viên Premium',
+            'goi_tap' => 'Gói Hội Viên Toàn Diện 12 Tháng',
+            'ngay_het_han' => '18/12/2026',
+            'so_ngay_con_lai' => 92,
+            'hlv_phu_trach' => 'Trần Minh Tuấn (HLV Chuyên sâu)',
+            'thong_ke' => [
+                'so_buoi_tap' => 32,
+                'tong_gio_tap' => 48,
+                'tuan_duy_tri' => 8,
+                'calo_tieu_thu' => 14250,
+            ]
+        ];
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    // Cập nhật thông tin hồ sơ hội viên
+    public function updateProfile(Request $request)
+    {
+        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+
+        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
+
+        if (!$client) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy thông tin hội viên'
+            ], 404);
+        }
+
+        $request->validate([
+            'ho_ten' => 'nullable|string|max:255',
+            'so_dien_thoai' => 'nullable|string|max:20',
+            'chieu_cao_cm' => 'nullable|numeric|min:50|max:250',
+            'can_nang_kg' => 'nullable|numeric|min:20|max:300',
+            'muc_tieu_hien_tai' => 'nullable|string|max:255',
+            'ngay_sinh' => 'nullable|string|max:50',
+        ]);
+
+        $client->update([
+            'ho_ten' => $request->ho_ten ?? $client->ho_ten,
+            'so_dien_thoai' => $request->so_dien_thoai ?? $client->so_dien_thoai,
+            'chieu_cao_cm' => $request->chieu_cao_cm ?? $client->chieu_cao_cm,
+            'can_nang_kg' => $request->can_nang_kg ?? $client->can_nang_kg,
+            'muc_tieu_hien_tai' => $request->muc_tieu_hien_tai ?? $client->muc_tieu_hien_tai,
+            'ngay_sinh' => $request->ngay_sinh ?? $client->ngay_sinh,
+            'noi_tap_uu_tien' => $request->noi_tap_uu_tien ?? $client->noi_tap_uu_tien,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cập nhật hồ sơ thành công',
+            'data' => $client
+        ]);
+    }
+
+    // Tải lên ảnh đại diện mới
+    public function uploadAvatar(Request $request)
+    {
+        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+
+        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
+
+        if (!$client) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy thông tin hội viên'
+            ], 404);
+        }
+
+        $request->validate([
+            'avatar' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+            'file' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+        ]);
+
+        $file = $request->file('avatar') ?? $request->file('file');
+
+        if ($file) {
+            $path = $file->store('avatars', 'public');
+            $url = $request->getSchemeAndHttpHost() . \Illuminate\Support\Facades\Storage::url($path);
+
+            $client->update(['anh_dai_dien' => $url]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Cập nhật ảnh đại diện thành công',
+                'url' => $url,
+                'data' => $client
+            ]);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Không tìm thấy file ảnh'
+        ], 400);
+    }
 }
