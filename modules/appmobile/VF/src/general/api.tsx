@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
-export const BASE_URL = "http://192.168.10.251:8000";
+export const BASE_URL = "http://192.168.1.25:8000";
 export const API_URL = `${BASE_URL}/api`;
 var is_auth_alert_shown = false;
 

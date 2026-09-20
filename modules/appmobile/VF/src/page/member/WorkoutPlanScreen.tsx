@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WorkoutPlan from './WorkoutPlan';
-import WorkoutUnPlan from './WorkoutUnPlan';
+import WorkoutUnPlan from './WorkoutUnPlan';  
 
 const WorkoutPlanScreen = ({ navigation, route }: any) => {
   const [goalModeEnabled, setGoalModeEnabled] = useState(true);
