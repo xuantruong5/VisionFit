@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             TrainerSeeder::class,
             AdminSeeder::class,
             ChuongTrinhBaiTapSeeder::class,
-            ChuongTrinhTapSeeder::class,
+            // ChuongTrinhTapSeeder::class,
             BaiTapSeeder::class,
             DangKyChuongTrinhSeeder::class,
             MonAnSeeder::class,
@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             KhauPhanAnSeeder::class,
             ChatSeeder::class,
             BachKhoaToanThuSeeder::class,
+            CapDoSeeder::class,
        ]);
     }
 }
