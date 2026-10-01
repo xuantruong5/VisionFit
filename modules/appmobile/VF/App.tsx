@@ -42,6 +42,7 @@ import SoTayStack from "./src/page/member/SoTay";
 import ExercisePage from "./src/page/member/TrainingPlan/Tab/ExercisePage";
 import ReportPage from "./src/page/member/TrainingPlan/Tab/ReportPage";
 import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExercisePlan";
+import ResultPage from "./src/page/member/ResultPage";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -213,16 +214,13 @@ const App = () => {
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} />
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
-
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
-
         <Stack.Screen name="DietDetail" component={DietDetail} />
-
-
         <Stack.Screen name="ExercisePage" component={ExercisePage} />
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+        <Stack.Screen name="ResultPage" component={ResultPage}/>
 
 
         {/* cua trainner  */}
