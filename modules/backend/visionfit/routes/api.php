@@ -7,6 +7,7 @@ use App\Http\Controllers\KeHoachAnController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\BachKhoaToanThuController;
 use App\Http\Controllers\DinhDuongTheThaoController;
+use App\Http\Controllers\ThucPhamSoTayController;
 
 // Sổ tay - Bách khoa toàn thư
 Route::get('/bach-khoa-toan-thu', [BachKhoaToanThuController::class, 'index']);
@@ -16,6 +17,11 @@ Route::get('/bach-khoa-toan-thu/{id}', [BachKhoaToanThuController::class, 'show'
 Route::get('/dinh-duong-the-thao/categories', [DinhDuongTheThaoController::class, 'getCategories']);
 Route::get('/dinh-duong-the-thao', [DinhDuongTheThaoController::class, 'index']);
 Route::get('/dinh-duong-the-thao/{id}', [DinhDuongTheThaoController::class, 'show'])->whereNumber('id');
+
+// Sổ tay - Thực phẩm & Lượng calo
+Route::get('/so-tay/thuc-pham/categories', [ThucPhamSoTayController::class, 'getCategories']);
+Route::get('/so-tay/thuc-pham', [ThucPhamSoTayController::class, 'index']);
+Route::get('/so-tay/thuc-pham/{id}', [ThucPhamSoTayController::class, 'show'])->whereNumber('id');
 
 // member
 Route::get('/bai-dang', [BaiDangController::class, 'index']);

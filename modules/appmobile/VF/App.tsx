@@ -36,7 +36,19 @@ import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
 import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
 import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
 import MemberProfile from "./src/page/member/MemberProfile";
-import SoTayStack from "./src/page/member/SoTay";
+// So Tay Module Screens
+import SoTayHomeScreen from "./src/page/member/SoTay/SoTayHomeScreen";
+import ExerciseCategoriesScreen from "./src/page/member/SoTay/Exercises/ExerciseCategoriesScreen";
+import ExerciseListScreen from "./src/page/member/SoTay/Exercises/ExerciseListScreen";
+import ExerciseDetailScreen from "./src/page/member/SoTay/Exercises/ExerciseDetailScreen";
+import NutritionCategoriesScreen from "./src/page/member/SoTay/Nutrition/NutritionCategoriesScreen";
+import NutritionProductListScreen from "./src/page/member/SoTay/Nutrition/NutritionProductListScreen";
+import NutritionDetailScreen from "./src/page/member/SoTay/Nutrition/NutritionDetailScreen";
+import FoodCategoriesScreen from "./src/page/member/SoTay/Food/FoodCategoriesScreen";
+import FoodListScreen from "./src/page/member/SoTay/Food/FoodListScreen";
+import FoodDetailScreen from "./src/page/member/SoTay/Food/FoodDetailScreen";
+import EncyclopediaListScreen from "./src/page/member/SoTay/Encyclopedia/EncyclopediaListScreen";
+import EncyclopediaDetailScreen from "./src/page/member/SoTay/Encyclopedia/EncyclopediaDetailScreen";
 
 
 import ExercisePage from "./src/page/member/TrainingPlan/Tab/ExercisePage";
@@ -101,6 +113,35 @@ function MainTabs() {
 
     </Tab.Navigator>
 
+  );
+}
+
+const SoTayStackNav = createNativeStackNavigator();
+
+function SoTayStack() {
+  return (
+    <SoTayStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <SoTayStackNav.Screen name="SoTayHome" component={SoTayHomeScreen} />
+      
+      {/* Exercises */}
+      <SoTayStackNav.Screen name="ExerciseCategories" component={ExerciseCategoriesScreen} />
+      <SoTayStackNav.Screen name="ExerciseList" component={ExerciseListScreen} />
+      <SoTayStackNav.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
+
+      {/* Nutrition */}
+      <SoTayStackNav.Screen name="NutritionCategories" component={NutritionCategoriesScreen} />
+      <SoTayStackNav.Screen name="NutritionProductList" component={NutritionProductListScreen} />
+      <SoTayStackNav.Screen name="NutritionDetail" component={NutritionDetailScreen} />
+
+      {/* Food */}
+      <SoTayStackNav.Screen name="FoodCategories" component={FoodCategoriesScreen} />
+      <SoTayStackNav.Screen name="FoodList" component={FoodListScreen} />
+      <SoTayStackNav.Screen name="FoodDetail" component={FoodDetailScreen} />
+
+      {/* Encyclopedia */}
+      <SoTayStackNav.Screen name="EncyclopediaList" component={EncyclopediaListScreen} />
+      <SoTayStackNav.Screen name="EncyclopediaDetail" component={EncyclopediaDetailScreen} />
+    </SoTayStackNav.Navigator>
   );
 }
 
@@ -221,6 +262,7 @@ const App = () => {
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
         <Stack.Screen name="ResultPage" component={ResultPage}/>
+        
 
 
         {/* cua trainner  */}

@@ -4,6 +4,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import { Calendar, LocaleConfig, } from "react-native-calendars";
 
+
 const DashboardScreen = () => {
     // lấy lịch 
     LocaleConfig.locales["vi"] = {
