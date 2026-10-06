@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,9 +7,11 @@ import {
   TextInput,
   ScrollView,
   ImageBackground,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import apiFitlife from '../../../../general/api';
 
 import ImageTextGradient from '../../../../components/ImageTextGradient';
 
@@ -17,43 +19,30 @@ interface FoodCategoriesScreenProps {
   navigation: any;
 }
 
-const FOOD_CATEGORIES = [
-  {
-    id: 'dairy',
-    name: 'Sữa và các sản phẩm từ sữa, sữa chua, phô mai cottage',
-    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'grains',
-    name: 'Ngũ cốc, cháo, khoai tây chiên',
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'eggs_cheese',
-    name: 'Trứng, phô mai, phô mai chế biến',
-    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'poultry',
-    name: 'Thịt gà và thịt gia cầm khác, thịt gà xay, phụ phẩm',
-    image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'vegetables',
-    name: 'Rau, rau xanh, ô liu',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'meat_seafood',
-    name: 'Thịt đỏ, cá và hải sản',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-  },
-];
-
 const FoodCategoriesScreen: React.FC<FoodCategoriesScreenProps> = ({ navigation }) => {
+  const [categories, setCategories] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const filteredCategories = FOOD_CATEGORIES.filter((cat) =>
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFitlife.get('/so-tay/thuc-pham/categories');
+      if (res.data?.status && res.data?.data) {
+        setCategories(res.data.data);
+      }
+    } catch (error) {
+      console.log('Error fetching food categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -97,12 +86,18 @@ const FoodCategoriesScreen: React.FC<FoodCategoriesScreenProps> = ({ navigation 
       </View>
 
       {/* Danh sách các nhóm thực phẩm */}
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredCategories.map((item) => (
+      {loading && categories.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 }}>
+          <ActivityIndicator size="large" color="#0D7F8D" />
+          <Text style={{ marginTop: 12, color: '#6B7280', fontSize: 14 }}>Đang tải danh mục thực phẩm...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredCategories.map((item) => (
           <TouchableOpacity
             key={item.id}
             activeOpacity={0.88}
@@ -128,6 +123,7 @@ const FoodCategoriesScreen: React.FC<FoodCategoriesScreenProps> = ({ navigation 
           </TouchableOpacity>
         ))}
       </ScrollView>
+    )}
     </SafeAreaView>
   );
 };
