@@ -4,10 +4,72 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\ChuongTrinhTap;
+use Illuminate\Support\Facades\DB;
 
 class MembersController extends Controller
 {
+
+    public function login(Request $request)
+    {
+        $check = Auth::guard('client')->attempt([
+            'email'     => $request->email,
+            'password'  => $request->password
+        ]);
+
+        if($check) {
+            $client = Auth::guard('client')->user();
+            $token     = $client->createToken('Token_client')->plainTextToken;
+            return response()->json([
+                'status'    => true,
+                'message'   => 'Đăng nhập thành công',
+                'token'     =>$token,
+                'client' =>$client
+            ]);
+        }else{
+            return response()->json([
+                'status' => false,
+                'message' => 'Đăng Nhập Thất Bại.Tài khoản hoặc mật khẩu không đúng'
+            ]);
+        }
+    }
+    public function logoutClient(){
+        $user = Auth::guard('sanctum')->user();
+        if ($user && $user->currentAccessToken()) {
+            DB::table('personal_access_tokens')
+                ->where('id', $user->currentAccessToken()->id)
+                ->delete();
+            return response()->json([
+                'status'  => true,
+                'message' => "Đăng xuất thành công",
+            ]);
+        } else {
+            return response()->json([
+                'status'  => false,
+                'message' => "Có lỗi xảy ra",
+            ]);
+        }
+    }
+    public function logoutAllClient(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if ($user) {
+            $ds_token = $user->tokens;
+            foreach ($ds_token as $token) {
+                $token->delete();
+            }
+            return response()->json([
+                'status'  => 1,
+                'message' => "Đăng xuất thành công",
+            ]);
+        } else {
+            return response()->json([
+                'status'  => 0,
+                'message' => "Có lỗi xảy ra",
+            ]);
+        }
+    }
     public function getChuongTrinhTap()
     {
         $data = ChuongTrinhTap::where('nhom_muc_tieu', 1)

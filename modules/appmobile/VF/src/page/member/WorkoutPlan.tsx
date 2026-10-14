@@ -15,7 +15,7 @@ const WorkoutPlan = ({ navigation, route }: any) => {
   const fetchGoals = async () => {
     try {
       setIsGoalLoading(true);
-      const response = await apiFitlife.get('/chuong-trinh-tap');
+      const response = await apiFitlife.get('/client/chuong-trinh-tap');
       if (response.data.status) {
         setGoals(response.data.data);
       }

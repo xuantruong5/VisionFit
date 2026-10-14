@@ -55,6 +55,7 @@ import ExercisePage from "./src/page/member/TrainingPlan/Tab/ExercisePage";
 import ReportPage from "./src/page/member/TrainingPlan/Tab/ReportPage";
 import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExercisePlan";
 import ResultPage from "./src/page/member/ResultPage";
+import Onloading from "./src/page/on_loading";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -237,9 +238,10 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
+        <Stack.Screen name="Onloading" component={Onloading}/>
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} />
         <Stack.Screen name="MemberHome" component={MemberHome} />

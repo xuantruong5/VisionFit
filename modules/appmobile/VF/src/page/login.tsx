@@ -6,7 +6,7 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 const Login = ({ navigation }: any) => {
     return (
         <View style={styles.container}>
-            <ImageBackground source={require("../assets/anh-fitness-1.png")} style={styles.background}  resizeMode="cover" >
+            <ImageBackground source={require("../assets/anh-fi.jpg")} style={styles.background}  resizeMode="cover" >
                 <View style={styles.overlay} />
                 <View style={styles.content}>
                     <Text style={styles.title}>
@@ -15,7 +15,7 @@ const Login = ({ navigation }: any) => {
                     <Text style={styles.loginBy}>
                         Đăng nhập bằng
                     </Text>
-                    <TouchableOpacity style={[ styles.loginButton, styles.appleButton, ]} >
+                    <TouchableOpacity style={[ styles.loginButton, styles.googleButton, ]} >
                         <MaterialCommunityIcons name="google" size={wp("7.5%")} color="#11343A" />
                         <Text style={styles.buttonText}>
                             Đăng nhập bằng Google
@@ -73,7 +73,6 @@ const Login = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#EAF9FB",
     },
     background: {
         flex: 1,
@@ -111,6 +110,7 @@ const styles = StyleSheet.create({
         fontSize: wp("10%"),
         fontWeight: "900",
         letterSpacing: 0.5,
+        color: "#FFFFFF",
     },
 
     titleThin: {
@@ -118,11 +118,11 @@ const styles = StyleSheet.create({
     },
 
     loginBy: {
-        
         fontSize: wp("6.5%"),
-        fontWeight: "700",
+        fontWeight: "500",
         marginTop: hp("3%"),
         marginBottom: hp("4%"),
+        color: "#FFFFFF",
     },
 
     loginButton: {
@@ -136,16 +136,17 @@ const styles = StyleSheet.create({
         gap: wp("3%"),
     },
 
-    appleButton: {
-        backgroundColor: "#111419",
+    googleButton: {
+        backgroundColor: "#FFFFFF",
+        borderWidth: 1,
+        borderColor: "#DADCE0",
+        borderRadius: 10,
     },
 
     facebookButton: {
         backgroundColor: "#4385e9",
     },
-
     buttonText: {
-        
         fontSize: wp("5.3%"),
         fontWeight: "700",
     },
@@ -155,10 +156,10 @@ const styles = StyleSheet.create({
     },
 
     emailText: {
-        
         fontSize: wp("5%"),
         fontWeight: "600",
         textDecorationLine: "underline",
+        color: "#FFFFFF",
     },
 
     trainerContainer: {
@@ -171,6 +172,7 @@ const styles = StyleSheet.create({
         fontSize: wp("5%"),
         fontWeight: "700",
         textAlign: "center",
+        color: "#FFFFFF",
     },
 
     trainerLink: {
@@ -179,6 +181,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         textDecorationLine: "underline",
         marginTop: hp("0.7%"),
+        color: "#FFFFFF",
     },
 
     policyContainer: {
@@ -194,12 +197,14 @@ const styles = StyleSheet.create({
         fontSize: wp("3.4%"),
         textAlign: "center",
         lineHeight: hp("2.5%"),
+        color: "#FFFFFF",
     },
 
     policyLinks: {
         flexDirection: "row",
         alignItems: "center",
         marginTop: hp("0.2%"),
+        color: "#FFFFFF",
     },
 
     policyLink: {
@@ -207,10 +212,11 @@ const styles = StyleSheet.create({
         fontSize: wp("3.4%"),
         fontWeight: "700",
         textDecorationLine: "underline",
+        color: "#FFFFFF",
     },
 
     policyAnd: {
-        
+        color: "#FFFFFF",
         fontSize: wp("3.4%"),
     },
 });
