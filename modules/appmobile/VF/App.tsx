@@ -36,11 +36,25 @@ import WorkoutDifficultyScreen from "./src/page/member/WorkoutDifficultyScreen";
 import WorkoutProgramDetailScreen from "./src/page/member/WorkoutProgramDetailScreen";
 import DietDetail from "./src/page/member/TrainingPlan/Tab/DietDetailScreen";
 import MemberProfile from "./src/page/member/MemberProfile";
+// So Tay Module Screens
+import SoTayHomeScreen from "./src/page/member/SoTay/SoTayHomeScreen";
+import ExerciseCategoriesScreen from "./src/page/member/SoTay/Exercises/ExerciseCategoriesScreen";
+import ExerciseListScreen from "./src/page/member/SoTay/Exercises/ExerciseListScreen";
+import ExerciseDetailScreen from "./src/page/member/SoTay/Exercises/ExerciseDetailScreen";
+import NutritionCategoriesScreen from "./src/page/member/SoTay/Nutrition/NutritionCategoriesScreen";
+import NutritionProductListScreen from "./src/page/member/SoTay/Nutrition/NutritionProductListScreen";
+import NutritionDetailScreen from "./src/page/member/SoTay/Nutrition/NutritionDetailScreen";
+import FoodCategoriesScreen from "./src/page/member/SoTay/Food/FoodCategoriesScreen";
+import FoodListScreen from "./src/page/member/SoTay/Food/FoodListScreen";
+import FoodDetailScreen from "./src/page/member/SoTay/Food/FoodDetailScreen";
+import EncyclopediaListScreen from "./src/page/member/SoTay/Encyclopedia/EncyclopediaListScreen";
+import EncyclopediaDetailScreen from "./src/page/member/SoTay/Encyclopedia/EncyclopediaDetailScreen";
 
 
 import ExercisePage from "./src/page/member/TrainingPlan/Tab/ExercisePage";
 import ReportPage from "./src/page/member/TrainingPlan/Tab/ReportPage";
 import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExercisePlan";
+import ResultPage from "./src/page/member/ResultPage";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -102,6 +116,35 @@ function MainTabs() {
   );
 }
 
+const SoTayStackNav = createNativeStackNavigator();
+
+function SoTayStack() {
+  return (
+    <SoTayStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <SoTayStackNav.Screen name="SoTayHome" component={SoTayHomeScreen} />
+      
+      {/* Exercises */}
+      <SoTayStackNav.Screen name="ExerciseCategories" component={ExerciseCategoriesScreen} />
+      <SoTayStackNav.Screen name="ExerciseList" component={ExerciseListScreen} />
+      <SoTayStackNav.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
+
+      {/* Nutrition */}
+      <SoTayStackNav.Screen name="NutritionCategories" component={NutritionCategoriesScreen} />
+      <SoTayStackNav.Screen name="NutritionProductList" component={NutritionProductListScreen} />
+      <SoTayStackNav.Screen name="NutritionDetail" component={NutritionDetailScreen} />
+
+      {/* Food */}
+      <SoTayStackNav.Screen name="FoodCategories" component={FoodCategoriesScreen} />
+      <SoTayStackNav.Screen name="FoodList" component={FoodListScreen} />
+      <SoTayStackNav.Screen name="FoodDetail" component={FoodDetailScreen} />
+
+      {/* Encyclopedia */}
+      <SoTayStackNav.Screen name="EncyclopediaList" component={EncyclopediaListScreen} />
+      <SoTayStackNav.Screen name="EncyclopediaDetail" component={EncyclopediaDetailScreen} />
+    </SoTayStackNav.Navigator>
+  );
+}
+
 
 function MemberTabs() {
   return (
@@ -160,7 +203,7 @@ function MemberTabs() {
       <Tab.Screen name="Kế Hoạch Tập" component={WorkoutPlanScreen} />
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
-      <Tab.Screen name="Sổ Tay" component={MemberHome} />
+      <Tab.Screen name="Sổ Tay" component={SoTayStack} />
       <Tab.Screen name="Thêm" component={MemberProfile} />
     </Tab.Navigator>
   );
@@ -194,10 +237,10 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="WorkoutExercisePlan"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
-        <Stack.Screen name="MemberTabs" component={MainTabs} />
+        <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} />
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
@@ -212,16 +255,14 @@ const App = () => {
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} />
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
-
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
-
         <Stack.Screen name="DietDetail" component={DietDetail} />
-
-
         <Stack.Screen name="ExercisePage" component={ExercisePage} />
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+        <Stack.Screen name="ResultPage" component={ResultPage}/>
+        
 
 
         {/* cua trainner  */}

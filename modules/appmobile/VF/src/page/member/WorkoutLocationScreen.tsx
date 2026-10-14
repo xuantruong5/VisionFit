@@ -35,9 +35,7 @@ const WorkoutLocationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={27} color="#376D88" />
         </TouchableOpacity>
 
@@ -47,11 +45,7 @@ const WorkoutLocationScreen = () => {
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity
-          style={styles.cardContainer}
-          activeOpacity={0.8}
-          onPress={() => handleSelectLocation('Phòng gym')}
-        >
+        <TouchableOpacity style={styles.cardContainer} activeOpacity={0.8} onPress={() => handleSelectLocation('Phòng gym')} >
           <ImageBackground
             source={{ uri: gymImage }}
             style={styles.cardImage}

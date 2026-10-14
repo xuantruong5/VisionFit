@@ -24,104 +24,51 @@ class MembersController extends Controller
             'data' => $data
         ]);
     }
-    public function getChuongTrinhTapKhongMucTieu()
+    public function getChuongTrinhTapKhongMucTieu(Request $request)
     {
-        $chuongTrinh = \App\Models\ChuongTrinhTap::where('nhom_muc_tieu', 0)
-            ->where('gioi_tinh_ap_dung', 2)
-            ->where('tinh_trang', '1')
-            ->orderBy('id_chuong_trinh')
+        $gioiTinh = $request->gioi_tinh_ap_dung;
+
+        $data = ChuongTrinhTap::where('nhom_muc_tieu', 0)
+            ->where('tinh_trang', 1)
+            ->where('gioi_tinh_ap_dung', $gioiTinh)
             ->get();
 
-        $data = $chuongTrinh->map(function ($item) {
-            return [
-                'id' => $item->id_chuong_trinh,
-                'name' => $item->ten_chuong_trinh,
-                'description' => $item->mo_ta,
-                'goalMode' => (bool) $item->nhom_muc_tieu,
-                'gender' => match ((int) $item->gioi_tinh_ap_dung) {
-                    0 => 'male',
-                    1 => 'female',
-                    2 => 'all',
-                    default => 'all'
-                },
-                'difficulty' => $item->cap_do,
-                'stars' => $item->so_sao,
-                'location' => $item->noi_tap,
-                'durationDays' => $item->so_ngay,
-                'sessionsPerWeek' => $item->so_buoi_moi_tuan,
-                'coverUrl' => $item->anh_dai_dien,
-                'status' => (int) $item->tinh_trang,
-            ];
-        });
-
-
-
         return response()->json([
-            'success' => true,
-            'data' => $data
+            'status' => true,
+            'message' => 'Lấy chương trình tập không mục tiêu thành công',
+            'data' => $data,
         ]);
     }
 
     public function getCapDoChuongTrinh(Request $request)
     {
-        $request->validate([
-            'ten_chuong_trinh' => 'required|string',
-            'noi_tap' => 'required|string',
-            'nhom_muc_tieu' => 'required|integer|in:0,1',
-        ]);
-
-        $noiTap = match ($request->noi_tap) {
-            'GYM' => 'Phòng gym',
-            'TAI_NHA' => 'Tại nhà',
-            default => $request->noi_tap,
-        };
-
-        $query = ChuongTrinhTap::where(
-            'ten_chuong_trinh',
-            $request->ten_chuong_trinh
-        )
-            ->where('nhom_muc_tieu', $request->nhom_muc_tieu)
-            ->where('noi_tap', $noiTap)
-            ->where('tinh_trang', '1');
-
-        if ((int) $request->nhom_muc_tieu === 1) {
-            $gioiTinh = match ($request->gioi_tinh) {
-                'Nam' => 0,
-                'Nữ' => 1,
-                '0', 0 => 0,
-                '1', 1 => 1,
-                default => null,
-            };
-
-            if ($gioiTinh === null) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Giới tính không hợp lệ',
-                ], 422);
-            }
-
-            $query->where('gioi_tinh_ap_dung', $gioiTinh);
-        } else {
-            $query->where('gioi_tinh_ap_dung', 2);
-        }
-
-        $data = $query
-            ->orderBy('so_sao')
+        $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do','=','cap_do.id')
+            ->where('chuong_trinh_tap.tinh_trang', 1)
+            ->select('cap_do.id','cap_do.ten_cap_do','cap_do.mo_ta','cap_do.hinh_anh' ,'chuong_trinh_tap.so_sao', 'chuong_trinh_tap.ten_chuong_trinh',)
+            ->distinct()
             ->get();
 
         return response()->json([
             'status' => true,
-            'data' => $data,
+            'message' => 'Lấy cấp độ chương trình tập thành công',
+            'data' => $data
         ]);
     }
 
     public function getChiTietChuongTrinhTap($id)
     {
-        $data = ChuongTrinhTap::where(
-            'id_chuong_trinh',
-            $id
-        )
-            ->where('tinh_trang', '1')
+        $data = ChuongTrinhTap::join(
+                'cap_do',
+                'chuong_trinh_tap.id_cap_do',
+                '=',
+                'cap_do.id'
+            )
+            ->where('chuong_trinh_tap.id_chuong_trinh', $id)
+            ->where('chuong_trinh_tap.tinh_trang', 1)
+            ->select(
+                'chuong_trinh_tap.*',
+                'cap_do.ten_cap_do'
+            )
             ->first();
 
         if (!$data) {

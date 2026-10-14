@@ -81,7 +81,7 @@ class BaiDangController extends Controller
             'id_nguoi_dung' => 'required|integer',
             'caption' => 'nullable|string|max:2000',
             'pham_vi_hien_thi' => 'required|in:0,1,2',
-            'media' => 'nullable|file|mimes:jpg,jpeg,png,webp,mp4,mov|max:20480',
+            'media' => 'nullable|file|mimes:jpg,jpeg,png,webp,mp4,mov,quicktime,avi,mkv|max:102400',
         ]);
 
         $baiDang = DB::transaction(function () use ($request) {

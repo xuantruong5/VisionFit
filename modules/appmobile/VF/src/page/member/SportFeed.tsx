@@ -10,7 +10,7 @@ import {
     Image,
     StatusBar,
     Alert,
-
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../general/api';
@@ -205,14 +205,18 @@ const SportFeed = () => {
             );
 
             if (selectedMedia?.uri) {
-                formData.append(
-                    'media',
-                    {
-                        uri: selectedMedia.uri,
-                        type: selectedMedia.type || 'image/jpeg',
-                        name: selectedMedia.fileName || 'sportfeed.jpg',
-                    } as any
-                );
+                const isVideo = selectedMedia.type?.startsWith('video') || 
+                                selectedMedia.uri.toLowerCase().endsWith('.mp4') || 
+                                selectedMedia.uri.toLowerCase().endsWith('.mov');
+                const ext = isVideo ? 'mp4' : (selectedMedia.type?.includes('png') ? 'png' : 'jpg');
+                const fileName = selectedMedia.fileName || `sportfeed_${Date.now()}.${ext}`;
+                const fileType = selectedMedia.type || (isVideo ? 'video/mp4' : 'image/jpeg');
+
+                formData.append('media', {
+                    uri: Platform.OS === 'android' ? selectedMedia.uri : selectedMedia.uri.replace('file://', ''),
+                    type: fileType,
+                    name: fileName,
+                } as any);
             }
 
             console.log('Đang gửi bài đăng...');
@@ -224,6 +228,7 @@ const SportFeed = () => {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },
+                    transformRequest: (data) => data, // prevent Axios from converting FormData to JSON
                 }
             );
 

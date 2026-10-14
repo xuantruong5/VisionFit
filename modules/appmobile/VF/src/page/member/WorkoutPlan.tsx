@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import apiFitlife, { BASE_URL } from '../../general/api';
+import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
 
 type Gender = 'male' | 'female';
-
 const WorkoutPlan = ({ navigation, route }: any) => {
   const [selectedGender, setSelectedGender] = useState<Gender>('male');
   const [goals, setGoals] = useState<any[]>([]);
   const [isGoalLoading, setIsGoalLoading] = useState(true);
-
   useEffect(() => {
     fetchGoals();
   }, []);
-
   const fetchGoals = async () => {
     try {
       setIsGoalLoading(true);
@@ -28,16 +25,10 @@ const WorkoutPlan = ({ navigation, route }: any) => {
       setIsGoalLoading(false);
     }
   };
-
-  const getImageUrl = (url: string | null) => {
-    if (!url) return 'https://i.ibb.co/3s64nKV/placeholder.png';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${BASE_URL}${url}`;
-  };
-
-  const currentGoals = goals.filter((goal) => 
-    selectedGender === 'male' ? goal.gioi_tinh_ap_dung === 0 : goal.gioi_tinh_ap_dung === 1
-  );
+  const currentGoals = goals.filter((goal) => {
+    const g = Number(goal.gioi_tinh_ap_dung);
+    return selectedGender === 'male' ? (g === 0 || g === 2) : (g === 1 || g === 2);
+  });
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -60,25 +51,57 @@ const WorkoutPlan = ({ navigation, route }: any) => {
           <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
         ) : (
           currentGoals.map((goal) => (
-            <TouchableOpacity 
-              key={goal.id_chuong_trinh} 
-              style={styles.goalCard} 
+            <TouchableOpacity
+              key={goal.id_chuong_trinh}
+              style={styles.goalCard}
               onPress={() => {
                 // Pass all previous params along with goalId, goalName, and the resolved gender string for images
                 const existingParams = route?.params || {};
-                navigation.navigate('WorkoutLocationScreen', { 
+                navigation.navigate('WorkoutLocationScreen', {
                   ...existingParams,
-                  goalId: goal.id_chuong_trinh, 
+                  goalId: goal.id_chuong_trinh,
                   goalName: goal.ten_chuong_trinh,
                   gender: selectedGender === 'male' ? 'Nam' : 'Nữ' // Keep this for WorkoutLocationScreen's internal logic
                 });
               }}
               activeOpacity={0.8}
             >
-              <ImageBackground source={{ uri: getImageUrl(goal.anh_dai_dien) }} style={styles.goalImage} imageStyle={styles.goalImageStyle} >
+              <ImageBackground source={{ uri: goal.anh_dai_dien || 'https://i.ibb.co/3s64nKV/placeholder.png', }} style={styles.goalImage} imageStyle={styles.goalImageStyle}>
                 <ImageTextGradient />
-                <View style={styles.goalCardContent}>
-                  <Text style={styles.goalTitle}>{goal.ten_chuong_trinh}</Text>
+                <View style={styles.goalCardContent1}>
+                  <View style={styles.goalInfo}>
+                    {/* Tên chương trình */}
+                    <Text style={styles.goalTitle1}>
+                      {goal.ten_chuong_trinh}
+                    </Text>
+                    {/* Nơi tập + số sao + cấp độ */}
+                    {/* <View style={styles.goalMeta}>
+                      <Ionicons name="barbell-outline" size={15} color="#FFFFFF" />
+                      <Text style={styles.goalMetaText}>
+                        {goal.noi_tap}
+                      </Text>
+                      <View style={styles.goalStars}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Ionicons key={star} name={star <= Number(goal.so_sao) ? "star" : "star-outline"} size={15} color="#FFFFFF" />
+                        ))}
+                      </View>
+                      <Text style={styles.goalMetaText}>
+                        {Number(goal.so_sao) === 0
+                          ? "Chưa có kinh nghiệm"
+                          : Number(goal.so_sao) <= 2
+                            ? "Người mới"
+                            : Number(goal.so_sao) <= 3
+                              ? "Trung cấp"
+                              : "Nâng cao"}
+                      </Text>
+                    </View> */}
+
+                    {/* Số ngày tập và số buổi mỗi tuần */}
+                    {/* <Text style={styles.goalDuration}>
+                      {goal.so_ngay} ngày tập luyện ({goal.so_buoi_moi_tuan} buổi mỗi tuần)
+                    </Text> */}
+                  </View>
+
                   <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
                 </View>
               </ImageBackground>
@@ -157,22 +180,44 @@ const styles = StyleSheet.create({
   goalImageStyle: {
     resizeMode: 'cover',
   },
-  goalCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingLeft: 24,
-    paddingRight: 15,
-    height: '100%',
+  goalCardContent1: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  goalTitle: {
-    color: '#ffffff',
+  goalInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  goalTitle1: {
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: 'bold',
-    maxWidth: '80%',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  goalMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 4,
+    marginBottom: 4,
+  },
+  goalMetaText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+  },
+  goalStars: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 2,
+  },
+  goalDuration: {
+    color: "#20D6D0",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
 

@@ -4,6 +4,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import { Calendar, LocaleConfig, } from "react-native-calendars";
 
+
 const DashboardScreen = () => {
     // lấy lịch 
     LocaleConfig.locales["vi"] = {
@@ -15,7 +16,7 @@ const DashboardScreen = () => {
     };
     LocaleConfig.defaultLocale = "vi";
     const today = new Date().toISOString().split("T")[0];
-    const [selectedDate, setSelectedDate] = useState("today");
+    const [selectedDate, setSelectedDate] = useState(today);
     // Sau này thay bằng dữ liệu lấy từ API.  Dữ liệu cứng để thử giao diện.cái chỗ mà lịch có cục tạ dưới 
     const trainingDates = [
         "2026-09-12",

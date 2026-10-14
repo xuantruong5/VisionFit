@@ -1,36 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    ImageBackground,
-    StatusBar,
-    ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
 
-type ProgramDetail = {
-    id_chuong_trinh: number;
-    ten_chuong_trinh: string;
-    mo_ta: string | null;
-    so_ngay: number | null;
-    so_buoi_moi_tuan: number | null;
-    anh_dai_dien: string | null;
-};
+
 
 const WorkoutProgramDetailScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-
-    const { goalId, goalName, gender, noitap, capDoName } = route.params || {};
-
-    const [program, setProgram] = useState<ProgramDetail | null>(null);
+    const { goalId, goalName, gender, noitap, capDoName,capDoId, } = route.params || {};
+    const [program, setProgram] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -59,25 +41,12 @@ const WorkoutProgramDetailScreen = () => {
         noitap === 'Phòng gym' || noitap === 'GYM' ? 'Tại gym' :
             noitap === 'Tại nhà' || noitap === 'TAI_NHA' ? 'Tại nhà' :
                 noitap || 'Chưa chọn';
-
-    const handleAddProgram = () => {
-        navigation.navigate('headerPage');
-    };
-
-    const handleBack = () => {
-        if (navigation.canGoBack()) {
-            navigation.goBack();
-        } else {
-            navigation.navigate('WorkoutDifficultyScreen', route.params);
-        }
-    };
-
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle="dark-content" />
 
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={25} color="#0D7F8D" />
                 </TouchableOpacity>
 
@@ -112,6 +81,9 @@ const WorkoutProgramDetailScreen = () => {
 
                                 <Text style={styles.heroTitle}>
                                     {goalName || program?.ten_chuong_trinh}
+                                </Text>
+                                <Text style={styles.heroTitle1}>
+                                    {capDoName || program?.ten_cap_do || 'Chưa có cấp độ'}
                                 </Text>
 
                                 <Text style={styles.heroSubtitle}>
@@ -173,7 +145,7 @@ const WorkoutProgramDetailScreen = () => {
                             </View>
                         </View>
                     </View>
-                    <TouchableOpacity style={styles.addButton} onPress={handleAddProgram}>
+                    <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('headerPage')}>
                         <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
                         <Text style={styles.addButtonText}>THÊM KẾ HOẠCH</Text>
                     </TouchableOpacity>
@@ -324,6 +296,12 @@ const styles = StyleSheet.create({
     heroTitle: {
         color: '#FFFFFF',
         fontSize: 28,
+        fontWeight: '800',
+        marginBottom: 5,
+    },
+    heroTitle1: {
+        color: '#FFFFFF',
+        fontSize: 18,
         fontWeight: '800',
         marginBottom: 5,
     },

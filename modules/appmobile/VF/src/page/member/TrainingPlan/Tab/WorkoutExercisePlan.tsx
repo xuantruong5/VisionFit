@@ -16,6 +16,8 @@ import {
 } from "react-native-responsive-screen";
 import LinearGradient from "react-native-linear-gradient";
 
+import { useNavigation } from "@react-navigation/native";
+
 // ================================
 // TYPES
 // ================================
@@ -42,14 +44,16 @@ const MOCK_DAYS: WorkoutDay[] = [
   { id: 7, dayLabel: "7 ngày tập luyện", type: "nghỉ ngơi", isLocked: true, progressPercent: 0 },
 ];
 
-const WorkoutExercisePlan = ({ navigation, route }: any) => {
+const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
+  const navHook = useNavigation<any>();
+  const navigation = propNav || navHook;
   const planName = route?.params?.planName ?? "Giảm cân";
 
   const handleDayPress = (day: WorkoutDay) => {
     if (day.isLocked) return;
     
     // Navigate to ExercisePage (danh sách bài tập) when clicking an unlocked day
-    navigation.navigate("ExercisePage", {
+    navigation?.navigate?.("ExercisePage", {
       dayLabel: day.dayLabel,
       dayType: day.type,
     });
