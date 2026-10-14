@@ -9,6 +9,17 @@ use App\Http\Controllers\BachKhoaToanThuController;
 use App\Http\Controllers\DinhDuongTheThaoController;
 use App\Http\Controllers\ThucPhamSoTayController;
 
+// member 
+Route::post('client/login', [MembersController::class, 'login']);
+Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
+    Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
+    Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+    Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
+    Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
+    Route::post('logout', [MembersController::class, 'logoutClient']);
+    Route::post('logout-all', [MembersController::class, 'logoutAllClient']);
+});
+
 // Sổ tay - Bách khoa toàn thư
 Route::get('/bach-khoa-toan-thu', [BachKhoaToanThuController::class, 'index']);
 Route::get('/bach-khoa-toan-thu/{id}', [BachKhoaToanThuController::class, 'show'])->whereNumber('id');
@@ -50,10 +61,10 @@ Route::get('/ho-so', [MembersController::class, 'getProfile']);
 Route::post('/ho-so/cap-nhat', [MembersController::class, 'updateProfile']);
 Route::post('/ho-so/avatar', [MembersController::class, 'uploadAvatar']);
 
-Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
-Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
-Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
-Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
+// Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
+// Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+// Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
+// Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
 Route::get('/bai-tap', [MembersController::class, 'getDanhSachBaiTap']);
 
 // Chat routes
