@@ -54,6 +54,7 @@ Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap'])
 Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
 Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
 Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
+Route::get('/bai-tap', [MembersController::class, 'getDanhSachBaiTap']);
 
 // Chat routes
 Route::prefix('chat')->group(function () {

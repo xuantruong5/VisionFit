@@ -200,7 +200,7 @@ function MemberTabs() {
         paddingBottom: 5,
       },
     })}>
-      <Tab.Screen name="Kế Hoạch Tập" component={WorkoutPlanScreen} />
+      <Tab.Screen name="Kế Hoạch Tập" component={ExercisePage} />
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
       <Tab.Screen name="Sổ Tay" component={SoTayStack} />

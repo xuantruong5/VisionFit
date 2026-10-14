@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   StatusBar,
@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   Image,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import apiFitlife from "../../../../general/api";
 
 // ================================
 // TYPES
@@ -27,6 +29,7 @@ type Exercise = {
   duration: string;
   muscle: string;
   image: string;
+  video?: string;
   completed: boolean;
 };
 
@@ -37,11 +40,12 @@ type Exercise = {
 const EXERCISES: Exercise[] = [
   {
     id: 1,
-    name: "Chạy tại chỗ nâng cao gối",
-    sets: "3 hiệp x 20 lần",
+    name: "Ngồi đan tay duỗi thẳng qua đầu",
+    sets: "3 hiệp x 15 lần",
     duration: "5 ph",
-    muscle: "Toàn thân",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043219.png",
+    muscle: "Vai & Lưng trên",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/05/High-Knees.gif",
+    video: "https://gymvisual.com/img/vid/12000/120401201-seated-interlocked-hands-top-raise-and-forward-pu-view.mp4",
     completed: false,
   },
   {
@@ -50,7 +54,8 @@ const EXERCISES: Exercise[] = [
     sets: "2 hiệp x 10 lần",
     duration: "4 ph",
     muscle: "Ngực & Tay",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043257.png",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kneeling-Push-up.gif",
+    video: "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kneeling-Push-up.gif",
     completed: false,
   },
   {
@@ -59,7 +64,8 @@ const EXERCISES: Exercise[] = [
     sets: "2 hiệp x 15 lần",
     duration: "4 ph",
     muscle: "Lưng & Mông",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043295.png",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Superman-exercise.gif",
+    video: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Superman-exercise.gif",
     completed: false,
   },
   {
@@ -68,7 +74,8 @@ const EXERCISES: Exercise[] = [
     sets: "2 hiệp x 15 lần",
     duration: "5 ph",
     muscle: "Đùi & Mông",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043273.png",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/02/AIR-SQUAT.gif",
+    video: "https://fitnessprogramer.com/wp-content/uploads/2021/02/AIR-SQUAT.gif",
     completed: false,
   },
   {
@@ -77,7 +84,8 @@ const EXERCISES: Exercise[] = [
     sets: "2 hiệp x 10 lần",
     duration: "4 ph",
     muscle: "Mông & Đùi sau",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043285.png",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/02/Glute-Bridge.gif",
+    video: "https://fitnessprogramer.com/wp-content/uploads/2021/02/Glute-Bridge.gif",
     completed: false,
   },
   {
@@ -86,7 +94,8 @@ const EXERCISES: Exercise[] = [
     sets: "2 hiệp x 20 lần",
     duration: "5 ph",
     muscle: "Toàn thân",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043247.png",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Jumping-Jack.gif",
+    video: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Jumping-Jack.gif",
     completed: false,
   },
   {
@@ -95,7 +104,8 @@ const EXERCISES: Exercise[] = [
     sets: "3 hiệp x 30 giây",
     duration: "5 ph",
     muscle: "Core & Bụng",
-    image: "https://cdn-icons-png.flaticon.com/512/3043/3043265.png",
+    image: "https://fitnessprogramer.com/wp-content/uploads/2021/02/plank.gif",
+    video: "https://fitnessprogramer.com/wp-content/uploads/2021/02/plank.gif",
     completed: false,
   },
 ];
@@ -106,10 +116,35 @@ const EXERCISES: Exercise[] = [
 
 const ExercisePage = ({ navigation, route }: any) => {
   const [exercises, setExercises] = useState<Exercise[]>(EXERCISES);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const dayLabel = route?.params?.dayLabel ?? "1 ngày tập luyện";
   const dayType = route?.params?.dayType ?? "toàn thân";
   const totalDuration = 37;
+
+  const gender = route?.params?.gender !== undefined ? route.params.gender : route?.params?.gioi_tinh;
+
+  useEffect(() => {
+    fetchExercises();
+  }, [gender]);
+
+  const fetchExercises = async () => {
+    try {
+      setLoading(true);
+      const params: any = {};
+      if (gender !== undefined && gender !== null) {
+        params.gioi_tinh = gender === 'female' || gender === 1 ? 1 : 0;
+      }
+      const res = await apiFitlife.get('/bai-tap', { params });
+      if (res?.data?.status && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setExercises(res.data.data);
+      }
+    } catch (err) {
+      console.log('Error loading exercises from backend:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const completedCount = exercises.filter((e) => e.completed).length;
   const progressPercent =
