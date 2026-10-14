@@ -14,7 +14,7 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
     const fetchDifficulties = async () => {
       try {
         setLoading(true);
-        const res = await apiFitlife.get('/chuong-trinh-tap/cap-do');
+        const res = await apiFitlife.get('/client/chuong-trinh-tap/cap-do');
         const data = res.data?.data || [];
         // Lọc cấp độ theo chương trình đã chọn
         const filteredData = goalName
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 72,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

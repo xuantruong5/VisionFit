@@ -6,8 +6,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
 
-
-
 const WorkoutProgramDetailScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
@@ -18,7 +16,7 @@ const WorkoutProgramDetailScreen = () => {
     useEffect(() => {
         const fetchProgram = async () => {
             try {
-                const res = await apiFitlife.get(`/chuong-trinh-tap/${goalId}`);
+                const res = await apiFitlife.get(`/client/chuong-trinh-tap/${goalId}`);
                 setProgram(res.data?.data || null);
             } catch (error) {
                 console.log('Lỗi lấy chương trình:', error);
@@ -82,9 +80,9 @@ const WorkoutProgramDetailScreen = () => {
                                 <Text style={styles.heroTitle}>
                                     {goalName || program?.ten_chuong_trinh}
                                 </Text>
-                                <Text style={styles.heroTitle1}>
+                                {/* <Text style={styles.heroTitle1}>
                                     {capDoName || program?.ten_cap_do || 'Chưa có cấp độ'}
-                                </Text>
+                                </Text> */}
 
                                 <Text style={styles.heroSubtitle}>
                                     Chương trình phù hợp với mục tiêu của bạn
@@ -166,7 +164,7 @@ const styles = StyleSheet.create({
 
     header: {
         height: 72,
-        backgroundColor: '#FFFFFF',
+        // backgroundColor: '#FFFFFF',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent:

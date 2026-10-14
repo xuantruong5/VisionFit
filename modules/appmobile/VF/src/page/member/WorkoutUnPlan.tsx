@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import {View,Text,TouchableOpacity,ActivityIndicator,ImageBackground,ScrollView,StyleSheet,} from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, ImageBackground, ScrollView, StyleSheet, } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
@@ -12,12 +12,12 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
   const [goals, setGoals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  
+
   const fetchGoals = async () => {
     try {
       setIsLoading(true);
       const response = await apiFitlife.get(
-        '/chuong-trinh-tap/khong-muc-tieu',
+        '/client/chuong-trinh-tap/khong-muc-tieu',
         {
           params: {
             gioi_tinh_ap_dung: selectedGender === 'male' ? 0 : 1,
@@ -39,6 +39,7 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
   useEffect(() => {
     fetchGoals();
   }, [selectedGender]);
+  
   const handleSelectGoal = (goal: any) => {
     navigation.navigate('WorkoutLocationScreen', {
       ...(route?.params || {}),
@@ -50,28 +51,28 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
   };
   const currentGoals = goals;
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       {/* Chọn giới tính */}
       <View style={styles.genderSelector}>
         <TouchableOpacity style={styles.radioContainer} onPress={() => setSelectedGender('male')} >
-          <View style={[ styles.radioCircle,selectedGender === 'male' && styles.radioCircleSelected, ]} >
+          <View style={[styles.radioCircle, selectedGender === 'male' && styles.radioCircleSelected,]} >
             {selectedGender === 'male' && (
               <View style={styles.radioInnerCircle} />
             )}
           </View>
-          <Text style={[ styles.radioLabel, selectedGender === 'male' && styles.radioLabelSelected, ]} >
+          <Text style={[styles.radioLabel, selectedGender === 'male' && styles.radioLabelSelected,]} >
             Dành cho nam
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.radioContainer} onPress={() => setSelectedGender('female')} >
-          <View  style={[ styles.radioCircle, selectedGender === 'female' && styles.radioCircleSelected, ]} >
+          <View style={[styles.radioCircle, selectedGender === 'female' && styles.radioCircleSelected,]} >
             {selectedGender === 'female' && (
               <View style={styles.radioInnerCircle} />
             )}
           </View>
 
-          <Text style={[ styles.radioLabel, selectedGender === 'female' && styles.radioLabelSelected, ]} >
+          <Text style={[styles.radioLabel, selectedGender === 'female' && styles.radioLabelSelected,]} >
             Dành cho nữ
           </Text>
         </TouchableOpacity>
@@ -80,7 +81,7 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
       {/* Danh sách chương trình */}
       <View style={styles.goalList}>
         {isLoading ? (
-          <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }}/>
+          <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
         ) : currentGoals.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
@@ -103,7 +104,7 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
                     </Text>
 
                     <View style={styles.goalMeta}>
-                      <Ionicons name="barbell-outline"size={15} color="#FFFFFF" />
+                      <Ionicons name="barbell-outline" size={15} color="#FFFFFF" />
 
                       <Text style={styles.goalMetaText}>
                         {goal.noi_tap}
