@@ -1,302 +1,262 @@
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, ImageBackground, ScrollView, StyleSheet } from 'react-native';
+import {View,Text,TouchableOpacity,ActivityIndicator,ImageBackground,ScrollView,StyleSheet,} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import apiFitlife, { BASE_URL } from '../../general/api';
+import apiFitlife from '../../general/api';
+import ImageTextGradient from '../../components/ImageTextGradient';
 
-export interface WorkoutPlanType {
-  id: number;
-  name: string;
-  description: string | null;
-  difficulty: string;
-  location: string | null;
-  durationDays: number;
-  sessionsPerWeek: number;
-  coverUrl: string | null;
-  stars: number;
-}
+type Gender = 'male' | 'female';
 
-const levelOptions = [
-  { label: 'Chưa có kinh nghiệm', value: 'CHUA_CO_KINH_NGHIEM' },
-  { label: 'Người bắt đầu', value: 'NGUOI_BAT_DAU' },
-  { label: 'Nâng cao', value: 'NANG_CAO' },
-  { label: 'Chuyên gia', value: 'CHUYEN_GIA' },
-  { label: 'Pro', value: 'PRO' },
-];
+const WorkoutUnPlan = ({ navigation, route }: any) => {
+  const [selectedGender, setSelectedGender] = useState<Gender>('male');
+  const [goals, setGoals] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-const getLevelLabel = (value: string) => {
-  return levelOptions.find(item => item.value === value)?.label || value;
-};
-
-const getImageUrl = (url: string | null) => {
-  if (!url) return 'https://i.ibb.co/3s64nKV/placeholder.png';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${BASE_URL}${url}`;
-};
-
-const renderStars = (filled: number) => (
-  <View style={styles.starRow}>
-    {[1, 2, 3, 4].map(star => (
-      <Ionicons
-        key={star}
-        name={star <= filled ? 'star' : 'star-outline'}
-        size={12}
-        color="#08BAC2"
-        style={styles.star}
-      />
-    ))}
-  </View>
-);
-
-const WorkoutUnPlan = ({ navigation }: any) => {
-  const [generalPlans, setGeneralPlans] = useState<WorkoutPlanType[]>([]);
-  const [isGeneralLoading, setIsGeneralLoading] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<string>('Tại nhà');
-
-  useEffect(() => {
-    fetchGeneralPlans();
-  }, []);
-
-  const fetchGeneralPlans = async () => {
+  
+  const fetchGoals = async () => {
     try {
-      setIsGeneralLoading(true);
-      const response = await apiFitlife.get('/chuong-trinh-tap/khong-muc-tieu');
-      if (response.data.success) {
-        setGeneralPlans(response.data.data);
+      setIsLoading(true);
+      const response = await apiFitlife.get(
+        '/chuong-trinh-tap/khong-muc-tieu',
+        {
+          params: {
+            gioi_tinh_ap_dung: selectedGender === 'male' ? 0 : 1,
+          },
+        }
+      );
+      if (response.data.status === true) {
+        setGoals(response.data.data);
+      } else {
+        setGoals([]);
       }
     } catch (error) {
-      console.error('Error fetching general plans:', error);
+      console.error('Lỗi lấy chương trình tập không mục tiêu:', error);
+      setGoals([]);
     } finally {
-      setIsGeneralLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const handleSelectLevel = (levelItem: WorkoutPlanType) => {
-    navigation.navigate('WorkoutProgramDetailScreen', {
-      goalId: levelItem.id,
-      goalName: levelItem.name,
-      capDo: levelItem.difficulty,
-      capDoName: getLevelLabel(levelItem.difficulty),
-      noitap: selectedLocation,
+  useEffect(() => {
+    fetchGoals();
+  }, [selectedGender]);
+  const handleSelectGoal = (goal: any) => {
+    navigation.navigate('WorkoutLocationScreen', {
+      ...(route?.params || {}),
+      goalId: goal.id_chuong_trinh,
+      goalName: goal.ten_chuong_trinh,
+      gender: selectedGender === 'male' ? 'Nam' : 'Nữ',
       goalMode: false,
     });
   };
-
-  const filteredGeneralPlans = generalPlans.filter(
-    (plan) => plan.location === selectedLocation
-  );
-
-  const groupedPlans = Object.values(
-    filteredGeneralPlans.reduce((acc, plan) => {
-      if (!acc[plan.name]) {
-        acc[plan.name] = {
-          name: plan.name,
-          description: plan.description,
-          coverUrl: plan.coverUrl,
-          levels: [],
-        };
-      }
-      acc[plan.name].levels.push(plan);
-      return acc;
-    }, {} as Record<string, { name: string; description: string | null; coverUrl: string | null; levels: WorkoutPlanType[] }>)
-  );
-
-  const renderGroup = ({ item }: { item: any }) => {
-    // Sort levels by stars
-    const sortedLevels = [...item.levels].sort((a, b) => a.stars - b.stars);
-
-    return (
-      <View style={styles.groupCard}>
-        <ImageBackground source={{ uri: getImageUrl(item.coverUrl) }} style={styles.groupHeader} imageStyle={styles.groupHeaderImage}>
-          <View style={[styles.blueGradient, { backgroundColor: 'rgba(0, 35, 55, 0.65)' }]} />
-          <View style={styles.groupHeaderContent}>
-            <Text style={styles.groupTitle}>{item.name}</Text>
-            <Text style={styles.groupDesc} numberOfLines={2}>{item.description}</Text>
-          </View>
-        </ImageBackground>
-
-        <View style={styles.levelsContainer}>
-          <Text style={styles.levelsTitle}>Chọn cấp độ:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.levelsScroll}>
-            {sortedLevels.map((level: WorkoutPlanType) => (
-              <TouchableOpacity key={level.id} style={styles.levelBox} activeOpacity={0.8} onPress={() => handleSelectLevel(level)}>
-                {renderStars(level.stars)}
-                <Text style={styles.levelName}>{getLevelLabel(level.difficulty)}</Text>
-                <View style={styles.levelMetaRow}>
-                  <Ionicons name="time-outline" size={12} color="#71949A" />
-                  <Text style={styles.levelMeta}>{level.durationDays} ngày</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-    );
-  };
-
+  const currentGoals = goals;
   return (
-    <View style={styles.container}>
-      {/* Location Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tabBtn, selectedLocation === 'Tại nhà' && styles.tabBtnActive]}
-          onPress={() => setSelectedLocation('Tại nhà')}>
-          <Ionicons name="home-outline" size={18} color={selectedLocation === 'Tại nhà' ? '#FFFFFF' : '#71949A'} />
-          <Text style={[styles.tabText, selectedLocation === 'Tại nhà' && styles.tabTextActive]}>Tại nhà</Text>
+    <ScrollView contentContainerStyle={styles.scrollContent}showsVerticalScrollIndicator={false}>
+      {/* Chọn giới tính */}
+      <View style={styles.genderSelector}>
+        <TouchableOpacity style={styles.radioContainer} onPress={() => setSelectedGender('male')} >
+          <View style={[ styles.radioCircle,selectedGender === 'male' && styles.radioCircleSelected, ]} >
+            {selectedGender === 'male' && (
+              <View style={styles.radioInnerCircle} />
+            )}
+          </View>
+          <Text style={[ styles.radioLabel, selectedGender === 'male' && styles.radioLabelSelected, ]} >
+            Dành cho nam
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tabBtn, selectedLocation === 'Phòng gym' && styles.tabBtnActive]}
-          onPress={() => setSelectedLocation('Phòng gym')}>
-          <Ionicons name="barbell-outline" size={18} color={selectedLocation === 'Phòng gym' ? '#FFFFFF' : '#71949A'} />
-          <Text style={[styles.tabText, selectedLocation === 'Phòng gym' && styles.tabTextActive]}>Phòng gym</Text>
+        <TouchableOpacity style={styles.radioContainer} onPress={() => setSelectedGender('female')} >
+          <View  style={[ styles.radioCircle, selectedGender === 'female' && styles.radioCircleSelected, ]} >
+            {selectedGender === 'female' && (
+              <View style={styles.radioInnerCircle} />
+            )}
+          </View>
+
+          <Text style={[ styles.radioLabel, selectedGender === 'female' && styles.radioLabelSelected, ]} >
+            Dành cho nữ
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {isGeneralLoading ? (
-        <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }} />
-      ) : groupedPlans.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Chưa có kế hoạch tập phù hợp</Text>
-          <TouchableOpacity style={styles.reloadBtn} onPress={fetchGeneralPlans}>
-            <Text style={styles.reloadBtnText}>Thử tải lại</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList 
-          data={groupedPlans} 
-          keyExtractor={(item) => item.name} 
-          renderItem={renderGroup} 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={{ height: 20 }} />} 
-        />
-      )}
-    </View>
+      {/* Danh sách chương trình */}
+      <View style={styles.goalList}>
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 50 }}/>
+        ) : currentGoals.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              Chưa có chương trình tập phù hợp
+            </Text>
+            <TouchableOpacity style={styles.reloadBtn} onPress={fetchGoals} >
+              <Text style={styles.reloadBtnText}>Thử tải lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          currentGoals.map((goal) => (
+            <TouchableOpacity key={goal.id_chuong_trinh} style={styles.goalCard} onPress={() => handleSelectGoal(goal)} activeOpacity={0.8} >
+              <ImageBackground source={{ uri: goal.anh_dai_dien }} style={styles.goalImage} imageStyle={styles.goalImageStyle} >
+                <ImageTextGradient />
+
+                <View style={styles.goalCardContent}>
+                  <View style={styles.goalInfo}>
+                    <Text style={styles.goalTitle}>
+                      {goal.ten_chuong_trinh}
+                    </Text>
+
+                    <View style={styles.goalMeta}>
+                      <Ionicons name="barbell-outline"size={15} color="#FFFFFF" />
+
+                      <Text style={styles.goalMetaText}>
+                        {goal.noi_tap}
+                      </Text>
+
+                      <View style={styles.goalStars}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Ionicons
+                            key={star}
+                            name={
+                              star <= Number(goal.so_sao)
+                                ? 'star'
+                                : 'star-outline'
+                            }
+                            size={15}
+                            color="#FFFFFF"
+                          />
+                        ))}
+                      </View>
+
+                      <Text style={styles.goalMetaText}>
+                        {Number(goal.so_sao) === 0
+                          ? 'Chưa có kinh nghiệm'
+                          : Number(goal.so_sao) <= 2
+                            ? 'Người mới'
+                            : Number(goal.so_sao) <= 3
+                              ? 'Trung cấp'
+                              : 'Nâng cao'}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.goalDuration}>
+                      {goal.so_ngay} ngày tập luyện (
+                      {goal.so_buoi_moi_tuan} buổi mỗi tuần)
+                    </Text>
+                  </View>
+
+                  <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F4FAFB',
+  scrollContent: {
+    paddingBottom: 100,
   },
-  tabContainer: {
+  genderSelector: {
     flexDirection: 'row',
-    paddingHorizontal: 18,
-    marginTop: 10,
-    marginBottom: 15,
-    gap: 10,
+    justifyContent: 'space-around',
+    marginBottom: 25,
   },
-  tabBtn: {
-    flex: 1,
+  radioContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#9ED9DF',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#C7E8EB',
-    borderRadius: 12,
-    paddingVertical: 12,
-    gap: 6,
+    marginRight: 8,
   },
-  tabBtnActive: {
-    backgroundColor: '#0D7F8D',
+  radioCircleSelected: {
     borderColor: '#0D7F8D',
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
+  radioInnerCircle: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#0D7F8D',
+  },
+  radioLabel: {
     color: '#71949A',
+    fontSize: 16,
+    fontWeight: '500',
   },
-  tabTextActive: {
-    color: '#FFFFFF',
-  },
-  scrollContent: {
-    paddingHorizontal: 18,
-    paddingBottom: 40,
-  },
-  groupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#8FAEB2',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-  },
-  groupHeader: {
-    width: '100%',
-    height: 120,
-    justifyContent: 'flex-end',
-  },
-  groupHeaderImage: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  blueGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  groupHeaderContent: {
-    padding: 15,
-  },
-  groupTitle: {
-    fontSize: 18,
+  radioLabelSelected: {
+    color: '#0D7F8D',
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
   },
-  groupDesc: {
-    fontSize: 12,
-    color: '#DFF6F8',
-    lineHeight: 16,
-  },
-  levelsContainer: {
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  levelsTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#11343A',
-    marginLeft: 15,
+  goalList: {
     marginBottom: 10,
   },
-  levelsScroll: {
-    paddingHorizontal: 15,
-    gap: 12,
+  goalCard: {
+    width: '100%',
+    aspectRatio: 2.6,
+    marginBottom: 12,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: '#FFFFFF',
+    elevation: 5,
+    shadowColor: '#D9D7FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
-  levelBox: {
-    width: 130,
-    backgroundColor: '#F4FAFB',
-    borderWidth: 1,
-    borderColor: '#D9EFF1',
-    borderRadius: 10,
-    padding: 10,
-    marginRight: 12,
+  goalImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
   },
-  starRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
+  goalImageStyle: {
+    resizeMode: 'cover',
   },
-  star: {
-    marginRight: 2,
-  },
-  levelName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0D7F8D',
-    marginBottom: 6,
-  },
-  levelMetaRow: {
+  goalCardContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  levelMeta: {
-    fontSize: 11,
-    color: '#71949A',
-    fontWeight: '500',
+  goalInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  goalTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  goalMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 4,
+  },
+  goalMetaText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  goalStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 2,
+  },
+  goalDuration: {
+    color: '#20D6D0',
+    fontSize: 12,
+    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',

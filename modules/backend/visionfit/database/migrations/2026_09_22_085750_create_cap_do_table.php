@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('ten_cap_do', 100);
             $table->text('mo_ta')->nullable();
+            $table->string('hinh_anh')->nullable();
             $table->timestamps();
         });
     }
