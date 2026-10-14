@@ -9,6 +9,10 @@ use App\Http\Controllers\BachKhoaToanThuController;
 use App\Http\Controllers\DinhDuongTheThaoController;
 use App\Http\Controllers\ThucPhamSoTayController;
 
+
+
+
+
 // member 
 Route::post('client/login', [MembersController::class, 'login']);
 Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
@@ -19,6 +23,12 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('logout', [MembersController::class, 'logoutClient']);
     Route::post('logout-all', [MembersController::class, 'logoutAllClient']);
 });
+
+
+
+
+
+
 
 // Sổ tay - Bách khoa toàn thư
 Route::get('/bach-khoa-toan-thu', [BachKhoaToanThuController::class, 'index']);
@@ -83,3 +93,7 @@ Route::prefix('chat')->group(function () {
     Route::post('/message/{id}/reaction', [ChatController::class, 'reactMessage']);
     Route::post('/upload', [ChatController::class, 'uploadMedia']);
 });
+
+
+
+
