@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView,} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiFitlife from '../../general/api';
+import { Alert } from 'react-native';
 const AuthScreen = ({ navigation }: any) => {
     const [isRegister, setIsRegister] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
@@ -8,13 +11,46 @@ const AuthScreen = ({ navigation }: any) => {
     const [password, setPassword] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+
+    const handleLogin = async () => {
+        if (!email.trim() || !password) {
+            Alert.alert('Thông báo', 'Vui lòng nhập email và mật khẩu');
+            return;
+        }
+        try {
+            const response = await apiFitlife.post('/client/login', {
+                email: email.trim(),
+                password: password,
+            });
+            console.log('Kết quả đăng nhập:', response.data);
+            // Lấy token từ dữ liệu API trả về
+            const token = response.data.token;
+            if (token) {
+                await AsyncStorage.setItem('token', token);
+                await AsyncStorage.setItem("role", "member");
+                Alert.alert('Thành công', 'Đăng nhập thành công');
+                navigation.reset({  index: 0, routes: [{ name: 'MemberTabs' }], });
+            } else {
+                Alert.alert(
+                    'Thông báo',
+                    'Đăng nhập thành công nhưng API không trả về token'
+                );
+            }
+        } catch (error: any) {
+            console.log('Lỗi đăng nhập:', error.response?.data || error.message);
+            Alert.alert(
+                'Đăng nhập thất bại',
+                error.response?.data?.message || 'Email hoặc mật khẩu không chính xác'
+            );
+        }
+    };
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} >
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={25} color="#333" />
+                        <Ionicons name="arrow-back" size={25} color="#11343A" />
                     </TouchableOpacity>
                     <Text style={styles.title}>
                         Đăng nhập/Đăng ký
@@ -42,7 +78,7 @@ const AuthScreen = ({ navigation }: any) => {
                     <TextInput
                         style={styles.input}
                         placeholder="Nhập địa chỉ email của bạn"
-                        placeholderTextColor="#b7b7b7"
+                        placeholderTextColor="#71949A"
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
@@ -56,13 +92,13 @@ const AuthScreen = ({ navigation }: any) => {
                         <TextInput
                             style={styles.passwordInput}
                             placeholder="Nhập mật khẩu của bạn"
-                            placeholderTextColor="#b7b7b7"
+                            placeholderTextColor="#71949A"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword} />
                         <TouchableOpacity onPress={() => setShowPassword(!showPassword) } style={styles.eyeButton} >
                             <Ionicons
-                                name={ showPassword  ? "eye-outline" : "eye-off-outline" } size={25} color="#a8a8a8" />
+                                name={ showPassword  ? "eye-outline" : "eye-off-outline" } size={25} color="#71949A" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -74,7 +110,7 @@ const AuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhập tên của bạn"
-                                placeholderTextColor="#b7b7b7"
+                                placeholderTextColor="#71949A"
                                 value={firstName}
                                 onChangeText={setFirstName}
                             />
@@ -84,7 +120,7 @@ const AuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhập họ của bạn"
-                                placeholderTextColor="#b7b7b7"
+                                placeholderTextColor="#71949A"
                                 value={lastName}
                                 onChangeText={setLastName}
                             />
@@ -123,7 +159,7 @@ const AuthScreen = ({ navigation }: any) => {
                                 Quên mật khẩu?
                             </Text>
                         </TouchableOpacity>                    
-                        <TouchableOpacity style={styles.mainButton} onPress={() => { console.log("Đăng nhập"); }} >
+                        <TouchableOpacity style={styles.mainButton} onPress={handleLogin} >
                             <Text style={styles.mainButtonText}>
                                 ĐĂNG NHẬP
                             </Text>
@@ -137,12 +173,12 @@ const AuthScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: "#FFFFFF",
     },
 
     content: {
         paddingHorizontal: 24,
-        paddingTop: 40,
+        paddingTop: 50,
         paddingBottom: 40,
     },
     header: {
@@ -151,31 +187,25 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
     },
-
     backButton: {
         width: 46,
         height: 46,
         borderRadius: 23,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#EAF9FB",
         alignItems: "center",
         justifyContent: "center",
     },
-
     headerRight: {
         width: 46,
     },
-
     title: {
         fontSize: 24,
         fontWeight: "700",
-        color: "#222",
+        
     },
-
-    
-
     tabContainer: {
         height: 56,
-        backgroundColor: "#e3e6e8",
+        backgroundColor: "#FFFFFF",
         borderRadius: 30,
         flexDirection: "row",
         padding: 3,
@@ -191,41 +221,31 @@ const styles = StyleSheet.create({
     },
 
     activeTab: {
-        backgroundColor: "#314d68",
+        backgroundColor: "#0D7F8D",
     },
 
     tabText: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#71808d",
+        color: "#71949A",
     },
-
     activeTabText: {
-        color: "#fff",
     },
-
-    
-
     inputGroup: {
         marginBottom: 27,
     },
-
     label: {
         fontSize: 17,
         fontWeight: "500",
-        color: "#333",
         marginBottom: 9,
     },
-
     input: {
         height: 55,
         borderBottomWidth: 1,
         borderBottomColor: "#dedede",
         fontSize: 17,
-        color: "#333",
         paddingHorizontal: 0,
     },
-
     passwordContainer: {
         height: 55,
         borderBottomWidth: 1,
@@ -233,24 +253,19 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
     },
-
     passwordInput: {
         flex: 1,
         height: 55,
         fontSize: 17,
-        color: "#333",
+        
         paddingHorizontal: 0,
     },
-
     eyeButton: {
         width: 40,
         height: 50,
         alignItems: "center",
         justifyContent: "center",
     },
-
-    
-
     policyContainer: {
         marginTop: 8,
         marginBottom: 30,
@@ -260,7 +275,7 @@ const styles = StyleSheet.create({
     policyText: {
         fontSize: 14,
         lineHeight: 21,
-        color: "#555",
+        color: "#71949A",
         textAlign: "center",
     },
 
@@ -276,35 +291,28 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "500",
     },
-
-    
-
     mainButton: {
         height: 56,
         borderRadius: 8,
-        backgroundColor: "#e5e5e5",
+        backgroundColor: "#0D7F8D",
         alignItems: "center",
         justifyContent: "center",
-        marginTop: 5,
+        // marginTop: 5,
     },
-
     mainButtonText: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#aaa",
+        color: "#71949A",
     },
-
-    
-
     forgotContainer: {
         marginTop: 4,
-        marginBottom: 480,
+        marginBottom: 30,
     },
 
     forgotText: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#3ba6a6",
+        color: "#075E68",
     },
 });
 

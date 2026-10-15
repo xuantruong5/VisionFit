@@ -1,0 +1,171 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+
+class TrainerSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        DB::table('trainers')->truncate();
+
+        DB::table('trainers')->insert([
+            [
+                'ho_ten' => 'Nguyễn Văn Hùng',
+                'email' => 'trainer1@gmail.com',
+                'password' => bcrypt('123456'),
+                'so_dien_thoai' => '0901111111',
+                'ngay_sinh' => '1995-05-10',
+                'gioi_tinh' => 0,
+                'mo_ta' => 'Huấn luyện viên chuyên về tăng cơ và thể hình.',
+                'hinh_anh' => 'trainer1.jpg',
+                'chuc_danh' => 'Personal Trainer',
+                'so_nam_kinh_nghiem' => '5',
+                'kinh_nghiem_lam_viec' => '5 năm làm việc trong lĩnh vực thể hình.',
+                'qua_trinh_dao_tao' => 'Tốt nghiệp chuyên ngành Thể dục thể thao.',
+                'chung_chi' => 'Chứng chỉ Personal Trainer',
+                'thanh_tuu' => 'Top Trainer VisionFit 2025',
+                'tinh_trang' => 1,
+                'id_phong_tap' => 1,
+                'is_active' => 1,
+                'is_block' => 0,
+                'hash_reset' => null,
+                'hash_active' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'ho_ten' => 'Trần Minh Tuấn',
+                'email' => 'trainer2@gmail.com',
+                'password' => bcrypt('123456'),
+                'so_dien_thoai' => '0902222222',
+                'ngay_sinh' => '1997-08-20',
+                'gioi_tinh' => 0,
+                'mo_ta' => 'Huấn luyện viên chuyên về giảm cân và cải thiện sức bền.',
+                'hinh_anh' => 'trainer2.jpg',
+                'chuc_danh' => 'Fitness Trainer',
+                'so_nam_kinh_nghiem' => '3',
+                'kinh_nghiem_lam_viec' => '3 năm huấn luyện cá nhân.',
+                'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về Fitness.',
+                'chung_chi' => 'Fitness Trainer Certificate',
+                'thanh_tuu' => 'Trainer xuất sắc 2025',
+                'tinh_trang' => 1,
+                'id_phong_tap' => 1,
+                'is_active' => 1,
+                'is_block' => 0,
+                'hash_reset' => null,
+                'hash_active' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'ho_ten' => 'Lê Quốc Bảo',
+                'email' => 'trainer3@gmail.com',
+                'password' => bcrypt('123456'),
+                'so_dien_thoai' => '0903333333',
+                'ngay_sinh' => '1993-12-15',
+                'gioi_tinh' => 0,
+                'mo_ta' => 'Huấn luyện viên chuyên về tăng cơ và sức mạnh.',
+                'hinh_anh' => 'trainer3.jpg',
+                'chuc_danh' => 'Strength Coach',
+                'so_nam_kinh_nghiem' => '7',
+                'kinh_nghiem_lam_viec' => '7 năm trong lĩnh vực huấn luyện thể hình.',
+                'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về Strength Training.',
+                'chung_chi' => 'Strength Coach Certificate',
+                'thanh_tuu' => 'Vô địch Fitness khu vực 2024',
+                'tinh_trang' => 1,
+                'id_phong_tap' => 2,
+                'is_active' => 1,
+                'is_block' => 0,
+                'hash_reset' => null,
+                'hash_active' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'ho_ten' => 'Phạm Hoàng Nam',
+                'email' => 'trainer4@gmail.com',
+                'password' => bcrypt('123456'),
+                'so_dien_thoai' => '0904444444',
+                'ngay_sinh' => '1990-03-05',
+                'gioi_tinh' => 0,
+                'mo_ta' => 'Huấn luyện viên có nhiều kinh nghiệm về phục hồi thể chất.',
+                'hinh_anh' => 'trainer4.jpg',
+                'chuc_danh' => 'Senior Trainer',
+                'so_nam_kinh_nghiem' => '10',
+                'kinh_nghiem_lam_viec' => '10 năm huấn luyện và tư vấn thể hình.',
+                'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về thể thao và phục hồi.',
+                'chung_chi' => 'Senior Personal Trainer',
+                'thanh_tuu' => 'Trainer tiêu biểu 2024',
+                'tinh_trang' => 1,
+                'id_phong_tap' => 2,
+                'is_active' => 1,
+                'is_block' => 0,
+                'hash_reset' => null,
+                'hash_active' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'ho_ten' => 'Nguyễn Thị Lan',
+                'email' => 'trainer5@gmail.com',
+                'password' => bcrypt('123456'),
+                'so_dien_thoai' => '0905555555',
+                'ngay_sinh' => '1998-06-18',
+                'gioi_tinh' => 1,
+                'mo_ta' => 'Huấn luyện viên chuyên về Fitness và Yoga.',
+                'hinh_anh' => 'trainer5.jpg',
+                'chuc_danh' => 'Fitness & Yoga Trainer',
+                'so_nam_kinh_nghiem' => '4',
+                'kinh_nghiem_lam_viec' => '4 năm huấn luyện Fitness và Yoga.',
+                'qua_trinh_dao_tao' => 'Đào tạo Yoga và Fitness chuyên nghiệp.',
+                'chung_chi' => 'Yoga Instructor Certificate',
+                'thanh_tuu' => 'Trainer được yêu thích 2025',
+                'tinh_trang' => 1,
+                'id_phong_tap' => 1,
+                'is_active' => 1,
+                'is_block' => 0,
+                'hash_reset' => null,
+                'hash_active' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'ho_ten' => 'Đỗ Minh Khôi',
+                'email' => 'trainer6@gmail.com',
+                'password' => bcrypt('123456'),
+                'so_dien_thoai' => '0906666666',
+                'ngay_sinh' => '1992-09-25',
+                'gioi_tinh' => 0,
+                'mo_ta' => 'Huấn luyện viên chuyên về CrossFit và thể lực.',
+                'hinh_anh' => 'trainer6.jpg',
+                'chuc_danh' => 'CrossFit Coach',
+                'so_nam_kinh_nghiem' => '8',
+                'kinh_nghiem_lam_viec' => '8 năm trong lĩnh vực CrossFit.',
+                'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về CrossFit và Strength.',
+                'chung_chi' => 'CrossFit Level 2',
+                'thanh_tuu' => 'CrossFit Coach of the Year 2025',
+                'tinh_trang' => 0,
+                'id_phong_tap' => 2,
+                'is_active' => 1,
+                'is_block' => 0,
+                'hash_reset' => null,
+                'hash_active' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+    }
+}
