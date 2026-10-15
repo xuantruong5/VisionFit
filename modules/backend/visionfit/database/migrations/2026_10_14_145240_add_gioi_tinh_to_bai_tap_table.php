@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bai_tap', function (Blueprint $table) {
-            $table->integer('gioi_tinh_ap_dung')->default(2)->comment('0: Nam, 1: Nu, 2: Ca hai')->after('nhom_co');
+            // $table->integer('gioi_tinh_ap_dung')->default(2)->comment('0: Nam, 1: Nu, 2: Ca hai')->after('nhom_co');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('bai_tap', function (Blueprint $table) {
-            $table->dropColumn('gioi_tinh_ap_dung');
+            // $table->dropColumn('gioi_tinh_ap_dung');
         });
     }
 };

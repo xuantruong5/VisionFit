@@ -61,6 +61,29 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
 
+const MemberWorkoutStack = createNativeStackNavigator();
+
+function MemberWorkoutNavigator() {
+  return (
+    <MemberWorkoutStack.Navigator initialRouteName="WorkoutPlanScreen" screenOptions={{ headerShown: false }}>
+
+      <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+
+      <MemberWorkoutStack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
+
+      <MemberWorkoutStack.Screen name="WorkoutPlan" component={WorkoutPlan} />
+
+      <MemberWorkoutStack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen}/>
+
+      <MemberWorkoutStack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
+
+      <MemberWorkoutStack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
+
+    </MemberWorkoutStack.Navigator>
+  );
+}
+
+
 
 function AnimatIcon({ name_icon, focused, color, size }: { name_icon: string; focused: boolean; color: string; size: number }) {
   const scaleIcon = new Animated.Value(focused ? 1.2 : 1);
@@ -201,7 +224,7 @@ function MemberTabs() {
         paddingBottom: 5,
       },
     })}>
-      <Tab.Screen name="Kế Hoạch Tập" component={ExercisePage} />
+      <Tab.Screen name="Kế Hoạch Tập" component={MemberWorkoutNavigator} />
       <Tab.Screen name="Feed" component={SportFeed} />
       <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
       <Tab.Screen name="Sổ Tay" component={SoTayStack} />
@@ -238,7 +261,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="Login"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Onloading" component={Onloading}/>
@@ -253,17 +276,17 @@ const App = () => {
         <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
-        <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+        {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
-        <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} />
+        <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} /> 
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
-        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
-        <Stack.Screen name="DietDetail" component={DietDetail} />
-        <Stack.Screen name="ExercisePage" component={ExercisePage} />
+        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} /> */}
+        <Stack.Screen name="DietDetail" component={DietDetail} /> 
+        <Stack.Screen name="ExercisePage" component={ExercisePage} /> 
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
-        <Stack.Screen name="ResultPage" component={ResultPage}/>
+        <Stack.Screen name="ResultPage" component={ResultPage}/> 
         
 
 

@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
             ChatSeeder::class,
             BachKhoaToanThuSeeder::class,
             CapDoSeeder::class,
+            ChiTietBaiTapSeeder::class,
+            BaiTapNhomCoSeeder::class,
        ]);
     }
 }

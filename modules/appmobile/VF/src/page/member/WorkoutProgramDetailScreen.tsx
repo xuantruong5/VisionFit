@@ -6,9 +6,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
 
-const WorkoutProgramDetailScreen = () => {
-    const navigation = useNavigation<any>();
-    const route = useRoute<any>();
+const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
     const { goalId, goalName, gender, noitap, capDoName,capDoId, } = route.params || {};
     const [program, setProgram] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -375,6 +373,7 @@ const styles = StyleSheet.create({
     section: {
         marginTop: 24,
         paddingHorizontal: 18,
+        paddingBottom: 90,
     },
 
     sectionTitle: {

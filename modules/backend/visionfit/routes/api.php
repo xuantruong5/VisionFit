@@ -8,21 +8,16 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\BachKhoaToanThuController;
 use App\Http\Controllers\DinhDuongTheThaoController;
 use App\Http\Controllers\ThucPhamSoTayController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\TrainerController;
 
 
 
 
 
-// member 
-Route::post('client/login', [MembersController::class, 'login']);
-Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
-    Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
-    Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
-    Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
-    Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
-    Route::post('logout', [MembersController::class, 'logoutClient']);
-    Route::post('logout-all', [MembersController::class, 'logoutAllClient']);
-});
+
+
+
 
 
 
@@ -75,6 +70,7 @@ Route::post('/ho-so/avatar', [MembersController::class, 'uploadAvatar']);
 // Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
 // Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
 // Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
+Route::get('/bai-tap', [MembersController::class, 'getDanhSachBaiTap']);
 
 // Chat routes
 Route::prefix('chat')->group(function () {
@@ -94,6 +90,31 @@ Route::prefix('chat')->group(function () {
     Route::post('/upload', [ChatController::class, 'uploadMedia']);
 });
 
+
+// member 
+Route::post('client/login', [MembersController::class, 'login']);
+Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
+    Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
+    Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+    Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
+    Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
+    Route::post('logout', [MembersController::class, 'logoutClient']);
+    Route::post('logout-all', [MembersController::class, 'logoutAllClient']);
+});
+
+
+// trainner 
+Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
+Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
+    Route::post('logout', [TrainerController::class, 'logoutTrainer']);
+});
+
+
+// admin 
+Route::post('admin/login', [AdminController::class, 'loginAdmin']);
+Route::group(['prefix' => 'admin','middleware' => 'AdminMiddleware'], function () {
+    Route::post('logout', [AdminController::class, 'logoutAdmin']);
+});
 
 
 

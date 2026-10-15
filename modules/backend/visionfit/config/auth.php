@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use App\Models\Client;
+use App\Models\Admin;
+use App\Models\Trainer;
 return [
 
     /*
@@ -46,6 +48,14 @@ return [
             'driver' => 'session',
             'provider' => 'clients',
         ],
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
+        'trainer' => [
+            'driver' => 'session',
+            'provider' => 'trainers',
+        ],
     ],
 
     /*
@@ -74,6 +84,15 @@ return [
             'driver' => 'eloquent',
             'model' => \App\Models\Client::class
         ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\Admin::class
+        ],
+        'trainers' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\Trainer::class
+        ],
+
 
         // 'users' => [
         //     'driver' => 'database',

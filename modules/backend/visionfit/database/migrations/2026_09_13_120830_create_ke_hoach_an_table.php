@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('ke_hoach_an', function (Blueprint $table) {
             $table->id(); // 'id_ke_hoach_an'
-            $table->unsignedBigInteger('id_chuong_trinh');
-            $table->unsignedBigInteger('id_hoi_vien')->nullable();
-            $table->unsignedBigInteger('id_nguoi_tao')->nullable();
+            $table->integer('id_chuong_trinh');
+            $table->integer('id_hoi_vien')->nullable();
+            $table->integer('id_nguoi_tao')->nullable();
             $table->string('ten_ke_hoach', 255);
             $table->integer('muc_tieu_calo_ngay')->nullable(); // ngày 
             $table->decimal('protein_muc_tieu', 8, 2)->nullable(); // ngày 
