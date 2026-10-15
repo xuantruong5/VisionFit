@@ -51,7 +51,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
 
   const handleDayPress = (day: WorkoutDay) => {
     if (day.isLocked) return;
-    
+
     // Navigate to ExercisePage (danh sách bài tập) when clicking an unlocked day
     navigation?.navigate?.("ExercisePage", {
       dayLabel: day.dayLabel,
@@ -64,7 +64,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* ================= MAIN HEADER (MOCK) ================= */}
-      <View style={styles.mainHeader}>
+      {/* <View style={styles.mainHeader}>
         <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="time-outline" size={wp("6%")} color="#0D7F8D" />
         </TouchableOpacity>
@@ -72,13 +72,10 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
         <TouchableOpacity style={styles.headerIconBtn}>
           <Ionicons name="list" size={wp("6%")} color="#0D7F8D" />
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+        style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* ================= TOP BANNER ================= */}
         <ImageBackground
           source={{ uri: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=1000" }}
@@ -92,7 +89,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
           >
             <View style={styles.bannerContent}>
               <Text style={styles.bannerTitle}>{planName}</Text>
-              
+
               <View style={styles.bannerInfoRow}>
                 <Ionicons name="home" size={wp("3.5%")} color="#FFFFFF" />
                 <Text style={styles.bannerInfoText}> Tại nhà </Text>
@@ -107,7 +104,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
               <Text style={styles.bannerHighlightText}>
                 24 ngày tập luyện (3 buổi mỗi tuần)
               </Text>
-              
+
               <Text style={styles.bannerInfoText}>
                 Tập luyện hoàn tất: 0
               </Text>
@@ -145,7 +142,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                   </View>
                 )}
               </View>
-              
+
               <View style={styles.dayCardInfo}>
                 <Text style={styles.dayLabelText}>{day.dayLabel}</Text>
                 <Text style={styles.dayTypeText}>{day.type}</Text>
@@ -207,6 +204,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+    marginTop: 10
   },
 
   // Main Header Top

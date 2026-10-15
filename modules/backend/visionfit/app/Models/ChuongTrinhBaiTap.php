@@ -12,13 +12,13 @@ class ChuongTrinhBaiTap extends Model
         'id_bai_tap',
         'ngay_thu',
         'ten_ngay_tap',
-        'thu_tu',
-        'so_hiep',
-        'so_lan_lap',
-        'trong_luong_goi_y',
-        'thoi_gian_giay',
+        'thoi_gian_phut',
         'thoi_gian_nghi',
         'cho_phep_bo_qua',
         'tinh_trang',
     ];
+    const DANG_KHOA = 0;
+    const DANG_MO = 1;
+
+
 }

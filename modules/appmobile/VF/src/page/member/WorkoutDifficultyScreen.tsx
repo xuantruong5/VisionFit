@@ -57,9 +57,7 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
           </View>
         </View>
       </View>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {loading ? (
           <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 40 }} />) : difficulties.length === 0 ? (
             <Text style={styles.emptyText}>
@@ -68,18 +66,8 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
           ) : (
           difficulties.map((item, index) => {
             return (
-              <TouchableOpacity
-                key={`${item.id}-${item.ten_chuong_trinh}`}
-                style={styles.card}
-                activeOpacity={0.88}
-                onPress={() =>
-                  navigation.navigate('WorkoutProgramDetailScreen', {
-                    ...(route.params || {}),
-                    capDoId: item.id,
-                    capDoName: item.ten_cap_do,
-                  })
-                }
-              >
+              <TouchableOpacity key={`${item.id}-${item.ten_chuong_trinh}`} style={styles.card} activeOpacity={0.88}
+                onPress={() => navigation.navigate('WorkoutProgramDetailScreen', { ...(route.params || {}), capDoId: item.id, capDoName: item.ten_cap_do, }) } >
                 <ImageBackground
                   source={item.hinh_anh? { uri: item.hinh_anh }: undefined}
                   style={styles.cardImage} imageStyle={styles.cardImageStyle}>
@@ -205,12 +193,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 18,
     paddingTop: 10,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   card: {
     width: '100%',
     height: 185,
-    marginBottom: 16,
+    marginBottom: 10,
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
@@ -219,6 +207,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 9,
     elevation: 5,
+    
   },
   cardImage: {
     flex: 1,

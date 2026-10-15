@@ -146,6 +146,87 @@ class MembersController extends Controller
         ]);
     }
 
+    // Lấy danh sách bài tập theo ngày hoặc theo chương trình và giới tính
+    public function getDanhSachBaiTap(Request $request)
+    {
+        $idChuongTrinh = $request->id_chuong_trinh ?? 1;
+        $ngayThu = $request->ngay_thu ?? 1;
+        $gioiTinh = $request->gioi_tinh; // 0: Nam, 1: Nữ, null: tất cả
+
+        $query = \Illuminate\Support\Facades\DB::table('chuong_trinh_bai_tap')
+            ->join('bai_tap', 'chuong_trinh_bai_tap.id_bai_tap', '=', 'bai_tap.id_bai_tap')
+            ->where('chuong_trinh_bai_tap.id_chuong_trinh', $idChuongTrinh)
+            ->where('chuong_trinh_bai_tap.ngay_thu', $ngayThu)
+            ->where('bai_tap.tinh_trang', 1);
+
+        if ($gioiTinh !== null) {
+            $g = (int)$gioiTinh;
+            $query->whereIn('bai_tap.gioi_tinh_ap_dung', [$g, 2]); // Bài tập của giới tính đó hoặc cho Cả hai
+        }
+
+        $exercises = $query->orderBy('chuong_trinh_bai_tap.thu_tu', 'asc')
+            ->select(
+                'bai_tap.id_bai_tap as id',
+                'bai_tap.ten_bai_tap as name',
+                'bai_tap.nhom_co as muscle',
+                'bai_tap.gioi_tinh_ap_dung',
+                'bai_tap.anh_dai_dien as image',
+                'bai_tap.video_huong_dan as video',
+                'bai_tap.mo_ta',
+                'bai_tap.huong_dan',
+                'chuong_trinh_bai_tap.so_hiep',
+                'chuong_trinh_bai_tap.so_lan_lap',
+                'chuong_trinh_bai_tap.thoi_gian_giay',
+                'chuong_trinh_bai_tap.thoi_gian_nghi',
+                'chuong_trinh_bai_tap.ten_ngay_tap'
+            )
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'muscle' => $item->muscle,
+                    'gioi_tinh_ap_dung' => $item->gioi_tinh_ap_dung,
+                    'sets' => $item->so_hiep . ' hiệp x ' . $item->so_lan_lap . ' lần',
+                    'duration' => round($item->thoi_gian_giay / 60) . ' ph',
+                    'image' => $item->image,
+                    'video' => $item->video,
+                    'completed' => false,
+                ];
+            });
+
+        // Nếu ngày đó chưa có thì lấy tất cả bài tập từ bai_tap theo giới tính
+        if ($exercises->isEmpty()) {
+            $fallback = \Illuminate\Support\Facades\DB::table('bai_tap')
+                ->where('tinh_trang', 1);
+
+            if ($gioiTinh !== null) {
+                $g = (int)$gioiTinh;
+                $fallback->whereIn('gioi_tinh_ap_dung', [$g, 2]);
+            }
+
+            $exercises = $fallback->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id_bai_tap,
+                        'name' => $item->ten_bai_tap,
+                        'muscle' => $item->nhom_co,
+                        'gioi_tinh_ap_dung' => $item->gioi_tinh_ap_dung,
+                        'sets' => '3 hiệp x 15 lần',
+                        'duration' => '5 ph',
+                        'image' => $item->anh_dai_dien,
+                        'video' => $item->video_huong_dan,
+                        'completed' => false,
+                    ];
+                });
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $exercises
+        ]);
+    }
+
     // Lấy thông tin hồ sơ cá nhân của hội viên
     public function getProfile(Request $request)
     {

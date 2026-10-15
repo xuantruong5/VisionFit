@@ -17,6 +17,7 @@ import {
     widthPercentageToDP as wp,
     heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import Video from "react-native-video";
 
 
 const ReportPage = ({ navigation, route }: any) => {
@@ -227,15 +228,28 @@ const ReportPage = ({ navigation, route }: any) => {
 
                 <View style={styles.exerciseImageArea}>
 
-                    <Image
-                        source={
-                            exercise?.image
-                                ? exercise.image
-                                : require("../../../../assets/fitness-bg.png")
-                        }
-                        style={styles.exerciseImage}
-                        resizeMode="contain"
-                    />
+                    {exercise?.video ? (
+                        <Video
+                            source={{ uri: exercise.video }}
+                            style={styles.exerciseImage}
+                            resizeMode="contain"
+                            repeat={true}
+                            paused={false}
+                            muted={true}
+                        />
+                    ) : (
+                        <Image
+                            source={
+                                typeof exercise?.image === 'string'
+                                    ? { uri: exercise.image }
+                                    : exercise?.image
+                                        ? exercise.image
+                                        : require("../../../../assets/fitness-bg.png")
+                            }
+                            style={styles.exerciseImage}
+                            resizeMode="contain"
+                        />
+                    )}
 
                 </View>
 
@@ -700,39 +714,25 @@ const styles = StyleSheet.create({
 
 
     /* ================= EXERCISE ================= */
-
     exerciseArea: {
-
-        height: hp("31%"),
-
+        width: wp("100%"),
+        height: hp("35%"),
         position: "relative",
-
         justifyContent: "center",
-
         alignItems: "center",
-
+        backgroundColor: "#FFFFFF",
     },
-
 
     exerciseImageArea: {
-
-        width: wp("65%"),
-
-        height: hp("28%"),
-
+        width: wp("100%"),
+        height: "100%",
         alignItems: "center",
-
         justifyContent: "center",
-
     },
 
-
     exerciseImage: {
-
-        width: wp("55%"),
-
-        height: hp("27%"),
-
+        width: wp("100%"),
+        height: "100%",
     },
 
 

@@ -12,20 +12,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bai_tap', function (Blueprint $table) {
-            $table->id('id_bai_tap');
+            $table->id();
+            $table->integer('id_chuong_trinh_bai_tap');
             $table->string('ma_bai_tap', 50)->unique();
             $table->string('ten_bai_tap');
-            $table->string('nhom_co');
-            $table->string('cap_do')->nullable();
-            $table->string('mo_ta')->nullable();
-            $table->string('huong_dan')->nullable();
+            $table->text('mo_ta')->nullable();
+            $table->integer('thoi_gian_phut')->nullable();
+            $table->integer('rep_yeu_cau')->nullable();
+            $table->integer('set_yeu_cau')->nullable();
+            $table->decimal('muc_ta_toi_thieu', 8, 2)->nullable()->comment('Đơn vị kg');
+            $table->integer('giay_yeu_cau')->nullable();
+            $table->string('anh_dai_dien', 500)->nullable();
+            $table->integer('tinh_trang')->default(1);
+
+            // $table->string('video_huong_dan', 500)->nullable();
+            // $table->string('nhom_co');
+            // $table->string('cap_do')->nullable();
+            // $table->string('huong_dan')->nullable();
             $table->string('loi_thuong_gap')->nullable();
             $table->string('thiet_bi', 255)->nullable();
-            $table->string('anh_dai_dien', 500)->nullable();
-            $table->string('video_huong_dan', 500)->nullable();
+            
             $table->boolean('ho_tro_ai')->nullable();
             $table->string('goc_camera_khuyen_nghi', 255)->nullable();
-            $table->integer('tinh_trang')->default(1);
+           
             $table->timestamps();
         });
     }

@@ -125,6 +125,7 @@ const styles = StyleSheet.create({
 
   modeContainer: {
     flex: 1,
+    marginBottom: 10
   },
 });
 
