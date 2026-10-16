@@ -17,9 +17,10 @@ return new class extends Migration
             $table->unsignedBigInteger('id_mon_an');
             $table->date('ngay_an');
             $table->time('gio_an')->nullable()->comment('Giờ ăn');
-            $table->string('bua_an', 30); // SANG, PHU_SANG, TRUA, PHU_TRUA, TOI, PHU_TOI
+            $table->string('bua_an', 30); // SANG, PHU_SANG, TRUA, PHU_TRUA, TOI, PHU_TOI (6 bữa )
             // Số lượng khẩu phần
             $table->decimal('so_luong', 8, 2)->default(1)->comment('Số khẩu phần');
+            // $table->decimal('tong_calo', 10, 2)->default(0)->comment('Tổng năng lượng (kcal)');
             $table->string('ghi_chu')->nullable();
             $table->timestamps();
         });

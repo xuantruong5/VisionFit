@@ -18,12 +18,14 @@ return new class extends Migration
             $table->string('anh_dai_dien', 500)->nullable();
             $table->decimal('khoi_luong_gram', 8, 2)->nullable()->comment('Khối lượng món ăn tính bằng gram');
             $table->integer('thoi_gian_nau')->nullable()->comment('Thời gian nấu tính bằng phút');
+            $table->string('loai_bua', 20)->nullable();
             $table->decimal('calo', 8, 2)->nullable()->comment('kcal');
             $table->decimal('protein', 8, 2)->nullable()->comment('gram');
             $table->decimal('carb', 8, 2)->nullable()->comment('gram');
             $table->decimal('fat', 8, 2)->nullable()->comment('gram');
-            $table->string('nguyen_lieu')->nullable(); // bao gồm cả gia vị 
-            $table->string('huong_dan_nau')->nullable();
+            $table->longText('nguyen_lieu')->nullable(); 
+            $table->longText('gia_vi')->nullable(); 
+            $table->longText('huong_dan_nau')->nullable();
             $table->integer('tinh_trang') ->default(1)->comment('0: nghi, 1: đang hoạt động');
             $table->timestamps();
         });

@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ChuongTrinhTap;
+use App\Models\NoiTap;
+
 use Illuminate\Support\Facades\DB;
+
 
 class MembersController extends Controller
 {
@@ -74,7 +77,7 @@ class MembersController extends Controller
     {
         $data = ChuongTrinhTap::where('nhom_muc_tieu', 1)
             ->where('tinh_trang', '1')
-            ->orderBy('id_chuong_trinh')
+            ->orderBy('id')
             ->get()
             ->unique(function ($item) {
                 return $item->ten_chuong_trinh . '-' . $item->gioi_tinh_ap_dung;
@@ -101,7 +104,38 @@ class MembersController extends Controller
             'data' => $data,
         ]);
     }
-
+    
+    public function getNoiTap($id)
+    {
+        $chuongTrinh = ChuongTrinhTap::find($id);
+        if (!$chuongTrinh) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Chương trình không tồn tại',
+            ], 404);
+        }
+        $idNoiTap = $chuongTrinh->id_noi_tap;
+        // Giải mã JSON
+        if (is_string($idNoiTap)) {
+            $idNoiTap = json_decode($idNoiTap, true);
+        }
+        // Nếu chỉ có một ID, ví dụ 2
+        if (is_numeric($idNoiTap)) {
+            $idNoiTap = [$idNoiTap];
+        }
+        // Nếu JSON chứa object có id, lấy danh sách id
+        if (is_array($idNoiTap) && isset($idNoiTap[0]['id'])) {
+            $idNoiTap = array_column($idNoiTap, 'id');
+        }
+        $noiTap = NoiTap::whereIn('id', $idNoiTap ?? [])
+            ->select('id', 'ten_noi_tap', 'mo_ta')
+            ->get();
+        return response()->json([
+            'status' => true,
+            'message' => 'Lấy danh sách nơi tập thành công',
+            'data' => $noiTap,
+        ], 200);
+    }
     public function getCapDoChuongTrinh(Request $request)
     {
         $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do','=','cap_do.id')
@@ -119,17 +153,11 @@ class MembersController extends Controller
 
     public function getChiTietChuongTrinhTap($id)
     {
-        $data = ChuongTrinhTap::join(
-                'cap_do',
-                'chuong_trinh_tap.id_cap_do',
-                '=',
-                'cap_do.id'
+        $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do', '=','cap_do.id'
             )
-            ->where('chuong_trinh_tap.id_chuong_trinh', $id)
+            ->where('chuong_trinh_tap.id', $id)
             ->where('chuong_trinh_tap.tinh_trang', 1)
-            ->select(
-                'chuong_trinh_tap.*',
-                'cap_do.ten_cap_do'
+            ->select( 'chuong_trinh_tap.*','cap_do.ten_cap_do'
             )
             ->first();
 
@@ -354,4 +382,13 @@ class MembersController extends Controller
             'message' => 'Không tìm thấy file ảnh'
         ], 400);
     }
+
+
+
+
+
+
+
+
+    
 }

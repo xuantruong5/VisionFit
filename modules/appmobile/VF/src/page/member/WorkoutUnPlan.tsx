@@ -43,7 +43,7 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
   const handleSelectGoal = (goal: any) => {
     navigation.navigate('WorkoutLocationScreen', {
       ...(route?.params || {}),
-      goalId: goal.id_chuong_trinh,
+      goalId: goal.id,
       goalName: goal.ten_chuong_trinh,
       gender: selectedGender === 'male' ? 'Nam' : 'Nữ',
       goalMode: false,
@@ -93,7 +93,7 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
           </View>
         ) : (
           currentGoals.map((goal) => (
-            <TouchableOpacity key={goal.id_chuong_trinh} style={styles.goalCard} onPress={() => handleSelectGoal(goal)} activeOpacity={0.8} >
+            <TouchableOpacity key={goal.id} style={styles.goalCard} onPress={() => handleSelectGoal(goal)} activeOpacity={0.8} >
               <ImageBackground source={{ uri: goal.anh_dai_dien }} style={styles.goalImage} imageStyle={styles.goalImageStyle} >
                 <ImageTextGradient />
 

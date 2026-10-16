@@ -52,14 +52,14 @@ const WorkoutPlan = ({ navigation, route }: any) => {
         ) : (
           currentGoals.map((goal) => (
             <TouchableOpacity
-              key={goal.id_chuong_trinh}
+              key={goal.id}
               style={styles.goalCard}
               onPress={() => {
                 // Pass all previous params along with goalId, goalName, and the resolved gender string for images
                 const existingParams = route?.params || {};
                 navigation.navigate('WorkoutLocationScreen', {
                   ...existingParams,
-                  goalId: goal.id_chuong_trinh,
+                  goalId: goal.id,
                   goalName: goal.ten_chuong_trinh,
                   gender: selectedGender === 'male' ? 'Nam' : 'Nữ' // Keep this for WorkoutLocationScreen's internal logic
                 });

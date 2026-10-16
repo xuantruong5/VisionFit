@@ -1,41 +1,79 @@
-import React from 'react';
-import {StyleSheet, Text, View, TouchableOpacity, ImageBackground, Dimensions,} from 'react-native';
 
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import ImageTextGradient from '../../components/ImageTextGradient';
+import apiFitlife from '../../general/api';
 
-const { width } = Dimensions.get('window');
+const WorkoutLocationScreen = ({ navigation, route }: any) => {
+  const { goalId, goalName, gender } = (route.params as any) || {};
+  const [noiTapList, setNoiTapList] = useState<{ id: number; ten_noi_tap: string; mo_ta: string | null }[]>([]);
+  const [loading, setLoading] = useState(true);
+  // Ảnh theo giới tính
+  const gymImageMale = 'https://images.unsplash.com/photo-1641337221253-fdc7237f6b61?fm=jpg&q=60&w=3000&auto=format&fit=crop';
+  const gymImageFemale = 'https://photo.znews.vn/w660/Uploaded/gtnvzv/2024_03_14/gym.jpg';
+  const homeImageMale = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSujSVeA5kR_ZONbeZ3emZB_cuq_7ScD-hOusBOLzDeZhCx8KiTkSkr6fw&s=10';
+  const homeImageFemale = 'https://media.istockphoto.com/id/1352616555/vi/anh/ng%C6%B0%E1%BB%9Di-ph%E1%BB%A5-n%E1%BB%AF-th%E1%BB%83-thao-t%E1%BA%ADp-th%E1%BB%83-d%E1%BB%A5c-t%E1%BA%A1i-nh%C3%A0.jpg?s=612x612&w=0&k=20&c=qgB4DoAqe9nMYRHhqI7KD3g9qASxXjF5_AN7nQfsgpc=';
+  const gymImage = gender === 'Nữ' ? gymImageFemale : gymImageMale;
+  const homeImage = gender === 'Nữ' ? homeImageFemale : homeImageMale;
 
-const WorkoutLocationScreen = () => {
-  const navigation = useNavigation<any>();
-  const route = useRoute();
-  const { goalId, goalName, gender } = route.params as any || {};
-  const handleSelectLocation = (noitap: string) => {
+  // Gọi API lấy danh sách nơi tập
+  useEffect(() => {
+    const getNoiTap = async () => {
+      if (!goalId) {
+        setNoiTapList([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await apiFitlife.get(
+          `/client/chuong-trinh-tap/${goalId}/noi-tap`
+        );
+
+        if (response.data.status) {
+          setNoiTapList(response.data.data);
+        } else {
+          setNoiTapList([]);
+        }
+      } catch (error) {
+        console.log('Lỗi lấy nơi tập:', error);
+        Alert.alert('Thông báo', 'Không thể tải danh sách nơi tập.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getNoiTap();
+  }, [goalId]);
+
+  // Chọn nơi tập và chuyển màn hình
+  const handleSelectLocation = (noiTap: { id: number; ten_noi_tap: string; mo_ta: string | null; }) => {
     navigation.navigate('WorkoutDifficultyScreen', {
       ...(route.params as any || {}),
       goalId,
       goalName,
       gender,
-      noitap,
+      id_noi_tap: noiTap.id,
+      ten_noi_tap: noiTap.ten_noi_tap,
     });
   };
-
-  // Define dynamic images based on gender
-  const gymImageMale = 'https://images.unsplash.com/photo-1641337221253-fdc7237f6b61?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Z3ltJTIwZXhlcmNpc2V8ZW58MHx8MHx8fDA%3D';
-  const gymImageFemale = 'https://photo.znews.vn/w660/Uploaded/gtnvzv/2024_03_14/gym.jpg';
-
-  const homeImageMale = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSujSVeA5kR_ZONbeZ3emZB_cuq_7ScD-hOusBOLzDeZhCx8KiTkSkr6fw&s=10';
-  const homeImageFemale = 'https://media.istockphoto.com/id/1352616555/vi/anh/ng%C6%B0%E1%BB%9Di-ph%E1%BB%A5-n%E1%BB%AF-th%E1%BB%83-thao-t%E1%BA%ADp-th%E1%BB%83-d%E1%BB%A5c-t%E1%BA%A1i-nh%C3%A0.jpg?s=612x612&w=0&k=20&c=qgB4DoAqe9nMYRHhqI7KD3g9qASxXjF5_AN7nQfsgpc=';
-
-  const gymImage = gender === 'Nữ' ? gymImageFemale : gymImageMale;
-  const homeImage = gender === 'Nữ' ? homeImageFemale : homeImageMale;
-
+  // Chọn ảnh theo nơi tập từ API
+  const getLocationImage = (noiTap: string) => {
+    const location = noiTap.toLowerCase();
+    if (location.includes('nhà')) {
+      return homeImage;
+    }
+    return gymImage;
+  };
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={27} color="#376D88" />
         </TouchableOpacity>
 
@@ -45,39 +83,43 @@ const WorkoutLocationScreen = () => {
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity style={styles.cardContainer} activeOpacity={0.8} onPress={() => handleSelectLocation('Phòng gym')} >
-          <ImageBackground
-            source={{ uri: gymImage }}
-            style={styles.cardImage}
-            imageStyle={styles.cardImageStyle}
-          >
-            <ImageTextGradient />
-            <View style={styles.overlay}>
-              <Text style={styles.cardText}>Tại gym</Text>
-            </View>
-          </ImageBackground>
-        </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator size="large" color="#376D88" />
+        ) : noiTapList.length === 0 ? (
+          <Text style={{ textAlign: 'center', color: '#666' }}>
+            Chưa có nơi tập nào.
+          </Text>
+        ) : (
+          noiTapList.map((noiTap) => (
+            <TouchableOpacity
+              key={noiTap.id}
+              style={styles.cardContainer}
+              activeOpacity={0.8}
+              onPress={() => handleSelectLocation(noiTap)}
+            >
+              <ImageBackground
+                source={{ uri: getLocationImage(noiTap.ten_noi_tap) }}
+                style={styles.cardImage}
+                imageStyle={styles.cardImageStyle}
+              >
+                <ImageTextGradient />
 
-        <TouchableOpacity
-          style={styles.cardContainer}
-          activeOpacity={0.8}
-          onPress={() => handleSelectLocation('Tại nhà')}
-        >
-          <ImageBackground
-            source={{ uri: homeImage }}
-            style={styles.cardImage}
-            imageStyle={styles.cardImageStyle}
-          >
-            <ImageTextGradient />
-            <View style={styles.overlay}>
-              <Text style={styles.cardText}>Tại nhà </Text>
-            </View>
-          </ImageBackground>
-        </TouchableOpacity>
+                <View style={styles.overlay}>
+                  <Text style={styles.cardText}>
+                    {noiTap.ten_noi_tap}
+                  </Text>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
     </SafeAreaView>
   );
 };
+
+
+
 
 const styles = StyleSheet.create({
   container: {

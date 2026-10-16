@@ -21,7 +21,6 @@ class DangKyChuongTrinhSeeder extends Seeder
                 'ngay_du_kien_ket_thuc' => '2026-10-12',
                 'phan_tram_hoan_thanh' => 0,
                 'tinh_trang' => '0',
-                'ngay_tao' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
