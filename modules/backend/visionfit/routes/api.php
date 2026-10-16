@@ -10,6 +10,10 @@ use App\Http\Controllers\DinhDuongTheThaoController;
 use App\Http\Controllers\ThucPhamSoTayController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TrainerController;
+use App\Http\Controllers\DangKyChuongTrinhController;
+
+
+
 
 
 
@@ -96,10 +100,24 @@ Route::post('client/login', [MembersController::class, 'login']);
 Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
     Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
     Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
+
+
+    Route::get('/chuong-trinh-tap/{id}/noi-tap', [MembersController::class, 'getNoiTap']);
+
+
     Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
     Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
     Route::post('logout', [MembersController::class, 'logoutClient']);
     Route::post('logout-all', [MembersController::class, 'logoutAllClient']);
+    Route::post('dang-ky-chuong-trinh', [DangKyChuongTrinhController::class, 'store']);
+
+    // chương trình đã đăng ký để bỏ onloading
+    Route::get('/my-programs', [DangKyChuongTrinhController::class, 'getMyPrograms']);
+
+    Route::get('/list-programs', [DangKyChuongTrinhController::class, 'getListPrograms']);
+
+
+    
 });
 
 

@@ -9,6 +9,7 @@ class ChuongTrinhTap extends Model
     protected $table = 'chuong_trinh_tap';
     protected $fillable = [
         'id_cap_do',
+        'id_noi_tap',
         'ten_chuong_trinh',
         'mo_ta',
         'muc_tieu',

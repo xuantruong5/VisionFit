@@ -10,10 +10,12 @@ class DKChuongTrinh extends Model
     protected $fillable = [
         'id_hoi_vien',
         'id_chuong_trinh',
+        'id_cap_do',
+        'id_noi_tap',
         'ngay_bat_dau',
         'ngay_du_kien_ket_thuc',
         'phan_tram_hoan_thanh',
         'tinh_trang',
-        'ngay_tao',
+        
     ];
 }

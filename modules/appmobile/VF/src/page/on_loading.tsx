@@ -1,24 +1,45 @@
 import { ActivityIndicator, Image, Text, View } from "react-native"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from "react";
+import apiFitlife from '../general/api';
 
 const Onloading = ({ navigation }: any) => {
     useEffect(() => {
-        const timeout = setTimeout(async () => {
-            const token = await AsyncStorage.getItem('token');
-            const role = await AsyncStorage.getItem("role");
-            console.log("TOKEN =", token);
-            console.log("ROLE =", role);
-
-            if (token && role) {
-                if (role === "member") {
-                    navigation.replace("MemberTabs");
-                } else {
-                    navigation.replace("MainTabs");
+        const checkLogin = async () => {
+            try {
+                const token = await AsyncStorage.getItem("token");
+                const role = await AsyncStorage.getItem("role");
+                console.log("TOKEN =", token);
+                console.log("ROLE =", role);
+                if (!token || !role) {
+                    navigation.replace("Login");
+                    return;
                 }
-            } else {
-                navigation.replace("Login");
+                if (role === "member") {
+                    const response = await apiFitlife.get("/client/my-programs");
+                    const chuongTrinh = response.data.data;
+                    console.log("MY PROGRAMS =", chuongTrinh);
+                    if (chuongTrinh && chuongTrinh.length > 0) {
+                        navigation.replace("headerPage");
+                    } else {
+                        navigation.replace("MemberTabs");
+                    }
+                    return;
+                }
+                navigation.replace("MainTabs");
+            } catch (error: any) {
+                console.log(
+                    "Lỗi kiểm tra đăng nhập:",
+                    error.response?.data || error.message
+                );
+                // Nếu API lỗi, không tự kết luận hội viên chưa đăng ký.
+                // Cho phép thử lại bằng cách khởi động lại ứng dụng.
+                navigation.replace("MemberTabs");
             }
+        };
+
+        const timeout = setTimeout(() => {
+            checkLogin();
         }, 2000);
 
         return () => clearTimeout(timeout);
@@ -29,7 +50,7 @@ const Onloading = ({ navigation }: any) => {
             <Image source={require("../assets/Onloading.png")}
                 style={{ position: "absolute", width: "100%", height: "100%", resizeMode: "stretch", }} />
             {/* Tên ứng dụng và slogan */}
-            <View style={{  position: "absolute", top: "50%", width: "100%", alignItems: "center", }} >
+            <View style={{ position: "absolute", top: "50%", width: "100%", alignItems: "center", }} >
                 {/* Tên ứng dụng */}
                 <Text style={{ fontSize: 34, fontWeight: "bold", color: "#11343A", letterSpacing: 1, }} >
                     VisionFit
@@ -48,7 +69,7 @@ const Onloading = ({ navigation }: any) => {
                 </Text>
             </View>
             {/* Nội dung cuối màn hình */}
-            <Text style={{ position: "absolute", bottom: 35,  width: "100%", textAlign: "center", fontSize: 16, letterSpacing: 1.5, color: "#3DB8BA",fontWeight: "bold",}} >
+            <Text style={{ position: "absolute", bottom: 35, width: "100%", textAlign: "center", fontSize: 16, letterSpacing: 1.5, color: "#3DB8BA", fontWeight: "bold", }} >
                 TẬP LUYỆN • CẢI THIỆN • PHÁT TRIỂN
             </Text>
         </View>

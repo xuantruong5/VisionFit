@@ -17,10 +17,10 @@ return new class extends Migration
             $table->integer('id_hoi_vien')->nullable();
             $table->integer('id_nguoi_tao')->nullable();
             $table->string('ten_ke_hoach', 255);
-            $table->integer('muc_tieu_calo_ngay')->nullable(); // ngày 
-            $table->decimal('protein_muc_tieu', 8, 2)->nullable(); // ngày 
-            $table->decimal('carb_muc_tieu', 8, 2)->nullable();// ngày 
-            $table->decimal('fat_muc_tieu', 8, 2)->nullable();// ngày 
+            $table->integer('muc_tieu_calo')->nullable(); // cả chương trình
+            $table->decimal('protein_muc_tieu', 8, 2)->nullable(); // cả chương trình 
+            $table->decimal('carb_muc_tieu', 8, 2)->nullable();// cả chương trình 
+            $table->decimal('fat_muc_tieu', 8, 2)->nullable();// cả chương trình 
             // Thời gian áp dụng
             $table->date('ngay_bat_dau')->nullable();
             $table->date('ngay_ket_thuc')->nullable();

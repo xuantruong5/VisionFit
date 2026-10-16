@@ -7,7 +7,7 @@ import { useRoute } from '@react-navigation/native';
 import apiFitlife from '../../general/api';
 import LinearGradient from 'react-native-linear-gradient';
 const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
-  const { goalName } = route.params || {};
+  const { goalId,goalName,gender,id_noi_tap,ten_noi_tap, } = route.params || {};
   const [difficulties, setDifficulties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -67,7 +67,7 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
           difficulties.map((item, index) => {
             return (
               <TouchableOpacity key={`${item.id}-${item.ten_chuong_trinh}`} style={styles.card} activeOpacity={0.88}
-                onPress={() => navigation.navigate('WorkoutProgramDetailScreen', { ...(route.params || {}), capDoId: item.id, capDoName: item.ten_cap_do, }) } >
+                onPress={() => navigation.navigate('WorkoutProgramDetailScreen', { ...route.params, goalId, goalName, gender, id_noi_tap, ten_noi_tap, capDoId: item.id, capDoName: item.ten_cap_do, })} >
                 <ImageBackground
                   source={item.hinh_anh? { uri: item.hinh_anh }: undefined}
                   style={styles.cardImage} imageStyle={styles.cardImageStyle}>
