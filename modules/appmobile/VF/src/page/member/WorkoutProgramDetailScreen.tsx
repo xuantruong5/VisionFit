@@ -6,15 +6,15 @@ import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
 
 const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
-    const { goalId, goalName, gender, capDoName, capDoId,id_noi_tap, ten_noi_tap,  } = route.params || {};
+    const { goalId, goalName, gender, capDoName, capDoId, id_noi_tap, ten_noi_tap, } = route.params || {};
     const [program, setProgram] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
 
 
+
     const handleRegisterProgram = async () => {
         if (registering) return;
-        
         if (!goalId) {
             Alert.alert('Thông báo', 'Không tìm thấy ID chương trình tập.');
             return;
@@ -24,17 +24,21 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
             const res = await apiFitlife.post('/client/dang-ky-chuong-trinh', {
                 id_chuong_trinh: goalId,
                 id_cap_do: capDoId,
-                id_noi_tap: id_noi_tap,
+                id_noi_tap,
             });
-            Alert.alert('Thông báo', res.data?.message || 'Không có thông báo.');
-
-            if (res.data?.status === true) {
-                navigation.navigate('headerPage');
+            if (res.data?.success || res.data?.status) {
+                Alert.alert(
+                    'Thông báo',
+                    res.data?.message || 'Đăng ký thành công!',
+                    [{ text: 'OK', onPress: () => navigation.navigate('headerPage') }],
+                );
+            } else {
+                Alert.alert('Thông báo', res.data?.message || 'Đăng ký chưa thành công.');
             }
         } catch (error: any) {
             Alert.alert(
                 'Thông báo',
-                error.response?.data?.message || 'Đã xảy ra lỗi.',
+                error?.response?.data?.message || 'Đã xảy ra lỗi.',
             );
         } finally {
             setRegistering(false);
@@ -43,13 +47,7 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
     useEffect(() => {
         const fetchProgram = async () => {
             try {
-                console.log('===== LẤY CHƯƠNG TRÌNH TẬP =====');
-        console.log('goalId gửi lên API:', goalId);
                 const res = await apiFitlife.get(`/client/chuong-trinh-tap/${goalId}`);
-                 console.log('Dữ liệu API trả về:', res.data);
-        console.log('Thông tin chương trình:', res.data?.data);
-        console.log('ID cấp độ:', res.data?.data?.id_cap_do);
-        console.log('Tên cấp độ:', res.data?.data?.ten_cap_do);
                 setProgram(res.data?.data || null);
             } catch (error) {
                 console.log('Lỗi lấy chương trình:', error);
@@ -57,7 +55,6 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
                 setLoading(false);
             }
         };
-
         if (goalId) fetchProgram();
         else setLoading(false);
     }, [goalId]);
