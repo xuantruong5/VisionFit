@@ -12,7 +12,7 @@ const Onloading = ({ navigation }: any) => {
                 console.log("TOKEN =", token);
                 console.log("ROLE =", role);
                 if (!token || !role) {
-                    navigation.replace("OnboardingScreen");
+                    navigation.replace("Login");
                     return;
                 }
                 if (role === "member") {
