@@ -21,7 +21,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa sáng
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 1,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -31,7 +31,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 2,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -43,7 +43,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ sáng
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 6,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -53,7 +53,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 10,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -65,7 +65,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa trưa
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 11,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -75,7 +75,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 14,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -87,7 +87,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ trưa
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 16,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -97,7 +97,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 19,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -109,7 +109,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa tối
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 21,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -119,7 +119,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 23,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -131,7 +131,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ tối
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 26,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -141,7 +141,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 1,
+                'id_muc_tieu_dinh_duong' => 1,
                 'id_mon_an' => 29,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -157,7 +157,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa sáng
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 4,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -167,7 +167,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 5,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -179,7 +179,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ sáng
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 6,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -189,7 +189,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 8,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -201,7 +201,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa trưa
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 11,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -211,7 +211,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 12,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -223,7 +223,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ trưa
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 17,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -233,7 +233,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 18,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -245,7 +245,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa tối
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 21,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -255,7 +255,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 24,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -267,7 +267,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ tối
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 27,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -277,7 +277,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 2,
+                'id_muc_tieu_dinh_duong' => 2,
                 'id_mon_an' => 30,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -293,7 +293,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa sáng
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 2,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -303,7 +303,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 3,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -315,7 +315,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ sáng
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 7,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -325,7 +325,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 9,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -337,7 +337,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa trưa
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 11,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -347,7 +347,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 15,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -359,7 +359,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ trưa
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 16,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -369,7 +369,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 20,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -381,7 +381,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa tối
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 22,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -391,7 +391,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 23,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -403,7 +403,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ tối
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 26,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -413,7 +413,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 3,
+                'id_muc_tieu_dinh_duong' => 3,
                 'id_mon_an' => 30,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -429,7 +429,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa sáng
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 1,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -439,7 +439,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 5,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '07:00:00',
@@ -451,7 +451,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ sáng
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 6,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -461,7 +461,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 10,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '09:30:00',
@@ -473,7 +473,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa trưa
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 12,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -483,7 +483,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 14,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '12:00:00',
@@ -495,7 +495,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ trưa
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 17,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -505,7 +505,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 19,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '15:00:00',
@@ -517,7 +517,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Bữa tối
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 21,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -527,7 +527,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 25,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '18:00:00',
@@ -539,7 +539,7 @@ class KhauPhanAnSeeder extends Seeder
 
             // Phụ tối
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 28,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
@@ -549,7 +549,7 @@ class KhauPhanAnSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id_ke_hoach_an' => 4,
+                'id_muc_tieu_dinh_duong' => 4,
                 'id_mon_an' => 29,
                 'ngay_an' => '2026-10-16',
                 'gio_an' => '20:30:00',
