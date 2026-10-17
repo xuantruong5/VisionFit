@@ -115,6 +115,10 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/my-programs', [DangKyChuongTrinhController::class, 'getMyPrograms']);
 
     Route::get('/list-programs', [DangKyChuongTrinhController::class, 'getListPrograms']);
+    Route::get('/list-program-exercises', [DangKyChuongTrinhController::class, 'getListProgramExercises']);
+    
+    Route::get('/list-meal-plans', [DangKyChuongTrinhController::class,'getListMealPlans']);
+
 
 
     

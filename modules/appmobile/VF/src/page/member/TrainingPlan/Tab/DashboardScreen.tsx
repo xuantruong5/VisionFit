@@ -1,11 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import { Calendar, LocaleConfig, } from "react-native-calendars";
-
+import apiFitlife from "../../../../general/api";
 
 const DashboardScreen = () => {
+    const [program, setProgram] = useState<any>(null);
+    const [trainingDates, setTrainingDates] = useState<string[]>([]);
+    // Hàm lấy danh sách chương trình
+   const getListPrograms = async () => {
+        try {
+            const res = await apiFitlife.get("/client/list-programs");
+            if (res.data.success && res.data.data.length > 0) {
+                setProgram(res.data.data[0]);
+                const dates = res.data.data
+                    .map((item: any) => item.ngay_tap)
+                    .filter((date: any) => typeof date === "string");
+                setTrainingDates(dates);
+            } else {
+                setProgram(null);
+                setTrainingDates([]);
+            }
+        } catch (error) {
+            console.log("Lỗi lấy chương trình tập:", error);
+        }
+    };
+    useEffect(() => {
+        getListPrograms();
+    }, []);
+
     // lấy lịch 
     LocaleConfig.locales["vi"] = {
         monthNames: ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",],
@@ -17,20 +41,9 @@ const DashboardScreen = () => {
     LocaleConfig.defaultLocale = "vi";
     const today = new Date().toISOString().split("T")[0];
     const [selectedDate, setSelectedDate] = useState(today);
-    // Sau này thay bằng dữ liệu lấy từ API.  Dữ liệu cứng để thử giao diện.cái chỗ mà lịch có cục tạ dưới 
-    const trainingDates = [
-        "2026-09-12",
-        "2026-09-15",
-        "2026-09-17",
-        "2026-09-19",
-        "2026-09-22",
-        "2026-09-24",
-        "2026-09-26",
-        "2026-09-29",
-    ];
 
     // Tạo object đánh dấu ngày cho react-native-calendars
-    const markedDates = {};
+    const markedDates: any = {};
     trainingDates.forEach((date) => { markedDates[date] = { marked: true, dotColor: "#55758F", }; });
     // Ngày đang chọn
     markedDates[selectedDate] = { ...markedDates[selectedDate], selected: true, selectedColor: "#18BFC3", selectedTextColor: "#FFFFFF", };
@@ -57,6 +70,8 @@ const DashboardScreen = () => {
             locked: true,
         },
     ];
+
+
     return (
         <View style={styles.container}>
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -72,35 +87,38 @@ const DashboardScreen = () => {
                 {/* Banner chương trình */}
                 <View style={styles.programCard}>
                     <ImageBackground
-                        source={{ uri: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80", }}
+                       source={{ uri: program?.anh_dai_dien}}
                         style={styles.programImage} imageStyle={styles.programImageStyle} >
                         {/* Lớp phủ tối */}
                         <View style={styles.overlay} />
                         <View style={styles.programContent}>
                             <Text style={styles.programTitle}>
-                                Tăng cơ bắp nói chung
+                                {program?.ten_chuong_trinh || "Chưa có chương trình tập"}
                             </Text>
+
                             <View style={styles.programInfoRow}>
-                                <Ionicons name="move-outline" size={wp("4.5%")} color="#fff" />
+                                <Ionicons name="move-outline"size={wp("4.5%")} color="#fff"/>
+
                                 <Text style={styles.programInfo}>
-                                    Tại gym
+                                    {program?.ten_noi_tap || "Chưa xác định nơi tập"}
                                 </Text>
+
                                 <View style={styles.stars}>
-                                    {[1, 2, 3, 4].map((item) => (
-                                        <Ionicons
-                                            key={item}
-                                            name="star-outline"
-                                            size={wp("5%")}
-                                            color="#fff"
-                                        />
+                                    {[1, 2, 3, 4, 5].map((item) => (
+                                        <Ionicons key={item}
+                                            name={ item <= (program?.so_sao || 0) ? "star" : "star-outline" } size={wp("5%")} color="#fff" />
                                     ))}
                                 </View>
+
                                 <Text style={styles.programInfo}>
-                                    Chưa có kinh nghiệm
+                                    {program?.ten_cap_do || "Chưa xác định cấp độ"}
                                 </Text>
                             </View>
+
                             <Text style={styles.trainingTime}>
-                                24 ngày tập luyện (3 buổi mỗi tuần)
+                                {program
+                                    ? `${program.so_ngay} ngày tập luyện (${program.so_buoi_moi_tuan} buổi mỗi tuần)`
+                                    : "Chưa có thông tin lịch tập"}
                             </Text>
 
                             <Text style={styles.completed}>
@@ -208,24 +226,6 @@ const DashboardScreen = () => {
                         // Khoảng cách giữa các hàng
                         dayComponent={undefined}
                     />
-
-                    {/* Ngày đã chọn */}
-                    {/* <View style={styles.selectedDateBox}>
-                        <Text style={styles.selectedDateLabel}>
-                            Ngày đã chọn
-                        </Text>
-
-                        <Text style={styles.selectedDateValue}>
-                            {selectedDate}
-                        </Text>
-
-                        <Text style={styles.selectedDateStatus}>
-                            {trainingDates.includes(selectedDate)
-                                ? "Có lịch tập luyện"
-                                : "Chưa có lịch tập luyện"}
-                        </Text>
-                    </View> */}
-
                 </View>
 
 

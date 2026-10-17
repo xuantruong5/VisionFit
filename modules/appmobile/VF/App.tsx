@@ -56,6 +56,8 @@ import ReportPage from "./src/page/member/TrainingPlan/Tab/ReportPage";
 import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExercisePlan";
 import ResultPage from "./src/page/member/ResultPage";
 import Onloading from "./src/page/on_loading";
+import OnboardingScreen from "./src/page/screens/OnboardingScreen";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -287,7 +289,10 @@ const App = () => {
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
         <Stack.Screen name="ResultPage" component={ResultPage}/> 
-        
+
+
+        {/* // gioi thieu */}
+       <Stack.Screen name="OnboardingScreen" component={OnboardingScreen}/>
 
 
         {/* cua trainner  */}

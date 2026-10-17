@@ -41,7 +41,8 @@ apiFitlife.interceptors.response.use(
         setTimeout(() => {
             is_auth_alert_shown = false;
         }, 3000);
-        return Promise.reject(error.response || error);
+        // return Promise.reject(error.response || error);
+        return Promise.reject(error);
     }
 );
 
