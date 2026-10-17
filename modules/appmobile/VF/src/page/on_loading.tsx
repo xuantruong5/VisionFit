@@ -19,8 +19,10 @@ const Onloading = ({ navigation }: any) => {
                     const response = await apiFitlife.get("/client/my-programs");
                     const chuongTrinh = response.data.data;
                     console.log("MY PROGRAMS =", chuongTrinh);
-                    if (chuongTrinh && chuongTrinh.length > 0) {
-                        navigation.replace("headerPage");
+                   if (chuongTrinh && chuongTrinh.length > 0) {
+                    navigation.replace("MemberTabs", { screen: "Kế Hoạch Tập",
+                        params: { screen: "headerPage", },
+                    });
                     } else {
                         navigation.replace("MemberTabs");
                     }

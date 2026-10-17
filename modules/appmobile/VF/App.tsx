@@ -81,6 +81,50 @@ function MemberWorkoutNavigator() {
 
       <MemberWorkoutStack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
 
+
+      <MemberWorkoutStack.Screen
+        name="headerPage"
+        component={headerPage}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="DashboardScreen"
+        component={DashboardScreen}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="DietScreen"
+        component={DietScreen}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="DietDetail"
+        component={DietDetail}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="ExercisePage"
+        component={ExercisePage}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="ReportPage"
+        component={ReportPage}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="WorkoutExercisePlan"
+        component={WorkoutExercisePlan}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="ResultPage"
+        component={ResultPage}
+      />
+
+
+
+
     </MemberWorkoutStack.Navigator>
   );
 }
@@ -275,20 +319,24 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
-        <Stack.Screen name="headerPage" component={headerPage} />
+        {/* <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
-        {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+       
+        <Stack.Screen name="DietDetail" component={DietDetail} /> 
+        <Stack.Screen name="ExercisePage" component={ExercisePage} /> 
+        <Stack.Screen name="ReportPage" component={ReportPage} />
+        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+        <Stack.Screen name="ResultPage" component={ResultPage}/>  */}
+
+
+
+         {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} /> 
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} /> */}
-        <Stack.Screen name="DietDetail" component={DietDetail} /> 
-        <Stack.Screen name="ExercisePage" component={ExercisePage} /> 
-        <Stack.Screen name="ReportPage" component={ReportPage} />
-        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
-        <Stack.Screen name="ResultPage" component={ResultPage}/> 
 
 
         {/* // gioi thieu */}

@@ -8,9 +8,12 @@ use App\Models\DKChuongTrinh;
 use App\Models\ChuongTrinhTap;
 use App\Models\Client;
 use App\Models\CapDo;
+use App\Models\KhauPhanAn;
+use App\Models\KeHoachAn;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+
 
 class DangKyChuongTrinhController extends Controller
 {
@@ -57,6 +60,32 @@ class DangKyChuongTrinhController extends Controller
                 'message' => 'Cấp độ không tồn tại.',
             ], 404);
         }
+        // 4. Lấy mục tiêu dinh dưỡng theo chương trình, không dùng mapping
+        $mucTieuDinhDuong = DB::table('muc_tieu_dinh_duong')
+            ->where('id_chuong_trinh', $idChuongTrinh)
+            ->first();
+
+        if (!$mucTieuDinhDuong) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình chưa có mục tiêu dinh dưỡng.',
+            ], 422);
+        }
+
+        $idMucTieuDinhDuong = $mucTieuDinhDuong->id;
+
+        // 5. Lấy thực đơn mẫu
+        $khauPhanMau = DB::table('khau_phan_an')
+            ->where('id_muc_tieu_dinh_duong', $idMucTieuDinhDuong)
+            ->whereNull('id_ke_hoach_an')
+            ->get();
+
+        if ($khauPhanMau->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thực đơn mẫu cho chương trình.',
+            ], 422);
+        }
         
         $ngayBatDau = Carbon::today();
         $ngayKetThuc = $ngayBatDau->copy()->addDays($chuongTrinh->so_ngay - 1);
@@ -67,7 +96,10 @@ class DangKyChuongTrinhController extends Controller
             $idCapDo,
             $idNoiTap,
             $ngayBatDau,
-            $ngayKetThuc
+            $ngayKetThuc,
+            $chuongTrinh,
+            $idMucTieuDinhDuong,
+            $khauPhanMau
         ) {
             $dangKy = DKChuongTrinh::create([
                 'id_hoi_vien' => $idHoiVien,
@@ -80,11 +112,48 @@ class DangKyChuongTrinhController extends Controller
                 'tinh_trang' => 0,
             ]);
             $this->taoLichTap($dangKy->id);
+            // 3. Tạo kế hoạch ăn
+            $keHoachAn = KeHoachAn::create([
+                'id_chuong_trinh' => $idChuongTrinh,
+                'id_hoi_vien' => $idHoiVien,
+                'id_nguoi_tao' => $idHoiVien,
+                'id_dang_ky_chuong_trinh' => $dangKy->id,
+                'ten_ke_hoach' => 'Kế hoạch ăn chương trình ' . $idChuongTrinh,
+                'tinh_trang' => 1,
+            ]);
+            // Tạo khẩu phần ăn theo từng ngày
+            $khauPhanMoi = [];
+            $thoiGianHienTai = now();
+
+            for ($ngayThu = 1; $ngayThu <= $chuongTrinh->so_ngay; $ngayThu++) {
+                $ngayAn = $ngayBatDau->copy()
+                    ->addDays($ngayThu - 1)
+                    ->toDateString();
+
+                foreach ($khauPhanMau as $mau) {
+                    $khauPhanMoi[] = [
+                        'id_ke_hoach_an' => $keHoachAn->id,
+                        'id_muc_tieu_dinh_duong' => $idMucTieuDinhDuong,
+                        'id_mon_an' => $mau->id_mon_an,
+                        'ngay_thu' => $ngayThu,
+                        'ngay_an' => $ngayAn,
+                        'gio_an' => $mau->gio_an,
+                        'bua_an' => $mau->bua_an,
+                        'so_luong' => $mau->so_luong,
+                        'ghi_chu' => $mau->ghi_chu,
+                        'created_at' => $thoiGianHienTai,
+                        'updated_at' => $thoiGianHienTai,
+                    ];
+                }
+            }
+            foreach (array_chunk($khauPhanMoi, 500) as $chunk) {
+                DB::table('khau_phan_an')->insert($chunk);
+            }
             return $dangKy;
         });
         return response()->json([
             'success' => true,
-            'message' => 'Đăng ký chương trình thành công.',
+            'message' => 'Đăng ký chương trình và tạo kế hoạch ăn thành công.',
             'data' => $dangKy,
         ], 201);
     }
@@ -138,6 +207,66 @@ class DangKyChuongTrinhController extends Controller
             $ngay->addDay();
         }
     }
+
+
+
+
+
+    private function taoNgayAn($keHoachAn)
+    {
+        $idKeHoachMau = 1; // Thay bằng ID kế hoạch mẫu thực tế
+
+        $thucDonMau = DB::table('khau_phan_an')
+            ->where('id_ke_hoach_an', $idKeHoachMau)
+            ->orderBy('ngay_an')
+            ->orderBy('gio_an')
+            ->get();
+
+        if ($thucDonMau->isEmpty()) {
+            throw new \RuntimeException('Kế hoạch mẫu chưa có thực đơn.');
+        }
+
+        $ngayBatDau = Carbon::parse($keHoachAn->ngay_bat_dau);
+        $ngayKetThuc = Carbon::parse($keHoachAn->ngay_ket_thuc);
+
+        $soNgayChuKy = max(
+            1,
+            Carbon::parse($thucDonMau->min('ngay_an'))
+                ->diffInDays(Carbon::parse($thucDonMau->max('ngay_an'))) + 1
+        );
+
+        $ngay = $ngayBatDau->copy();
+
+        while ($ngay->lte($ngayKetThuc)) {
+            $ngayThu = $ngayBatDau->diffInDays($ngay);
+
+            foreach ($thucDonMau as $mon) {
+                $ngayMau = Carbon::parse($mon->ngay_an);
+                $ngayMauThu = Carbon::parse($thucDonMau->min('ngay_an'))
+                    ->diffInDays($ngayMau);
+
+                if ($ngayMauThu !== $ngayThu % $soNgayChuKy) {
+                    continue;
+                }
+
+                DB::table('khau_phan_an')->insert([
+                    'id_ke_hoach_an' => $keHoachAn->id_ke_hoach_an,
+                    'id_mon_an' => $mon->id_mon_an,
+                    'ngay_an' => $ngay->toDateString(),
+                    'gio_an' => $mon->gio_an,
+                    'bua_an' => $mon->bua_an,
+                    'so_luong' => $mon->so_luong,
+                    'ghi_chu' => $mon->ghi_chu,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            $ngay->addDay();
+        }
+    }
+
+
 
 
 
@@ -260,47 +389,74 @@ class DangKyChuongTrinhController extends Controller
 
         // 3. Lấy kế hoạch ăn theo chương trình đã đăng ký
         $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $idHoiVien)
-            ->join( 'ke_hoach_an as kha','dang_ky_chuong_trinh.id_chuong_trinh', '=','kha.id_chuong_trinh')
-            ->leftJoin('khau_phan_an as kpa','kha.id','=','kpa.id_ke_hoach_an')
-            ->leftJoin('mon_an as ma','kpa.id_mon_an','=','ma.id')
-            ->where('kha.tinh_trang', 1)
-            ->select(
-                'kha.id as id_ke_hoach_an',
-                'kha.id_chuong_trinh',
-                'kha.id_hoi_vien',
-                'kha.ten_ke_hoach',
-                'kha.muc_tieu_calo',
-                'kha.protein_muc_tieu',
-                'kha.carb_muc_tieu',
-                'kha.fat_muc_tieu',
-                'kha.ngay_bat_dau',
-                'kha.ngay_ket_thuc',
-                'kha.tinh_trang',
-                'kpa.id as id_khau_phan_an',
-                'kpa.ngay_an',
-                'kpa.gio_an',
-                'kpa.bua_an',
-                'kpa.so_luong',
-                'kpa.ghi_chu',
-                'ma.id as id_mon_an',
-                'ma.ten_mon_an',
-                'ma.mo_ta',
-                'ma.anh_dai_dien',
-                'ma.khoi_luong_gram',
-                'ma.thoi_gian_nau',
-                'ma.loai_bua',
-                'ma.calo',
-                'ma.protein',
-                'ma.carb',
-                'ma.fat',
-                'ma.nguyen_lieu',
-                'ma.gia_vi',
-                'ma.huong_dan_nau'
-            )
-            ->orderBy('kha.id')
-            ->orderBy('kpa.ngay_an')
-            ->orderBy('kpa.gio_an')
-            ->get();
+    ->join(
+        'ke_hoach_an as kha',
+        'dang_ky_chuong_trinh.id',
+        '=',
+        'kha.id_dang_ky_chuong_trinh'
+    )
+    ->leftJoin(
+        'khau_phan_an as kpa',
+        'kha.id',
+        '=',
+        'kpa.id_ke_hoach_an'
+    )
+    ->leftJoin(
+        'mon_an as ma',
+        'kpa.id_mon_an',
+        '=',
+        'ma.id'
+    )
+    ->leftJoin(
+        'muc_tieu_dinh_duong as mtd',
+        'kpa.id_muc_tieu_dinh_duong',
+        '=',
+        'mtd.id'
+    )
+    ->where('kha.tinh_trang', 1)
+    ->select(
+        // Kế hoạch ăn
+        'kha.id as id_ke_hoach_an',
+        'kha.id_chuong_trinh',
+        'kha.ten_ke_hoach',
+        'kha.tinh_trang',
+
+        // Mục tiêu dinh dưỡng
+        'mtd.muc_tieu_the_trang',
+        'mtd.muc_tieu_calo',
+        'mtd.protein_muc_tieu',
+        'mtd.carb_muc_tieu',
+        'mtd.fat_muc_tieu',
+
+        // Khẩu phần ăn
+        'kpa.id as id_khau_phan_an',
+        'kpa.ngay_thu',
+        'kpa.ngay_an',
+        'kpa.gio_an',
+        'kpa.bua_an',
+        'kpa.so_luong',
+        'kpa.ghi_chu',
+
+        // Thông tin món ăn
+        'ma.id as id_mon_an',
+        'ma.ten_mon_an',
+        'ma.mo_ta',
+        'ma.anh_dai_dien',
+        'ma.calo',
+        'ma.khoi_luong_gram',
+        'ma.fat',
+        'ma.carb',
+        'ma.protein',
+        'ma.nguyen_lieu',
+        'ma.gia_vi',
+        'ma.thoi_gian_nau',
+        'ma.huong_dan_nau',
+        'ma.loai_bua'
+    )
+    ->orderBy('kha.id')
+    ->orderBy('kpa.ngay_thu')
+    ->orderBy('kpa.gio_an')
+    ->get();
 
         return response()->json([
             'success' => true,
