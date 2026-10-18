@@ -466,4 +466,61 @@ class DangKyChuongTrinhController extends Controller
             'data' => $data,
         ]);
     }
+
+    public function destroy($id)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+
+        // Tìm bản đăng ký theo id dang_ky_chuong_trinh hoặc id_chuong_trinh của hội viên
+        $dangKy = DKChuongTrinh::where('id_hoi_vien', $user->id)
+            ->where(function ($query) use ($id) {
+                $query->where('id', $id)
+                      ->orWhere('id_chuong_trinh', $id);
+            })
+            ->first();
+
+        if (!$dangKy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy kế hoạch tập luyện.',
+            ], 404);
+        }
+
+        DB::transaction(function () use ($dangKy) {
+            // 1. Xóa các món trong khẩu phần ăn
+            $idKeHoachAns = DB::table('ke_hoach_an')
+                ->where('id_dang_ky_chuong_trinh', $dangKy->id)
+                ->pluck('id');
+
+            if ($idKeHoachAns->isNotEmpty()) {
+                DB::table('khau_phan_an')
+                    ->whereIn('id_ke_hoach_an', $idKeHoachAns)
+                    ->delete();
+            }
+
+            // 2. Xóa kế hoạch ăn
+            DB::table('ke_hoach_an')
+                ->where('id_dang_ky_chuong_trinh', $dangKy->id)
+                ->delete();
+
+            // 3. Xóa lịch tập
+            DB::table('lich_tap')
+                ->where('id_dang_ky_chuong_trinh', $dangKy->id)
+                ->delete();
+
+            // 4. Xóa đăng ký chương trình
+            $dangKy->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xóa kế hoạch tập luyện thành công.',
+        ], 200);
+    }
 }

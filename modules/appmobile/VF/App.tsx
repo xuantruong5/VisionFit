@@ -28,6 +28,7 @@ import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/WorkoutPlan";
 
 
+
 import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
 import WorkoutLocationScreen from "./src/page/member/WorkoutLocationScreen";
 import ChatList from "./src/page/chat/ChatList";
@@ -57,6 +58,10 @@ import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExerc
 import ResultPage from "./src/page/member/ResultPage";
 import Onloading from "./src/page/on_loading";
 import OnboardingScreen from "./src/page/screens/OnboardingScreen";
+import OnboardingScreen1 from "./src/page/screens/OnboardingScreen1";
+import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
+import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
+
 
 
 const Stack = createNativeStackNavigator();
@@ -341,6 +346,10 @@ const App = () => {
 
         {/* // gioi thieu */}
        <Stack.Screen name="OnboardingScreen" component={OnboardingScreen}/>
+       <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1}/>
+       <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2}/>
+       <Stack.Screen name="OnboardingScreen3" component={OnboardingScreen3}/>
+
 
 
         {/* cua trainner  */}

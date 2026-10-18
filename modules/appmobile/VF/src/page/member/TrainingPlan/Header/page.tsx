@@ -5,8 +5,12 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-na
 import DashboardScreen from "../Tab/DashboardScreen";
 import DietScreen from "../Tab/DietScreen";
 import WorkoutExercisePlan from "../Tab/WorkoutExercisePlan";
-const HeaderPage = () => {
+import MyPlansModal from "./MyPlansModal";
+
+const HeaderPage = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState("Trang tổng quan");
+    const [myPlansVisible, setMyPlansVisible] = useState(false);
+
     return (
         <View style={styles.container}>
             {/* ================= HEADER ================= */}
@@ -19,8 +23,12 @@ const HeaderPage = () => {
                 <Text style={styles.title}>
                     Kế hoạch tập
                 </Text>
-                {/* Nút danh sách */}
-                <TouchableOpacity style={styles.iconButton}>
+                {/* Nút danh sách (3 gạch) */}
+                <TouchableOpacity
+                    style={styles.iconButton}
+                    onPress={() => setMyPlansVisible(true)}
+                    activeOpacity={0.7}
+                >
                     <Ionicons name="list-outline" size={wp("7%")} color="#456987" />
                 </TouchableOpacity>
             </View>
@@ -57,6 +65,13 @@ const HeaderPage = () => {
             {activeTab === "Chế độ ăn" && (
                 <DietScreen />
             )}
+
+            {/* Modal Kế hoạch của tôi */}
+            <MyPlansModal
+                visible={myPlansVisible}
+                onClose={() => setMyPlansVisible(false)}
+                navigation={navigation}
+            />
         </View>
     );
 };
