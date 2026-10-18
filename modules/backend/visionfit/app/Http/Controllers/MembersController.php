@@ -174,88 +174,86 @@ class MembersController extends Controller
         ]);
     }
 
-    // Lấy danh sách bài tập theo ngày hoặc theo chương trình và giới tính
+        // Lấy danh sách bài tập kèm chi tiết (video đúng, video sai)
     public function getDanhSachBaiTap(Request $request)
     {
         $idChuongTrinh = $request->id_chuong_trinh ?? 1;
         $ngayThu = $request->ngay_thu ?? 1;
-        $gioiTinh = $request->gioi_tinh; // 0: Nam, 1: Nữ, null: tất cả
 
-        $query = \Illuminate\Support\Facades\DB::table('chuong_trinh_bai_tap')
-            ->join('bai_tap', 'chuong_trinh_bai_tap.id_bai_tap', '=', 'bai_tap.id_bai_tap')
-            ->where('chuong_trinh_bai_tap.id_chuong_trinh', $idChuongTrinh)
-            ->where('chuong_trinh_bai_tap.ngay_thu', $ngayThu)
-            ->where('bai_tap.tinh_trang', 1);
-
-        if ($gioiTinh !== null) {
-            $g = (int)$gioiTinh;
-            $query->whereIn('bai_tap.gioi_tinh_ap_dung', [$g, 2]); // Bài tập của giới tính đó hoặc cho Cả hai
-        }
-
-        $exercises = $query->orderBy('chuong_trinh_bai_tap.thu_tu', 'asc')
+        // Truy vấn danh sách bài tập kèm chi tiết bài tập
+        $exercises = \Illuminate\Support\Facades\DB::table('bai_tap')
+            ->leftJoin('chi_tiet_bai_tap', 'bai_tap.id', '=', 'chi_tiet_bai_tap.id_bai_tap')
+            ->where('bai_tap.tinh_trang', 1)
             ->select(
-                'bai_tap.id_bai_tap as id',
+                'bai_tap.id',
                 'bai_tap.ten_bai_tap as name',
-                'bai_tap.nhom_co as muscle',
-                'bai_tap.gioi_tinh_ap_dung',
                 'bai_tap.anh_dai_dien as image',
-                'bai_tap.video_huong_dan as video',
-                'bai_tap.mo_ta',
-                'bai_tap.huong_dan',
-                'chuong_trinh_bai_tap.so_hiep',
-                'chuong_trinh_bai_tap.so_lan_lap',
-                'chuong_trinh_bai_tap.thoi_gian_giay',
-                'chuong_trinh_bai_tap.thoi_gian_nghi',
-                'chuong_trinh_bai_tap.ten_ngay_tap'
+                'bai_tap.set_yeu_cau',
+                'bai_tap.rep_yeu_cau',
+                'bai_tap.giay_yeu_cau',
+                'bai_tap.thoi_gian_phut',
+                'chi_tiet_bai_tap.video_huong_dan as video',
+                'chi_tiet_bai_tap.video_sai as video_sai',
+                'chi_tiet_bai_tap.mo_ta as description',
+                'chi_tiet_bai_tap.huong_dan as instructions',
+                'chi_tiet_bai_tap.canh_bao as warnings',
+                'chi_tiet_bai_tap.noi_tap as location',
+                'chi_tiet_bai_tap.ghi_chu as equipment'
             )
+            ->get();
+
+        // Lấy thông tin nhóm cơ và tỷ lệ tác động từ bai_tap_nhom_co
+        $allMuscles = \Illuminate\Support\Facades\DB::table('bai_tap_nhom_co')
+            ->orderBy('ty_le_tac_dong', 'desc')
             ->get()
-            ->map(function ($item) {
+            ->groupBy('id_bai_tap');
+
+        $colorPalette = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'];
+
+        $mapped = $exercises->map(function ($item) use ($allMuscles, $colorPalette) {
+            $muscles = $allMuscles->get($item->id, collect());
+            $primaryMuscle = $muscles->first()?->ten_nhom_co ?? 'Toàn thân';
+
+            $distribution = $muscles->values()->map(function ($m, $idx) use ($colorPalette) {
                 return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'muscle' => $item->muscle,
-                    'gioi_tinh_ap_dung' => $item->gioi_tinh_ap_dung,
-                    'sets' => $item->so_hiep . ' hiệp x ' . $item->so_lan_lap . ' lần',
-                    'duration' => round($item->thoi_gian_giay / 60) . ' ph',
-                    'image' => $item->image,
-                    'video' => $item->video,
-                    'completed' => false,
+                    'name' => $m->ten_nhom_co,
+                    'percent' => (int)round((float)$m->ty_le_tac_dong),
+                    'color' => $colorPalette[$idx % count($colorPalette)],
                 ];
-            });
+            })->toArray();
 
-        // Nếu ngày đó chưa có thì lấy tất cả bài tập từ bai_tap theo giới tính
-        if ($exercises->isEmpty()) {
-            $fallback = \Illuminate\Support\Facades\DB::table('bai_tap')
-                ->where('tinh_trang', 1);
+            $sets = ($item->set_yeu_cau ?? 3) . ' hiệp x ' . ($item->rep_yeu_cau ?? 15) . ' lần';
+            $duration = ($item->thoi_gian_phut ?? 5) . ' ph';
 
-            if ($gioiTinh !== null) {
-                $g = (int)$gioiTinh;
-                $fallback->whereIn('gioi_tinh_ap_dung', [$g, 2]);
-            }
+            $videoUrl = $item->video;
+            $videoSai = $item->video_sai;
+            $imageUrl = $item->image ?: $videoUrl;
 
-            $exercises = $fallback->get()
-                ->map(function ($item) {
-                    return [
-                        'id' => $item->id_bai_tap,
-                        'name' => $item->ten_bai_tap,
-                        'muscle' => $item->nhom_co,
-                        'gioi_tinh_ap_dung' => $item->gioi_tinh_ap_dung,
-                        'sets' => '3 hiệp x 15 lần',
-                        'duration' => '5 ph',
-                        'image' => $item->anh_dai_dien,
-                        'video' => $item->video_huong_dan,
-                        'completed' => false,
-                    ];
-                });
-        }
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'muscle' => $primaryMuscle,
+                'sets' => $sets,
+                'duration' => $duration,
+                'image' => $imageUrl,
+                'video' => $videoUrl,
+                'video_sai' => $videoSai,
+                'description' => $item->description,
+                'instructions' => $item->instructions,
+                'warnings' => $item->warnings,
+                'equipment' => $item->equipment,
+                'location' => $item->location,
+                'musclesDistribution' => $distribution,
+                'completed' => false,
+            ];
+        });
 
         return response()->json([
             'status' => true,
-            'data' => $exercises
+            'data' => $mapped
         ]);
     }
 
-    // Lấy thông tin hồ sơ cá nhân của hội viên
     public function getProfile(Request $request)
     {
         $idNguoiDung = $request->id_nguoi_dung ?? 1;
