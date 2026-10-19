@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 
 import {
     StyleSheet,
@@ -7,6 +7,8 @@ import {
     Image,
     TouchableOpacity,
     StatusBar,
+    Modal,
+    ScrollView,
 } from "react-native";
 
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -27,28 +29,13 @@ const ReportPage = ({ navigation, route }: any) => {
     const [isRunning, setIsRunning] = useState(false);
 
     const [setCount, setSetCount] = useState(0);
-
-
-    /*
-        Nếu đi từ WorkoutPage:
-
-        navigation.navigate("ExerciseDetail", {
-            exercise: item,
-        });
-
-        thì có thể lấy dữ liệu ở đây.
-    */
+    
 
     const exercise = route?.params?.exercise;
 
 
     const exerciseName =
         exercise?.name || "Bài tập chạy tại chỗ";
-
-
-    /*
-        COUNTDOWN TIMER
-    */
 
     useEffect(() => {
 
@@ -83,9 +70,6 @@ const ReportPage = ({ navigation, route }: any) => {
     }, [isRunning, time]);
 
 
-    /*
-        FORMAT TIMER HEADER
-    */
 
     const formatTime = (seconds: number) => {
 
@@ -97,10 +81,6 @@ const ReportPage = ({ navigation, route }: any) => {
 
     };
 
-
-    /*
-        START
-    */
 
     const handleStart = () => {
 
@@ -115,9 +95,6 @@ const ReportPage = ({ navigation, route }: any) => {
     };
 
 
-    /*
-        RESET
-    */
 
     const handleReset = () => {
 
@@ -129,10 +106,6 @@ const ReportPage = ({ navigation, route }: any) => {
 
     };
 
-
-    /*
-        ADD SET
-    */
 
     const handleAddSet = () => {
 
@@ -150,18 +123,22 @@ const ReportPage = ({ navigation, route }: any) => {
         <View style={styles.container}>
 
             <StatusBar
-            //    backgroundColor="#FFFFFF"
+                //    backgroundColor="#FFFFFF"
                 barStyle="dark-content"
             />
 
-
-            {/* ================= HEADER ================= */}
 
             <View style={styles.header}>
 
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={() => {
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        } else {
+                            navigation.navigate("MemberTabs");
+                        }
+                    }}
                 >
 
                     <Ionicons
@@ -226,9 +203,8 @@ const ReportPage = ({ navigation, route }: any) => {
             <View style={styles.exerciseArea}>
 
 
-                <View style={styles.exerciseImageArea}>
-
-                    {exercise?.video ? (
+                                <View style={styles.exerciseImageArea}>
+                    {exercise?.video && !exercise.video.toLowerCase().endsWith('.gif') ? (
                         <Video
                             source={{ uri: exercise.video }}
                             style={styles.exerciseImage}
@@ -240,17 +216,18 @@ const ReportPage = ({ navigation, route }: any) => {
                     ) : (
                         <Image
                             source={
-                                typeof exercise?.image === 'string'
-                                    ? { uri: exercise.image }
-                                    : exercise?.image
-                                        ? exercise.image
-                                        : require("../../../../assets/fitness-bg.png")
+                                exercise?.video
+                                    ? { uri: exercise.video }
+                                    : typeof exercise?.image === 'string'
+                                        ? { uri: exercise.image }
+                                        : exercise?.image
+                                            ? exercise.image
+                                            : require("../../../../assets/fitness-bg.png")
                             }
                             style={styles.exerciseImage}
                             resizeMode="contain"
                         />
                     )}
-
                 </View>
 
 
@@ -275,6 +252,25 @@ const ReportPage = ({ navigation, route }: any) => {
 
                     <TouchableOpacity
                         style={styles.rightIconButton}
+                        onPress={() => {
+                            navigation.navigate('ExerciseDetail', {
+                                exercise: {
+                                    ...exercise,
+                                    name: exerciseName,
+                                    description: exercise?.description || 'Tiếng Anh là Treadmill. Máy chạy bộ là một trong nhiều loại máy giúp bạn rèn luyện tim mạch với các chuyển động mô phỏng hệt như chạy bộ và đi bộ ở bên ngoài. Các chuyển động này giúp đẩy nhanh quá trình trao đổi chất, đồng thời đốt cháy mỡ thừa tích tụ và làm tăng sức bền.',
+                                    image: typeof exercise?.image === 'string' ? exercise.image : 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80',
+                                    musclesDistribution: exercise?.musclesDistribution || [
+                                        { name: 'Cơ đùi trước (Quadriceps)', percent: 80, color: '#EF4444' },
+                                        { name: 'Cơ mông (Glutes)', percent: 70, color: '#3B82F6' },
+                                        { name: 'Cơ đùi sau (Hamstrings)', percent: 65, color: '#10B981' },
+                                        { name: 'Cơ bắp chuối (Calves)', percent: 75, color: '#F59E0B' },
+                                        { name: 'Cơ bụng và liên sườn (Core)', percent: 50, color: '#8B5CF6' },
+                                    ]
+                                },
+                                categoryName: exercise?.muscle || 'Cardio'
+                            });
+                        }}
+                        activeOpacity={0.8}
                     >
 
                         <Ionicons
@@ -437,139 +433,6 @@ const ReportPage = ({ navigation, route }: any) => {
                 </TouchableOpacity>
 
             </View>
-
-
-            {/* ================= BOTTOM NAV ================= */}
-
-            <View style={styles.bottomNavigation}>
-
-
-                {/* PLAN */}
-
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() =>
-                        navigation.navigate("WorkoutPage")
-                    }
-                >
-
-                    <View style={styles.activeNavIcon}>
-
-                        <MaterialCommunityIcons
-                            name="calendar-month-outline"
-                            size={wp("5.5%")}
-                            color="#18BEC2"
-                        />
-
-                    </View>
-
-                    <Text
-                        style={[
-                            styles.navText,
-                            styles.activeNavText
-                        ]}
-                    >
-
-                        Kế hoạch tập
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* FEED */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <MaterialCommunityIcons
-                        name="rss"
-                        size={wp("5.4%")}
-                        color="#6E797D"
-                    />
-
-                    <Text style={styles.navText}>
-
-                        Feed
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* MESSAGE */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <Ionicons
-                        name="chatbubble-outline"
-                        size={wp("5.3%")}
-                        color="#6E797D"
-                    />
-
-                    <Text style={styles.navText}>
-
-                        Tin nhắn
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* NOTE */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <MaterialCommunityIcons
-                        name="notebook-outline"
-                        size={wp("5.5%")}
-                        color="#6E797D"
-                    />
-
-                    <Text style={styles.navText}>
-
-                        Sổ tay
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* MORE */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <View style={styles.moreContainer}>
-
-                        <Ionicons
-                            name="ellipsis-horizontal"
-                            size={wp("5.5%")}
-                            color="#6E797D"
-                        />
-
-                        <View style={styles.notificationBadge}>
-
-                            <Text style={styles.badgeText}>
-
-                                1
-
-                            </Text>
-
-                        </View>
-
-                    </View>
-
-                    <Text style={styles.navText}>
-
-                        Thêm
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-            </View>
-
-
         </View>
 
     );
@@ -1105,6 +968,151 @@ const styles = StyleSheet.create({
 
         fontWeight: "700",
 
+    },
+
+    /* ================= MODAL INFO STYLES ================= */
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.55)",
+        justifyContent: "flex-end",
+    },
+    modalContent: {
+        backgroundColor: "#FFFFFF",
+        borderTopLeftRadius: wp("6%"),
+        borderTopRightRadius: wp("6%"),
+        paddingHorizontal: wp("5%"),
+        paddingTop: hp("2.5%"),
+        paddingBottom: hp("3.5%"),
+        maxHeight: hp("78%"),
+    },
+    modalHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingBottom: hp("1.5%"),
+        borderBottomWidth: 1,
+        borderBottomColor: "#F0F3F4",
+    },
+    modalHeaderTitleGroup: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    modalHeaderIcon: {
+        width: wp("8.5%"),
+        height: wp("8.5%"),
+        borderRadius: wp("4.25%"),
+        backgroundColor: "#E8FAF9",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: wp("2.5%"),
+    },
+    modalHeaderTitle: {
+        fontSize: wp("4.3%"),
+        fontWeight: "700",
+        color: "#182022",
+    },
+    modalCloseButton: {
+        padding: wp("1.5%"),
+    },
+    modalBody: {
+        marginVertical: hp("1.5%"),
+    },
+    modalExerciseName: {
+        fontSize: wp("4.8%"),
+        fontWeight: "700",
+        color: "#283235",
+        marginBottom: hp("1.2%"),
+    },
+    modalBadgeRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginBottom: hp("2%"),
+    },
+    modalBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F4F7F8",
+        paddingHorizontal: wp("3%"),
+        paddingVertical: hp("0.7%"),
+        borderRadius: wp("4%"),
+        marginRight: wp("2%"),
+        marginBottom: hp("0.8%"),
+    },
+    modalBadgeText: {
+        fontSize: wp("3%"),
+        fontWeight: "600",
+        color: "#4A5558",
+        marginLeft: wp("1.5%"),
+    },
+    modalSection: {
+        marginBottom: hp("1.8%"),
+    },
+    modalSectionTitle: {
+        fontSize: wp("3.7%"),
+        fontWeight: "700",
+        color: "#283235",
+        marginBottom: hp("1.2%"),
+    },
+    modalStepItem: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginBottom: hp("1.4%"),
+    },
+    stepNumberBadge: {
+        width: wp("6%"),
+        height: wp("6%"),
+        borderRadius: wp("3%"),
+        backgroundColor: "#1BC3C8",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: wp("3%"),
+        marginTop: hp("0.2%"),
+    },
+    stepNumberText: {
+        color: "#FFFFFF",
+        fontWeight: "700",
+        fontSize: wp("3%"),
+    },
+    stepDescText: {
+        flex: 1,
+        fontSize: wp("3.3%"),
+        color: "#4B565A",
+        lineHeight: wp("4.8%"),
+    },
+    modalWarningBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ECFDF5",
+        padding: wp("3.5%"),
+        borderRadius: wp("3%"),
+        borderWidth: 1,
+        borderColor: "#A7F3D0",
+        marginTop: hp("0.5%"),
+        marginBottom: hp("1%"),
+    },
+    modalWarningTitle: {
+        fontSize: wp("3.3%"),
+        fontWeight: "700",
+        color: "#065F46",
+    },
+    modalWarningDesc: {
+        fontSize: wp("3%"),
+        color: "#047857",
+        marginTop: hp("0.3%"),
+        lineHeight: wp("4.3%"),
+    },
+    modalSubmitButton: {
+        backgroundColor: "#1BC3C8",
+        paddingVertical: hp("1.6%"),
+        borderRadius: wp("3%"),
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: hp("0.5%"),
+    },
+    modalSubmitText: {
+        color: "#FFFFFF",
+        fontSize: wp("3.8%"),
+        fontWeight: "700",
     },
 
 });

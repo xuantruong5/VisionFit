@@ -1,4 +1,4 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+﻿import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { Alert, Animated, View, Text } from "react-native";
@@ -72,7 +72,7 @@ const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="WorkoutPlanScreen" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="ExercisePage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
 
@@ -125,6 +125,11 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen
         name="ResultPage"
         component={ResultPage}
+      />
+
+      <MemberWorkoutStack.Screen
+        name="ExerciseDetail"
+        component={ExerciseDetailScreen}
       />
 
 
@@ -324,15 +329,16 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
-        {/* <Stack.Screen name="headerPage" component={headerPage} />
+        <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
        
         <Stack.Screen name="DietDetail" component={DietDetail} /> 
-        <Stack.Screen name="ExercisePage" component={ExercisePage} /> 
+        <Stack.Screen name="ExercisePage" component={ExercisePage} />
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
-        <Stack.Screen name="ResultPage" component={ResultPage}/>  */}
+        <Stack.Screen name="ResultPage" component={ResultPage}/>
+        <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/>
 
 
 
