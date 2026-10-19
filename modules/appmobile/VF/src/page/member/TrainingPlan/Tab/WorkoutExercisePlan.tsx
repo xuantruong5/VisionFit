@@ -11,6 +11,8 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const [program, setProgram] = useState<any>(null);
   const [apiData, setApiData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [isReversed, setIsReversed] = useState(false);
   const getProgramExercises = async () => {
     try {
       const res = await apiFitlife.get("/client/list-program-exercises");
@@ -91,7 +93,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
         {/* ================= LIST HEADER ================= */}
         <View style={styles.listHeaderRow}>
           <Text style={styles.listHeaderTitle}>Ngày tập luyện</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsReversed(prev => !prev)}>
             <Ionicons name="swap-vertical" size={wp("5.5%")} color="#18BEC3" />
           </TouchableOpacity>
         </View>
@@ -107,7 +109,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
               Chưa có ngày tập luyện.
             </Text>
           ) : (
-            apiData.map((day: any) => {
+            (isReversed ? [...apiData].reverse() : apiData).map((day: any) => {
               const isUnlocked = Number(day.tinh_trang) === 1;
               return (
                 <TouchableOpacity

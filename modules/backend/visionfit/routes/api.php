@@ -113,12 +113,14 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
     // chương trình đã đăng ký để bỏ onloading
     Route::get('/my-programs', [DangKyChuongTrinhController::class, 'getMyPrograms']);
-
+    Route::get('/all-list-programs', [DangKyChuongTrinhController::class, 'getAllListPrograms']);
     Route::get('/list-programs', [DangKyChuongTrinhController::class, 'getListPrograms']);
+
     Route::get('/list-program-exercises', [DangKyChuongTrinhController::class, 'getListProgramExercises']);
     
     Route::get('/list-meal-plans', [DangKyChuongTrinhController::class,'getListMealPlans']);
     Route::delete('/delete-program/{id}', [DangKyChuongTrinhController::class, 'destroy']);
+    Route::post('/activate-program/{id}',[DangKyChuongTrinhController::class, 'activateProgram']);
 
 
 

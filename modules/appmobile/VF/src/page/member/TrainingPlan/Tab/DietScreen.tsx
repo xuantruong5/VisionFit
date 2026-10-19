@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
@@ -9,145 +9,112 @@ import apiFitlife from "../../../../general/api";
 const DietScreen = () => {
     // do trang header dang reder trực tiếp nên mới dùng cách này còn kh mọi người cứ dùng cách cũ 
     const navigation = useNavigation<any>()
-    // Dữ liệu cứng - sau này thay bằng dữ liệu API
-    const meals = [
-        {
-            id: 1,
-            name: "Bữa ăn 1",
-            time: "07:00",
-            foods: [
-                {
-                    id: 1,
-                    title: "Salad sốt mè tahini, ăn kèm bánh mì pita và sốt hummus, kiểu Levant",
-                    calories: "281 Kcal",
-                    weight: "200 g",
-                    image:
-                        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
-                },
-                {
-                    id: 2,
-                    title: "Sữa chua ăn kèm phô mai tươi, các loại hạt và mật ong",
-                    calories: "320 Kcal",
-                    weight: "250 g",
-                    image:
-                        "https://images.unsplash.com/photo-1488477181946-6428a0291777",
-                },
-                {
-                    id: 3,
-                    title: "Trứng chiên rau củ",
-                    calories: "489 Kcal",
-                    weight: "300 g",
-                    image:
-                        "https://images.unsplash.com/photo-1525351484163-7529414344d8",
-                },
-            ],
-        },
-        {
-            id: 2,
-            name: "Bữa ăn 2",
-            time: "10:00",
-            foods: [
-                {
-                    id: 4,
-                    title: "Bánh mì nguyên cám và chuối",
-                    calories: "250 Kcal",
-                    weight: "180 g",
-                    image:
-                        "https://images.unsplash.com/photo-1481349518771-20055b2a7b24",
-                },
-                {
-                    id: 5,
-                    title: "Sinh tố trái cây tươi",
-                    calories: "190 Kcal",
-                    weight: "250 ml",
-                    image:
-                        "https://images.unsplash.com/photo-1553530666-ba11a7da3888",
-                },
-            ],
-        },
-        {
-            id: 3,
-            name: "Bữa ăn 3",
-            time: "13:00",
-            foods: [
-                {
-                    id: 6,
-                    title: "Cơm gạo lứt với ức gà và rau củ",
-                    calories: "450 Kcal",
-                    weight: "350 g",
-                    image:
-                        "https://images.unsplash.com/photo-1547592180-85f173990554",
-                },
-                {
-                    id: 7,
-                    title: "Salad cá hồi và rau xanh",
-                    calories: "380 Kcal",
-                    weight: "280 g",
-                    image:
-                        "https://images.unsplash.com/photo-1467003909585-2f8a72700288",
-                },
-            ],
-        },
-        {
-            id: 4,
-            name: "Bữa ăn 4",
-            time: "17:00",
-            foods: [
-                {
-                    id: 6,
-                    title: "Cơm gạo lứt với ức gà và rau củ",
-                    calories: "450 Kcal",
-                    weight: "350 g",
-                    image:
-                        "https://images.unsplash.com/photo-1547592180-85f173990554",
-                },
-                {
-                    id: 7,
-                    title: "Salad cá hồi và rau xanh",
-                    calories: "380 Kcal",
-                    weight: "280 g",
-                    image:
-                        "https://images.unsplash.com/photo-1467003909585-2f8a72700288",
-                },
-            ],
-        },
-        {
-            id: 5,
-            name: "Bữa ăn 5",
-            time: "20:00",
-            foods: [
-                {
-                    id: 4,
-                    title: "Bánh mì nguyên cám và chuối",
-                    calories: "250 Kcal",
-                    weight: "180 g",
-                    image:
-                        "https://images.unsplash.com/photo-1481349518771-20055b2a7b24",
-                },
-                {
-                    id: 5,
-                    title: "Sinh tố trái cây tươi",
-                    calories: "190 Kcal",
-                    weight: "250 ml",
-                    image:
-                        "https://images.unsplash.com/photo-1553530666-ba11a7da3888",
-                },
-            ],
-        },
-    ];
+    // Danh sách dữ liệu kế hoạch ăn từ API
+    const [mealPlans, setMealPlans] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    // Hàm lấy ngày theo định dạng YYYY-MM-DD
+    const formatDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
 
-    // hàm lấy ngày tháng 
+    // Ngày hiện tại
     const today = new Date();
     const [selectedDay, setSelectedDay] = useState(today.getDate());
+    const [selectedDate, setSelectedDate] = useState(formatDate(today));
     const [showDays, setShowDays] = useState(false);
+
+    // Danh sách 7 ngày, giữ nguyên giao diện chọn ngày
     const days = Array.from({ length: 7 }, (_, index) => {
         const date = new Date(today);
         date.setDate(today.getDate() + index);
+
         return {
             day: date.getDate(),
             month: date.getMonth() + 1,
+            date: formatDate(date),
         };
     });
+
+    // Gọi API mỗi khi chọn ngày khác
+    useEffect(() => {
+        const getMealPlans = async () => {
+            try {
+                setLoading(true);
+                const response = await apiFitlife.get("/client/list-meal-plans");
+
+                if (response.data.success) {
+                    setMealPlans(response.data.data || []);
+                } else {
+                    setMealPlans([]);
+                }
+            } catch (error) {
+                console.log("Lỗi lấy danh sách kế hoạch ăn:", error);
+                setMealPlans([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        getMealPlans();
+    }, [selectedDate]);
+
+    // Tên hiển thị của từng bữa ăn
+    const mealNames: Record<string, string> = {
+        SANG: "Bữa sáng",
+        PHU_SANG: "Bữa phụ sáng",
+        TRUA: "Bữa trưa",
+        PHU_TRUA: "Bữa phụ trưa",
+        TOI: "Bữa tối",
+        PHU_TOI: "Bữa phụ tối",
+    };
+    // Lọc dữ liệu theo ngày đã chọn và nhóm các món cùng bữa
+    const meals = useMemo(() => {
+        const filteredPlans = mealPlans.filter((item) => item.ngay_an === selectedDate);
+        const groupedMeals: Record<string, any> = {};
+        filteredPlans.forEach((item) => {
+            const key = `${item.bua_an}_${item.gio_an}`;
+            if (!groupedMeals[key]) {
+                groupedMeals[key] = {
+                    id: key,
+                    name: mealNames[item.bua_an] || item.bua_an,
+                    time: item.gio_an?.slice(0, 5) || "",
+                    foods: [],
+                };
+            }
+            groupedMeals[key].foods.push({
+                id: item.id_khau_phan_an,
+                title: item.ten_mon_an,
+                calories: `${Number(item.calo || 0)} Kcal`,
+                weight: `${Number(item.khoi_luong_gram || 0)} g`,
+                image: item.anh_dai_dien,
+                id_mon_an: item.id_mon_an,
+                mo_ta: item.mo_ta,
+                nguyen_lieu: item.nguyen_lieu,
+                gia_vi: item.gia_vi,
+                thoi_gian_nau: item.thoi_gian_nau,
+                huong_dan_nau: item.huong_dan_nau,
+                protein: item.protein,
+                carb: item.carb,
+                fat: item.fat,
+                // Mục tiêu dinh dưỡng của kế hoạch
+                muc_tieu_the_trang: item.muc_tieu_the_trang,
+                muc_tieu_calo: item.muc_tieu_calo,
+                protein_muc_tieu: item.protein_muc_tieu,
+                carb_muc_tieu: item.carb_muc_tieu,
+                fat_muc_tieu: item.fat_muc_tieu,
+
+                so_luong: item.so_luong,
+                ghi_chu: item.ghi_chu,
+                ngay_an: item.ngay_an,
+            });
+        });
+        return Object.values(groupedMeals).sort((a, b) =>
+            a.time.localeCompare(b.time)
+        );
+    }, [mealPlans, selectedDate]);
     // plan kế hoạch 
     const [activeTab, setActiveTab] = useState("plan");
 
@@ -157,7 +124,7 @@ const DietScreen = () => {
             <View style={styles.daySection}>
                 <View style={styles.daysRow}>
                     {days.map((item, index) => (
-                        <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => setSelectedDay(item.day)}
+                        <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => { setSelectedDay(item.day); setSelectedDate(item.date); }}
                             style={[styles.dayItem, selectedDay === item.day && styles.selectedDay,]} >
                             <Text style={[styles.dayText, selectedDay === item.day && styles.selectedDayText,]} >
                                 {item.day}
@@ -172,7 +139,7 @@ const DietScreen = () => {
                 {showDays && (
                     <View style={styles.dropdownContent}>
                         <Text style={styles.dropdownTitle}>
-                            Ngày đang chọn: {selectedDay}
+                            Ngày đang chọn: {selectedDate}
                         </Text>
                         <Text style={styles.dropdownDescription}>
                             Chọn ngày để xem thực đơn dinh dưỡng.
@@ -182,60 +149,74 @@ const DietScreen = () => {
             </View>
             {/* Danh sách các bữa ăn */}
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
-                {meals.map((meal) => (
-                    <View key={meal.id} style={styles.mealSection}>
-                        {/* Tiêu đề bữa ăn */}
-                        <View style={styles.mealHeader}>
-                            <Text style={styles.mealName}>
-                                {meal.name}:
-                            </Text>
-                            <Text style={styles.mealTime}>
-                                {meal.time}
-                            </Text>
-                        </View>
-                        {/* Các món ăn vuốt ngang */}
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.foodList} >
-                            {meal.foods.map((food) => (
-                                <TouchableOpacity key={food.id} activeOpacity={0.85} style={styles.foodCard}
-                                 onPress={() => { navigation.navigate("DietDetail", { food: food, });}} >
-                                    <ImageBackground source={{ uri: food.image }} style={styles.foodImage} imageStyle={styles.foodImageRadius} >
-                                        {/* Lớp phủ tối */}
-                                        <View style={styles.gradient} >
-                                            <View style={styles.foodInfo} >
-                                                <Text style={styles.foodTitle} numberOfLines={2} >
-                                                    {food.title}
-                                                </Text>
-                                                <View style={styles.foodMeta} >
-                                                    <Text
-                                                        style={styles.foodMetaText} >
-                                                        {food.calories}
+                {loading ? (
+                    <View style={{ paddingVertical: hp("4%"), alignItems: "center" }}>
+                        <Text style={{ color: "#16B9B7", fontSize: wp("3.8%") }}>
+                            Đang tải thực đơn...
+                        </Text>
+                    </View>
+                ) : meals.length > 0 ? (
+                    meals.map((meal) => (
+                        <View key={meal.id} style={styles.mealSection}>
+                            <View style={styles.mealHeader}>
+                                <Text style={styles.mealName}>
+                                    {meal.name}:
+                                </Text>
+                                <Text style={styles.mealTime}>
+                                    {meal.time}
+                                </Text>
+                            </View>
+                            <ScrollView  horizontal  showsHorizontalScrollIndicator={false} contentContainerStyle={styles.foodList} >
+                                {meal.foods.map((food: any) => (
+                                    <TouchableOpacity
+                                        key={food.id}
+                                        activeOpacity={0.85}
+                                        style={styles.foodCard}
+                                        onPress={() => { navigation.navigate("DietDetail", { food: food,});}}>
+                                        <ImageBackground source={{ uri: food.image }} style={styles.foodImage} imageStyle={styles.foodImageRadius} >
+                                            <View style={styles.gradient}>
+                                                <View style={styles.foodInfo}>
+                                                    <Text style={styles.foodTitle} numberOfLines={2} >
+                                                        {food.title}
                                                     </Text>
-                                                    <Text style={styles.foodMetaText} >
-                                                        {food.weight}
-                                                    </Text>
+                                                    <View style={styles.foodMeta}>
+                                                        <Text style={styles.foodMetaText}>
+                                                            {food.calories}
+                                                        </Text>
+
+                                                        <Text style={styles.foodMetaText}>
+                                                            {food.weight}
+                                                        </Text>
+                                                    </View>
                                                 </View>
                                             </View>
-                                        </View>
-                                    </ImageBackground>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
+                                        </ImageBackground>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    ))
+                ) : (
+                    <View style={{ paddingVertical: hp("4%"), alignItems: "center" }}>
+                        <Text style={{ color: "#777", fontSize: wp("3.8%") }}>
+                            Ngày này chưa có thực đơn.
+                        </Text>
                     </View>
-                ))}
+                )}
 
                 {/* TAB KẾ HOẠCH / KHẨU PHẦN ĂN */}
                 <View style={styles.planCard}>
                     {/* Thanh tab */}
                     <View style={styles.tabRow}>
                         <TouchableOpacity activeOpacity={0.8}
-                            style={[ styles.tabButton, activeTab === "plan" && styles.activeTabButton,]} onPress={() => setActiveTab("plan")} >
-                            <Text style={[ styles.tabText, activeTab === "plan" && styles.activeTabText, ]} >
+                            style={[styles.tabButton, activeTab === "plan" && styles.activeTabButton,]} onPress={() => setActiveTab("plan")} >
+                            <Text style={[styles.tabText, activeTab === "plan" && styles.activeTabText,]} >
                                 Kế hoạch hiện tại
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity activeOpacity={0.8} style={[ styles.tabButton, activeTab === "daily" && styles.activeTabButton, ]} 
-                        onPress={() => setActiveTab("daily")} >
-                            <Text style={[ styles.tabText, activeTab === "daily" && styles.activeTabText, ]} >
+                        <TouchableOpacity activeOpacity={0.8} style={[styles.tabButton, activeTab === "daily" && styles.activeTabButton,]}
+                            onPress={() => setActiveTab("daily")} >
+                            <Text style={[styles.tabText, activeTab === "daily" && styles.activeTabText,]} >
                                 Khẩu phần ăn hàng ngày
                             </Text>
                         </TouchableOpacity>
@@ -246,7 +227,7 @@ const DietScreen = () => {
                     {activeTab === "plan" && (
                         <View style={styles.nutritionRow}>
                             <View style={styles.nutritionItem}>
-                                <Text style={styles.nutritionValue}>178,5</Text>
+                                <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.protein_muc_tieu ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeGreen}>
                                     -20 ↓
                                 </Text>
@@ -255,7 +236,7 @@ const DietScreen = () => {
                                 </Text>
                             </View>
                             <View style={styles.nutritionItem}>
-                                <Text style={styles.nutritionValue}>40,3</Text>
+                                <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.fat_muc_tieu ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeOrange}>
                                     +2 ↑
                                 </Text>
@@ -264,7 +245,7 @@ const DietScreen = () => {
                                 </Text>
                             </View>
                             <View style={styles.nutritionItem}>
-                                <Text style={styles.nutritionValue}>500</Text>
+                                <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.carb_muc_tieu ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeGreen}>
                                     0
                                 </Text>
@@ -273,7 +254,7 @@ const DietScreen = () => {
                                 </Text>
                             </View>
                             <View style={styles.nutritionItem}>
-                                <Text style={styles.nutritionValue}>1800</Text>
+                                <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.muc_tieu_calo ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeRed}>
                                     -100 ↓
                                 </Text>

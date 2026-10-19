@@ -5,39 +5,76 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import { useRoute } from "@react-navigation/native";
 
-const ingredients = [
-    { name: "Sốt đậu gà nhà làm", amount: "30 g" },
-    { name: "Ớt chuông đỏ, sống", amount: "14 g" },
-    { name: "Bơ hoặc dầu mè", amount: "8 g" },
-    { name: "Ngò tây", amount: "6 g" },
-    { name: "Bánh mì Pita", amount: "60 g" },
-    { name: "Dưa leo, có vỏ, sống", amount: "42 g" },
-    { name: "Cà chua, đỏ, sống", amount: "30 g" },
-    { name: "Hành tây đỏ, sống", amount: "6 g" },
-    { name: "Nước ép chanh vàng", amount: "4 g" },
-];
+// const ingredients = [
+//     { name: "Sốt đậu gà nhà làm", amount: "30 g" },
+//     { name: "Ớt chuông đỏ, sống", amount: "14 g" },
+//     { name: "Bơ hoặc dầu mè", amount: "8 g" },
+//     { name: "Ngò tây", amount: "6 g" },
+//     { name: "Bánh mì Pita", amount: "60 g" },
+//     { name: "Dưa leo, có vỏ, sống", amount: "42 g" },
+//     { name: "Cà chua, đỏ, sống", amount: "30 g" },
+//     { name: "Hành tây đỏ, sống", amount: "6 g" },
+//     { name: "Nước ép chanh vàng", amount: "4 g" },
+// ];
 
-const spices = [
-    "Tỏi, sống",
-    "Gia vị sumac",
-    "Muối",
-];
-const cookingSteps = [
-    "Băm nhỏ cà chua, dưa chuột, ớt chuông, hành tây tím và rau mùi tây.",
-    "Băm nhỏ tỏi.",
-    "Trộn nước cốt chanh, sốt mè tahini và tỏi trong tô lớn. Nếu nước sốt quá sệt thì pha loãng với một chút nước.",
-    "Cho các loại rau và rau mùi tây vào nước sốt.",
-    "Thêm muối và bột sumac cho vừa ăn.",
-    "Trộn đều.",
-    "Thưởng thức món salad với bánh mì pita và sốt hummus.",
-];
-const DietDetail = ({ navigation }: any) => {
-    const route = useRoute<any>();
+// const spices = [
+//     "Tỏi, sống",
+//     "Gia vị sumac",
+//     "Muối",
+// ];
+// const cookingSteps = [
+//     "Băm nhỏ cà chua, dưa chuột, ớt chuông, hành tây tím và rau mùi tây.",
+//     "Băm nhỏ tỏi.",
+//     "Trộn nước cốt chanh, sốt mè tahini và tỏi trong tô lớn. Nếu nước sốt quá sệt thì pha loãng với một chút nước.",
+//     "Cho các loại rau và rau mùi tây vào nước sốt.",
+//     "Thêm muối và bột sumac cho vừa ăn.",
+//     "Trộn đều.",
+//     "Thưởng thức món salad với bánh mì pita và sốt hummus.",
+// ];
+
+// Chuyển dữ liệu API thành danh sách để hiển thị
+const parseList = (value: any): any[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value;
+    }
+    if (typeof value === "string") {
+        try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+            return parsed ? [parsed] : [];
+        } catch {
+            return value
+                .split(/\r?\n/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+        }
+    }
+
+    return [];
+};
+
+
+const DietDetail = ({ navigation,route }: any) => {
     // Lấy món ăn được truyền từ DietScreen
-    const food = route.params?.food;
+   const food = route.params?.food;
     const foodImage = food?.image;
     const foodName = food?.title || "Chi tiết món ăn";
     const weightdetail = food?.weight || "0 g";
+    const cookingTime = food?.thoi_gian_nau;
+    const protein = Number(food?.protein || 0);
+    const fat = Number(food?.fat || 0);
+    const carb = Number(food?.carb || 0);
+    // Lấy calo từ trường calories (ví dụ: "200 Kcal")
+    // hoặc từ trường calo nếu có truyền sang
+    const calories = Number(food?.calo ?? String(food?.calories ?? "0").replace(/[^\d.]/g, ""));
+
+    // Nguyên liệu, gia vị và hướng dẫn nấu
+    const ingredients = parseList(food?.nguyen_lieu);
+    const spices = parseList(food?.gia_vi);
+    const cookingSteps = parseList(food?.huong_dan_nau);
 
 
     return (
@@ -68,7 +105,7 @@ const DietDetail = ({ navigation }: any) => {
                     <View style={styles.timeRow}>
                         <Ionicons name="time-outline" size={wp("4.5%")} color="#A7B0B6" />
                         <Text style={styles.timeText}>
-                            Thời gian nấu: 15 phút.
+                            Thời gian nấu: {cookingTime ? `${cookingTime} phút` : "Chưa cập nhật"}
                         </Text>
                     </View>
                     {/* Khẩu phần */}
@@ -80,43 +117,30 @@ const DietDetail = ({ navigation }: any) => {
                         </View>
                         <View style={styles.servingInactive}>
                             <Text style={styles.servingInactiveText}>
-                                100 g
+                               {weightdetail}
                             </Text>
                         </View>
                     </View>
                     {/* Dinh dưỡng */}
                     <View style={styles.nutritionCard}>
                         <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionValue}>
-                                281,2
-                            </Text>
-                            <Text style={styles.nutritionLabel}>
-                                Protein, g
-                            </Text>
+                            <Text style={styles.nutritionValue}>{protein}</Text>
+                            <Text style={styles.nutritionLabel}>Protein, g</Text>
                         </View>
+
                         <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionValue}>
-                                9,8
-                            </Text>
-                            <Text style={styles.nutritionLabel}>
-                                Chất béo, g
-                            </Text>
+                            <Text style={styles.nutritionValue}>{fat}</Text>
+                            <Text style={styles.nutritionLabel}>Chất béo, g</Text>
                         </View>
+
                         <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionValue}>
-                                8,2
-                            </Text>
-                            <Text style={styles.nutritionLabel}>
-                                Carb, g
-                            </Text>
+                            <Text style={styles.nutritionValue}>{carb}</Text>
+                            <Text style={styles.nutritionLabel}>Carb, g</Text>
                         </View>
+
                         <View style={styles.kcalItem}>
-                            <Text style={styles.kcalValue}>
-                                46
-                            </Text>
-                            <Text style={styles.kcalLabel}>
-                                Kcal
-                            </Text>
+                            <Text style={styles.kcalValue}>{calories}</Text>
+                            <Text style={styles.kcalLabel}>Kcal</Text>
                         </View>
                     </View>
                     {/* Nguyên liệu */}
@@ -127,20 +151,46 @@ const DietDetail = ({ navigation }: any) => {
                         <Ionicons name="information-circle-outline" size={wp("5.5%")} color="#27BFC4" />
                     </View>
                     <View style={styles.ingredientsCard}>
-                        {ingredients.map((item, index) => (
-                            <TouchableOpacity
-                                key={index} style={[styles.ingredientRow, index === ingredients.length - 1 && styles.lastRow,]} >
-                                <Text style={styles.ingredientName}>
-                                    {item.name}
-                                </Text>
-                                <View style={styles.amountRow}>
-                                    <Text style={styles.amountText}>
-                                        {item.amount}
-                                    </Text>
-                                    <Ionicons name="chevron-forward" size={wp("5%")} color="#26BDBD" />
-                                </View>
-                            </TouchableOpacity>
-                        ))}
+                        {ingredients.length > 0 ? (
+    ingredients.map((item, index) => {
+        const name =
+            typeof item === "string"
+                ? item
+                : item.name ?? item.ten_nguyen_lieu ?? item.ten ?? "Nguyên liệu";
+
+        const amount =
+            typeof item === "string"
+                ? ""
+                : item.amount ?? item.khoi_luong ?? item.so_luong ?? "";
+
+        return (
+            <View
+                key={index}
+                style={[
+                    styles.ingredientRow,
+                    index === ingredients.length - 1 && styles.lastRow,
+                ]}
+            >
+                <Text style={styles.ingredientName}>{name}</Text>
+
+                <View style={styles.amountRow}>
+                    <Text style={styles.amountText}>
+                        {amount}
+                    </Text>
+                    <Ionicons
+                        name="chevron-forward"
+                        size={wp("5%")}
+                        color="#26BDBD"
+                    />
+                </View>
+            </View>
+        );
+    })
+) : (
+    <Text style={styles.ingredientName}>
+        Chưa có thông tin nguyên liệu.
+    </Text>
+)}
                     </View>
 
                     {/* Tùy theo khẩu vị */}
@@ -442,7 +492,7 @@ const styles = StyleSheet.create({
         borderRadius: wp("2.5%"),
         paddingHorizontal: wp("2.5%"),
         paddingVertical: hp("1.5%"),
-        marginBottom: hp("2%"),
+        marginBottom: hp("6%"),
     },
 
     recipeStep: {

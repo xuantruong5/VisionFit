@@ -24,7 +24,9 @@ const Onloading = ({ navigation }: any) => {
                         params: { screen: "headerPage", },
                     });
                     } else {
-                        navigation.replace("MemberTabs");
+                        navigation.replace("MemberTabs", { screen: "Kế Hoạch Tập",
+                        params: { screen: "WorkoutPlanScreen", },
+                    });
                     }
                     return;
                 }

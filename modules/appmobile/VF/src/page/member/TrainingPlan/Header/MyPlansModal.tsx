@@ -1,45 +1,63 @@
 import React, { useState, useEffect } from "react";
-import {
-    StyleSheet,
-    Text,
-    View,
-    Modal,
-    TouchableOpacity,
-    ImageBackground,
-    Alert,
-    ScrollView,
-    useWindowDimensions,
-} from "react-native";
+import { StyleSheet, Text, View, Modal, TouchableOpacity, ImageBackground, Alert, ScrollView, useWindowDimensions, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import apiFitlife from "../../../../general/api";
 
 const MyPlansModal = ({ visible, onClose, navigation }: any) => {
     const { width, height } = useWindowDimensions();
     const [programs, setPrograms] = useState<any[]>([]);
-
     // 1. Lấy danh sách kế hoạch tập 
     useEffect(() => {
         if (visible) {
-            apiFitlife.get("/client/list-programs")
+            apiFitlife.get("/client/all-list-programs")
                 .then((res) => {
-                    if (res.data.success && res.data.data?.length > 0) {
-                        const unique: any[] = [];
-                        const seen = new Set();
-                        res.data.data.forEach((item: any) => {
-                            const key = item.id_chuong_trinh || item.id;
-                            if (!seen.has(key)) {
-                                seen.add(key);
-                                unique.push(item);
-                            }
-                        });
-                        setPrograms(unique);
+                    if (res.data.success) {
+                        setPrograms(
+                            res.data.data.filter(
+                                (item: any, index: number, arr: any[]) =>
+                                    arr.findIndex((p: any) => p.id === item.id) === index
+                            )
+                        );
                     } else {
                         setPrograms([]);
                     }
                 })
-                .catch(() => {});
+                .catch(() => { });
         }
     }, [visible]);
+    const handleActivate = async (item: any) => {
+        if (Number(item.tinh_trang) === 1) {
+            return;
+        }
+        try {
+            const res = await apiFitlife.post(
+                `/client/activate-program/${item.id}`
+            );
+            if (res.data.success) {
+                const listRes = await apiFitlife.get(
+                    "/client/all-list-programs"
+                );
+                if (listRes.data.success) {
+                    setPrograms(
+                        listRes.data.data.filter(
+                            (item: any, index: number, arr: any[]) =>
+                                arr.findIndex((p: any) => p.id === item.id) === index
+                        )
+                    );
+                }
+                Alert.alert(
+                    "Thành công",
+                    "Đã chuyển sang chương trình được chọn."
+                );
+            }
+        } catch (error: any) {
+            Alert.alert(
+                "Lỗi",
+                error?.response?.data?.message ||
+                "Không thể thay đổi chương trình."
+            );
+        }
+    };
 
     // 2. Xóa kế hoạch tập 
     const handleDelete = (id: any, name: string) => {
@@ -64,16 +82,8 @@ const MyPlansModal = ({ visible, onClose, navigation }: any) => {
     return (
         <View style={styles.fullscreenOverlay}>
             {/* Backdrop làm mờ ấn ra ngoài để đóng */}
-            <TouchableOpacity
-                style={styles.backdrop}
-                activeOpacity={1}
-                onPress={onClose}
-            />
-
-            <View
-                style={[styles.sheet, { maxHeight: height * 0.88 }]}
-                onStartShouldSetResponder={() => true}
-            >
+            <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+            <View style={[styles.sheet, { maxHeight: height * 0.88 }]} onStartShouldSetResponder={() => true} >
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
@@ -85,23 +95,19 @@ const MyPlansModal = ({ visible, onClose, navigation }: any) => {
 
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                     {/* 2 nút chọn */}
-                    <TouchableOpacity
-                        style={styles.btnPrimary}
+                    <TouchableOpacity style={styles.btnPrimary}
                         onPress={() => {
                             onClose();
                             navigation?.navigate("WorkoutPlanScreen");
-                        }}
-                    >
+                        }}>
                         <Text style={styles.btnPrimaryText}>THÊM KẾ HOẠCH TẬP MẶC ĐỊNH</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.btnSecondary}
+                    <TouchableOpacity style={styles.btnSecondary}
                         onPress={() => {
                             onClose();
                             navigation?.navigate("WorkoutPlanScreen");
-                        }}
-                    >
+                        }} >
                         <Text style={styles.btnSecondaryText}>SỬ DỤNG ỨNG DỤNG TẬP LUYỆN</Text>
                     </TouchableOpacity>
 
@@ -113,79 +119,58 @@ const MyPlansModal = ({ visible, onClose, navigation }: any) => {
                         </View>
                     ) : (
                         programs.map((item) => (
-                        <ScrollView
-                            key={item.id || item.id_chuong_trinh}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.cardRow}
-                            nestedScrollEnabled={true}
-                            overScrollMode="never"
-                        >
-                            <ImageBackground
-                                source={
-                                    item.anh_dai_dien
-                                        ? { uri: item.anh_dai_dien }
-                                        : require("../../../../assets/anh-fi.jpg")
-                                }
-                                style={[styles.card, { width: width - 40 }]}
-                                imageStyle={{ borderRadius: 14 }}
-                            >
-                                <View style={styles.cardOverlay} />
+                            <ScrollView key={item.id || item.id_chuong_trinh} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow} nestedScrollEnabled={true} overScrollMode="never" >
+                                <TouchableOpacity activeOpacity={0.9} onPress={() => handleActivate(item)}>
+                                    <ImageBackground
+                                        source={
+                                            item.anh_dai_dien
+                                                ? { uri: item.anh_dai_dien }
+                                                : require("../../../../assets/anh-fi.jpg")
+                                        }
+                                        style={[styles.card, { width: width - 40 }]}
+                                        imageStyle={{ borderRadius: 14 }} >
+                                        <View style={styles.cardOverlay} />
+                                        <View style={[styles.badge, { backgroundColor: Number(item.tinh_trang) === 1 ? "#00A878" : "#FF5E74", },]}>
+                                            <Text style={styles.badgeText}>
+                                                {Number(item.tinh_trang) === 1 ? "ĐANG HOẠT ĐỘNG" : "TẠM DỪNG HOẠT ĐỘNG"}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.cardTitle} numberOfLines={1}>
+                                            {item.ten_chuong_trinh || "Tăng cơ bắp nói chung"}
+                                        </Text>
+                                        <View style={styles.metaRow}>
+                                            <Ionicons name="barbell-outline" size={14} color="#FFF" />
+                                            <Text style={styles.metaText}>{item.ten_noi_tap || "Tại gym"}</Text>
+                                            <View style={styles.stars}>
+                                                {[1, 2, 3, 4, 5].map((s) => (
+                                                    <Ionicons key={s} name={s <= (item.so_sao || 1) ? "star" : "star-outline"} size={13} color="#FFF" />
+                                                ))}
+                                            </View>
+                                            <Text style={styles.metaText}>{item.ten_cap_do || "Người bắt đầu"}</Text>
+                                        </View>
+                                        <Text style={styles.duration}>
+                                            {item.so_ngay || 24} ngày tập luyện ({item.so_buoi_moi_tuan || 3} buổi mỗi tuần)
+                                        </Text>
+                                        <Text style={styles.completed}>Tập luyện hoàn tất: 0</Text>
 
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>ĐANG HOẠT ĐỘNG</Text>
-                                </View>
+                                        <TouchableOpacity style={styles.trashBtnCard} onPress={() => handleDelete(item.id || item.id_chuong_trinh, item.ten_chuong_trinh)} activeOpacity={0.8} >
+                                            <Ionicons name="trash-outline" size={18} color="#FFF" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.shareBtn} onPress={() => Alert.alert("Chia sẻ", "Chia sẻ kế hoạch tập")}>
+                                            <Ionicons name="share-social" size={18} color="#FFF" />
+                                        </TouchableOpacity>
+                                    </ImageBackground>
 
-                                <Text style={styles.cardTitle} numberOfLines={1}>
-                                    {item.ten_chuong_trinh || "Tăng cơ bắp nói chung"}
-                                </Text>
-
-                                <View style={styles.metaRow}>
-                                    <Ionicons name="barbell-outline" size={14} color="#FFF" />
-                                    <Text style={styles.metaText}>{item.ten_noi_tap || "Tại gym"}</Text>
-                                    <View style={styles.stars}>
-                                        {[1, 2, 3, 4, 5].map((s) => (
-                                            <Ionicons
-                                                key={s}
-                                                name={s <= (item.so_sao || 1) ? "star" : "star-outline"}
-                                                size={13}
-                                                color="#FFF"
-                                            />
-                                        ))}
-                                    </View>
-                                    <Text style={styles.metaText}>{item.ten_cap_do || "Người bắt đầu"}</Text>
-                                </View>
-
-                                <Text style={styles.duration}>
-                                    {item.so_ngay || 24} ngày tập luyện ({item.so_buoi_moi_tuan || 3} buổi mỗi tuần)
-                                </Text>
-                                <Text style={styles.completed}>Tập luyện hoàn tất: 0</Text>
-
-                                <TouchableOpacity
-                                    style={styles.trashBtnCard}
-                                    onPress={() => handleDelete(item.id || item.id_chuong_trinh, item.ten_chuong_trinh)}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="trash-outline" size={18} color="#FFF" />
+                                    {/* Nút xóa đỏ khi vuốt sang */}
+                                    {/* <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id || item.id_chuong_trinh, item.ten_chuong_trinh)}>
+                                        <Ionicons name="trash-outline" size={24} color="#FFF" />
+                                    </TouchableOpacity> */}
                                 </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    style={styles.shareBtn}
-                                    onPress={() => Alert.alert("Chia sẻ", "Chia sẻ kế hoạch tập")}
-                                >
-                                    <Ionicons name="share-social" size={18} color="#FFF" />
-                                </TouchableOpacity>
-                            </ImageBackground>
 
-                            {/* Nút xóa đỏ khi vuốt sang */}
-                            <TouchableOpacity
-                                style={styles.deleteBtn}
-                                onPress={() => handleDelete(item.id || item.id_chuong_trinh, item.ten_chuong_trinh)}
-                            >
-                                <Ionicons name="trash-outline" size={24} color="#FFF" />
-                            </TouchableOpacity>
-                        </ScrollView>
-                    )))}
+
+                            </ScrollView>
+                        )))}
                 </ScrollView>
             </View>
         </View>

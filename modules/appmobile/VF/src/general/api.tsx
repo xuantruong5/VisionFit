@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
 
-export const BASE_URL = "http://192.168.1.123:8000";
+export const BASE_URL = "http://172.29.192.1:8000";
 
 export const API_URL = `${BASE_URL}/api`; 
 var is_auth_alert_shown = false;
