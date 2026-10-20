@@ -13,13 +13,16 @@ return new class extends Migration
     {
         Schema::create('khau_phan_an', function (Blueprint $table) {
             $table->id();  //id_khau_phan_an;
-            $table->unsignedBigInteger('id_ke_hoach_an');
+            $table->unsignedBigInteger('id_ke_hoach_an')->nullable();
+             $table->unsignedBigInteger('id_muc_tieu_dinh_duong');
             $table->unsignedBigInteger('id_mon_an');
-            $table->date('ngay_an');
+            $table->unsignedInteger('ngay_thu')->default(1);
+            $table->date('ngay_an')->nullable();
             $table->time('gio_an')->nullable()->comment('Giờ ăn');
-            $table->string('bua_an', 30); // SANG, PHU_SANG, TRUA, PHU_TRUA, TOI, PHU_TOI
+            $table->string('bua_an', 30); // SANG, PHU_SANG, TRUA, PHU_TRUA, TOI, PHU_TOI (6 bữa )
             // Số lượng khẩu phần
             $table->decimal('so_luong', 8, 2)->default(1)->comment('Số khẩu phần');
+            // $table->decimal('tong_calo', 10, 2)->default(0)->comment('Tổng năng lượng (kcal)');
             $table->string('ghi_chu')->nullable();
             $table->timestamps();
         });

@@ -1,16 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator,} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator, Alert, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
 
 const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
-    const { goalId, goalName, gender, noitap, capDoName,capDoId, } = route.params || {};
+    const { goalId, goalName, gender, capDoName, capDoId, id_noi_tap, ten_noi_tap, } = route.params || {};
     const [program, setProgram] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [registering, setRegistering] = useState(false);
 
+
+
+    const handleRegisterProgram = async () => {
+        if (registering) return;
+        if (!goalId) {
+            Alert.alert('Thông báo', 'Không tìm thấy ID chương trình tập.');
+            return;
+        }
+        setRegistering(true);
+        try {
+            const res = await apiFitlife.post('/client/dang-ky-chuong-trinh', {
+                id_chuong_trinh: goalId,
+                id_cap_do: capDoId,
+                id_noi_tap,
+            });
+            if (res.data?.success || res.data?.status) {
+                Alert.alert(
+                    'Thông báo',
+                    res.data?.message || 'Đăng ký thành công!',
+                    [{ text: 'OK', onPress: () => navigation.navigate('headerPage') }],
+                );
+            } else {
+                Alert.alert('Thông báo', res.data?.message || 'Đăng ký chưa thành công.');
+            }
+        } catch (error: any) {
+            Alert.alert(
+                'Thông báo',
+                error?.response?.data?.message || 'Đã xảy ra lỗi.',
+            );
+        } finally {
+            setRegistering(false);
+        }
+    };
     useEffect(() => {
         const fetchProgram = async () => {
             try {
@@ -22,7 +55,6 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
                 setLoading(false);
             }
         };
-
         if (goalId) fetchProgram();
         else setLoading(false);
     }, [goalId]);
@@ -33,10 +65,11 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
 
     const genderIcon = gender === 'Nữ' ? 'female-outline' : 'male-outline';
 
-    const locationLabel =
-        noitap === 'Phòng gym' || noitap === 'GYM' ? 'Tại gym' :
-            noitap === 'Tại nhà' || noitap === 'TAI_NHA' ? 'Tại nhà' :
-                noitap || 'Chưa chọn';
+    // const locationLabel =
+    //     noitap === 'Phòng gym' || noitap === 'GYM' ? 'Tại gym' :
+    //         noitap === 'Tại nhà' || noitap === 'TAI_NHA' ? 'Tại nhà' :
+    //             noitap || 'Chưa chọn';
+    const locationLabel = ten_noi_tap || 'Chưa chọn';
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle="dark-content" />
@@ -78,9 +111,7 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
                                 <Text style={styles.heroTitle}>
                                     {goalName || program?.ten_chuong_trinh}
                                 </Text>
-                                {/* <Text style={styles.heroTitle1}>
-                                    {capDoName || program?.ten_cap_do || 'Chưa có cấp độ'}
-                                </Text> */}
+
 
                                 <Text style={styles.heroSubtitle}>
                                     Chương trình phù hợp với mục tiêu của bạn
@@ -141,9 +172,17 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
                             </View>
                         </View>
                     </View>
-                    <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('headerPage')}>
-                        <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
-                        <Text style={styles.addButtonText}>THÊM KẾ HOẠCH</Text>
+                    <TouchableOpacity style={[styles.addButton, registering && { opacity: 0.7 },]}
+                        onPress={handleRegisterProgram} disabled={registering} >
+                        {registering ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
+                        )}
+
+                        <Text style={styles.addButtonText}>
+                            {registering ? 'ĐANG ĐĂNG KÝ...' : 'THÊM KẾ HOẠCH'}
+                        </Text>
                     </TouchableOpacity>
                     <View style={styles.section}>
                         <Text style={styles.description}>{program?.mo_ta || 'Chưa có mô tả'}</Text>

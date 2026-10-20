@@ -1,156 +1,68 @@
 import React, { useState, useEffect } from "react";
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Animated,
-  ActivityIndicator,
-} from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import apiFitlife from "../../../../general/api";
-
-// ================================
-// TYPES
-// ================================
 
 type Exercise = {
   id: number;
   name: string;
   sets: string;
   duration: string;
-  muscle: string;
   image: string;
+  time: string;
   video?: string;
   completed: boolean;
 };
 
-// ================================
-// MOCK DATA
-// ================================
-
-const EXERCISES: Exercise[] = [
-  {
-    id: 1,
-    name: "Ngồi đan tay duỗi thẳng qua đầu",
-    sets: "3 hiệp x 15 lần",
-    duration: "5 ph",
-    muscle: "Vai & Lưng trên",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/05/High-Knees.gif",
-    video: "https://gymvisual.com/img/vid/12000/120401201-seated-interlocked-hands-top-raise-and-forward-pu-view.mp4",
-    completed: false,
-  },
-  {
-    id: 2,
-    name: "Hít đất trên gối",
-    sets: "2 hiệp x 10 lần",
-    duration: "4 ph",
-    muscle: "Ngực & Tay",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kneeling-Push-up.gif",
-    video: "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kneeling-Push-up.gif",
-    completed: false,
-  },
-  {
-    id: 3,
-    name: "Kéo giãn cơ Superman",
-    sets: "2 hiệp x 15 lần",
-    duration: "4 ph",
-    muscle: "Lưng & Mông",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Superman-exercise.gif",
-    video: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Superman-exercise.gif",
-    completed: false,
-  },
-  {
-    id: 4,
-    name: "Squat không tạ",
-    sets: "2 hiệp x 15 lần",
-    duration: "5 ph",
-    muscle: "Đùi & Mông",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/02/AIR-SQUAT.gif",
-    video: "https://fitnessprogramer.com/wp-content/uploads/2021/02/AIR-SQUAT.gif",
-    completed: false,
-  },
-  {
-    id: 5,
-    name: "Nâng hông nằm ngửa",
-    sets: "2 hiệp x 10 lần",
-    duration: "4 ph",
-    muscle: "Mông & Đùi sau",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/02/Glute-Bridge.gif",
-    video: "https://fitnessprogramer.com/wp-content/uploads/2021/02/Glute-Bridge.gif",
-    completed: false,
-  },
-  {
-    id: 6,
-    name: "Nhảy Jack chéo",
-    sets: "2 hiệp x 20 lần",
-    duration: "5 ph",
-    muscle: "Toàn thân",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Jumping-Jack.gif",
-    video: "https://fitnessprogramer.com/wp-content/uploads/2021/05/Jumping-Jack.gif",
-    completed: false,
-  },
-  {
-    id: 7,
-    name: "Plank giữ thẳng người",
-    sets: "3 hiệp x 30 giây",
-    duration: "5 ph",
-    muscle: "Core & Bụng",
-    image: "https://fitnessprogramer.com/wp-content/uploads/2021/02/plank.gif",
-    video: "https://fitnessprogramer.com/wp-content/uploads/2021/02/plank.gif",
-    completed: false,
-  },
-];
-
-// ================================
-// COMPONENT
-// ================================
-
 const ExercisePage = ({ navigation, route }: any) => {
-  const [exercises, setExercises] = useState<Exercise[]>(EXERCISES);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const idDangKy = route?.params?.id_dang_ky_chuong_trinh;
+  const idNgayTap = route?.params?.id_chuong_trinh_bai_tap;
+  console.log("===== DỮ LIỆU NHẬN TẠI ExercisePage =====");
+  console.log("route.params:", JSON.stringify(route?.params, null, 2));
+  console.log("idDangKy:", idDangKy);
 
-  const dayLabel = route?.params?.dayLabel ?? "1 ngày tập luyện";
-  const dayType = route?.params?.dayType ?? "toàn thân";
-  const totalDuration = 37;
-
-  const gender = route?.params?.gender !== undefined ? route.params.gender : route?.params?.gioi_tinh;
-
-  useEffect(() => {
-    fetchExercises();
-  }, [gender]);
 
   const fetchExercises = async () => {
     try {
       setLoading(true);
-      const params: any = {};
-      if (gender !== undefined && gender !== null) {
-        params.gioi_tinh = gender === 'female' || gender === 1 ? 1 : 0;
+      const res = await apiFitlife.get(`/client/list-program-exercises/${idNgayTap}`);
+      if (res.data.success && Array.isArray(res.data.data)) {
+        const dataNgayTap = res.data.data.filter(
+          (item: any) =>
+            Number(item.id_chuong_trinh_bai_tap) === Number(idNgayTap)
+        );
+
+        const danhSachBaiTap: Exercise[] = dataNgayTap.map(
+          (item: any) => ({
+            id: item.id_bai_tap,
+            name: item.ten_bai_tap,
+            sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${item.muc_ta_toi_thieu ?? 0}`,
+            duration: `${item.thoi_gian_phut ?? 0} phút`,
+          
+            image: item.anh_bai_tap ?? "",
+            video: item.video_huong_dan ?? "",
+            completed: false,
+          })
+        );
+        setExercises(danhSachBaiTap);
+      } else {
+        setExercises([]);
       }
-      const res = await apiFitlife.get('/bai-tap', { params });
-      if (res?.data?.status && Array.isArray(res.data.data) && res.data.data.length > 0) {
-        setExercises(res.data.data);
-      }
-    } catch (err) {
-      console.log('Error loading exercises from backend:', err);
+    } catch (error: any) {
+      console.log("LỖI API:", error.response?.data ?? error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchExercises();
+  }, [idDangKy, idNgayTap]);
   const completedCount = exercises.filter((e) => e.completed).length;
-  const progressPercent =
-    exercises.length > 0
-      ? Math.round((completedCount / exercises.length) * 100)
-      : 0;
+  const progressPercent = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
 
   // ================================
   // HANDLERS
@@ -172,38 +84,22 @@ const ExercisePage = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-
       {/* ================= HEADER ================= */}
 
       <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.backButton}
-          onPress={() => navigation?.goBack()}
-        >
+        <TouchableOpacity activeOpacity={0.7} style={styles.backButton} onPress={() => navigation?.goBack()} >
           <Ionicons name="arrow-back" size={wp("5.5%")} color="#607D8B" />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>Bài tập ngày</Text>
-
         <TouchableOpacity activeOpacity={0.7} style={styles.moreButton}>
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={wp("5.5%")}
-            color="#607D8B"
-          />
+          <Ionicons name="ellipsis-horizontal" size={wp("5.5%")} color="#607D8B" />
         </TouchableOpacity>
       </View>
 
       {/* ================= CONTENT ================= */}
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* ================= SESSION CARD ================= */}
-
         <View style={styles.sessionCard}>
           {/* Left: Progress circle */}
           <View style={styles.progressCircleWrapper}>
@@ -234,29 +130,22 @@ const ExercisePage = ({ navigation, route }: any) => {
 
           {/* Middle: Info */}
           <View style={styles.sessionInfo}>
-            <Text style={styles.sessionDayLabel}>{dayLabel}</Text>
-            <Text style={styles.sessionType}>{dayType}</Text>
-
+            <Text style={styles.sessionDayLabel}> Ngày tập {route.params?.ngayThu ?? 1} </Text>
+            <Text style={styles.sessionType}>{route.params?.dayType ?? "Ngày tập luyện"} </Text>
             <View style={styles.sessionMeta}>
               <Ionicons name="time-outline" size={wp("3.2%")} color="#8FA9B2" />
-              <Text style={styles.sessionMetaText}>~ {totalDuration} phút</Text>
-
+              <Text style={styles.sessionMetaText}> ~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
               <View style={styles.metaDivider} />
-
-              <Ionicons
-                name="barbell-outline"
-                size={wp("3.2%")}
-                color="#8FA9B2"
-              />
+              <Ionicons name="barbell-outline" size={wp("3.2%")} color="#8FA9B2" />
               <Text style={styles.sessionMetaText}>
-                {exercises.length} bài
+                10 bài
               </Text>
             </View>
           </View>
 
           {/* Right: Completed badge */}
           <View style={styles.completedBadge}>
-            <Text style={styles.completedCount}>{completedCount}</Text>
+            <Text style={styles.completedCount}>0</Text>
             <Text style={styles.completedLabel}>xong</Text>
           </View>
         </View>
@@ -266,86 +155,74 @@ const ExercisePage = ({ navigation, route }: any) => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
           <Text style={styles.sectionSubtitle}>
-            {completedCount}/{exercises.length} hoàn thành
+            0/10 hoàn thành
           </Text>
         </View>
 
         {/* ================= EXERCISE LIST ================= */}
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#18BEC3"
+            style={{ marginVertical: 30 }}
+          />
+        ) : exercises.length === 0 ? (
+          <Text style={{ textAlign: "center", color: "#5B7C84", padding: 20 }}>
+            Ngày tập này chưa có bài tập.
+          </Text>
+        ) : (
+          <View style={styles.exerciseList}>
+            {exercises.map((exercise, index) => (
+              <View key={exercise.id}>
+                <TouchableOpacity activeOpacity={0.75} style={styles.exerciseItem} onPress={() => handleExercisePress(exercise)}>
+                  {/* Image */}
+                  <View style={styles.exerciseImageWrapper}>
+                    <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain"/>
+                  </View>
 
-        <View style={styles.exerciseList}>
-          {exercises.map((exercise, index) => (
-            <View key={exercise.id}>
-              <TouchableOpacity
-                activeOpacity={0.75}
-                style={styles.exerciseItem}
-                onPress={() => handleExercisePress(exercise)}
-              >
-                {/* Image */}
-                <View style={styles.exerciseImageWrapper}>
-                  <Image
-                    source={{ uri: exercise.image }}
-                    style={styles.exerciseImage}
-                    resizeMode="contain"
-                  />
-                </View>
+                  {/* Info */}
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName} numberOfLines={2}>
+                      {exercise.name}
+                    </Text>
 
-                {/* Info */}
-                <View style={styles.exerciseInfo}>
-                  <Text
-                    style={styles.exerciseName}
-                    numberOfLines={2}
-                  >
-                    {exercise.name}
-                  </Text>
+                    <View style={styles.exerciseTags}>
+                      <View style={styles.tagPill}>
+                        <Ionicons name="repeat-outline" size={wp("3%")} color="#18BEC3" />
+                        <Text style={styles.tagText}>{exercise.sets}</Text>
+                      </View>
 
-                  <View style={styles.exerciseTags}>
-                    <View style={styles.tagPill}>
-                      <Ionicons
-                        name="repeat-outline"
-                        size={wp("3%")}
-                        color="#18BEC3"
-                      />
-                      <Text style={styles.tagText}>{exercise.sets}</Text>
-                    </View>
-
-                    <View style={[styles.tagPill, styles.tagPillGray]}>
-                      <Ionicons
-                        name="body-outline"
-                        size={wp("3%")}
-                        color="#8FA9B2"
-                      />
-                      <Text style={[styles.tagText, styles.tagTextGray]}>
-                        {exercise.muscle}
-                      </Text>
+                      <View style={[styles.tagPill, styles.tagPillGray]}>
+                        <Ionicons name="body-outline" size={wp("3%")} color="#8FA9B2"/>
+                        <Text style={[styles.tagText, styles.tagTextGray]}>
+                          {exercise.duration}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                {/* Arrow */}
-                <Ionicons
-                  name="chevron-forward"
-                  size={wp("5%")}
-                  color="#18BEC3"
-                />
-              </TouchableOpacity>
+                  {/* Arrow */}
+                  <Ionicons
+                    name="chevron-forward"
+                    size={wp("5%")}
+                    color="#18BEC3"
+                  />
+                </TouchableOpacity>
 
-              {/* Divider (not after last item) */}
-              {index < exercises.length - 1 && (
-                <View style={styles.divider} />
-              )}
-            </View>
-          ))}
-        </View>
+                {/* Divider: không hiển thị sau bài cuối */}
+                {index < exercises.length - 1 && (
+                  <View style={styles.divider} />
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* ================= TIPS CARD ================= */}
 
         <View style={styles.tipsCard}>
           <View style={styles.tipsHeader}>
-            <Ionicons
-              name="bulb-outline"
-              size={wp("4.5%")}
-              color="#E8A020"
-            />
+            <Ionicons name="bulb-outline" size={wp("4.5%")} color="#E8A020" />
             <Text style={styles.tipsTitle}>Lưu ý buổi tập</Text>
           </View>
           <Text style={styles.tipsText}>
@@ -353,32 +230,19 @@ const ExercisePage = ({ navigation, route }: any) => {
             nước trong suốt buổi tập để duy trì năng lượng tốt nhất.
           </Text>
         </View>
-
       </ScrollView>
 
       {/* ================= BOTTOM AREA ================= */}
 
       <View style={styles.bottomArea}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={[
-            styles.startButton,
-            progressPercent === 100 && styles.startButtonDone,
-          ]}
-          onPress={handleStart}
-        >
-          <Ionicons
-            name={progressPercent === 100 ? "checkmark-circle" : "play"}
-            size={wp("5%")}
-            color="#FFFFFF"
-            style={styles.startIcon}
-          />
+        <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, progressPercent === 100 && styles.startButtonDone,]} onPress={handleStart}>
+          <Ionicons name={progressPercent === 100 ? "checkmark-circle" : "play"} size={wp("5%")} color="#FFFFFF" style={styles.startIcon} />
           <Text style={styles.startButtonText}>
             {progressPercent === 100
               ? "HOÀN THÀNH BUỔI TẬP"
               : progressPercent > 0
-              ? "TIẾP TỤC TẬP"
-              : "BẮT ĐẦU TẬP"}
+                ? "TIẾP TỤC TẬP"
+                : "BẮT ĐẦU TẬP"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -394,26 +258,22 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#F6FAFB",
+    paddingTop: hp("7%"),
   },
-
-  // =================================================
-  // HEADER
-  // =================================================
-
   header: {
     height: hp("7%"),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: wp("4%"),
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
+    // backgroundColor: "#FFFFFF",
+    // borderBottomWidth: 1,
     borderBottomColor: "#EEF3F5",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    // elevation: 2,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
   },
 
   headerTitle: {
@@ -731,7 +591,7 @@ const styles = StyleSheet.create({
     padding: wp("4%"),
     borderWidth: 1,
     borderColor: "#F5E8C0",
-    marginBottom: hp("2%"),
+    marginBottom: hp("5%"),
   },
 
   tipsHeader: {
@@ -765,7 +625,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingHorizontal: wp("4%"),
     paddingTop: hp("1.5%"),
-    paddingBottom: hp("3%"),
+    paddingBottom: hp("10%"),
     borderTopWidth: 1,
     borderTopColor: "#EEF3F5",
     elevation: 10,

@@ -34,6 +34,10 @@ class DatabaseSeeder extends Seeder
             CapDoSeeder::class,
             ChiTietBaiTapSeeder::class,
             BaiTapNhomCoSeeder::class,
+            LichTapSeeder::class,
+            LichTapChuongTrinhSeeder::class,
+            NoiTapSeeder::class,
+            MucTieuDinhDuongSeeder::class,
        ]);
     }
 }

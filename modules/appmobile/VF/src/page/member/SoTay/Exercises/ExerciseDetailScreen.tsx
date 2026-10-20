@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -21,6 +21,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
   const [activeTab, setActiveTab] = useState<'info' | 'muscles' | 'history' | 'progress'>('info');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [fontSizeScale, setFontSizeScale] = useState(1);
+  const [videoMode, setVideoMode] = useState<'correct' | 'wrong'>('correct');
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('day');
   const [showOnDashboard, setShowOnDashboard] = useState(false);
   const [showAllPrograms, setShowAllPrograms] = useState(true);
@@ -29,19 +30,32 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
     setFontSizeScale((prev) => (prev === 1 ? 1.2 : prev === 1.2 ? 1.4 : 1));
   };
 
-  const currentExercise = exercise || {
-    name: 'Bài fly ép ngực với máy',
-    englishName: 'Seated cable fly',
+    const defaultExerciseData = {
+    name: 'Chạy bộ trên máy',
+    englishName: 'Treadmill',
     image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80',
     description:
-      'Tiếng Anh là Seated cable fly. Đây là một bài tập giúp bạn tập trung phát triển hai nhóm cơ ngực lớn một cách riêng biệt. Chuyển động của bài tập này là tự nhiên đối với các cơ ngực lớn vì chức năng chính của chúng là dùng để kết hợp hai tay lại với nhau. Tùy theo độ nghiêng khi chuyển động mà trọng tâm lực sẽ tác động lên ngực trên, ngực giữa hay ngực dưới nhiều hơn.',
+      'Tiếng Anh là Treadmill. Máy chạy bộ là một trong nhiều loại máy giúp bạn rèn luyện tim mạch với các chuyển động mô phỏng hệt như chạy bộ và đi bộ ở bên ngoài. Các chuyển động này giúp đẩy nhanh quá trình trao đổi chất, đồng thời đốt cháy mỡ thừa tích tụ và làm tăng sức bền.',
     musclesDistribution: [
-      { name: 'Ngực', percent: 80, color: '#EF4444' },
-      { name: 'Cơ delta trước', percent: 45, color: '#8B5CF6' },
-      { name: 'Đầu xương đòn của cơ ngực lớn', percent: 70, color: '#3B82F6' },
-      { name: 'Đầu ức sườn của cơ ngực lớn', percent: 85, color: '#EF4444' },
-      { name: 'Cơ ngực bé', percent: 60, color: '#10B981' },
+      { name: 'Cơ đùi trước (Quadriceps)', percent: 80, color: '#EF4444' },
+      { name: 'Cơ mông (Glutes)', percent: 70, color: '#3B82F6' },
+      { name: 'Cơ đùi sau (Hamstrings)', percent: 65, color: '#10B981' },
+      { name: 'Cơ bắp chuối (Calves)', percent: 75, color: '#F59E0B' },
+      { name: 'Cơ bụng và liên sườn (Core)', percent: 50, color: '#8B5CF6' },
     ],
+  };
+
+  const currentExercise = {
+    ...defaultExerciseData,
+    ...(exercise || {}),
+    name: exercise?.name || defaultExerciseData.name,
+    description: exercise?.description || defaultExerciseData.description,
+    image: exercise?.image || defaultExerciseData.image,
+    video: exercise?.video,
+    video_sai: exercise?.video_sai,
+    instructions: typeof (exercise?.instructions || exercise?.huong_dan) === 'string' ? (exercise?.instructions || exercise?.huong_dan).replace(/\\n/g, '\n') : (exercise?.instructions || exercise?.huong_dan),
+    warnings: typeof (exercise?.warnings || exercise?.canh_bao) === 'string' ? (exercise?.warnings || exercise?.canh_bao).replace(/\\n/g, '\n') : (exercise?.warnings || exercise?.canh_bao),
+    musclesDistribution: exercise?.musclesDistribution || defaultExerciseData.musclesDistribution,
   };
 
   return (
@@ -127,45 +141,186 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
         {/* ================= TAB 1: THÔNG TIN ================= */}
         {activeTab === 'info' && (
           <View>
-            {/* Hình ảnh/Minh họa bài tập */}
+            {/* Bộ chọn Video đúng / Video sai */}
+            {currentExercise.video_sai ? (
+              <View style={styles.videoModeToggleRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.videoModeToggleBtn,
+                    videoMode === 'correct' && styles.videoModeToggleBtnCorrect,
+                  ]}
+                  onPress={() => setVideoMode('correct')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={videoMode === 'correct' ? '#FFFFFF' : '#10B981'}
+                  />
+                  <Text
+                    style={[
+                      styles.videoModeToggleText,
+                      videoMode === 'correct' && styles.videoModeToggleTextActive,
+                    ]}
+                  >
+                    Video đúng (Kỹ thuật chuẩn)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.videoModeToggleBtn,
+                    videoMode === 'wrong' && styles.videoModeToggleBtnWrong,
+                  ]}
+                  onPress={() => setVideoMode('wrong')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={16}
+                    color={videoMode === 'wrong' ? '#FFFFFF' : '#EF4444'}
+                  />
+                  <Text
+                    style={[
+                      styles.videoModeToggleText,
+                      videoMode === 'wrong' && styles.videoModeToggleTextActive,
+                    ]}
+                  >
+                    Video sai (Lỗi thường gặp)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {/* Hình ảnh/Minh họa bài tập (GIF Animation) */}
             <View style={styles.imageBox}>
               <Image
-                source={{ uri: currentExercise.image }}
+                source={{
+                  uri:
+                    (videoMode === 'correct'
+                      ? currentExercise.video
+                      : currentExercise.video_sai) ||
+                    currentExercise.image,
+                }}
                 style={styles.exerciseHeroImage}
                 resizeMode="contain"
               />
+              <View
+                style={[
+                  styles.videoBadge,
+                  videoMode === 'correct'
+                    ? styles.videoBadgeCorrect
+                    : styles.videoBadgeWrong,
+                ]}
+              >
+                <Ionicons
+                  name={videoMode === 'correct' ? 'checkmark' : 'alert-outline'}
+                  size={12}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.videoBadgeText}>
+                  {videoMode === 'correct'
+                    ? 'Động tác đúng'
+                    : 'Lỗi sai cần tránh'}
+                </Text>
+              </View>
             </View>
 
             {/* Tên bài tập */}
-            <Text style={[styles.exerciseNameText, { fontSize: 20 * fontSizeScale }]}>
+            <Text
+              style={[
+                styles.exerciseNameText,
+                { fontSize: 20 * fontSizeScale },
+              ]}
+            >
               {currentExercise.name}
             </Text>
 
             {/* Mô tả chi tiết */}
-            <Text style={[styles.bodyDescription, { fontSize: 14 * fontSizeScale }]}>
+            <Text
+              style={[styles.bodyDescription, { fontSize: 14 * fontSizeScale }]}
+            >
               {currentExercise.description}
             </Text>
 
             {/* Hướng dẫn */}
-            <Text style={styles.sectionHeaderTitle}>Hướng dẫn</Text>
-            <View style={styles.guideStep}>
-              <Text style={styles.stepNum}>1.</Text>
-              <Text style={[styles.stepText, { fontSize: 14 * fontSizeScale }]}>
-                Điều chỉnh ghế ngồi sao cho tay cầm ngang tầm giữa ngực. Lưng và đầu áp sát vào đệm tựa.
+            <Text style={styles.sectionHeaderTitle}>Hướng dẫn thực hiện</Text>
+            {currentExercise.instructions ? (
+              <Text
+                style={[
+                  styles.bodyDescription,
+                  { fontSize: 14 * fontSizeScale, lineHeight: 22 },
+                ]}
+              >
+                {currentExercise.instructions}
               </Text>
-            </View>
-            <View style={styles.guideStep}>
-              <Text style={styles.stepNum}>2.</Text>
-              <Text style={[styles.stepText, { fontSize: 14 * fontSizeScale }]}>
-                Hít vào, từ từ ép hai tay cầm về phía trước ngực với khuỷu tay hơi cong nhẹ tự nhiên.
-              </Text>
-            </View>
-            <View style={styles.guideStep}>
-              <Text style={styles.stepNum}>3.</Text>
-              <Text style={[styles.stepText, { fontSize: 14 * fontSizeScale }]}>
-                Giữ siết cơ ngực 1 giây ở điểm ép chặt nhất, sau đó thở ra và từ từ mở rộng hai tay về vị trí ban đầu.
-              </Text>
-            </View>
+            ) : (
+              <>
+                <View style={styles.guideStep}>
+                  <Text style={styles.stepNum}>1.</Text>
+                  <Text
+                    style={[
+                      styles.stepText,
+                      { fontSize: 14 * fontSizeScale },
+                    ]}
+                  >
+                    Điều chỉnh tư thế sao cho bả vai, lưng và cột sống ở vị trí trung tính an toàn.
+                  </Text>
+                </View>
+                <View style={styles.guideStep}>
+                  <Text style={styles.stepNum}>2.</Text>
+                  <Text
+                    style={[
+                      styles.stepText,
+                      { fontSize: 14 * fontSizeScale },
+                    ]}
+                  >
+                    Hít vào, từ từ thực hiện động tác theo đúng kỹ thuật hướng dẫn.
+                  </Text>
+                </View>
+                <View style={styles.guideStep}>
+                  <Text style={styles.stepNum}>3.</Text>
+                  <Text
+                    style={[
+                      styles.stepText,
+                      { fontSize: 14 * fontSizeScale },
+                    ]}
+                  >
+                    Giữ siết cơ 1 giây ở điểm căng nhất, sau đó thở ra và từ từ trở về vị trí ban đầu.
+                  </Text>
+                </View>
+              </>
+            )}
+
+            {/* Cảnh báo / Lưu ý */}
+            {currentExercise.warnings ? (
+              <>
+                <Text
+                  style={[
+                    styles.sectionHeaderTitle,
+                    { color: '#B91C1C', marginTop: 16 },
+                  ]}
+                >
+                  Lưu ý & Cảnh báo an toàn
+                </Text>
+                <View style={styles.warningBox}>
+                  <Ionicons
+                    name="warning-outline"
+                    size={20}
+                    color="#B91C1C"
+                    style={{ marginTop: 2 }}
+                  />
+                  <Text
+                    style={[
+                      styles.warningText,
+                      { fontSize: 13 * fontSizeScale },
+                    ]}
+                  >
+                    {currentExercise.warnings}
+                  </Text>
+                </View>
+              </>
+            ) : null}
           </View>
         )}
 
@@ -391,7 +546,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingTop: 12,
-    paddingBottom: 50,
+    paddingBottom: 170,
   },
   imageBox: {
     width: '100%',
@@ -610,5 +765,76 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     lineHeight: 16,
+  },
+  videoModeToggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  videoModeToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    gap: 6,
+  },
+  videoModeToggleBtnCorrect: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  videoModeToggleBtnWrong: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
+  },
+  videoModeToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  videoModeToggleTextActive: {
+    color: '#FFFFFF',
+  },
+  videoBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  videoBadgeCorrect: {
+    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+  },
+  videoBadgeWrong: {
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+  },
+  videoBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  warningBox: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+  },
+  warningText: {
+    flex: 1,
+    color: '#991B1B',
+    lineHeight: 20,
   },
 });

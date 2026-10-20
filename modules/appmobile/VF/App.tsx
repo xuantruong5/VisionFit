@@ -1,4 +1,4 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+﻿import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { Alert, Animated, View, Text } from "react-native";
@@ -26,6 +26,7 @@ import headerPage from "./src/page/member/TrainingPlan/Header/page";
 import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
 import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/WorkoutPlan";
+
 
 
 import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
@@ -56,6 +57,12 @@ import ReportPage from "./src/page/member/TrainingPlan/Tab/ReportPage";
 import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExercisePlan";
 import ResultPage from "./src/page/member/ResultPage";
 import Onloading from "./src/page/on_loading";
+import OnboardingScreen from "./src/page/screens/OnboardingScreen";
+import OnboardingScreen1 from "./src/page/screens/OnboardingScreen1";
+import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
+import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
+
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -65,7 +72,7 @@ const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="WorkoutPlanScreen" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="ExercisePage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
 
@@ -78,6 +85,20 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
 
       <MemberWorkoutStack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
+
+
+      <MemberWorkoutStack.Screen name="headerPage" component={headerPage}/>
+      <MemberWorkoutStack.Screen name="DashboardScreen" component={DashboardScreen} />
+      <MemberWorkoutStack.Screen name="DietScreen" component={DietScreen} />
+      <MemberWorkoutStack.Screen name="DietDetail" component={DietDetail} />
+      <MemberWorkoutStack.Screen name="ExercisePage" component={ExercisePage}/>
+      <MemberWorkoutStack.Screen name="ReportPage" component={ReportPage}/>
+      <MemberWorkoutStack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+      <MemberWorkoutStack.Screen name="ResultPage" component={ResultPage}/>
+      {/* <MemberWorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} /> */}
+
+
+
 
     </MemberWorkoutStack.Navigator>
   );
@@ -261,7 +282,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Login"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Onloading" component={Onloading}/>
@@ -274,20 +295,32 @@ const App = () => {
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
         <Stack.Screen name="headerPage" component={headerPage} />
-        <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+        {/* <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
-        {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+       
+        <Stack.Screen name="DietDetail" component={DietDetail} /> 
+        <Stack.Screen name="ExercisePage" component={ExercisePage} />
+        <Stack.Screen name="ReportPage" component={ReportPage} />
+        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} /> */}
+        {/* <Stack.Screen name="ResultPage" component={ResultPage}/> */}
+        <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/>
+
+
+
+         {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} /> 
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} /> */}
-        <Stack.Screen name="DietDetail" component={DietDetail} /> 
-        <Stack.Screen name="ExercisePage" component={ExercisePage} /> 
-        <Stack.Screen name="ReportPage" component={ReportPage} />
-        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
-        <Stack.Screen name="ResultPage" component={ResultPage}/> 
-        
+
+
+        {/* // gioi thieu */}
+       <Stack.Screen name="OnboardingScreen" component={OnboardingScreen}/>
+       <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1}/>
+       <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2}/>
+       <Stack.Screen name="OnboardingScreen3" component={OnboardingScreen3}/>
+
 
 
         {/* cua trainner  */}

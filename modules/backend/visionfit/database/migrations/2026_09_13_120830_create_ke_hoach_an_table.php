@@ -16,14 +16,11 @@ return new class extends Migration
             $table->integer('id_chuong_trinh');
             $table->integer('id_hoi_vien')->nullable();
             $table->integer('id_nguoi_tao')->nullable();
+            $table->unsignedBigInteger('id_dang_ky_chuong_trinh')->unique();
             $table->string('ten_ke_hoach', 255);
-            $table->integer('muc_tieu_calo_ngay')->nullable(); // ngày 
-            $table->decimal('protein_muc_tieu', 8, 2)->nullable(); // ngày 
-            $table->decimal('carb_muc_tieu', 8, 2)->nullable();// ngày 
-            $table->decimal('fat_muc_tieu', 8, 2)->nullable();// ngày 
             // Thời gian áp dụng
-            $table->date('ngay_bat_dau')->nullable();
-            $table->date('ngay_ket_thuc')->nullable();
+            // $table->date('ngay_bat_dau')->nullable();
+            // $table->date('ngay_ket_thuc')->nullable();
             // Trạng thái
             $table->integer('tinh_trang') ->default(1)->comment('0: nghi, 1: đang hoạt động');
             $table->timestamps();
