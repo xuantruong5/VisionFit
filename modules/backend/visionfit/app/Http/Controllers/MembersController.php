@@ -153,14 +153,11 @@ class MembersController extends Controller
 
     public function getChiTietChuongTrinhTap($id)
     {
-        $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do', '=','cap_do.id'
-            )
+        $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do', '=','cap_do.id')
             ->where('chuong_trinh_tap.id', $id)
             ->where('chuong_trinh_tap.tinh_trang', 1)
-            ->select( 'chuong_trinh_tap.*','cap_do.ten_cap_do'
-            )
+            ->select( 'chuong_trinh_tap.*','cap_do.ten_cap_do')
             ->first();
-
         if (!$data) {
             return response()->json([
                 'status' => false,

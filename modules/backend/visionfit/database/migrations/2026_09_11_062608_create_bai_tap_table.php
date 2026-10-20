@@ -25,10 +25,7 @@ return new class extends Migration
             $table->string('anh_dai_dien', 500)->nullable();
             $table->integer('tinh_trang')->default(1);
 
-            // $table->string('video_huong_dan', 500)->nullable();
-            // $table->string('nhom_co');
-            // $table->string('cap_do')->nullable();
-            // $table->string('huong_dan')->nullable();
+          
             $table->string('loi_thuong_gap')->nullable();
             $table->string('thiet_bi', 255)->nullable();
             
@@ -47,3 +44,7 @@ return new class extends Migration
         Schema::dropIfExists('bai_tap');
     }
 };
+  // $table->string('video_huong_dan', 500)->nullable();
+            // $table->string('nhom_co');
+            // $table->string('cap_do')->nullable();
+            // $table->string('huong_dan')->nullable();

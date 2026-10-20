@@ -423,6 +423,55 @@ class DangKyChuongTrinhController extends Controller
             'data' => $data,
         ], 200);
     }
+    
+   public function getExercises($id)
+    {
+        // 1. Lấy hội viên đang đăng nhập
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+        $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+            ->where('dang_ky_chuong_trinh.tinh_trang', 1)
+            ->join( 'chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=','ct.id')
+            ->join('chuong_trinh_bai_tap as ctbt','ct.id','=','ctbt.id_chuong_trinh' )
+            ->where('ctbt.id', $id)
+            ->join('bai_tap as bt','ctbt.id','=','bt.id_chuong_trinh_bai_tap')
+            ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap'
+            )
+            ->select(
+                'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
+                'dang_ky_chuong_trinh.id_chuong_trinh',
+                'ctbt.id as id_chuong_trinh_bai_tap',
+                'ctbt.ten_ngay_tap',
+                'bt.id as id_bai_tap',
+                'bt.ten_bai_tap',
+                'bt.mo_ta as mo_ta_bai_tap',
+                'bt.thoi_gian_phut',
+                'bt.rep_yeu_cau',
+                'bt.set_yeu_cau',
+                'bt.anh_dai_dien as anh_bai_tap',
+                'bt.muc_ta_toi_thieu',
+                'ctct.video_huong_dan',
+                'ctct.video_sai',
+                'ctct.huong_dan',
+                'ctct.canh_bao'
+            )
+            ->orderBy('bt.id')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy danh sách bài tập thành công',
+            'data' => $data,
+        ], 200);
+    }
+
+
+
 
     public function getListMealPlans()
     {
@@ -504,7 +553,6 @@ class DangKyChuongTrinhController extends Controller
     public function destroy($id)
     {
         $user = Auth::guard('sanctum')->user();
-
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -521,7 +569,19 @@ class DangKyChuongTrinhController extends Controller
                 'message' => 'Không tìm thấy đăng ký chương trình hoặc bạn không có quyền xóa.',
             ], 404);
         }
+        $dangHoatDong = $dangKy->tinh_trang == 1;
         $dangKy->delete();
+        if ($dangHoatDong) {
+        // Tìm chương trình còn lại
+            $chuongTrinhConLai = DKChuongTrinh::where('id_hoi_vien', $idHoiVien)
+                ->orderBy('id', 'desc')
+                ->first();
+            // Nếu còn chương trình thì kích hoạt
+            if ($chuongTrinhConLai) {
+                $chuongTrinhConLai->tinh_trang = 1;
+                $chuongTrinhConLai->save();
+            }
+        }
         return response()->json([
             'success' => true,
             'message' => 'Xóa đăng ký chương trình tập thành công.',

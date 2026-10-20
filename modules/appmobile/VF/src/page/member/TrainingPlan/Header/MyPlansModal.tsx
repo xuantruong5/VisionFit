@@ -60,22 +60,64 @@ const MyPlansModal = ({ visible, onClose, navigation }: any) => {
     };
 
     // 2. Xóa kế hoạch tập 
+
     const handleDelete = (id: any, name: string) => {
-        Alert.alert("Xóa kế hoạch tập", `Bạn có chắc chắn muốn xóa "${name}" không?`, [
-            { text: "Hủy", style: "cancel" },
-            {
-                text: "Xóa",
-                style: "destructive",
-                onPress: async () => {
-                    const res = await apiFitlife.delete(`/client/delete-program/${id}`);
-                    if (res.data.success) {
-                        setPrograms((prev) => prev.filter((p) => p.id !== id && p.id_chuong_trinh !== id));
-                        Alert.alert("Thành công", "Đã xóa kế hoạch tập luyện!");
-                    }
+        Alert.alert(
+            "Xóa kế hoạch tập",
+            `Bạn có chắc chắn muốn xóa "${name}" không?`,
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel",
                 },
-            },
-        ]);
+                {
+                    text: "Xóa",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const res = await apiFitlife.delete( `/client/delete-program/${id}` );
+                            if (res.data.success) {
+                                // Lấy lại danh sách sau khi xóa
+                                const listRes = await apiFitlife.get(
+                                    "/client/all-list-programs"
+                                );
+                                const danhSach = listRes.data.success
+                                    ? listRes.data.data.filter(
+                                        (item: any, index: number, arr: any[]) =>
+                                            arr.findIndex(
+                                                (p: any) =>
+                                                    String(p.id) === String(item.id)
+                                            ) === index
+                                    )
+                                    : [];
+                                // Cập nhật danh sách kế hoạch
+                                setPrograms(danhSach);
+                                Alert.alert( "Thành công", "Đã xóa kế hoạch tập luyện!");
+
+                                // Nếu không còn chương trình nào
+                                if (danhSach.length === 0) {
+                                    onClose();
+                                    navigation.navigate("WorkoutPlanScreen");
+                                }
+                            } else {
+                                Alert.alert(
+                                    "Lỗi",
+                                    res.data.message || "Không thể xóa kế hoạch."
+                                );
+                            }
+                        } catch (error: any) {
+                            Alert.alert(
+                                "Lỗi",
+                                error?.response?.data?.message ||
+                                "Không thể xóa kế hoạch tập luyện."
+                            );
+                        }
+                    },
+                },
+            ]
+        );
     };
+
 
     if (!visible) return null;
 
