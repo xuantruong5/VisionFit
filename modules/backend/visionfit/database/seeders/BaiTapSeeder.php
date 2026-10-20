@@ -29,7 +29,7 @@ class BaiTapSeeder extends Seeder
                 'set_yeu_cau' => 3,
                 'muc_ta_toi_thieu' => 0,
                 'giay_yeu_cau' => null ,
-                'anh_dai_dien' => 'https://bloganchoi.com/wp-content/uploads/2019/09/tap-co-nguc-barbell-bench-p.jpg',
+                'anh_dai_dien' => 'https://liftmanual.com/wp-content/uploads/2023/04/barbell-bench-press.jpg',
                 'tinh_trang' => 1,
                 'thiet_bi' => 'Thanh tạ đòn, ghế tập',
                 // tập có dụng cụ tại nhà, gym 
