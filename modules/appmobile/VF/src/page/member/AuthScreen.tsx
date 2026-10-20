@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView,} from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
@@ -12,6 +12,7 @@ const AuthScreen = ({ navigation }: any) => {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
 
+
     const handleLogin = async () => {
         if (!email.trim() || !password) {
             Alert.alert('Thông báo', 'Vui lòng nhập email và mật khẩu');
@@ -23,27 +24,57 @@ const AuthScreen = ({ navigation }: any) => {
                 password: password,
             });
             console.log('Kết quả đăng nhập:', response.data);
-            // Lấy token từ dữ liệu API trả về
             const token = response.data.token;
-            if (token) {
-                await AsyncStorage.setItem('token', token);
-                await AsyncStorage.setItem("role", "member");
-                Alert.alert('Thành công', 'Đăng nhập thành công');
-                navigation.reset({  index: 0, routes: [{ name: 'MemberTabs' }], });
-            } else {
+            if (!token) {
                 Alert.alert(
                     'Thông báo',
                     'Đăng nhập thành công nhưng API không trả về token'
                 );
+                return;
             }
+            // Lưu token và role
+            await AsyncStorage.setItem('token', token);
+            await AsyncStorage.setItem('role', 'member');
+            console.log('Đăng nhập thành công, đang kiểm tra chương trình tập...');
+            // Kiểm tra chương trình tập đã đăng ký
+            const programResponse = await apiFitlife.get('/client/my-programs');
+            const chuongTrinh = programResponse.data.data;
+            console.log('MY PROGRAMS =', chuongTrinh);
+            // Có chương trình thì vào DashboardScreen
+            // Chưa có chương trình thì vào WorkoutPlanScreen
+            const targetScreen = Array.isArray(chuongTrinh) && chuongTrinh.length > 0
+                    ? 'headerPage'
+                    : 'WorkoutPlanScreen';
+
+            Alert.alert('Thành công', 'Đăng nhập thành công');
+            navigation.reset({
+                index: 0,
+                routes: [
+                    {
+                        name: 'MemberTabs',
+                        params: {
+                            screen: 'Kế Hoạch Tập',
+                            params: {
+                                screen: targetScreen,
+                            },
+                        },
+                    },
+                ],
+            });
         } catch (error: any) {
-            console.log('Lỗi đăng nhập:', error.response?.data || error.message);
+            console.log(
+                'Lỗi đăng nhập hoặc kiểm tra chương trình:',
+                error.response?.data || error.message
+            );
+
             Alert.alert(
-                'Đăng nhập thất bại',
-                error.response?.data?.message || 'Email hoặc mật khẩu không chính xác'
+                'Thông báo',
+                error.response?.data?.message ||
+                'Không thể đăng nhập hoặc kiểm tra chương trình tập'
             );
         }
     };
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} >
@@ -60,14 +91,14 @@ const AuthScreen = ({ navigation }: any) => {
                 {/* Tab Đăng ký / Đăng nhập */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
-                        style={[ styles.tab, isRegister && styles.activeTab, ]} onPress={() => setIsRegister(true)} >
+                        style={[styles.tab, isRegister && styles.activeTab,]} onPress={() => setIsRegister(true)} >
                         <Text
-                            style={[ styles.tabText, isRegister && styles.activeTabText, ]} >
+                            style={[styles.tabText, isRegister && styles.activeTabText,]} >
                             Đăng ký
                         </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[ styles.tab, !isRegister && styles.activeTab, ]} onPress={() => setIsRegister(false)} >
-                        <Text style={[ styles.tabText, !isRegister && styles.activeTabText, ]} >
+                    <TouchableOpacity style={[styles.tab, !isRegister && styles.activeTab,]} onPress={() => setIsRegister(false)} >
+                        <Text style={[styles.tabText, !isRegister && styles.activeTabText,]} >
                             Đăng nhập
                         </Text>
                     </TouchableOpacity>
@@ -96,15 +127,15 @@ const AuthScreen = ({ navigation }: any) => {
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword} />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword) } style={styles.eyeButton} >
+                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton} >
                             <Ionicons
-                                name={ showPassword  ? "eye-outline" : "eye-off-outline" } size={25} color="#71949A" />
+                                name={showPassword ? "eye-outline" : "eye-off-outline"} size={25} color="#71949A" />
                         </TouchableOpacity>
                     </View>
                 </View>
                 {/* Form Đăng ký */}
                 {isRegister && (
-                    <>                     
+                    <>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Tên</Text>
                             <TextInput
@@ -114,7 +145,7 @@ const AuthScreen = ({ navigation }: any) => {
                                 value={firstName}
                                 onChangeText={setFirstName}
                             />
-                        </View>                 
+                        </View>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Họ</Text>
                             <TextInput
@@ -158,7 +189,7 @@ const AuthScreen = ({ navigation }: any) => {
                             <Text style={styles.forgotText}>
                                 Quên mật khẩu?
                             </Text>
-                        </TouchableOpacity>                    
+                        </TouchableOpacity>
                         <TouchableOpacity style={styles.mainButton} onPress={handleLogin} >
                             <Text style={styles.mainButtonText}>
                                 ĐĂNG NHẬP
@@ -201,7 +232,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: "700",
-        
+
     },
     tabContainer: {
         height: 56,
@@ -257,7 +288,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 55,
         fontSize: 17,
-        
+
         paddingHorizontal: 0,
     },
     eyeButton: {

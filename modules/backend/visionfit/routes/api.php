@@ -95,48 +95,41 @@ Route::prefix('chat')->group(function () {
 });
 
 
-// member 
+// member
 Route::post('client/login', [MembersController::class, 'login']);
 Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
     Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
     Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
-
-
     Route::get('/chuong-trinh-tap/{id}/noi-tap', [MembersController::class, 'getNoiTap']);
-
-
     Route::get('/chuong-trinh-tap/cap-do', [MembersController::class,'getCapDoChuongTrinh']);
     Route::get('/chuong-trinh-tap/{id}', [MembersController::class, 'getChiTietChuongTrinhTap']);
     Route::post('logout', [MembersController::class, 'logoutClient']);
     Route::post('logout-all', [MembersController::class, 'logoutAllClient']);
     Route::post('dang-ky-chuong-trinh', [DangKyChuongTrinhController::class, 'store']);
-
     // chương trình đã đăng ký để bỏ onloading
     Route::get('/my-programs', [DangKyChuongTrinhController::class, 'getMyPrograms']);
     Route::get('/all-list-programs', [DangKyChuongTrinhController::class, 'getAllListPrograms']);
     Route::get('/list-programs', [DangKyChuongTrinhController::class, 'getListPrograms']);
     Route::get('/list-program-exercises', [DangKyChuongTrinhController::class, 'getListProgramExercises']);
-    
     Route::get('//list-program-exercises/{id}', [DangKyChuongTrinhController::class, 'getExercises']);
-
     Route::get('/list-meal-plans', [DangKyChuongTrinhController::class,'getListMealPlans']);
     Route::delete('/delete-program/{id}', [DangKyChuongTrinhController::class, 'destroy']);
     Route::post('/activate-program/{id}',[DangKyChuongTrinhController::class, 'activateProgram']);
 
 
 
-    
+
 });
 
 
-// trainner 
+// trainner
 Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
     Route::post('logout', [TrainerController::class, 'logoutTrainer']);
 });
 
 
-// admin 
+// admin
 Route::post('admin/login', [AdminController::class, 'loginAdmin']);
 Route::group(['prefix' => 'admin','middleware' => 'AdminMiddleware'], function () {
     Route::post('logout', [AdminController::class, 'logoutAdmin']);

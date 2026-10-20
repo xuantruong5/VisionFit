@@ -104,7 +104,7 @@ class MembersController extends Controller
             'data' => $data,
         ]);
     }
-    
+
     public function getNoiTap($id)
     {
         $chuongTrinh = ChuongTrinhTap::find($id);
@@ -385,5 +385,5 @@ class MembersController extends Controller
 
 
 
-    
+
 }
