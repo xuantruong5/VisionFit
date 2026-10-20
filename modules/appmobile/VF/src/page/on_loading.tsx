@@ -11,43 +11,96 @@ const Onloading = ({ navigation }: any) => {
                 const role = await AsyncStorage.getItem("role");
                 console.log("TOKEN =", token);
                 console.log("ROLE =", role);
+                // Chưa đăng nhập
                 if (!token || !role) {
-                    navigation.replace("Login");
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: "OnboardingScreen" }],
+                    });
                     return;
                 }
+                // Hội viên
                 if (role === "member") {
-                    const response = await apiFitlife.get("/client/my-programs");
-                    const chuongTrinh = response.data.data;
-                    console.log("MY PROGRAMS =", chuongTrinh);
-                   if (chuongTrinh && chuongTrinh.length > 0) {
-                    navigation.replace("MemberTabs", { screen: "Kế Hoạch Tập",
-                        params: { screen: "headerPage", },
-                    });
-                    } else {
-                        navigation.replace("MemberTabs", { screen: "Kế Hoạch Tập",
-                        params: { screen: "WorkoutPlanScreen", },
-                    });
+                    try {const response = await apiFitlife.get("/client/my-programs");
+                        const chuongTrinh = response.data.data;
+                        console.log("MY PROGRAMS =", chuongTrinh);
+                        const targetScreen =
+                            Array.isArray(chuongTrinh) &&
+                            chuongTrinh.length > 0
+                                ? "headerPage"
+                                : "WorkoutPlanScreen";
+
+                        navigation.reset({
+                            index: 0,
+                            routes: [
+                                {
+                                    name: "MemberTabs",
+                                    params: {
+                                        screen: "Kế Hoạch Tập",
+                                        params: {
+                                            screen: targetScreen,
+                                        },
+                                    },
+                                },
+                            ],
+                        });
+                    } catch (error: any) {
+                        console.log(
+                            "Lỗi kiểm tra chương trình:",
+                            error.response?.data || error.message
+                        );
+
+                        // API lỗi xác thực thì quay về đăng nhập
+                        if (error.response?.status === 401 ||
+                            error.response?.status === 403) {
+                            await AsyncStorage.removeItem("token");
+                            await AsyncStorage.removeItem("role");
+
+                            navigation.reset({
+                                index: 0,
+                                routes: [
+                                    { name: "OnboardingScreen" },
+                                ],
+                            });
+                            return;
+                        }
+
+                        // Lỗi mạng/server: không đoán trạng thái đăng ký
+                        navigation.replace("MemberTabs");
                     }
+
                     return;
                 }
-                navigation.replace("MainTabs");
+
+                // Huấn luyện viên
+                if (role === "trainer") {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: "MainTabs" }],
+                    });
+                    return;
+                }
+                // Role không hợp lệ
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: "OnboardingScreen" }],
+                });
             } catch (error: any) {
                 console.log(
                     "Lỗi kiểm tra đăng nhập:",
-                    error.response?.data || error.message
+                    error.message
                 );
-                // Nếu API lỗi, không tự kết luận hội viên chưa đăng ký.
-                // Cho phép thử lại bằng cách khởi động lại ứng dụng.
-                navigation.replace("MemberTabs");
+
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: "OnboardingScreen" }],
+                });
             }
         };
 
-        const timeout = setTimeout(() => {
-            checkLogin();
-        }, 2000);
-
-        return () => clearTimeout(timeout);
+        checkLogin();
     }, [navigation]);
+
     return (
         <View style={{ flex: 1, backgroundColor: "#F5FCFB" }}>
             {/* Ảnh nền toàn màn hình */}
