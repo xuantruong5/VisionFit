@@ -1,209 +1,97 @@
 ﻿import React, { useEffect, useState } from "react";
-
-import {
-    StyleSheet,
-    Text,
-    View,
-    Image,
-    TouchableOpacity,
-    StatusBar,
-    Modal,
-    ScrollView,
-} from "react-native";
-
+import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView,} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-
-import {
-    widthPercentageToDP as wp,
-    heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp,} from "react-native-responsive-screen";
 import Video from "react-native-video";
-
-
 const ReportPage = ({ navigation, route }: any) => {
-
     const [time, setTime] = useState(9);
-
     const [isRunning, setIsRunning] = useState(false);
-
     const [setCount, setSetCount] = useState(0);
-    
-
     const exercise = route?.params?.exercise;
-
-
-    const exerciseName =
-        exercise?.name || "Bài tập chạy tại chỗ";
+    const exerciseName = exercise?.name || "Bài tập chạy tại chỗ";
 
     useEffect(() => {
-
         let interval: ReturnType<typeof setInterval> | undefined;
-
         if (isRunning && time > 0) {
-
             interval = setInterval(() => {
-
                 setTime((prev) => prev - 1);
-
             }, 1000);
-
         }
-
         if (time === 0) {
-
             setIsRunning(false);
-
         }
-
         return () => {
-
             if (interval) {
-
                 clearInterval(interval);
-
             }
-
         };
-
     }, [isRunning, time]);
 
-
-
     const formatTime = (seconds: number) => {
-
         const minute = Math.floor(seconds / 60);
-
         const second = seconds % 60;
-
         return `${minute}:${second.toString().padStart(2, "0")}`;
-
     };
-
 
     const handleStart = () => {
-
         if (time === 0) {
-
             setTime(20);
-
         }
-
         setIsRunning(!isRunning);
-
     };
-
-
 
     const handleReset = () => {
-
         setTime(20);
-
         setIsRunning(false);
-
         setSetCount(0);
-
     };
-
 
     const handleAddSet = () => {
-
         if (setCount < 3) {
-
             setSetCount((prev) => prev + 1);
-
         }
-
     };
 
-
     return (
-
         <View style={styles.container}>
-
-            <StatusBar
-                //    backgroundColor="#FFFFFF"
-                barStyle="dark-content"
-            />
-
-
+            <StatusBar barStyle="dark-content"/>
             <View style={styles.header}>
-
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => {
+                <TouchableOpacity style={styles.backButton} 
+                onPress={() => {
                         if (navigation.canGoBack()) {
                             navigation.goBack();
                         } else {
                             navigation.navigate("MemberTabs");
                         }
-                    }}
-                >
-
-                    <Ionicons
-                        name="chevron-back"
-                        size={wp("6%")}
-                        color="#61737B"
-                    />
-
+                    }} >
+                    <Ionicons name="chevron-back" size={wp("6%")} color="#61737B" />
                 </TouchableOpacity>
 
-
                 <Text style={styles.headerTitle}>
-
                     1/13 Luyện tập chức năng
-
                 </Text>
-
 
                 <View style={styles.headerTimer}>
-
                     <Text style={styles.headerTimerText}>
-
                         {formatTime(time)}
-
                     </Text>
-
                 </View>
-
             </View>
-
-
             {/* ================= NOTICE ================= */}
-
-            <TouchableOpacity
-                style={styles.noticeBox}
-                activeOpacity={0.85}
-            >
-
+            <TouchableOpacity style={styles.noticeBox} activeOpacity={0.85} >
                 <View style={styles.noticeIcon}>
-
-                    <Ionicons
-                        name="information-circle-outline"
-                        size={wp("5.5%")}
-                        color="#FFFFFF"
-                    />
-
+                    <Ionicons name="information-circle-outline" size={wp("5.5%")} color="#FFFFFF" />
                 </View>
-
-
                 <Text style={styles.noticeText}>
-
                     Xem cách diễn vào nhật ký{"\n"}
                     tập luyện
-
                 </Text>
-
             </TouchableOpacity>
 
-
             {/* ================= EXERCISE IMAGE ================= */}
-
             <View style={styles.exerciseArea}>
-
-
-                                <View style={styles.exerciseImageArea}>
+                <View style={styles.exerciseImageArea}>
                     {exercise?.video && !exercise.video.toLowerCase().endsWith('.gif') ? (
                         <Video
                             source={{ uri: exercise.video }}
@@ -229,31 +117,13 @@ const ReportPage = ({ navigation, route }: any) => {
                         />
                     )}
                 </View>
-
-
                 {/* RIGHT BUTTONS */}
-
                 <View style={styles.rightButtons}>
-
-
-                    <TouchableOpacity
-                        style={styles.rightIconButton}
-                        onPress={handleReset}
-                    >
-
-                        <Ionicons
-                            name="refresh"
-                            size={wp("5%")}
-                            color="#1BC3C8"
-                        />
-
+                    <TouchableOpacity style={styles.rightIconButton} onPress={handleReset} >
+                        <Ionicons name="refresh" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
-
-
-                    <TouchableOpacity
-                        style={styles.rightIconButton}
-                        onPress={() => {
-                            navigation.navigate('ExerciseDetail', {
+                    <TouchableOpacity style={styles.rightIconButton}
+                        onPress={() => { navigation.navigate('ExerciseDetail', {
                                 exercise: {
                                     ...exercise,
                                     name: exerciseName,
@@ -441,130 +311,73 @@ const ReportPage = ({ navigation, route }: any) => {
 
 
 const styles = StyleSheet.create({
-
-
-    /* ================= CONTAINER ================= */
-
     container: {
-
         flex: 1,
-
         backgroundColor: "#FFFFFF",
-
+        paddingTop: hp("7%"),
     },
 
-
     /* ================= HEADER ================= */
-
     header: {
-
         height: hp("7%"),
-
         flexDirection: "row",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         paddingHorizontal: wp("3%"),
-
         borderBottomWidth: 1,
-
         borderBottomColor: "#EEEEEE",
-
+        
     },
 
 
     backButton: {
-
         position: "absolute",
-
         left: wp("3%"),
-
         width: wp("10%"),
-
         height: wp("10%"),
-
         justifyContent: "center",
-
         alignItems: "center",
-
     },
 
 
     headerTitle: {
-
         fontSize: wp("3.7%"),
-
         fontWeight: "600",
-
         color: "#282F32",
-
     },
 
-
     headerTimer: {
-
         position: "absolute",
-
         right: wp("4%"),
-
         paddingHorizontal: wp("3%"),
-
         paddingVertical: hp("0.8%"),
-
         borderRadius: wp("5%"),
-
         backgroundColor: "#F5F7F8",
-
     },
 
 
     headerTimerText: {
-
         fontSize: wp("3%"),
-
         color: "#65777D",
-
     },
-
 
     /* ================= NOTICE ================= */
-
     noticeBox: {
-
         width: wp("94%"),
-
         minHeight: hp("6%"),
-
         alignSelf: "center",
-
         flexDirection: "row",
-
         alignItems: "center",
-
         backgroundColor: "#4B9ADE",
-
         borderRadius: wp("1.5%"),
-
         marginTop: hp("1.5%"),
-
         paddingHorizontal: wp("4%"),
-
         paddingVertical: hp("1.2%"),
-
     },
-
-
     noticeIcon: {
-
         marginRight: wp("4%"),
-
     },
-
-
     noticeText: {
-
         color: "#FFFFFF",
 
         fontSize: wp("3%"),

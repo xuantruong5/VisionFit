@@ -118,13 +118,18 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                   activeOpacity={isUnlocked ? 0.7 : 1}
                   onPress={() => {
                     if (!isUnlocked) return;
-                    navigation.navigate("ExercisePage", {
+                    const params = {
                       ngayThu: day.ngay_thu,
                       dayType: day.ten_ngay_tap,
+                      thoi_gian_phut: day.thoi_gian_phut,
                       id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
                       id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
                       id_chuong_trinh: day.id_chuong_trinh,
-                    });
+                    };
+                    console.log("===== DỮ LIỆU GỬI SANG ExercisePage =====");
+                    console.log("Ngày tập:", day);
+                    console.log("Params:", JSON.stringify(params, null, 2));
+                    navigation.navigate("ExercisePage", params);
                   }}
                 >
                   {/* Chỉ icon thay đổi theo trạng thái */}
