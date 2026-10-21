@@ -1,15 +1,33 @@
 ﻿import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView,} from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp,} from "react-native-responsive-screen";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import Video from "react-native-video";
 const ReportPage = ({ navigation, route }: any) => {
     const [time, setTime] = useState(9);
     const [isRunning, setIsRunning] = useState(false);
     const [setCount, setSetCount] = useState(0);
     const exercise = route?.params?.exercise;
-    const exerciseName = exercise?.name || "Bài tập chạy tại chỗ";
+    console.log("Thông tin bài tập:", exercise);
+    console.log("Tên:", exercise.ten_bai_tap);
+    console.log("Thời gian:", exercise.thoi_gian_phut);
+    console.log("Số lần:", exercise.rep_yeu_cau);
+    console.log("Số hiệp:", exercise.set_yeu_cau);
+    console.log("Giây yêu cầu:", exercise.giay_yeu_cau);
+    console.log("Mức tạ:", exercise.muc_ta_toi_thieu);
+    console.log("Thiết bị:", exercise.thiet_bi);
+    console.log("Video hướng dẫn:", exercise.video_huong_dan);
+    console.log("Video sai:", exercise.video_sai);
+    console.log("Hướng dẫn:", exercise.huong_dan);
+    console.log("Cảnh báo:", exercise.canh_bao);
+    console.log("Nơi tập:", exercise.noi_tap);
+    console.log("Mô tả:", exercise.mo_ta);
+
+
+    // check giay va rep 
+    const hasSeconds = Number(exercise?.giay_yeu_cau) > 0;
+    const exerciseRequirement = hasSeconds ? exercise.giay_yeu_cau : exercise?.rep_yeu_cau;
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | undefined;
@@ -55,10 +73,10 @@ const ReportPage = ({ navigation, route }: any) => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content"/>
+            <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} 
-                onPress={() => {
+                <TouchableOpacity style={styles.backButton}
+                    onPress={() => {
                         if (navigation.canGoBack()) {
                             navigation.goBack();
                         } else {
@@ -92,29 +110,14 @@ const ReportPage = ({ navigation, route }: any) => {
             {/* ================= EXERCISE IMAGE ================= */}
             <View style={styles.exerciseArea}>
                 <View style={styles.exerciseImageArea}>
-                    {exercise?.video && !exercise.video.toLowerCase().endsWith('.gif') ? (
-                        <Video
-                            source={{ uri: exercise.video }}
-                            style={styles.exerciseImage}
-                            resizeMode="contain"
-                            repeat={true}
-                            paused={false}
-                            muted={true}
-                        />
+                    {exercise?.video_huong_dan ? (
+                        exercise.video_huong_dan.toLowerCase().endsWith(".gif") ? (
+                            <Image source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" onError={() => console.log("Video hướng dẫn bị lỗi")} />
+                        ) : (
+                            <Video source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" repeat paused={false} muted onError={() => console.log("Video hướng dẫn bị lỗi")} />
+                        )
                     ) : (
-                        <Image
-                            source={
-                                exercise?.video
-                                    ? { uri: exercise.video }
-                                    : typeof exercise?.image === 'string'
-                                        ? { uri: exercise.image }
-                                        : exercise?.image
-                                            ? exercise.image
-                                            : require("../../../../assets/fitness-bg.png")
-                            }
-                            style={styles.exerciseImage}
-                            resizeMode="contain"
-                        />
+                        <Text>Video hướng dẫn bị lỗi</Text>
                     )}
                 </View>
                 {/* RIGHT BUTTONS */}
@@ -123,99 +126,75 @@ const ReportPage = ({ navigation, route }: any) => {
                         <Ionicons name="refresh" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.rightIconButton}
-                        onPress={() => { navigation.navigate('ExerciseDetail', {
+                       onPress={() => {
+                        navigation.getParent()?.navigate("Kế Hoạch Tập", {
+                            screen: "ExerciseDetail",
+                            params: {
                                 exercise: {
                                     ...exercise,
-                                    name: exerciseName,
-                                    description: exercise?.description || 'Tiếng Anh là Treadmill. Máy chạy bộ là một trong nhiều loại máy giúp bạn rèn luyện tim mạch với các chuyển động mô phỏng hệt như chạy bộ và đi bộ ở bên ngoài. Các chuyển động này giúp đẩy nhanh quá trình trao đổi chất, đồng thời đốt cháy mỡ thừa tích tụ và làm tăng sức bền.',
-                                    image: typeof exercise?.image === 'string' ? exercise.image : 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80',
-                                    musclesDistribution: exercise?.musclesDistribution || [
-                                        { name: 'Cơ đùi trước (Quadriceps)', percent: 80, color: '#EF4444' },
-                                        { name: 'Cơ mông (Glutes)', percent: 70, color: '#3B82F6' },
-                                        { name: 'Cơ đùi sau (Hamstrings)', percent: 65, color: '#10B981' },
-                                        { name: 'Cơ bắp chuối (Calves)', percent: 75, color: '#F59E0B' },
-                                        { name: 'Cơ bụng và liên sườn (Core)', percent: 50, color: '#8B5CF6' },
-                                    ]
+                                    name: exercise?.ten_bai_tap,
+                                    description: exercise?.mo_ta,
+                                    video_huong_dan: exercise?.video_huong_dan,
+                                    video_sai: exercise?.video_sai,
+                                    huong_dan: exercise?.huong_dan,
+                                    canh_bao: exercise?.canh_bao,
+                                    noi_tap: exercise?.noi_tap,
+                                    muc_ta_toi_thieu: exercise?.muc_ta_toi_thieu,
+                                    rep_yeu_cau: exercise?.rep_yeu_cau,
+                                    set_yeu_cau: exercise?.set_yeu_cau,
+                                    giay_yeu_cau: exercise?.giay_yeu_cau,
                                 },
-                                categoryName: exercise?.muscle || 'Cardio'
-                            });
-                        }}
-                        activeOpacity={0.8}
-                    >
-
-                        <Ionicons
-                            name="information"
-                            size={wp("5%")}
-                            color="#1BC3C8"
-                        />
-
+                                categoryName: exercise?.noi_tap || "Bài tập",
+                            },
+                        });
+                    }}
+                        activeOpacity={0.8}>
+                        <Ionicons name="information" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
-
-
                 </View>
-
             </View>
-
-
             {/* ================= EXERCISE TITLE ================= */}
 
             <Text style={styles.exerciseTitle}>
-
-                {exerciseName}
-
+                {exercise?.ten_bai_tap || "Bài tập chưa có tên"}
             </Text>
+
+            {exercise?.muc_ta_toi_thieu &&
+                exercise.muc_ta_toi_thieu !== "0.00" && (
+                    <Text style={styles.exerciseTitle1}>
+                        <Text style={{ fontWeight: "bold" }}>
+                            Mức tạ khuyến nghị:
+                        </Text>
+                        {exercise.muc_ta_toi_thieu}
+                    </Text>
+                )}
 
 
             {/* ================= CONTROLS ================= */}
-
             <View style={styles.controlContainer}>
-
-
                 {/* SECONDS */}
-
+                {/* GIÂY YÊU CẦU HOẶC SỐ LẦN LẶP */}
                 <View style={styles.controlItem}>
-
                     <View style={styles.circleNormal}>
-
                         <Text style={styles.circleNumber}>
-
-                            20
-
+                            {exerciseRequirement}
                         </Text>
-
                     </View>
 
                     <Text style={styles.controlLabel}>
-
-                        Giây
-
+                        {hasSeconds ? "Giây" : "Rep"}
                     </Text>
 
                     <Text style={styles.controlSubLabel}>
-
                         yêu cầu
-
                     </Text>
-
                 </View>
-
-
                 {/* START */}
-
                 <View style={styles.controlItem}>
-
-                    <TouchableOpacity
-                        style={styles.startCircle}
-                        activeOpacity={0.8}
-                        onPress={handleStart}
-                    >
-
+                    <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleStart}>
                         <Text style={styles.startText}>
-
                             {isRunning ? "DỪNG" : "BẮT ĐẦU"}
-
                         </Text>
-
                         <Ionicons
                             name={
                                 isRunning
@@ -227,79 +206,36 @@ const ReportPage = ({ navigation, route }: any) => {
                         />
 
                     </TouchableOpacity>
-
                     <Text style={styles.controlLabel}>
-
                         Hẹn giờ
-
                     </Text>
-
                 </View>
-
 
                 {/* SET */}
-
                 <View style={styles.controlItem}>
-
                     <View style={styles.setCircle}>
-
                         <Text style={styles.circleNumber}>
-
-                            {setCount}/3
-
+                            {setCount}/{exercise?.set_yeu_cau ?? 0}
                         </Text>
-
                     </View>
-
                     <Text style={styles.controlLabel}>
-
                         Set
-
                     </Text>
-
                     <Text style={styles.controlSubLabel}>
-
                         tập
-
                     </Text>
-
                 </View>
-
-
             </View>
-
-
             {/* ================= SECOND INPUT ================= */}
-
             <View style={styles.secondArea}>
 
-                <TouchableOpacity
-                    style={styles.secondButton}
-                    activeOpacity={0.8}
-                    onPress={() => setTime(20)}
-                >
-
+                <TouchableOpacity style={styles.secondButton} activeOpacity={0.8} onPress={() => setTime(20)}>
                     <Text style={styles.secondText}>
-
                         Giây
-
                     </Text>
-
                 </TouchableOpacity>
-
-
-                <TouchableOpacity
-                    style={styles.addButton}
-                    activeOpacity={0.8}
-                    onPress={handleAddSet}
-                >
-
-                    <Ionicons
-                        name="add"
-                        size={wp("8%")}
-                        color="#FFFFFF"
-                    />
-
+                <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} >
+                    <Ionicons name="add" size={wp("8%")} color="#FFFFFF" />
                 </TouchableOpacity>
 
             </View>
@@ -326,7 +262,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp("3%"),
         borderBottomWidth: 1,
         borderBottomColor: "#EEEEEE",
-        
+
     },
 
 
@@ -411,213 +347,132 @@ const styles = StyleSheet.create({
         height: "100%",
     },
 
-
     /* RIGHT ICONS */
-
     rightButtons: {
-
         position: "absolute",
-
         right: wp("4%"),
-
         top: hp("2.5%"),
-
         alignItems: "center",
-
     },
-
 
     rightIconButton: {
-
         width: wp("10%"),
-
         height: wp("10%"),
-
         borderWidth: 1.5,
-
         borderColor: "#21C1C5",
-
         borderRadius: wp("2%"),
-
         alignItems: "center",
-
         justifyContent: "center",
-
         marginBottom: hp("1.2%"),
-
         backgroundColor: "#FFFFFF",
-
     },
-
 
     /* ================= TITLE ================= */
 
     exerciseTitle: {
-
         color: "#32383A",
-
         fontSize: wp("4%"),
-
         fontWeight: "500",
-
         paddingHorizontal: wp("4%"),
-
         marginTop: hp("0.3%"),
-
+    },
+    exerciseTitle1: {
+        color: "#32383A",
+        fontSize: wp("4%"),
+        paddingHorizontal: wp("4%"),
+        marginTop: hp("0.3%"),
     },
 
 
     /* ================= CONTROLS ================= */
 
     controlContainer: {
-
         width: "100%",
-
         flexDirection: "row",
-
         alignItems: "flex-start",
-
         justifyContent: "space-around",
-
         paddingHorizontal: wp("4%"),
-
         marginTop: hp("2.5%"),
-
     },
 
 
     controlItem: {
-
         width: wp("26%"),
-
         alignItems: "center",
-
     },
 
 
     circleNormal: {
-
         width: wp("19%"),
-
         height: wp("19%"),
-
         borderRadius: wp("9.5%"),
-
         borderWidth: 2.5,
-
         borderColor: "#13BEC2",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         backgroundColor: "#FFFFFF",
-
     },
 
 
     startCircle: {
-
         width: wp("22%"),
-
         height: wp("22%"),
-
         borderRadius: wp("11%"),
-
         borderWidth: 2.5,
-
         borderColor: "#14BCC0",
-
         justifyContent: "center",
-
         alignItems: "center",
-
         backgroundColor: "#FFFFFF",
-
         marginTop: -wp("1.5%"),
-
     },
 
 
     setCircle: {
-
         width: wp("19%"),
-
         height: wp("19%"),
-
         borderRadius: wp("9.5%"),
-
         borderWidth: 2.5,
-
         borderColor: "#FFB7BC",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         backgroundColor: "#FFFFFF",
-
     },
 
 
     circleNumber: {
-
         color: "#283235",
-
         fontSize: wp("5%"),
-
         fontWeight: "500",
-
     },
 
-
     startText: {
-
         color: "#11B7BC",
-
         fontSize: wp("3%"),
-
         fontWeight: "500",
-
         marginBottom: hp("0.2%"),
-
     },
 
 
     controlLabel: {
-
         fontSize: wp("2.5%"),
-
         color: "#768184",
-
         marginTop: hp("0.6%"),
-
     },
 
 
     controlSubLabel: {
-
         fontSize: wp("2.3%"),
-
         color: "#8A9396",
-
         marginTop: hp("0.1%"),
 
     },
-
-
     /* ================= SECOND ================= */
 
     secondArea: {
-
         flexDirection: "row",
-
         alignItems: "center",
-
         paddingHorizontal: wp("3%"),
-
         marginTop: hp("1.6%"),
-
     },
 
 

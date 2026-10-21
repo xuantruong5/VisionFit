@@ -6,6 +6,22 @@ import apiFitlife from "../../../../general/api";
 
 type Exercise = {
   id: number;
+  id_bai_tap: number;
+  ten_bai_tap: string;
+  thoi_gian_phut: number;
+  rep_yeu_cau: number;
+  set_yeu_cau: number;
+  giay_yeu_cau: number;
+  muc_ta_toi_thieu: string | number;
+  thiet_bi: string;
+  video_huong_dan: string;
+  video_sai: string;
+  huong_dan: string;
+  canh_bao: string;
+  noi_tap: string;
+  mo_ta: string;
+
+  // Các trường phục vụ hiển thị danh sách
   name: string;
   sets: string;
   duration: string;
@@ -20,10 +36,8 @@ const ExercisePage = ({ navigation, route }: any) => {
   const [loading, setLoading] = useState<boolean>(true);
   const idDangKy = route?.params?.id_dang_ky_chuong_trinh;
   const idNgayTap = route?.params?.id_chuong_trinh_bai_tap;
-  console.log("===== DỮ LIỆU NHẬN TẠI ExercisePage =====");
-  console.log("route.params:", JSON.stringify(route?.params, null, 2));
-  console.log("idDangKy:", idDangKy);
-
+  const [skipping, setSkipping] = useState(false);
+ 
 
   const fetchExercises = async () => {
     try {
@@ -41,16 +55,29 @@ const ExercisePage = ({ navigation, route }: any) => {
             name: item.ten_bai_tap,
             sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${item.muc_ta_toi_thieu ?? 0}`,
             duration: `${item.thoi_gian_phut ?? 0} phút`,
-          
             image: item.anh_bai_tap ?? "",
             video: item.video_huong_dan ?? "",
             completed: false,
+            ten_bai_tap: item.ten_bai_tap ?? "",
+            thoi_gian_phut: item.thoi_gian_phut ?? 0,
+            rep_yeu_cau: item.rep_yeu_cau ?? 0,
+            set_yeu_cau: item.set_yeu_cau ?? 0,
+            giay_yeu_cau: item.giay_yeu_cau ?? 0,
+            muc_ta_toi_thieu: item.muc_ta_toi_thieu ?? "",
+            thiet_bi: item.thiet_bi ?? "",
+            video_huong_dan: item.video_huong_dan ?? "",
+            video_sai: item.video_sai ?? "",
+            huong_dan: item.huong_dan ?? "",
+            canh_bao: item.canh_bao ?? "",
+            noi_tap: item.noi_tap ?? "",
+            mo_ta: item.mo_ta ?? "",
+
           })
         );
-        setExercises(danhSachBaiTap);
-      } else {
-        setExercises([]);
-      }
+          setExercises(danhSachBaiTap);
+        } else {
+          setExercises([]);
+        }
     } catch (error: any) {
       console.log("LỖI API:", error.response?.data ?? error.message);
     } finally {
@@ -58,28 +85,52 @@ const ExercisePage = ({ navigation, route }: any) => {
     }
   };
 
+  const handleSkip = async () => {
+    try {
+      await apiFitlife.post(`/client/chuong-trinh-bai-tap/${idNgayTap}/bo-qua`, {
+        cho_phep_bo_qua: 1,
+      });
+      navigation.goBack();
+    } catch (error) {
+      console.log("Lỗi bỏ qua:", error);
+    }
+  };
+
+
+
   useEffect(() => {
     fetchExercises();
   }, [idDangKy, idNgayTap]);
   const completedCount = exercises.filter((e) => e.completed).length;
   const progressPercent = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
 
-  // ================================
-  // HANDLERS
-  // ================================
 
   const handleExercisePress = (exercise: Exercise) => {
-    navigation?.navigate('ReportPage', { exercise });
+    navigation?.navigate("ReportPage", {
+      exercise: {
+        id_bai_tap: exercise.id_bai_tap,
+        ten_bai_tap: exercise.ten_bai_tap,
+        thoi_gian_phut: exercise.thoi_gian_phut,
+        rep_yeu_cau: exercise.rep_yeu_cau,
+        set_yeu_cau: exercise.set_yeu_cau,
+        giay_yeu_cau: exercise.giay_yeu_cau,
+        muc_ta_toi_thieu: exercise.muc_ta_toi_thieu,
+        thiet_bi: exercise.thiet_bi,
+        video_huong_dan: exercise.video_huong_dan,
+        video_sai: exercise.video_sai,
+        huong_dan: exercise.huong_dan,
+        canh_bao: exercise.canh_bao,
+        noi_tap: exercise.noi_tap,
+        mo_ta: exercise.mo_ta,
+      },
+    });
   };
 
   const handleStart = () => {
-    // Navigate to live workout or next page
     console.log("Bắt đầu tập luyện...");
   };
 
-  // ================================
-  // RENDER
-  // ================================
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -90,9 +141,13 @@ const ExercisePage = ({ navigation, route }: any) => {
         <TouchableOpacity activeOpacity={0.7} style={styles.backButton} onPress={() => navigation?.goBack()} >
           <Ionicons name="arrow-back" size={wp("5.5%")} color="#607D8B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bài tập ngày</Text>
-        <TouchableOpacity activeOpacity={0.7} style={styles.moreButton}>
-          <Ionicons name="ellipsis-horizontal" size={wp("5.5%")} color="#607D8B" />
+        <Text style={styles.headerTitle}>Bài tập </Text>
+        <TouchableOpacity activeOpacity={0.7} style={styles.moreButton} onPress={handleSkip}disabled={skipping}>
+            {skipping ? (
+              <ActivityIndicator size="small" color="#607D8B" />
+            ) : (
+              <Text style={styles.skipText}>Bỏ qua</Text>
+            )}
         </TouchableOpacity>
       </View>
 
@@ -281,8 +336,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: "center",
-    fontSize: wp("4.2%"),
-    fontWeight: "700",
+    fontSize: wp("4.7%"),
+    fontWeight: "800",
     color: "#111C1E",
   },
 
@@ -297,14 +352,21 @@ const styles = StyleSheet.create({
   },
 
   moreButton: {
-    width: wp("9%"),
-    height: wp("9%"),
-    borderRadius: wp("4.5%"),
-    alignItems: "center",
+    width: wp("20%"),
+    height: wp("12%"),
+    borderRadius: wp("8%"),
+    // borderWidth: 1.5,
+    // borderColor: "#607D8B",
     justifyContent: "center",
-    backgroundColor: "#F2F8F9",
-    zIndex: 10,
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
   },
+  skipText: {
+    fontSize: wp("4.2%"),
+    color: "#607D8B",
+    fontWeight: "600",
+  },
+
 
   // =================================================
   // SCROLL VIEW

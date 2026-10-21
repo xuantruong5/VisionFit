@@ -20,18 +20,14 @@ return new class extends Migration
             $table->integer('thoi_gian_phut')->nullable();
             $table->integer('rep_yeu_cau')->nullable();
             $table->integer('set_yeu_cau')->nullable();
-            $table->decimal('muc_ta_toi_thieu', 8, 2)->nullable()->comment('Đơn vị kg');
+            $table->string('muc_ta_toi_thieu')->nullable()->comment('Mức tạ tối thiểu');
             $table->integer('giay_yeu_cau')->nullable();
             $table->string('anh_dai_dien', 500)->nullable();
             $table->integer('tinh_trang')->default(1);
-
-          
             $table->string('loi_thuong_gap')->nullable();
             $table->string('thiet_bi', 255)->nullable();
-            
             $table->boolean('ho_tro_ai')->nullable();
             $table->string('goc_camera_khuyen_nghi', 255)->nullable();
-           
             $table->timestamps();
         });
     }

@@ -11,7 +11,8 @@ use App\Http\Controllers\ThucPhamSoTayController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\DangKyChuongTrinhController;
-
+use App\Http\Controllers\ChuongTrinhBaiTapController;
+use App\Http\Controllers\PhongGymController;
 
 
 
@@ -96,6 +97,10 @@ Route::prefix('chat')->group(function () {
 
 
 // member
+
+Route::get('/phong-gym', [PhongGymController::class,'danhSach']);
+
+
 Route::post('client/login', [MembersController::class, 'login']);
 Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
     Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
@@ -115,6 +120,9 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/list-meal-plans', [DangKyChuongTrinhController::class,'getListMealPlans']);
     Route::delete('/delete-program/{id}', [DangKyChuongTrinhController::class, 'destroy']);
     Route::post('/activate-program/{id}',[DangKyChuongTrinhController::class, 'activateProgram']);
+
+    Route::post('/chuong-trinh-bai-tap/{id}/bo-qua', [ChuongTrinhBaiTapController::class, 'changeSkip']);
+    // Route::get('/my-program-detail',[DangKyChuongTrinhController::class, 'getMyProgramDetail']); // api tổng hợp  
 
 
 
