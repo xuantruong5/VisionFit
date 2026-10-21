@@ -453,12 +453,16 @@ class DangKyChuongTrinhController extends Controller
                 'bt.thoi_gian_phut',
                 'bt.rep_yeu_cau',
                 'bt.set_yeu_cau',
+                'bt.giay_yeu_cau',
                 'bt.anh_dai_dien as anh_bai_tap',
                 'bt.muc_ta_toi_thieu',
+                'bt.thiet_bi',
                 'ctct.video_huong_dan',
                 'ctct.video_sai',
                 'ctct.huong_dan',
-                'ctct.canh_bao'
+                'ctct.canh_bao',
+                'ctct.noi_tap',
+                'ctct.mo_ta',
             )
             ->orderBy('bt.id')
             ->get();
@@ -634,5 +638,156 @@ class DangKyChuongTrinhController extends Controller
         ]);
 
     }
+
+
+    // api tổng hợp
+    // public function getMyProgramDetail()
+    // {
+        
+    //     $user = Auth::guard('sanctum')->user();
+    //     if (!$user) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Chưa đăng nhập',
+    //         ], 401);
+    //     }
+
+       
+    //     $programs = DKChuongTrinh::where( 'dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+    //         ->where('dang_ky_chuong_trinh.tinh_trang', 1)
+    //         ->join('chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=','ct.id')
+    //         ->leftJoin( 'cap_do as cd','dang_ky_chuong_trinh.id_cap_do', '=','cd.id')
+    //         ->leftJoin( 'noi_tap as nt','dang_ky_chuong_trinh.id_noi_tap','=','nt.id')
+    //         ->select(
+    //             'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
+    //             'dang_ky_chuong_trinh.id_chuong_trinh',
+    //             'ct.ten_chuong_trinh',
+    //             'ct.so_sao',
+    //             'ct.so_ngay',
+    //             'ct.so_buoi_moi_tuan',
+    //             'ct.anh_dai_dien',
+    //             'cd.ten_cap_do',
+    //             'nt.ten_noi_tap'
+    //         )
+    //         ->orderByDesc('dang_ky_chuong_trinh.id')
+    //         ->get();
+
+        
+       
+
+       
+    //     foreach ($programs as $program) {
+    //          $program->lich_tap = DB::table('lich_tap as lt')
+    //         ->where(
+    //             'lt.id_dang_ky_chuong_trinh',
+    //             $program->id_dang_ky_chuong_trinh
+    //         )
+    //         ->select(
+    //             'lt.id',
+    //             'lt.id_chuong_trinh',
+    //             'lt.id_hoi_vien',
+    //             'lt.ngay_thu',
+    //             'lt.ngay_tap'
+    //         )
+    //         ->orderBy('lt.ngay_tap')
+    //         ->get();
+    //         $program->ngay_tap = DB::table('chuong_trinh_bai_tap as ctbt')
+    //             ->where('ctbt.id_chuong_trinh', $program->id_chuong_trinh)
+    //             ->select(
+    //                 'ctbt.id as id_chuong_trinh_bai_tap',
+    //                 'ctbt.ngay_thu',
+    //                 'ctbt.ten_ngay_tap',
+    //                 'ctbt.thoi_gian_phut',
+    //                 'ctbt.cho_phep_bo_qua',
+    //                 'ctbt.tinh_trang'
+    //             )
+    //             ->orderBy('ctbt.ngay_thu')
+    //             ->get();
+
+    //         foreach ($program->ngay_tap as $day) {
+    //             $day->bai_tap = DB::table('bai_tap as bt')
+    //                 ->leftJoin('chi_tiet_bai_tap as ctct','bt.id', '=', 'ctct.id_bai_tap')
+    //                 ->where('bt.id_chuong_trinh_bai_tap', $day->id_chuong_trinh_bai_tap )
+    //                 ->select(
+    //                     'bt.id as id_bai_tap',
+    //                     'bt.ten_bai_tap',
+    //                     'bt.mo_ta as mo_ta_bai_tap',
+    //                     'bt.thoi_gian_phut',
+    //                     'bt.rep_yeu_cau',
+    //                     'bt.set_yeu_cau',
+    //                     'bt.anh_dai_dien as anh_bai_tap',
+    //                     'bt.muc_ta_toi_thieu',
+    //                     'ctct.video_huong_dan',
+    //                     'ctct.video_sai',
+    //                     'ctct.huong_dan',
+    //                     'ctct.canh_bao'
+    //                 )
+    //                 ->orderBy('bt.id')
+    //                 ->get();
+    //         }
+
+    //         $program->ke_hoach_an = DB::table('ke_hoach_an as kha')
+    //             ->where( 'kha.id_dang_ky_chuong_trinh',$program->id_dang_ky_chuong_trinh)
+    //             ->where('kha.tinh_trang', 1)
+    //             ->select(
+    //                 'kha.id as id_ke_hoach_an',
+    //                 'kha.id_chuong_trinh',
+    //                 'kha.ten_ke_hoach',
+    //                 'kha.tinh_trang'
+    //             )
+    //             ->get();
+
+    //         foreach ($program->ke_hoach_an as $mealPlan) {
+    //             $mealPlan->mon_an = DB::table('khau_phan_an as kpa')
+    //                 ->leftJoin('mon_an as ma', 'kpa.id_mon_an', '=','ma.id')
+    //                 ->leftJoin('muc_tieu_dinh_duong as mtd','kpa.id_muc_tieu_dinh_duong', '=', 'mtd.id')
+    //                 ->where('kpa.id_ke_hoach_an', $mealPlan->id_ke_hoach_an)
+    //                 ->select(
+    //                     'kpa.id as id_khau_phan_an',
+    //                     'kpa.ngay_thu',
+    //                     'kpa.ngay_an',
+    //                     'kpa.gio_an',
+    //                     'kpa.bua_an',
+    //                     'kpa.so_luong',
+    //                     'kpa.ghi_chu',
+    //                     'ma.id as id_mon_an',
+    //                     'ma.ten_mon_an',
+    //                     'ma.mo_ta',
+    //                     'ma.anh_dai_dien',
+    //                     'ma.calo',
+    //                     'ma.khoi_luong_gram',
+    //                     'ma.fat',
+    //                     'ma.carb',
+    //                     'ma.protein',
+    //                     'ma.nguyen_lieu',
+    //                     'ma.gia_vi',
+    //                     'ma.thoi_gian_nau',
+    //                     'ma.huong_dan_nau',
+    //                     'ma.loai_bua',
+    //                     'mtd.muc_tieu_the_trang',
+    //                     'mtd.muc_tieu_calo',
+    //                     'mtd.protein_muc_tieu',
+    //                     'mtd.carb_muc_tieu',
+    //                     'mtd.fat_muc_tieu'
+    //                 )
+    //                 ->orderBy('kpa.ngay_thu')
+    //                 ->orderBy('kpa.gio_an')
+    //                 ->get();
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Lấy thông tin chương trình thành công',
+    //         'data' => $programs,
+    //     ], 200);
+    // }
+
+
+
+
+
+
+
 
 }

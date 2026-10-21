@@ -41,7 +41,6 @@ import MemberProfile from "./src/page/member/MemberProfile";
 import SoTayHomeScreen from "./src/page/member/SoTay/SoTayHomeScreen";
 import ExerciseCategoriesScreen from "./src/page/member/SoTay/Exercises/ExerciseCategoriesScreen";
 import ExerciseListScreen from "./src/page/member/SoTay/Exercises/ExerciseListScreen";
-import ExerciseDetailScreen from "./src/page/member/SoTay/Exercises/ExerciseDetailScreen";
 import NutritionCategoriesScreen from "./src/page/member/SoTay/Nutrition/NutritionCategoriesScreen";
 import NutritionProductListScreen from "./src/page/member/SoTay/Nutrition/NutritionProductListScreen";
 import NutritionDetailScreen from "./src/page/member/SoTay/Nutrition/NutritionDetailScreen";
@@ -61,6 +60,7 @@ import OnboardingScreen from "./src/page/screens/OnboardingScreen";
 import OnboardingScreen1 from "./src/page/screens/OnboardingScreen1";
 import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
 import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
+import ExerciseDetailScreen from "./src/page/member/TrainingPlan/Tab/ExerciseDetailScreen";
 
 
 
@@ -95,7 +95,7 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen name="ReportPage" component={ReportPage}/>
       <MemberWorkoutStack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
       <MemberWorkoutStack.Screen name="ResultPage" component={ResultPage}/>
-      {/* <MemberWorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} /> */}
+      <MemberWorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
 
 
 
@@ -303,7 +303,7 @@ const App = () => {
         <Stack.Screen name="ReportPage" component={ReportPage} />
         <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} /> */}
         {/* <Stack.Screen name="ResultPage" component={ResultPage}/> */}
-        <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/>
+        {/* <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/> */}
 
 
 
