@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
 const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const navHook = useNavigation<any>();
@@ -32,9 +32,11 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    getProgramExercises();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getProgramExercises();
+    }, [])
+  );
 
   const handleDayPress = (day: any) => {
     if (day.isLocked) return;

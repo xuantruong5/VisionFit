@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             ChuongTrinhBaiTapSeeder::class,
             ChuongTrinhTapSeeder::class,
             BaiTapSeeder::class,
-            DangKyChuongTrinhSeeder::class,
+            // DangKyChuongTrinhSeeder::class,
             MonAnSeeder::class,
             KeHoachAnSeeder::class,
             KhauPhanAnSeeder::class,
