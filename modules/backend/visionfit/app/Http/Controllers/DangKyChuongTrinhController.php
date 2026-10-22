@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\CapDo;
 use App\Models\KhauPhanAn;
 use App\Models\KeHoachAn;
+use App\Models\ChuongTrinhBaiTapChiTiet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -436,12 +437,14 @@ class DangKyChuongTrinhController extends Controller
         }
         $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
             ->where('dang_ky_chuong_trinh.tinh_trang', 1)
-            ->join( 'chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=','ct.id')
-            ->join('chuong_trinh_bai_tap as ctbt','ct.id','=','ctbt.id_chuong_trinh' )
+            ->join('chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh','=','ct.id')
+            ->join('chuong_trinh_bai_tap as ctbt','ct.id','=','ctbt.id_chuong_trinh')
+            // Nối buổi tập với bảng trung gian chi tiết
+            ->join('chuong_trinh_bai_tap_chi_tiet as ctbtct','ctbt.id','=','ctbtct.id_chuong_trinh_bai_tap')
+            // Nối bảng trung gian với danh mục bài tập
+            ->join('bai_tap as bt','ctbtct.id_bai_tap','=','bt.id')
+            ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap')
             ->where('ctbt.id', $id)
-            ->join('bai_tap as bt','ctbt.id','=','bt.id_chuong_trinh_bai_tap')
-            ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap'
-            )
             ->select(
                 'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
                 'dang_ky_chuong_trinh.id_chuong_trinh',
@@ -463,13 +466,15 @@ class DangKyChuongTrinhController extends Controller
                 'ctct.canh_bao',
                 'ctct.noi_tap',
                 'ctct.mo_ta',
+                'ctbtct.thu_tu'
             )
-            ->orderBy('bt.id')
+            ->orderBy('ctbtct.thu_tu')
             ->get();
 
         return response()->json([
             'success' => true,
             'message' => 'Lấy danh sách bài tập thành công',
+            'total_exercises' => $data->count(),
             'data' => $data,
         ], 200);
     }

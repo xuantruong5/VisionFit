@@ -9,6 +9,7 @@ class BaiTap extends Model
     protected $table = 'bai_tap';
     protected $fillable = [
         'id_chuong_trinh_bai_tap',
+        'thu_tu',
         'ma_bai_tap',
         'ten_bai_tap',
         'mo_ta',

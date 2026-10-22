@@ -379,6 +379,102 @@ class MembersController extends Controller
     }
 
 
+    // lấy dữ liệu phòng tập theo xã phường 
+    public function getProvinces()
+    {
+        $data = DB::table('provinces')
+            ->select(
+                'code',
+                'name',
+                'codename',
+                'division_type'
+            )
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    public function getWards($code)
+    {
+        $data = DB::table('provinces as p')
+            ->join('wards as w', 'p.id', '=', 'w.id_province')
+            ->where('p.code', $code)
+            ->select(
+                'p.code as ma_tinh',
+                'p.name as ten_tinh',
+                'w.id as id_ward',
+                'w.code as ma_phuong_xa',
+                'w.name as ten_phuong_xa',
+                'w.codename',
+                'w.division_type'
+            )
+            ->orderBy('w.name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    public function getGymsByProvince($code)
+    {
+        $data = DB::table('provinces as p')
+            ->join('wards as w', 'p.id', '=', 'w.id_province')
+            ->join('phong_gyms as pg', 'w.id', '=', 'pg.id_ward')
+            ->where('p.code', $code)
+            ->select(
+                'p.name as ten_tinh',
+                'w.name as ten_phuong_xa',
+                'pg.id',
+                'pg.ten_phong_gym',
+                'pg.dia_chi',
+                'pg.vi_do',
+                'pg.kinh_do',
+                'pg.id_ward',
+                'pg.so_dien_thoai',
+                'pg.website'
+            )
+            ->orderBy('w.name')
+            ->orderBy('pg.ten_phong_gym')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    public function getGymsByWard($code)
+    {
+        $data = DB::table('wards as w')
+            ->join('phong_gyms as pg', 'w.id', '=', 'pg.id_ward')
+            ->where('w.code', $code)
+            ->select(
+                'w.id as id_ward',
+                'w.code as ma_phuong_xa',
+                'w.name as ten_phuong_xa',
+                'pg.id as id_phong_gym',
+                'pg.ten_phong_gym',
+                'pg.dia_chi',
+                'pg.vi_do',
+                'pg.kinh_do',
+                'pg.so_dien_thoai',
+                'pg.website'
+            )
+            ->orderBy('pg.ten_phong_gym')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+
+
+
 
 
 

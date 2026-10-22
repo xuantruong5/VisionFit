@@ -607,14 +607,14 @@ class ChiTietBaiTapSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now()
             ],
-            [ // Gym
+            [
                 'id_bai_tap' => 50,
                 'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/2331-XSCHmiI.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/1160-dK9394r.gif',
-                'mo_ta' => 'Run on Treadmill là bài tập chạy trên máy giúp cải thiện sức bền tim mạch. Ưu điểm chính là dễ điều chỉnh tốc độ và độ dốc theo khả năng. Động tác huy động cơ đùi trước, cơ đùi sau, cơ mông và bắp chân, trong khi cơ bụng hỗ trợ giữ tư thế chạy.',
-                'ghi_chu' => 'Máy chạy bộ',
-                'huong_dan' => 'Chạy trên máy chạy bộ với tốc độ phù hợp, giữ tư thế thẳng và duy trì nhịp thở đều.',
-                'canh_bao' => '• Không dùng lực quán tính hoặc vung người để hoàn thành động tác.\\n• Giữ cổ tay ổn định và kiểm soát tạ ở cả chiều nâng lẫn chiều hạ.\\n• Không khóa cứng khớp khuỷu tay ở cuối động tác; dừng trước khi mất kiểm soát.\\n• Chọn mức tạ phù hợp; nếu đau nhói ở vai, khuỷu tay hoặc cổ tay thì dừng tập.',
+                'video_sai' => 'https://fujf.net/assets/exercises/videos/2138-H1PESYI.gif',
+                'mo_ta' => 'Walk Elliptical Cross Trainer là bài tập cardio trên máy tập elip, giúp cải thiện sức bền tim mạch. Bài tập mô phỏng động tác đi bộ hoặc chạy bằng cách đạp chân luân phiên và kéo tay cầm. Các nhóm cơ tham gia gồm cơ tứ đầu đùi, cơ gân kheo, cơ mông và cơ bắp chân.',
+                'ghi_chu' => 'Máy tập elip',
+                'huong_dan' => 'Điều chỉnh mức kháng lực và độ nghiêng của máy theo khả năng. Bước lên bàn đạp và nắm nhẹ tay cầm. Đạp chân luân phiên, đồng thời đẩy và kéo tay cầm theo chuyển động tự nhiên.Giữ lưng thẳng, siết cơ bụng và duy trì nhịp độ ổn định. Tiếp tục tập trong thời lượng mong muốn. Giảm tốc độ và mức kháng lực trước khi bước xuống máy.',
+                'canh_bao' => '• Kiểm tra độ ổn định của máy trước khi tập.\\n• Bước lên và xuống máy cẩn thận, giữ tay vào tay cầm để đảm bảo thăng bằng.\\n• Không khóa cứng đầu gối hoặc nghiêng người quá mức.\\n• Điều chỉnh tốc độ và mức kháng lực phù hợp với thể lực.\\n• Dừng tập nếu cảm thấy chóng mặt, khó thở bất thường hoặc đau nhức.',
                 'noi_tap' => 'Gym',
                 'created_at' => now(),
                 'updated_at' => now()

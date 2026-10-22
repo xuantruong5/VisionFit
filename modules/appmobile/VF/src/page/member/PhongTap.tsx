@@ -1,16 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-    StyleSheet,
-    Text,
-    View,
-    TouchableOpacity,
-    TextInput,
-    FlatList,
-    Image,
-    Modal,
-    ScrollView,
-    Alert,
-} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, Image, Modal, ScrollView, Alert,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -448,11 +437,7 @@ const PhongTap = ({ navigation, route }: any) => {
         const isSelected = selectedGym?.id === item.id;
 
         return (
-            <TouchableOpacity
-                style={[styles.gymCard, isSelected && styles.gymCardSelected]}
-                activeOpacity={0.85}
-                onPress={() => setSelectedGym(item)}
-            >
+            <TouchableOpacity style={[styles.gymCard, isSelected && styles.gymCardSelected]} activeOpacity={0.85}  onPress={() => setSelectedGym(item)}>
                 {/* Ảnh phòng tập */}
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: item.image }} style={styles.gymImage} resizeMode="cover" />
@@ -514,10 +499,7 @@ const PhongTap = ({ navigation, route }: any) => {
                     </View>
 
                     {/* Nút chọn hoặc trạng thái chọn */}
-                    <TouchableOpacity
-                        style={[styles.selectButton, isSelected && styles.selectButtonActive]}
-                        onPress={() => setSelectedGym(item)}
-                    >
+                    <TouchableOpacity style={[styles.selectButton, isSelected && styles.selectButtonActive]} onPress={() => setSelectedGym(item)} >
                         <Text style={[styles.selectButtonText, isSelected && styles.selectButtonTextActive]}>
                             {isSelected ? '✓ ĐÃ CHỌN PHÒNG NÀY' : 'CHỌN PHÒNG TẬP NÀY'}
                         </Text>
@@ -566,11 +548,7 @@ const PhongTap = ({ navigation, route }: any) => {
                 {/* Bộ lọc Vị trí: Thành phố & Quận */}
                 <View style={styles.filterRow}>
                     {/* Chọn Thành phố */}
-                    <TouchableOpacity
-                        style={styles.filterCard}
-                        onPress={() => setCityModalVisible(true)}
-                        activeOpacity={0.8}
-                    >
+                    <TouchableOpacity style={styles.filterCard} onPress={() => setCityModalVisible(true)} activeOpacity={0.8} >
                         <View style={styles.filterCardIconWrapper}>
                             <Ionicons name="business" size={18} color="#0D7F8D" />
                         </View>

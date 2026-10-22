@@ -20,7 +20,6 @@ class BaiTapSeeder extends Seeder
         DB::table('bai_tap')->insert([
             // Chương trình bài tập ID 1
             [
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0101',
                 'ten_bai_tap' => 'Barbell Bench Press',
                 'mo_ta' => 'Nằm ngửa trên ghế phẳng, hai tay nắm thanh tạ rộng hơn vai. Từ từ hạ tạ xuống giữa ngực, sau đó đẩy tạ lên đến khi cánh tay gần duỗi thẳng. Giữ lưng ổn định và kiểm soát chuyển động trong suốt bài tập.',
@@ -35,7 +34,6 @@ class BaiTapSeeder extends Seeder
                 // tập có dụng cụ tại nhà, gym 
             ],
             [
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0102',
                 'ten_bai_tap' => 'Dumbbell Floor Press',
                 'mo_ta' => 'Nằm ngửa trên sàn, co gối và cầm hai tạ đơn ở hai bên ngực. Đẩy tạ lên trên đến khi cánh tay gần duỗi thẳng, sau đó từ từ hạ tạ xuống cho đến khi khuỷu tay chạm nhẹ sàn. Giữ cổ tay ổn định và kiểm soát chuyển động trong suốt bài tập.',
@@ -49,7 +47,6 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn, thảm tập',
             ],// tập có dụng cụ tại nhà, gym 
             [
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0103',
                 'ten_bai_tap' => 'Band Low Chest Fly',
                 'mo_ta' => 'Cố định dây kháng lực ở vị trí thấp phía sau người, mỗi tay nắm một đầu dây. Đưa hai tay từ dưới lên trên theo đường vòng cung, đồng thời khép tay trước ngực để siết cơ ngực trên. Sau đó từ từ hạ tay về vị trí ban đầu và kiểm soát lực kéo của dây.',
@@ -64,7 +61,6 @@ class BaiTapSeeder extends Seeder
                  // tập ở nhà có dụng cụ , gym 
             ], 
             [ // tập ở nhà được và gym thư giãn khởi động 
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0104',
                 'ten_bai_tap' => 'Push-Up',
                 'mo_ta' => 'Bắt đầu ở tư thế plank cao, hai tay đặt rộng bằng vai và giữ thân người thẳng. Từ từ gập khuỷu tay, hạ ngực xuống gần sàn, sau đó đẩy người trở về vị trí ban đầu. Giữ cơ bụng siết chặt trong suốt động tác.',
@@ -79,7 +75,6 @@ class BaiTapSeeder extends Seeder
                  
             ],// tập ở nhà được , gym 
             [
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0105',
                 'ten_bai_tap' => 'Dumbbell Lying on Floor Chest Press',
                 'mo_ta' => 'Nằm ngửa trên sàn, co gối và cầm hai tạ đơn ở hai bên ngực. Đẩy tạ lên trên đến khi cánh tay gần duỗi thẳng, sau đó từ từ hạ tạ xuống cho đến khi khuỷu tay chạm nhẹ sàn. Giữ cổ tay ổn định và siết cơ ngực trong suốt động tác.',
@@ -94,7 +89,6 @@ class BaiTapSeeder extends Seeder
                  // tập ở nhà có dụng cụ, gym 
             ],
             [ // tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0106',
                 'ten_bai_tap' => 'Machine Inner Chest Press',
                 'mo_ta' => 'Ngồi vào máy, tựa lưng sát đệm và nắm hai tay cầm ngang ngực. Đẩy hai tay về phía trước, đồng thời ép tay cầm hướng vào nhau để siết cơ ngực, sau đó từ từ trở về vị trí ban đầu.',
@@ -109,7 +103,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [ // tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0107',
                 'ten_bai_tap' => 'Pec Deck Fly',
                 'mo_ta' => 'Ngồi vào máy Pec Deck Fly, tựa lưng vào đệm và đặt cánh tay lên các miếng đệm. Ép hai tay về phía trước cho đến khi gần chạm nhau, siết cơ ngực, sau đó từ từ mở tay trở về vị trí ban đầu.',
@@ -124,7 +117,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0108',
                 'ten_bai_tap' => 'Machine Decline Chest Press',
                 'mo_ta' => 'Ngồi vào máy Machine Decline Chest Press, tựa lưng vào đệm và nắm hai tay cầm ngang ngực dưới. Đẩy tay cầm về phía trước bằng cách duỗi tay, tập trung siết cơ ngực dưới, sau đó từ từ gập khuỷu tay để trở về vị trí ban đầu.',
@@ -139,7 +131,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0109',
                 'ten_bai_tap' => 'Cable Pushdown',
                 'mo_ta' => 'Đứng trước máy cáp, dùng hai tay nắm thanh kéo với lòng bàn tay hướng xuống, giữ khuỷu tay sát thân. Đẩy thanh kéo xuống bằng cách duỗi thẳng khuỷu tay, siết cơ tay sau, sau đó từ từ đưa tay về vị trí ban đầu.',
@@ -154,7 +145,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [
-                'id_chuong_trinh_bai_tap' => 1,
                 'ma_bai_tap' => 'BT0110',
                 'ten_bai_tap' => 'Dumbbell Standing Kickback',
                 'mo_ta' => 'Cầm tạ đơn, gập người về phía trước và giữ lưng thẳng, khuỷu tay áp sát thân. Duỗi cẳng tay ra sau đến khi tay gần thẳng, siết cơ tay sau rồi từ từ hạ tạ về vị trí ban đầu.',
@@ -171,7 +161,6 @@ class BaiTapSeeder extends Seeder
 
             // Chương trình bài tập ID 2
             [// tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0201',
                 'ten_bai_tap' => 'Sled Hack Squat',
                 'mo_ta' => 'Đứng vào máy Sled Hack Squat, tựa lưng và vai vào đệm, đặt hai chân lên bàn đạp rộng bằng vai. Gập gối để hạ người xuống, sau đó đẩy chân để trở về vị trí ban đầu, tập trung vào cơ đùi trước và cơ mông.',
@@ -186,7 +175,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [ // tập ở nhà có thiết bị, gym 
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0202',
                 'ten_bai_tap' => 'Dumbbell Squat',
                 'mo_ta' => 'Đứng thẳng, hai chân rộng bằng vai và cầm tạ đơn ở hai bên thân người. Đẩy hông ra sau, từ từ gập đầu gối để hạ thấp cơ thể, giữ lưng thẳng và trọng lượng cơ thể phân bố đều trên bàn chân. Sau đó đẩy chân xuống sàn để đứng thẳng trở lại, siết cơ đùi và cơ mông khi nâng người lên.',
@@ -201,7 +189,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [ // tập ở nhà được và gym thư giãn khởi động 
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0203',
                 'ten_bai_tap' => 'Lunge bước tới',
                 'mo_ta' => 'Đứng thẳng, hai chân rộng bằng hông, sau đó bước một chân về phía trước và từ từ hạ thấp người bằng cách gập cả hai đầu gối. Giữ thân người thẳng, đầu gối trước hướng theo mũi chân và không vượt quá tầm kiểm soát. Dùng chân trước đẩy người trở về vị trí ban đầu, sau đó đổi chân và lặp lại động tác.',
@@ -216,7 +203,6 @@ class BaiTapSeeder extends Seeder
                  
             ], 
             [ // tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0204',
                 'ten_bai_tap' => 'Seated Leg Press',
                 'mo_ta' => 'Ngồi vào máy Leg Press, tựa lưng sát đệm và đặt hai bàn chân lên bàn đạp rộng bằng vai. Từ từ gập đầu gối để hạ bàn đạp xuống, giữ lưng áp sát ghế và đầu gối hướng theo mũi chân. Sau đó đẩy bàn đạp ra bằng cách duỗi chân, tập trung vào cơ đùi trước và cơ mông, tránh khóa cứng đầu gối khi duỗi chân.',
@@ -231,7 +217,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0205',
                 'ten_bai_tap' => 'Cable Seated Leg Extension.',
                 'mo_ta' => 'Ngồi trên ghế trước máy cáp thấp, gắn dây cáp vào cổ chân và giữ thân người ổn định. Từ từ duỗi thẳng đầu gối để nâng cẳng chân lên, siết cơ đùi trước và giữ lực căng từ dây cáp. Sau đó gập gối, đưa chân về vị trí ban đầu một cách có kiểm soát.',
@@ -246,7 +231,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0206',
                 'ten_bai_tap' => 'Seated Leg Curl.',
                 'mo_ta' => 'Ngồi vào máy Seated Leg Curl, tựa lưng vào đệm và đặt hai chân phía trên con lăn, điều chỉnh đệm cố định đùi phù hợp. Gập đầu gối để kéo con lăn xuống, siết cơ đùi sau, sau đó từ từ duỗi chân về vị trí ban đầu và kiểm soát lực cản.',
@@ -261,7 +245,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0207',
                 'ten_bai_tap' => 'Seated Hip Abduction',
                 'mo_ta' => 'Ngồi vào máy dang hông, tựa lưng vào đệm và đặt hai đùi sát vào đệm đỡ. Dùng lực cơ mông đẩy hai chân dang ra ngoài, giữ trong giây lát rồi từ từ khép chân về vị trí ban đầu.',
@@ -276,7 +259,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0208',
                 'ten_bai_tap' => 'Glute Bridge',
                 'mo_ta' => 'Nằm ngửa trên sàn, co hai đầu gối và đặt bàn chân phẳng trên sàn, hai tay duỗi dọc theo thân người. Siết cơ mông, nâng hông lên đến khi vai, hông và đầu gối gần tạo thành một đường thẳng. Sau đó từ từ hạ hông về vị trí ban đầu.',
@@ -291,7 +273,6 @@ class BaiTapSeeder extends Seeder
                  
             ], 
             [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0209',
                 'ten_bai_tap' => 'Machine Standing Calf Raise.',
                 'mo_ta' => 'Đứng vào máy, đặt vai dưới đệm và mũi chân lên bệ đỡ, để gót chân tự do di chuyển. Giữ chân thẳng, từ từ nâng gót lên cao bằng cách siết cơ bắp chân, sau đó hạ gót xuống thấp có kiểm soát để kéo giãn cơ.',
@@ -306,7 +287,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 2,
                 'ma_bai_tap' => 'BT0210',
                 'ten_bai_tap' => 'Seated Calf Raise.',
                 'mo_ta' => 'Ngồi vào máy tập bắp chân, đặt mũi chân lên bệ đỡ và đặt đệm máy lên đùi gần đầu gối. Từ từ nâng gót chân lên cao bằng cách siết cơ bắp chân, giữ trong giây lát rồi hạ gót xuống có kiểm soát để lặp lại động tác.',
@@ -323,7 +303,6 @@ class BaiTapSeeder extends Seeder
 
             // Chương trình bài tập ID 3
             [// tập ở nhà được và gym thư giãn khởi động 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0301',
                 'ten_bai_tap' => 'Jumping Jack',
                 'mo_ta' => 'Đứng thẳng, hai chân khép lại và hai tay đặt dọc theo thân người. Bật nhảy dang rộng hai chân đồng thời đưa hai tay lên cao qua đầu, sau đó bật nhảy trở về tư thế ban đầu. Lặp lại liên tục theo nhịp để tăng nhịp tim và làm nóng cơ thể.',
@@ -338,7 +317,6 @@ class BaiTapSeeder extends Seeder
                  
             ], 
             [// tập ở nhà được và gym thư giãn khởi động 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0302',
                 'ten_bai_tap' => 'Bodyweight Squat.',
                 'mo_ta' => 'Đứng thẳng, hai chân rộng bằng vai, mũi chân hơi hướng ra ngoài. Đẩy hông ra sau, từ từ gập gối và hạ người xuống như đang ngồi trên ghế. Giữ lưng thẳng, sau đó đẩy chân để đứng trở lại tư thế ban đầu.',
@@ -353,7 +331,6 @@ class BaiTapSeeder extends Seeder
                  
             ], 
             [ // tập ở nhà được và gym 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0303',
                 'ten_bai_tap' => 'Decline Push-Up',
                 'mo_ta' => 'Đặt hai chân lên bục cao, hai tay chống xuống sàn rộng bằng vai và giữ cơ thể thẳng từ đầu đến gót chân. Từ từ gập khuỷu tay để hạ ngực xuống gần sàn, sau đó đẩy người trở về vị trí ban đầu. ',
@@ -368,7 +345,6 @@ class BaiTapSeeder extends Seeder
                  
             ], 
             [ // tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0304',
                 'ten_bai_tap' => 'Assisted Triceps Dip',
                 'mo_ta' => 'Đứng hoặc quỳ lên bệ đỡ của máy, nắm chắc tay cầm và giữ thân người ổn định. Gập khuỷu tay để hạ cơ thể xuống, sau đó đẩy người lên bằng cơ tay sau, ngực và vai. Thực hiện động tác chậm rãi, có kiểm soát.',
@@ -383,7 +359,6 @@ class BaiTapSeeder extends Seeder
             ],
             
             [ // tập ở nhà và gym  được khởi động 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0305',
                 'ten_bai_tap' => 'Mountain Climber Jump',
                 'mo_ta' => 'Bắt đầu ở tư thế plank cao, hai tay chống thẳng dưới vai. Bật nhảy để đổi vị trí hai chân trên không, luân phiên đưa đầu gối về phía ngực. Tiếp đất nhẹ nhàng, giữ thân người ổn định và siết cơ bụng trong suốt động tác.',
@@ -398,7 +373,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0306',
                 'ten_bai_tap' => 'Cable Side Bend',
                 'mo_ta' => 'Đứng cạnh máy cáp, hai chân mở rộng bằng vai và một tay nắm tay cầm cáp. Giữ lưng thẳng, từ từ nghiêng thân người sang bên để tập cơ liên sườn, sau đó trở về vị trí ban đầu. Hoàn thành số lần yêu cầu rồi đổi bên, thực hiện 3 hiệp, mỗi hiệp 10 lần.',
@@ -413,7 +387,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [// tập ở nhà và gym  được khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0307',
                 'ten_bai_tap' => 'High Knees',
                 'mo_ta' => 'Đứng thẳng, chạy tại chỗ và luân phiên nâng cao hai đầu gối về phía ngực. Đánh tay tự nhiên theo nhịp, giữ thân người ổn định và duy trì tốc độ đều trong suốt bài tập.',
@@ -428,7 +401,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [ // tập ở nhà và gym  được khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0308',
                 'ten_bai_tap' => 'Alternating Lunges.',
                 'mo_ta' => 'Đứng thẳng, bước một chân về phía trước và hạ thấp hông cho đến khi hai đầu gối gập gần 90 độ. Đẩy chân trước để trở về tư thế ban đầu, sau đó đổi chân và lặp lại động tác.',
@@ -443,7 +415,6 @@ class BaiTapSeeder extends Seeder
                  
             ],
             [ // tập ở gym 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0309',
                 'ten_bai_tap' => 'Machine Seated Full Crunch',
                 'mo_ta' => 'Ngồi vào máy gập bụng, giữ lưng tựa vào đệm và đặt tay đúng vị trí. Siết cơ bụng, gập thân người về phía trước để kéo máy xuống, sau đó từ từ trở về tư thế ban đầu và kiểm soát lực cản.',
@@ -458,7 +429,6 @@ class BaiTapSeeder extends Seeder
                  
             ], 
             [// tập ở nhà và gym  được khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 3,
                 'ma_bai_tap' => 'BT0310',
                 'ten_bai_tap' => 'High Knees Running',
                 'mo_ta' => 'Đứng thẳng, chạy tại chỗ và nâng cao hai đầu gối luân phiên về phía trước. Đánh tay tự nhiên theo nhịp, giữ lưng thẳng và tiếp đất nhẹ nhàng bằng mũi chân. Bài tập có thể thực hiện tại nhà mà không cần thiết bị.',
@@ -474,8 +444,7 @@ class BaiTapSeeder extends Seeder
             ], 
 
             // Chương trình bài tập ID 22
-            [ // tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 22,
+            [ // tập ở phòng gym ,
                 'ma_bai_tap' => 'BT2201',
                 'ten_bai_tap' => 'Cable Bar Lateral Pulldown',
                 'mo_ta' => 'Kéo thanh xuống trước ngực để tập cơ lưng xô.',
@@ -489,8 +458,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Máy cáp, thanh kéo xô',
                  
             ],
-            [// tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym ,
                 'ma_bai_tap' => 'BT2202',
                 'ten_bai_tap' => 'Cable Low Seated Row with V Bar',
                 'mo_ta' => 'Kéo tay cầm về thân người, giữ lưng ổn định.',
@@ -504,8 +472,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Máy cáp, tay cầm chữ V',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2203',
                 'ten_bai_tap' => 'Dumbbell Single Arm Bent Over Row',
                 'mo_ta' => 'Kéo tạ về phía hông để tập cơ lưng.',
@@ -519,8 +486,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2204',
                 'ten_bai_tap' => 'Strongman Deadlift',
                 'mo_ta' => 'Nâng tạ từ sàn với kỹ thuật và mức tạ phù hợp.',
@@ -534,8 +500,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thanh tạ đòn, bánh tạ',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2205',
                 'ten_bai_tap' => 'Barbell Bent Over Row',
                 'mo_ta' => 'Kéo tạ về bụng trong tư thế cúi người ổn định.',
@@ -549,8 +514,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thanh tạ đòn, bánh tạ',
                  
             ],
-            [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym,
                 'ma_bai_tap' => 'BT2206',
                 'ten_bai_tap' => 'Cable Standing Face Pull',
                 'mo_ta' => 'Kéo dây cáp về phía mặt để tập vai sau và lưng trên.',
@@ -564,8 +528,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Máy cáp, dây kéo',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2207',
                 'ten_bai_tap' => 'Dumbbell Biceps Curl',
                 'mo_ta' => 'Gập khuỷu tay để tập cơ tay trước.',
@@ -579,8 +542,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2208',
                 'ten_bai_tap' => 'Barbell Alternate Biceps Curl',
                 'mo_ta' => 'Cuốn tạ đòn lên bằng cơ tay trước.',
@@ -594,8 +556,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thanh tạ đòn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2209',
                 'ten_bai_tap' => 'Dumbbell Hammer Curl',
                 'mo_ta' => 'Đứng thẳng, hai tay cầm tạ đơn với lòng bàn tay hướng vào nhau. Giữ khuỷu tay sát thân người, gập khuỷu tay để cuốn tạ lên gần vai, sau đó từ từ hạ tạ về vị trí ban đầu. Thực hiện động tác có kiểm soát, tránh vung người.',
@@ -609,8 +570,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 22,
+            [// tập ở phòng gym,
                 'ma_bai_tap' => 'BT2210',
                 'ten_bai_tap' => 'Cable Close Grip Curl',
                 'mo_ta' => 'Cuốn tay trước với lực kéo ổn định từ máy cáp.',
@@ -626,8 +586,7 @@ class BaiTapSeeder extends Seeder
             ],
 
             // Chương trình bài tập ID 23
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2301',
                 'ten_bai_tap' => 'Đẩy vai với tạ đơn',
                 'mo_ta' => 'Đứng thẳng, hai chân mở rộng bằng vai, mỗi tay cầm một quả tạ đơn đặt ngang vai với lòng bàn tay hướng về phía trước. Siết cơ bụng, đẩy cả hai tạ lên cao cho đến khi hai tay gần duỗi thẳng, sau đó từ từ hạ tạ về vị trí ban đầu. Giữ lưng thẳng, tránh ưỡn người quá mức và kiểm soát chuyển động trong suốt bài tập.',
@@ -641,8 +600,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2302',
                 'ten_bai_tap' => 'Barbell Overhead Carry',
                 'mo_ta' => 'Đứng thẳng, hai chân mở rộng bằng vai, hai tay nắm thanh tạ đòn và đặt tạ ngang phần vai trên. Siết cơ bụng, đẩy thanh tạ thẳng lên qua đầu cho đến khi hai tay gần duỗi thẳng, sau đó từ từ hạ tạ về vị trí ban đầu. Giữ lưng ổn định, tránh ưỡn người quá mức và kiểm soát chuyển động trong suốt bài tập.',
@@ -656,8 +614,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thanh tạ đòn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2303',
                 'ten_bai_tap' => 'Dumbbell Lateral Raise',
                 'mo_ta' => 'Đứng thẳng, hai chân mở rộng bằng vai, mỗi tay cầm một quả tạ đơn đặt cạnh hông, lòng bàn tay hướng vào thân người. Giữ khuỷu tay hơi cong, nâng hai tay sang hai bên đến ngang vai, sau đó từ từ hạ tạ về vị trí ban đầu. Tránh dùng đà hoặc nhún người, tập trung vào cơ vai giữa trong suốt động tác.',
@@ -671,8 +628,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2304',
                 'ten_bai_tap' => 'Dumbbell Front Raise',
                 'mo_ta' => 'Đứng thẳng, hai chân mở rộng bằng vai, mỗi tay cầm một quả tạ đơn đặt trước đùi, lòng bàn tay hướng vào thân người. Giữ khuỷu tay hơi cong, lần lượt hoặc đồng thời nâng tạ về phía trước đến ngang vai, sau đó từ từ hạ tạ về vị trí ban đầu. Giữ thân người ổn định, tránh đung đưa để tạo đà và kiểm soát chuyển động trong suốt bài tập.',
@@ -686,8 +642,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2305',
                 'ten_bai_tap' => 'Band Reverse Fly',
                 'mo_ta' => 'Đứng hơi cúi người về phía trước, hai chân mở rộng bằng vai, mỗi tay cầm một quả tạ đơn và giữ lưng thẳng. Hơi cong khuỷu tay, dang hai tay sang hai bên và kéo tạ ra sau cho đến khi cánh tay gần ngang vai. Sau đó từ từ hạ tạ về vị trí ban đầu, tập trung vào cơ vai sau và giữ thân người ổn định trong suốt động tác.',
@@ -701,8 +656,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Dây kháng lực',
                  
             ],
-            [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym,
                 'ma_bai_tap' => 'BT2306',
                 'ten_bai_tap' => 'Cable One Arm Reverse Fly',
                 'mo_ta' => 'Đứng cạnh máy cáp ở vị trí thấp hoặc ngang hông, một tay nắm tay cầm và kéo ngang ra sau để tập cơ vai sau. Từ từ đưa tay về vị trí ban đầu, giữ thân người ổn định và thực hiện lần lượt từng bên.',
@@ -716,8 +670,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Máy cáp, tay cầm đơ',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2307',
                 'ten_bai_tap' => 'Dumbbell Shrug',
                 'mo_ta' => 'Đứng thẳng, hai tay cầm tạ đơn ở hai bên thân người. Nhún hai vai lên cao về phía tai, giữ trong giây lát rồi từ từ hạ vai về vị trí ban đầu. Giữ tay thẳng và tránh xoay vai trong quá trình thực hiện.',
@@ -731,8 +684,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2308',
                 'ten_bai_tap' => 'Barbell Wide Grip Upright Row',
                 'mo_ta' => 'Đứng thẳng, hai tay cầm thanh tạ trước đùi. Kéo tạ lên dọc theo thân người đến ngang ngực, giữ khuỷu tay hướng lên trên. Sau đó từ từ hạ tạ về vị trí ban đầu, giữ thân người ổn định trong suốt động tác.',
@@ -746,8 +698,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thanh tạ đòn',
                  
             ],
-            [// tập ở phòng gym và nhà 
-                'id_chuong_trinh_bai_tap' => 23,
+            [// tập ở phòng gym và nhà ,
                 'ma_bai_tap' => 'BT2309',
                 'ten_bai_tap' => 'Dumbbell Arnold Press',
                 'mo_ta' => 'Ngồi hoặc đứng thẳng, cầm hai quả tạ đơn trước ngực với lòng bàn tay hướng về phía cơ thể. Đẩy tạ lên cao qua đầu đồng thời xoay cổ tay để lòng bàn tay hướng ra trước. Sau đó từ từ hạ tạ xuống và xoay cổ tay về vị trí ban đầu.',
@@ -761,25 +712,23 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Tạ đơn',
                  
             ],
-            [ // tập ở phòng gym 
-                'id_chuong_trinh_bai_tap' => 23,
+            [ // tập ở phòng gym ,
                 'ma_bai_tap' => 'BT2310',
-                'ten_bai_tap' => 'Run on Treadmill',
-                'mo_ta' => 'Chạy trên máy chạy bộ với tốc độ phù hợp, giữ tư thế thẳng và duy trì nhịp thở đều.',
-                'thoi_gian_phut' => 5,
+                'ten_bai_tap' => 'walk elliptical cross trainer',
+                'mo_ta' => 'Đi bộ trên máy tập elliptical bằng cách đạp chân luân phiên và kéo tay cầm. Giữ tư thế thẳng, siết cơ bụng và duy trì nhịp độ ổn định trong suốt bài tập.',
+                'thoi_gian_phut' => 8,
                 'rep_yeu_cau' => null,
                 'set_yeu_cau' => null,
                 'muc_ta_toi_thieu' => null,
                 'giay_yeu_cau' => null,
-                'anh_dai_dien' => 'https://liftmanual.com/wp-content/uploads/2023/04/run-on-treadmill.jpg',
+                'anh_dai_dien' => 'https://liftmanual.com/wp-content/uploads/2023/04/cycle-cross-trainer.gif',
                 'tinh_trang' => 1,
-                'thiet_bi' => 'Máy chạy bộ',
+                'thiet_bi' => 'Máy tập elip',
                  
             ],
 
             // Chương trình bài tập ID 24
-            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn ,
                 'ma_bai_tap' => 'BT2401',
                 'ten_bai_tap' => 'Russian Twist',
                 'mo_ta' => 'Ngồi hơi ngả người về sau, xoay thân sang trái và phải luân phiên để tập cơ bụng và cơ liên sườn.',
@@ -792,8 +741,7 @@ class BaiTapSeeder extends Seeder
                 'tinh_trang' => 1,
                 'thiet_bi' => null,
             ], 
-            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn ,
                 'ma_bai_tap' => 'BT2402',
                 'ten_bai_tap' => 'Bicycle Crunch',
                 'mo_ta' => 'Nằm ngửa, luân phiên đưa khuỷu tay về phía đầu gối đối diện, kết hợp co duỗi hai chân như động tác đạp xe.',
@@ -806,8 +754,7 @@ class BaiTapSeeder extends Seeder
                 'tinh_trang' => 1,
                 'thiet_bi' => 'Thảm tập',
             ], 
-            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn ,
                 'ma_bai_tap' => 'BT2403',
                 'ten_bai_tap' => 'Reverse Crunch',
                 'mo_ta' => 'Nằm ngửa trên thảm, hai tay đặt dọc thân người và co gối tạo góc vuông. Siết cơ bụng, nâng hông lên khỏi thảm và đưa đầu gối về phía ngực, sau đó từ từ hạ chân về vị trí ban đầu.',
@@ -821,8 +768,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thảm tập',
                  
             ],
-            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn ,
                 'ma_bai_tap' => 'BT2404',
                 'ten_bai_tap' => 'Lying Leg Raise',
                 'mo_ta' => 'Nằm ngửa trên thảm, hai chân duỗi thẳng và hai tay đặt dọc thân người. Siết cơ bụng, từ từ nâng hai chân lên cho đến khi gần vuông góc với thân người, sau đó hạ chân xuống chậm rãi mà không để chân chạm sàn.',
@@ -836,8 +782,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thảm tập',
                  
             ], 
-            [ // tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 24,
+            [ // tập ở phòng gym,
                 'ma_bai_tap' => 'BT2405',
                 'ten_bai_tap' => 'Machine Seated Crunch',
                 'mo_ta' => 'Ngồi vào máy tập bụng, giữ tay cầm và siết cơ bụng để gập thân người về phía trước. Từ từ trở về vị trí ban đầu và kiểm soát chuyển động.',
@@ -850,8 +795,7 @@ class BaiTapSeeder extends Seeder
                 'tinh_trang' => 1,
                 'thiet_bi' => 'Máy tập bụng',
             ],
-            [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym,
                 'ma_bai_tap' => 'BT2406',
                 'ten_bai_tap' => 'Cable Twisting Standing High Row',
                 'mo_ta' => 'Đứng cạnh máy cáp đặt ở vị trí cao, dùng hai tay kéo cáp chéo xuống qua thân người kết hợp xoay thân. Giữ tư thế ổn định và siết cơ lưng trên, vai sau cùng cơ liên sườn.',
@@ -864,8 +808,7 @@ class BaiTapSeeder extends Seeder
                 'tinh_trang' => 1,
                 'thiet_bi' => 'Máy cáp, tay cầm',
             ],
-            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn ,
                 'ma_bai_tap' => 'BT2407',
                 'ten_bai_tap' => 'Side Plank',
                 'mo_ta' => 'Nằm nghiêng, chống một cẳng tay xuống sàn và nâng hông lên sao cho đầu, thân người và chân tạo thành một đường thẳng. Siết cơ bụng và giữ tư thế ổn định trong thời gian yêu cầu.',
@@ -879,8 +822,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thảm tập',
                  
             ],  
-            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn 
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym và nhà giảm cân, khởi động , thư giãn ,
                 'ma_bai_tap' => 'BT2408',
                 'ten_bai_tap' => 'Dead Bug',
                 'mo_ta' => 'Nằm ngửa, giữ lưng dưới áp sát sàn, nâng hai tay và co chân vuông góc. Từ từ duỗi một tay và chân đối diện, sau đó thu về vị trí ban đầu và đổi bên. Siết cơ bụng để giữ thân người ổn định trong suốt động tác.',
@@ -894,8 +836,7 @@ class BaiTapSeeder extends Seeder
                 'thiet_bi' => 'Thảm tập',
                  
             ],
-            [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym,
                 'ma_bai_tap' => 'BT2409',
                 'ten_bai_tap' => 'Machine Trunk Rotation',
                 'mo_ta' => 'Ngồi vào máy xoay thân, giữ lưng áp sát đệm và cố định tư thế theo hướng dẫn của máy. Siết cơ bụng, xoay thân người sang một bên chống lại lực cản, sau đó từ từ trở về vị trí ban đầu và thực hiện bên còn lại.',
@@ -908,8 +849,7 @@ class BaiTapSeeder extends Seeder
                 'tinh_trang' => 1,
                 'thiet_bi' => 'Máy xoay thân',
             ],
-            [// tập ở phòng gym
-                'id_chuong_trinh_bai_tap' => 24,
+            [// tập ở phòng gym,
                 'ma_bai_tap' => 'BT2410',
                 'ten_bai_tap' => 'Captains Chair Leg Raise',
                 'mo_ta' => 'Đứng vào máy Captain Chair, tựa lưng vào đệm và đặt cẳng tay lên phần đỡ. Siết cơ bụng, nâng hai đầu gối về phía ngực, sau đó từ từ hạ chân xuống vị trí ban đầu mà không đung đưa cơ thể.',

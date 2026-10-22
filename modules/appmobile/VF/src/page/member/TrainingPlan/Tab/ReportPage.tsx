@@ -1,62 +1,80 @@
-﻿import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, } from "react-native";
+﻿import React, { useEffect, useRef, useState } from "react";
+import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, TextInput, DeviceEventEmitter, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
+import Svg, { Circle } from "react-native-svg";
 import Video from "react-native-video";
 const ReportPage = ({ navigation, route }: any) => {
-    const [time, setTime] = useState(9);
+    // const [time, setTime] = useState(9);
     const [isRunning, setIsRunning] = useState(false);
     const [setCount, setSetCount] = useState(0);
     const exercise = route?.params?.exercise;
-    console.log("Thông tin bài tập:", exercise);
-    console.log("Tên:", exercise.ten_bai_tap);
-    console.log("Thời gian:", exercise.thoi_gian_phut);
-    console.log("Số lần:", exercise.rep_yeu_cau);
-    console.log("Số hiệp:", exercise.set_yeu_cau);
-    console.log("Giây yêu cầu:", exercise.giay_yeu_cau);
-    console.log("Mức tạ:", exercise.muc_ta_toi_thieu);
-    console.log("Thiết bị:", exercise.thiet_bi);
-    console.log("Video hướng dẫn:", exercise.video_huong_dan);
-    console.log("Video sai:", exercise.video_sai);
-    console.log("Hướng dẫn:", exercise.huong_dan);
-    console.log("Cảnh báo:", exercise.canh_bao);
-    console.log("Nơi tập:", exercise.noi_tap);
-    console.log("Mô tả:", exercise.mo_ta);
-
-
+    const [showWeight, setShowWeight] = useState(false);
+    const [showRep, setShowRep] = useState(false);
+    const [showSeconds, setShowSeconds] = useState(false);
+    const [showMinutesInput, setShowMinutesInput] = useState(false);
+    // của dấu cộng 
+    const [savedMinutes, setSavedMinutes] = useState<string | null>(null);
     // check giay va rep 
-    const hasSeconds = Number(exercise?.giay_yeu_cau) > 0;
-    const exerciseRequirement = hasSeconds ? exercise.giay_yeu_cau : exercise?.rep_yeu_cau;
+    // Kiểm tra thông số bài tập
+    const mucTa = String(exercise?.muc_ta_toi_thieu ?? "").match(/\d+(\.\d+)?/)?.[0] ?? "0";
+    // thay đổi số và nhập số mới 
+    const [weightValue, setWeightValue] = useState(String(mucTa));
+    const [repValue, setRepValue] = useState(String(exercise?.rep_yeu_cau ?? 0));
+    const [secondsValue, setSecondsValue] = useState(String(exercise?.giay_yeu_cau ?? 0));
+    const [minutesValue, setMinutesValue] = useState(String(exercise?.thoi_gian_phut ?? 0));
+    const hasWeight = Number(mucTa) > 0;
+    const hasRep = Number(exercise?.rep_yeu_cau) > 0;
+    const hasSet = Number(exercise?.set_yeu_cau) > 0;
+    const hasDuration = Number(exercise?.thoi_gian_phut) > 0;
+    const hasSecondsValue = Number(exercise?.giay_yeu_cau) > 0;
+    // Chỉ hiện Giây khi không có Rep và có số giây yêu cầu
+    const hasSeconds = !hasRep && hasSecondsValue;
+    // Có mức tạ và Rep thì hiện hai ô Kilogram + Rep
+    const hasWeightAndRep = hasWeight && hasRep;
+    const showMinutes = !hasRep && !hasSet && !hasSeconds && hasDuration;
+    // Cấu hình vòng tròn tiến độ
+    const circleSize = wp("19%");
+    const circleRadius = circleSize / 2 - 3;
+    const circumference = 2 * Math.PI * circleRadius;
+    // Tính tiến độ theo Set hoặc Phút
+    const progressTarget = hasSet ? Number(exercise?.set_yeu_cau || 1) : Number(exercise?.thoi_gian_phut || 1);
+    const progressValue = hasSet ? setCount : showMinutes ? Number(savedMinutes ?? 0) : 0;
+    const progress = Math.min(Math.max(progressValue / progressTarget, 0), 1);
+    // Đổi màu theo tiến độ
+    const progressColor = progress >= 1 && progressValue > 0 ? "#13BEC2" : progress > 0 ? "#FFB957" : "#FFB7BC";
+    const [time, setTime] = useState(0);
 
+
+
+
+
+    // Đồng bộ thời gian ban đầu từ ExercisePage và tạm dừng và bắt đầu lại 
+    const [workoutTime, setWorkoutTime] = useState(route?.params?.elapsedSeconds ?? 0);
+    const [isWorkoutRunning, setIsWorkoutRunning] = useState(route?.params?.isTraining ?? false);
     useEffect(() => {
-        let interval: ReturnType<typeof setInterval> | undefined;
-        if (isRunning && time > 0) {
-            interval = setInterval(() => {
-                setTime((prev) => prev - 1);
-            }, 1000);
-        }
-        if (time === 0) {
-            setIsRunning(false);
-        }
-        return () => {
-            if (interval) {
-                clearInterval(interval);
-            }
-        };
-    }, [isRunning, time]);
-
+        setWorkoutTime(route?.params?.elapsedSeconds ?? 0);
+    }, [route?.params?.elapsedSeconds]);
+    // Đồng hồ tổng chỉ chạy khi đang tập
+    useEffect(() => {
+        if (!isWorkoutRunning) return;
+        const timer = setInterval(() => {
+            setWorkoutTime((prev) => prev + 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [isWorkoutRunning]);
+    // Tạm dừng hoặc tiếp tục đồng hồ ở cả hai trang
+    const handleWorkoutPause = () => {
+        const nextRunning = !isWorkoutRunning;
+        setIsWorkoutRunning(nextRunning);
+        DeviceEventEmitter.emit("workout-training-change", nextRunning
+        );
+    };
     const formatTime = (seconds: number) => {
         const minute = Math.floor(seconds / 60);
         const second = seconds % 60;
         return `${minute}:${second.toString().padStart(2, "0")}`;
-    };
-
-    const handleStart = () => {
-        if (time === 0) {
-            setTime(20);
-        }
-        setIsRunning(!isRunning);
     };
 
     const handleReset = () => {
@@ -65,8 +83,13 @@ const ReportPage = ({ navigation, route }: any) => {
         setSetCount(0);
     };
 
+
     const handleAddSet = () => {
-        if (setCount < 3) {
+        if (showMinutes) {
+            setSavedMinutes((prev) =>
+                String(Number(prev ?? 0) + Number(minutesValue || 0))
+            );
+        } else {
             setSetCount((prev) => prev + 1);
         }
     };
@@ -87,14 +110,21 @@ const ReportPage = ({ navigation, route }: any) => {
                 </TouchableOpacity>
 
                 <Text style={styles.headerTitle}>
-                    1/13 Luyện tập chức năng
+                    {exercise?.thu_tu ?? 1}/{route?.params?.total_exercises ?? 0} Luyện tập
                 </Text>
 
-                <View style={styles.headerTimer}>
-                    <Text style={styles.headerTimerText}>
-                        {formatTime(time)}
-                    </Text>
-                </View>
+                <TouchableOpacity style={[styles.headerTimer, isWorkoutRunning && styles.headerTimerRunning,]}
+                    activeOpacity={0.8} onPress={() => { if (!isWorkoutRunning) { handleWorkoutPause(); } }} >
+                    {isWorkoutRunning ? (
+                        <Text style={styles.headerTimerText}>
+                            {formatTime(workoutTime)}
+                        </Text>
+                    ) : (
+                        <Text style={styles.headerTimerStartText}>
+                            Bắt đầu
+                        </Text>
+                    )}
+                </TouchableOpacity>
             </View>
             {/* ================= NOTICE ================= */}
             <TouchableOpacity style={styles.noticeBox} activeOpacity={0.85} >
@@ -126,28 +156,30 @@ const ReportPage = ({ navigation, route }: any) => {
                         <Ionicons name="refresh" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.rightIconButton}
-                       onPress={() => {
-                        navigation.getParent()?.navigate("Kế Hoạch Tập", {
-                            screen: "ExerciseDetail",
-                            params: {
-                                exercise: {
-                                    ...exercise,
-                                    name: exercise?.ten_bai_tap,
-                                    description: exercise?.mo_ta,
-                                    video_huong_dan: exercise?.video_huong_dan,
-                                    video_sai: exercise?.video_sai,
-                                    huong_dan: exercise?.huong_dan,
-                                    canh_bao: exercise?.canh_bao,
-                                    noi_tap: exercise?.noi_tap,
-                                    muc_ta_toi_thieu: exercise?.muc_ta_toi_thieu,
-                                    rep_yeu_cau: exercise?.rep_yeu_cau,
-                                    set_yeu_cau: exercise?.set_yeu_cau,
-                                    giay_yeu_cau: exercise?.giay_yeu_cau,
+                        onPress={() => {
+                            navigation.getParent()?.navigate("Kế Hoạch Tập", {
+                                screen: "ExerciseDetail",
+                                params: {
+                                    exercise: {
+                                        ...exercise,
+                                        name: exercise?.ten_bai_tap,
+                                        description: exercise?.mo_ta,
+                                        video_huong_dan: exercise?.video_huong_dan,
+                                        video_sai: exercise?.video_sai,
+                                        huong_dan: exercise?.huong_dan,
+                                        canh_bao: exercise?.canh_bao,
+                                        noi_tap: exercise?.noi_tap,
+                                        muc_ta_toi_thieu: exercise?.muc_ta_toi_thieu,
+                                        rep_yeu_cau: exercise?.rep_yeu_cau,
+                                        set_yeu_cau: exercise?.set_yeu_cau,
+                                        giay_yeu_cau: exercise?.giay_yeu_cau,
+                                        thu_tu: exercise?.thu_tu ,
+                                    },
+                                    categoryName: exercise?.noi_tap || "Bài tập",
+                                    total_exercises: route?.params?.total_exercises ?? 0,
                                 },
-                                categoryName: exercise?.noi_tap || "Bài tập",
-                            },
-                        });
-                    }}
+                            });
+                        }}
                         activeOpacity={0.8}>
                         <Ionicons name="information" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
@@ -172,12 +204,23 @@ const ReportPage = ({ navigation, route }: any) => {
 
             {/* ================= CONTROLS ================= */}
             <View style={styles.controlContainer}>
-                {/* SECONDS */}
                 {/* GIÂY YÊU CẦU HOẶC SỐ LẦN LẶP */}
-                <View style={styles.controlItem}>
+                <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
+                    onPress={() => {
+                        if (hasWeightAndRep) {
+                            setShowWeight(true);
+                            setShowRep(true);
+                        } else if (hasSeconds) {
+                            setShowSeconds(true);
+                            setTime(Number(exercise?.giay_yeu_cau));
+                            setIsRunning(false);
+                        } else if (hasRep) {
+                            setShowRep(true);
+                        }
+                    }}>
                     <View style={styles.circleNormal}>
                         <Text style={styles.circleNumber}>
-                            {exerciseRequirement}
+                            {hasSeconds ? exercise?.giay_yeu_cau : exercise?.rep_yeu_cau ?? 0}
                         </Text>
                     </View>
 
@@ -186,58 +229,155 @@ const ReportPage = ({ navigation, route }: any) => {
                     </Text>
 
                     <Text style={styles.controlSubLabel}>
-                        yêu cầu
-                    </Text>
-                </View>
-                {/* START */}
-                <View style={styles.controlItem}>
-                    <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleStart}>
-                        <Text style={styles.startText}>
-                            {isRunning ? "DỪNG" : "BẮT ĐẦU"}
-                        </Text>
-                        <Ionicons
-                            name={
-                                isRunning
-                                    ? "pause"
-                                    : "play"
-                            }
-                            size={wp("6.5%")}
-                            color="#0EB9BD"
-                        />
-
-                    </TouchableOpacity>
-                    <Text style={styles.controlLabel}>
-                        Hẹn giờ
-                    </Text>
-                </View>
-
-                {/* SET */}
-                <View style={styles.controlItem}>
-                    <View style={styles.setCircle}>
-                        <Text style={styles.circleNumber}>
-                            {setCount}/{exercise?.set_yeu_cau ?? 0}
-                        </Text>
-                    </View>
-                    <Text style={styles.controlLabel}>
-                        Set
-                    </Text>
-                    <Text style={styles.controlSubLabel}>
-                        tập
-                    </Text>
-                </View>
-            </View>
-            {/* ================= SECOND INPUT ================= */}
-            <View style={styles.secondArea}>
-
-                <TouchableOpacity style={styles.secondButton} activeOpacity={0.8} onPress={() => setTime(20)}>
-                    <Text style={styles.secondText}>
-                        Giây
+                        {hasSeconds || hasRep ? "yêu cầu" : ""}
                     </Text>
                 </TouchableOpacity>
+                {/* START / TẠM NGHỈ */}
+                <View style={styles.controlItem}>
+                    <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleWorkoutPause}>
+
+                        <Ionicons name={isWorkoutRunning ? "pause" : "play"} size={wp("6.5%")} color="#0EB9BD" />
+                    </TouchableOpacity>
+
+                    <Text style={styles.controlLabel}>
+                        Tạm Nghỉ
+                    </Text>
+                </View>
+
+                {/* SET HOẶC THỜI GIAN PHÚT */}
+                <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
+                    onPress={() => {
+                        if (hasSet) {
+                            setSetCount(0);
+                        } else if (showMinutes) {
+                            setShowMinutesInput(true);
+                            setTime(Number(exercise?.thoi_gian_phut) * 60);
+                            setIsRunning(false);
+                        }
+                    }} >
+                    <View style={styles.progressCircle}>
+                        <Svg width={circleSize} height={circleSize} viewBox={`0 0 ${circleSize} ${circleSize}`} >
+                            {/* Vòng nền */}
+                            <Circle cx={circleSize / 2} cy={circleSize / 2} r={circleRadius} stroke="#FFE0E2" strokeWidth={3} fill="none" />
+
+                            {/* Vòng tiến độ */}
+                            {progress > 0 && (
+                                <Circle
+                                    cx={circleSize / 2}
+                                    cy={circleSize / 2}
+                                    r={circleRadius}
+                                    stroke={progressColor}
+                                    strokeWidth={3}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeDasharray={`${circumference} ${circumference}`}
+                                    strokeDashoffset={circumference * (1 - progress)}
+                                    rotation={-90}
+                                    origin={`${circleSize / 2}, ${circleSize / 2}`} />
+                            )}
+                        </Svg>
+
+                        {/* Số hiển thị giữa vòng tròn */}
+                        <View style={styles.progressText}>
+                            <Text style={styles.circleNumber}>
+                                {hasSet
+                                    ? `${setCount}/${exercise?.set_yeu_cau}`
+                                    : showMinutes
+                                        ? savedMinutes === null
+                                            ? exercise?.thoi_gian_phut
+                                            : `${savedMinutes}/${exercise?.thoi_gian_phut}`
+                                        : "0"}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <Text style={styles.controlLabel}>
+                        {hasSet ? "Set" : showMinutes ? "Phút" : ""}
+                    </Text>
+
+                    <Text style={styles.controlSubLabel}>
+                        {hasSet || showMinutes ? "tập" : ""}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+
+            {/* ================= SECOND INPUT ================= */}
+
+            <View style={styles.secondArea}>
+                {hasWeightAndRep ? (
+                    <>
+                        {/* Ô chỉnh sửa mức tạ */}
+                        <View style={styles.secondButton}>
+                            <TextInput
+                                style={styles.secondInput}
+                                value={showWeight ? weightValue : ""}
+                                onChangeText={setWeightValue}
+                                placeholderTextColor="#A4AFB1"
+                                keyboardType="decimal-pad"
+                                selectTextOnFocus />
+                            {showWeight && (
+                                <Text style={styles.secondUnit}>kg</Text>
+                            )}
+                        </View>
+
+                        {/* Ô chỉnh sửa số Rep */}
+                        <View style={styles.secondButton}>
+                            <TextInput
+                                style={styles.secondInput}
+                                value={showRep ? repValue : ""}
+                                onChangeText={setRepValue}
+                                placeholderTextColor="#A4AFB1"
+                                keyboardType="number-pad"
+                                selectTextOnFocus />
+                            {showRep && (
+                                <Text style={styles.secondUnit}>Rep</Text>
+                            )}
+                        </View>
+                    </>
+                ) : hasSeconds ? (
+                    <View style={styles.secondButton}>
+                        <TextInput
+                            style={styles.secondInput}
+                            value={showSeconds ? secondsValue : ""}
+                            onChangeText={setSecondsValue}
+                            placeholderTextColor="#A4AFB1"
+                            keyboardType="number-pad"
+                            selectTextOnFocus />
+                        {showSeconds && (
+                            <Text style={styles.secondUnit}>Giây</Text>
+                        )}
+                    </View>
+                ) : showMinutes ? (
+                    <View style={styles.secondButton}>
+                        <TextInput
+                            style={styles.secondInput}
+                            value={showMinutesInput ? minutesValue : ""}
+                            onChangeText={setMinutesValue}
+                            placeholderTextColor="#A4AFB1"
+                            keyboardType="number-pad"
+                            selectTextOnFocus />
+                        {showMinutesInput && (
+                            <Text style={styles.secondUnit}>Phút</Text>
+                        )}
+                    </View>
+                ) : hasRep ? (
+                    <View style={styles.secondButton}>
+                        <TextInput
+                            style={styles.secondInput}
+                            value={showRep ? repValue : ""}
+                            onChangeText={setRepValue}
+                            placeholderTextColor="#A4AFB1"
+                            keyboardType="number-pad"
+                            selectTextOnFocus />
+                        {showRep && (
+                            <Text style={styles.secondUnit}>Rep</Text>
+                        )}
+                    </View>
+                ) : null}
                 <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} >
                     <Ionicons name="add" size={wp("8%")} color="#FFFFFF" />
                 </TouchableOpacity>
-
             </View>
         </View>
 
@@ -282,21 +422,44 @@ const styles = StyleSheet.create({
         color: "#282F32",
     },
 
+    // headerTimer: {
+    //     position: "absolute",
+    //     right: wp("4%"),
+    //     paddingHorizontal: wp("4%"),
+    //     paddingVertical: hp("0.7%"),
+    //     borderRadius: wp("5%"),
+    //     backgroundColor: "#ace6ed",
+    // },
     headerTimer: {
         position: "absolute",
         right: wp("4%"),
-        paddingHorizontal: wp("3%"),
-        paddingVertical: hp("0.8%"),
-        borderRadius: wp("5%"),
-        backgroundColor: "#F5F7F8",
+        minWidth: wp("20%"),
+        height: hp("5%"),
+        paddingHorizontal: wp("4%"),
+        borderRadius: wp("7%"),
+        backgroundColor: "#FFFFFF",
+        alignItems: "center",
+        justifyContent: "center",
+
+        elevation: 2,
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
     },
-
-
+    headerTimerStartText: {
+        fontSize: wp("4%"),
+        fontWeight: "600",
+        color: "#607D8B",
+    },
+    headerTimerRunning: {
+        backgroundColor: "#EAF9FB",
+    },
     headerTimerText: {
-        fontSize: wp("3%"),
-        color: "#65777D",
+        fontSize: wp("3.8%"),
+        fontWeight: "700",
+        color: "#0D7F8D",
     },
-
     /* ================= NOTICE ================= */
     noticeBox: {
         width: wp("94%"),
@@ -315,15 +478,10 @@ const styles = StyleSheet.create({
     },
     noticeText: {
         color: "#FFFFFF",
-
         fontSize: wp("3%"),
-
         fontWeight: "500",
-
         lineHeight: wp("4%"),
-
     },
-
 
     /* ================= EXERCISE ================= */
     exerciseArea: {
@@ -473,171 +631,92 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: wp("3%"),
         marginTop: hp("1.6%"),
+        width: "100%",
     },
-
 
     secondButton: {
-
         flex: 1,
-
         height: hp("5.2%"),
-
         backgroundColor: "#EDF7F9",
-
         borderRadius: wp("1.5%"),
-
+        flexDirection: "row",
         justifyContent: "center",
-
         alignItems: "center",
-
         marginRight: wp("2%"),
-
     },
-
 
     secondText: {
-
         color: "#A4AFB1",
-
         fontSize: wp("3.6%"),
-
     },
 
-
     addButton: {
-
         width: wp("12%"),
-
         height: wp("12%"),
-
         borderRadius: wp("2%"),
-
         backgroundColor: "#20BEC2",
-
         justifyContent: "center",
-
         alignItems: "center",
-
+        flexShrink: 0,
     },
 
 
     /* ================= BOTTOM NAV ================= */
 
     bottomNavigation: {
-
         position: "absolute",
-
         left: 0,
-
         right: 0,
-
         bottom: 0,
-
         height: hp("7.5%"),
-
         flexDirection: "row",
-
         alignItems: "center",
-
         justifyContent: "space-around",
-
         borderTopWidth: 1,
-
         borderTopColor: "#E7ECEE",
-
         backgroundColor: "#FFFFFF",
-
     },
-
-
     navItem: {
-
         flex: 1,
-
         height: "100%",
-
         justifyContent: "center",
-
         alignItems: "center",
-
     },
 
 
     activeNavIcon: {
-
         paddingHorizontal: wp("4.5%"),
-
         paddingVertical: hp("0.2%"),
-
         backgroundColor: "#E7F7F8",
-
         borderRadius: wp("5%"),
-
     },
-
 
     navText: {
-
         marginTop: hp("0.2%"),
-
         fontSize: wp("2.2%"),
-
         color: "#727F83",
-
     },
 
-
-    activeNavText: {
-
-        color: "#18BEC2",
-
-    },
-
-
-    moreContainer: {
-
-        position: "relative",
-
-    },
-
-
+    activeNavText: { color: "#18BEC2",},
+    moreContainer: { position: "relative", },
     notificationBadge: {
-
         position: "absolute",
-
         top: -hp("0.5%"),
-
         right: -wp("2%"),
-
         width: wp("3.8%"),
-
         height: wp("3.8%"),
-
         borderRadius: wp("1.9%"),
-
         backgroundColor: "#FF6070",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         borderWidth: 1,
-
         borderColor: "#FFFFFF",
-
     },
-
-
     badgeText: {
-
         color: "#FFFFFF",
-
         fontSize: wp("1.8%"),
-
         fontWeight: "700",
-
     },
-
     /* ================= MODAL INFO STYLES ================= */
     modalOverlay: {
         flex: 1,
@@ -781,6 +860,40 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontSize: wp("3.8%"),
         fontWeight: "700",
+    },
+    secondInput: {
+        flex: 0,
+        minWidth: wp("10%"),
+        maxWidth: wp("30%"),
+        paddingVertical: 0,
+        paddingHorizontal: wp("1%"),
+        color: "#283235",
+        fontSize: wp("3.6%"),
+        textAlign: "right",
+    },
+
+    secondUnit: {
+        color: "#A4AFB1",
+        fontSize: wp("4%"),
+        marginLeft: wp("1%"),
+        marginRight: 0,
+    },
+    progressCircle: {
+        width: wp("20%"),
+        height: wp("20%"),
+        position: "relative",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    progressText: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
 });
