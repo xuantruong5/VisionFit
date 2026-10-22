@@ -12,6 +12,7 @@ import AuthScreen from "./src/page/member/AuthScreen";
 import Login from "./src/page/login";
 import GenderSelection from "./src/page/member/GenderSelection";
 import BodyMetrics from "./src/page/member/BodyMetrics";
+import PhongTap from "./src/page/member/PhongTap";
 import TrainerAuthScreen from "./src/page/trainners/TrainerAuthScreen";
 import Dashboard from "./src/page/trainners/Dashboard";
 import Income from "./src/page/trainners/Income";
@@ -80,6 +81,7 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
 
       <MemberWorkoutStack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
+      <MemberWorkoutStack.Screen name="PhongTap" component={PhongTap} />
 
 
       <MemberWorkoutStack.Screen
@@ -307,7 +309,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="PhongTap"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Onloading" component={Onloading}/>
@@ -319,6 +321,7 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
+        <Stack.Screen name="PhongTap" component={PhongTap} />
         {/* <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
