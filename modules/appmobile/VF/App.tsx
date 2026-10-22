@@ -1,4 +1,4 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+﻿import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { Alert, Animated, View, Text } from "react-native";
@@ -29,6 +29,7 @@ import DietScreen from "./src/page/member/TrainingPlan/Tab/DietScreen";
 import WorkoutPlan from "./src/page/member/WorkoutPlan";
 
 
+
 import WorkoutUnPlan from "./src/page/member/WorkoutUnPlan";
 import WorkoutLocationScreen from "./src/page/member/WorkoutLocationScreen";
 import ChatList from "./src/page/chat/ChatList";
@@ -41,7 +42,6 @@ import MemberProfile from "./src/page/member/MemberProfile";
 import SoTayHomeScreen from "./src/page/member/SoTay/SoTayHomeScreen";
 import ExerciseCategoriesScreen from "./src/page/member/SoTay/Exercises/ExerciseCategoriesScreen";
 import ExerciseListScreen from "./src/page/member/SoTay/Exercises/ExerciseListScreen";
-import ExerciseDetailScreen from "./src/page/member/SoTay/Exercises/ExerciseDetailScreen";
 import NutritionCategoriesScreen from "./src/page/member/SoTay/Nutrition/NutritionCategoriesScreen";
 import NutritionProductListScreen from "./src/page/member/SoTay/Nutrition/NutritionProductListScreen";
 import NutritionDetailScreen from "./src/page/member/SoTay/Nutrition/NutritionDetailScreen";
@@ -58,6 +58,11 @@ import WorkoutExercisePlan from "./src/page/member/TrainingPlan/Tab/WorkoutExerc
 import ResultPage from "./src/page/member/ResultPage";
 import Onloading from "./src/page/on_loading";
 import OnboardingScreen from "./src/page/screens/OnboardingScreen";
+import OnboardingScreen1 from "./src/page/screens/OnboardingScreen1";
+import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
+import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
+import ExerciseDetailScreen from "./src/page/member/TrainingPlan/Tab/ExerciseDetailScreen";
+
 
 
 const Stack = createNativeStackNavigator();
@@ -68,7 +73,7 @@ const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="WorkoutPlanScreen" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="ExercisePage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
 
@@ -84,45 +89,15 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen name="PhongTap" component={PhongTap} />
 
 
-      <MemberWorkoutStack.Screen
-        name="headerPage"
-        component={headerPage}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="DashboardScreen"
-        component={DashboardScreen}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="DietScreen"
-        component={DietScreen}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="DietDetail"
-        component={DietDetail}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="ExercisePage"
-        component={ExercisePage}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="ReportPage"
-        component={ReportPage}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="WorkoutExercisePlan"
-        component={WorkoutExercisePlan}
-      />
-
-      <MemberWorkoutStack.Screen
-        name="ResultPage"
-        component={ResultPage}
-      />
+      <MemberWorkoutStack.Screen name="headerPage" component={headerPage}/>
+      <MemberWorkoutStack.Screen name="DashboardScreen" component={DashboardScreen} />
+      <MemberWorkoutStack.Screen name="DietScreen" component={DietScreen} />
+      <MemberWorkoutStack.Screen name="DietDetail" component={DietDetail} />
+      <MemberWorkoutStack.Screen name="ExercisePage" component={ExercisePage}/>
+      <MemberWorkoutStack.Screen name="ReportPage" component={ReportPage}/>
+      <MemberWorkoutStack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+      <MemberWorkoutStack.Screen name="ResultPage" component={ResultPage}/>
+      <MemberWorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
 
 
 
@@ -321,16 +296,20 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
+
         <Stack.Screen name="PhongTap" component={PhongTap} />
         {/* <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+        <Stack.Screen name="headerPage" component={headerPage} />
+        {/* <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
        
         <Stack.Screen name="DietDetail" component={DietDetail} /> 
-        <Stack.Screen name="ExercisePage" component={ExercisePage} /> 
+        <Stack.Screen name="ExercisePage" component={ExercisePage} />
         <Stack.Screen name="ReportPage" component={ReportPage} />
-        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
-        <Stack.Screen name="ResultPage" component={ResultPage}/>  */}
+        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} /> */}
+        {/* <Stack.Screen name="ResultPage" component={ResultPage}/> */}
+        {/* <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/> */}
 
 
 
@@ -344,6 +323,10 @@ const App = () => {
 
         {/* // gioi thieu */}
        <Stack.Screen name="OnboardingScreen" component={OnboardingScreen}/>
+       <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1}/>
+       <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2}/>
+       <Stack.Screen name="OnboardingScreen3" component={OnboardingScreen3}/>
+
 
 
         {/* cua trainner  */}

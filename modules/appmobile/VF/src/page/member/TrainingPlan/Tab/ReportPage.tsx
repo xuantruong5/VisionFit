@@ -1,355 +1,200 @@
-import React, { useEffect, useState } from "react";
-
-import {
-    StyleSheet,
-    Text,
-    View,
-    Image,
-    TouchableOpacity,
-    StatusBar,
-} from "react-native";
-
+﻿import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-
-import {
-    widthPercentageToDP as wp,
-    heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import Video from "react-native-video";
-
-
 const ReportPage = ({ navigation, route }: any) => {
-
     const [time, setTime] = useState(9);
-
     const [isRunning, setIsRunning] = useState(false);
-
     const [setCount, setSetCount] = useState(0);
-
-
-    /*
-        Nếu đi từ WorkoutPage:
-
-        navigation.navigate("ExerciseDetail", {
-            exercise: item,
-        });
-
-        thì có thể lấy dữ liệu ở đây.
-    */
-
     const exercise = route?.params?.exercise;
+    console.log("Thông tin bài tập:", exercise);
+    console.log("Tên:", exercise.ten_bai_tap);
+    console.log("Thời gian:", exercise.thoi_gian_phut);
+    console.log("Số lần:", exercise.rep_yeu_cau);
+    console.log("Số hiệp:", exercise.set_yeu_cau);
+    console.log("Giây yêu cầu:", exercise.giay_yeu_cau);
+    console.log("Mức tạ:", exercise.muc_ta_toi_thieu);
+    console.log("Thiết bị:", exercise.thiet_bi);
+    console.log("Video hướng dẫn:", exercise.video_huong_dan);
+    console.log("Video sai:", exercise.video_sai);
+    console.log("Hướng dẫn:", exercise.huong_dan);
+    console.log("Cảnh báo:", exercise.canh_bao);
+    console.log("Nơi tập:", exercise.noi_tap);
+    console.log("Mô tả:", exercise.mo_ta);
 
 
-    const exerciseName =
-        exercise?.name || "Bài tập chạy tại chỗ";
-
-
-    /*
-        COUNTDOWN TIMER
-    */
+    // check giay va rep 
+    const hasSeconds = Number(exercise?.giay_yeu_cau) > 0;
+    const exerciseRequirement = hasSeconds ? exercise.giay_yeu_cau : exercise?.rep_yeu_cau;
 
     useEffect(() => {
-
         let interval: ReturnType<typeof setInterval> | undefined;
-
         if (isRunning && time > 0) {
-
             interval = setInterval(() => {
-
                 setTime((prev) => prev - 1);
-
             }, 1000);
-
         }
-
         if (time === 0) {
-
             setIsRunning(false);
-
         }
-
         return () => {
-
             if (interval) {
-
                 clearInterval(interval);
-
             }
-
         };
-
     }, [isRunning, time]);
 
-
-    /*
-        FORMAT TIMER HEADER
-    */
-
     const formatTime = (seconds: number) => {
-
         const minute = Math.floor(seconds / 60);
-
         const second = seconds % 60;
-
         return `${minute}:${second.toString().padStart(2, "0")}`;
-
     };
-
-
-    /*
-        START
-    */
 
     const handleStart = () => {
-
         if (time === 0) {
-
             setTime(20);
-
         }
-
         setIsRunning(!isRunning);
-
     };
-
-
-    /*
-        RESET
-    */
 
     const handleReset = () => {
-
         setTime(20);
-
         setIsRunning(false);
-
         setSetCount(0);
-
     };
-
-
-    /*
-        ADD SET
-    */
 
     const handleAddSet = () => {
-
         if (setCount < 3) {
-
             setSetCount((prev) => prev + 1);
-
         }
-
     };
 
-
     return (
-
         <View style={styles.container}>
-
-            <StatusBar
-            //    backgroundColor="#FFFFFF"
-                barStyle="dark-content"
-            />
-
-
-            {/* ================= HEADER ================= */}
-
+            <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
-
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-
-                    <Ionicons
-                        name="chevron-back"
-                        size={wp("6%")}
-                        color="#61737B"
-                    />
-
+                <TouchableOpacity style={styles.backButton}
+                    onPress={() => {
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        } else {
+                            navigation.navigate("MemberTabs");
+                        }
+                    }} >
+                    <Ionicons name="chevron-back" size={wp("6%")} color="#61737B" />
                 </TouchableOpacity>
 
-
                 <Text style={styles.headerTitle}>
-
                     1/13 Luyện tập chức năng
-
                 </Text>
-
 
                 <View style={styles.headerTimer}>
-
                     <Text style={styles.headerTimerText}>
-
                         {formatTime(time)}
-
                     </Text>
-
                 </View>
-
             </View>
-
-
             {/* ================= NOTICE ================= */}
-
-            <TouchableOpacity
-                style={styles.noticeBox}
-                activeOpacity={0.85}
-            >
-
+            <TouchableOpacity style={styles.noticeBox} activeOpacity={0.85} >
                 <View style={styles.noticeIcon}>
-
-                    <Ionicons
-                        name="information-circle-outline"
-                        size={wp("5.5%")}
-                        color="#FFFFFF"
-                    />
-
+                    <Ionicons name="information-circle-outline" size={wp("5.5%")} color="#FFFFFF" />
                 </View>
-
-
                 <Text style={styles.noticeText}>
-
                     Xem cách diễn vào nhật ký{"\n"}
                     tập luyện
-
                 </Text>
-
             </TouchableOpacity>
 
-
             {/* ================= EXERCISE IMAGE ================= */}
-
             <View style={styles.exerciseArea}>
-
-
                 <View style={styles.exerciseImageArea}>
-
-                    {exercise?.video ? (
-                        <Video
-                            source={{ uri: exercise.video }}
-                            style={styles.exerciseImage}
-                            resizeMode="contain"
-                            repeat={true}
-                            paused={false}
-                            muted={true}
-                        />
+                    {exercise?.video_huong_dan ? (
+                        exercise.video_huong_dan.toLowerCase().endsWith(".gif") ? (
+                            <Image source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" onError={() => console.log("Video hướng dẫn bị lỗi")} />
+                        ) : (
+                            <Video source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" repeat paused={false} muted onError={() => console.log("Video hướng dẫn bị lỗi")} />
+                        )
                     ) : (
-                        <Image
-                            source={
-                                typeof exercise?.image === 'string'
-                                    ? { uri: exercise.image }
-                                    : exercise?.image
-                                        ? exercise.image
-                                        : require("../../../../assets/fitness-bg.png")
-                            }
-                            style={styles.exerciseImage}
-                            resizeMode="contain"
-                        />
+                        <Text>Video hướng dẫn bị lỗi</Text>
                     )}
-
                 </View>
-
-
                 {/* RIGHT BUTTONS */}
-
                 <View style={styles.rightButtons}>
-
-
-                    <TouchableOpacity
-                        style={styles.rightIconButton}
-                        onPress={handleReset}
-                    >
-
-                        <Ionicons
-                            name="refresh"
-                            size={wp("5%")}
-                            color="#1BC3C8"
-                        />
-
+                    <TouchableOpacity style={styles.rightIconButton} onPress={handleReset} >
+                        <Ionicons name="refresh" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
-
-
-                    <TouchableOpacity
-                        style={styles.rightIconButton}
-                    >
-
-                        <Ionicons
-                            name="information"
-                            size={wp("5%")}
-                            color="#1BC3C8"
-                        />
-
+                    <TouchableOpacity style={styles.rightIconButton}
+                       onPress={() => {
+                        navigation.getParent()?.navigate("Kế Hoạch Tập", {
+                            screen: "ExerciseDetail",
+                            params: {
+                                exercise: {
+                                    ...exercise,
+                                    name: exercise?.ten_bai_tap,
+                                    description: exercise?.mo_ta,
+                                    video_huong_dan: exercise?.video_huong_dan,
+                                    video_sai: exercise?.video_sai,
+                                    huong_dan: exercise?.huong_dan,
+                                    canh_bao: exercise?.canh_bao,
+                                    noi_tap: exercise?.noi_tap,
+                                    muc_ta_toi_thieu: exercise?.muc_ta_toi_thieu,
+                                    rep_yeu_cau: exercise?.rep_yeu_cau,
+                                    set_yeu_cau: exercise?.set_yeu_cau,
+                                    giay_yeu_cau: exercise?.giay_yeu_cau,
+                                },
+                                categoryName: exercise?.noi_tap || "Bài tập",
+                            },
+                        });
+                    }}
+                        activeOpacity={0.8}>
+                        <Ionicons name="information" size={wp("5%")} color="#1BC3C8" />
                     </TouchableOpacity>
-
-
                 </View>
-
             </View>
-
-
             {/* ================= EXERCISE TITLE ================= */}
 
             <Text style={styles.exerciseTitle}>
-
-                {exerciseName}
-
+                {exercise?.ten_bai_tap || "Bài tập chưa có tên"}
             </Text>
+
+            {exercise?.muc_ta_toi_thieu &&
+                exercise.muc_ta_toi_thieu !== "0.00" && (
+                    <Text style={styles.exerciseTitle1}>
+                        <Text style={{ fontWeight: "bold" }}>
+                            Mức tạ khuyến nghị:
+                        </Text>
+                        {exercise.muc_ta_toi_thieu}
+                    </Text>
+                )}
 
 
             {/* ================= CONTROLS ================= */}
-
             <View style={styles.controlContainer}>
-
-
                 {/* SECONDS */}
-
+                {/* GIÂY YÊU CẦU HOẶC SỐ LẦN LẶP */}
                 <View style={styles.controlItem}>
-
                     <View style={styles.circleNormal}>
-
                         <Text style={styles.circleNumber}>
-
-                            20
-
+                            {exerciseRequirement}
                         </Text>
-
                     </View>
 
                     <Text style={styles.controlLabel}>
-
-                        Giây
-
+                        {hasSeconds ? "Giây" : "Rep"}
                     </Text>
 
                     <Text style={styles.controlSubLabel}>
-
                         yêu cầu
-
                     </Text>
-
                 </View>
-
-
                 {/* START */}
-
                 <View style={styles.controlItem}>
-
-                    <TouchableOpacity
-                        style={styles.startCircle}
-                        activeOpacity={0.8}
-                        onPress={handleStart}
-                    >
-
+                    <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleStart}>
                         <Text style={styles.startText}>
-
                             {isRunning ? "DỪNG" : "BẮT ĐẦU"}
-
                         </Text>
-
                         <Ionicons
                             name={
                                 isRunning
@@ -361,215 +206,39 @@ const ReportPage = ({ navigation, route }: any) => {
                         />
 
                     </TouchableOpacity>
-
                     <Text style={styles.controlLabel}>
-
                         Hẹn giờ
-
                     </Text>
-
                 </View>
-
 
                 {/* SET */}
-
                 <View style={styles.controlItem}>
-
                     <View style={styles.setCircle}>
-
                         <Text style={styles.circleNumber}>
-
-                            {setCount}/3
-
+                            {setCount}/{exercise?.set_yeu_cau ?? 0}
                         </Text>
-
                     </View>
-
                     <Text style={styles.controlLabel}>
-
                         Set
-
                     </Text>
-
                     <Text style={styles.controlSubLabel}>
-
                         tập
-
                     </Text>
-
                 </View>
-
-
             </View>
-
-
             {/* ================= SECOND INPUT ================= */}
-
             <View style={styles.secondArea}>
 
-                <TouchableOpacity
-                    style={styles.secondButton}
-                    activeOpacity={0.8}
-                    onPress={() => setTime(20)}
-                >
-
+                <TouchableOpacity style={styles.secondButton} activeOpacity={0.8} onPress={() => setTime(20)}>
                     <Text style={styles.secondText}>
-
                         Giây
-
                     </Text>
-
                 </TouchableOpacity>
-
-
-                <TouchableOpacity
-                    style={styles.addButton}
-                    activeOpacity={0.8}
-                    onPress={handleAddSet}
-                >
-
-                    <Ionicons
-                        name="add"
-                        size={wp("8%")}
-                        color="#FFFFFF"
-                    />
-
+                <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} >
+                    <Ionicons name="add" size={wp("8%")} color="#FFFFFF" />
                 </TouchableOpacity>
 
             </View>
-
-
-            {/* ================= BOTTOM NAV ================= */}
-
-            <View style={styles.bottomNavigation}>
-
-
-                {/* PLAN */}
-
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() =>
-                        navigation.navigate("WorkoutPage")
-                    }
-                >
-
-                    <View style={styles.activeNavIcon}>
-
-                        <MaterialCommunityIcons
-                            name="calendar-month-outline"
-                            size={wp("5.5%")}
-                            color="#18BEC2"
-                        />
-
-                    </View>
-
-                    <Text
-                        style={[
-                            styles.navText,
-                            styles.activeNavText
-                        ]}
-                    >
-
-                        Kế hoạch tập
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* FEED */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <MaterialCommunityIcons
-                        name="rss"
-                        size={wp("5.4%")}
-                        color="#6E797D"
-                    />
-
-                    <Text style={styles.navText}>
-
-                        Feed
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* MESSAGE */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <Ionicons
-                        name="chatbubble-outline"
-                        size={wp("5.3%")}
-                        color="#6E797D"
-                    />
-
-                    <Text style={styles.navText}>
-
-                        Tin nhắn
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* NOTE */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <MaterialCommunityIcons
-                        name="notebook-outline"
-                        size={wp("5.5%")}
-                        color="#6E797D"
-                    />
-
-                    <Text style={styles.navText}>
-
-                        Sổ tay
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-                {/* MORE */}
-
-                <TouchableOpacity style={styles.navItem}>
-
-                    <View style={styles.moreContainer}>
-
-                        <Ionicons
-                            name="ellipsis-horizontal"
-                            size={wp("5.5%")}
-                            color="#6E797D"
-                        />
-
-                        <View style={styles.notificationBadge}>
-
-                            <Text style={styles.badgeText}>
-
-                                1
-
-                            </Text>
-
-                        </View>
-
-                    </View>
-
-                    <Text style={styles.navText}>
-
-                        Thêm
-
-                    </Text>
-
-                </TouchableOpacity>
-
-
-            </View>
-
-
         </View>
 
     );
@@ -578,130 +247,73 @@ const ReportPage = ({ navigation, route }: any) => {
 
 
 const styles = StyleSheet.create({
-
-
-    /* ================= CONTAINER ================= */
-
     container: {
-
         flex: 1,
-
         backgroundColor: "#FFFFFF",
-
+        paddingTop: hp("7%"),
     },
 
-
     /* ================= HEADER ================= */
-
     header: {
-
         height: hp("7%"),
-
         flexDirection: "row",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         paddingHorizontal: wp("3%"),
-
         borderBottomWidth: 1,
-
         borderBottomColor: "#EEEEEE",
 
     },
 
 
     backButton: {
-
         position: "absolute",
-
         left: wp("3%"),
-
         width: wp("10%"),
-
         height: wp("10%"),
-
         justifyContent: "center",
-
         alignItems: "center",
-
     },
 
 
     headerTitle: {
-
         fontSize: wp("3.7%"),
-
         fontWeight: "600",
-
         color: "#282F32",
-
     },
 
-
     headerTimer: {
-
         position: "absolute",
-
         right: wp("4%"),
-
         paddingHorizontal: wp("3%"),
-
         paddingVertical: hp("0.8%"),
-
         borderRadius: wp("5%"),
-
         backgroundColor: "#F5F7F8",
-
     },
 
 
     headerTimerText: {
-
         fontSize: wp("3%"),
-
         color: "#65777D",
-
     },
-
 
     /* ================= NOTICE ================= */
-
     noticeBox: {
-
         width: wp("94%"),
-
         minHeight: hp("6%"),
-
         alignSelf: "center",
-
         flexDirection: "row",
-
         alignItems: "center",
-
         backgroundColor: "#4B9ADE",
-
         borderRadius: wp("1.5%"),
-
         marginTop: hp("1.5%"),
-
         paddingHorizontal: wp("4%"),
-
         paddingVertical: hp("1.2%"),
-
     },
-
-
     noticeIcon: {
-
         marginRight: wp("4%"),
-
     },
-
-
     noticeText: {
-
         color: "#FFFFFF",
 
         fontSize: wp("3%"),
@@ -735,213 +347,132 @@ const styles = StyleSheet.create({
         height: "100%",
     },
 
-
     /* RIGHT ICONS */
-
     rightButtons: {
-
         position: "absolute",
-
         right: wp("4%"),
-
         top: hp("2.5%"),
-
         alignItems: "center",
-
     },
-
 
     rightIconButton: {
-
         width: wp("10%"),
-
         height: wp("10%"),
-
         borderWidth: 1.5,
-
         borderColor: "#21C1C5",
-
         borderRadius: wp("2%"),
-
         alignItems: "center",
-
         justifyContent: "center",
-
         marginBottom: hp("1.2%"),
-
         backgroundColor: "#FFFFFF",
-
     },
-
 
     /* ================= TITLE ================= */
 
     exerciseTitle: {
-
         color: "#32383A",
-
         fontSize: wp("4%"),
-
         fontWeight: "500",
-
         paddingHorizontal: wp("4%"),
-
         marginTop: hp("0.3%"),
-
+    },
+    exerciseTitle1: {
+        color: "#32383A",
+        fontSize: wp("4%"),
+        paddingHorizontal: wp("4%"),
+        marginTop: hp("0.3%"),
     },
 
 
     /* ================= CONTROLS ================= */
 
     controlContainer: {
-
         width: "100%",
-
         flexDirection: "row",
-
         alignItems: "flex-start",
-
         justifyContent: "space-around",
-
         paddingHorizontal: wp("4%"),
-
         marginTop: hp("2.5%"),
-
     },
 
 
     controlItem: {
-
         width: wp("26%"),
-
         alignItems: "center",
-
     },
 
 
     circleNormal: {
-
         width: wp("19%"),
-
         height: wp("19%"),
-
         borderRadius: wp("9.5%"),
-
         borderWidth: 2.5,
-
         borderColor: "#13BEC2",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         backgroundColor: "#FFFFFF",
-
     },
 
 
     startCircle: {
-
         width: wp("22%"),
-
         height: wp("22%"),
-
         borderRadius: wp("11%"),
-
         borderWidth: 2.5,
-
         borderColor: "#14BCC0",
-
         justifyContent: "center",
-
         alignItems: "center",
-
         backgroundColor: "#FFFFFF",
-
         marginTop: -wp("1.5%"),
-
     },
 
 
     setCircle: {
-
         width: wp("19%"),
-
         height: wp("19%"),
-
         borderRadius: wp("9.5%"),
-
         borderWidth: 2.5,
-
         borderColor: "#FFB7BC",
-
         alignItems: "center",
-
         justifyContent: "center",
-
         backgroundColor: "#FFFFFF",
-
     },
 
 
     circleNumber: {
-
         color: "#283235",
-
         fontSize: wp("5%"),
-
         fontWeight: "500",
-
     },
 
-
     startText: {
-
         color: "#11B7BC",
-
         fontSize: wp("3%"),
-
         fontWeight: "500",
-
         marginBottom: hp("0.2%"),
-
     },
 
 
     controlLabel: {
-
         fontSize: wp("2.5%"),
-
         color: "#768184",
-
         marginTop: hp("0.6%"),
-
     },
 
 
     controlSubLabel: {
-
         fontSize: wp("2.3%"),
-
         color: "#8A9396",
-
         marginTop: hp("0.1%"),
 
     },
-
-
     /* ================= SECOND ================= */
 
     secondArea: {
-
         flexDirection: "row",
-
         alignItems: "center",
-
         paddingHorizontal: wp("3%"),
-
         marginTop: hp("1.6%"),
-
     },
 
 
@@ -1105,6 +636,151 @@ const styles = StyleSheet.create({
 
         fontWeight: "700",
 
+    },
+
+    /* ================= MODAL INFO STYLES ================= */
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.55)",
+        justifyContent: "flex-end",
+    },
+    modalContent: {
+        backgroundColor: "#FFFFFF",
+        borderTopLeftRadius: wp("6%"),
+        borderTopRightRadius: wp("6%"),
+        paddingHorizontal: wp("5%"),
+        paddingTop: hp("2.5%"),
+        paddingBottom: hp("3.5%"),
+        maxHeight: hp("78%"),
+    },
+    modalHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingBottom: hp("1.5%"),
+        borderBottomWidth: 1,
+        borderBottomColor: "#F0F3F4",
+    },
+    modalHeaderTitleGroup: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    modalHeaderIcon: {
+        width: wp("8.5%"),
+        height: wp("8.5%"),
+        borderRadius: wp("4.25%"),
+        backgroundColor: "#E8FAF9",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: wp("2.5%"),
+    },
+    modalHeaderTitle: {
+        fontSize: wp("4.3%"),
+        fontWeight: "700",
+        color: "#182022",
+    },
+    modalCloseButton: {
+        padding: wp("1.5%"),
+    },
+    modalBody: {
+        marginVertical: hp("1.5%"),
+    },
+    modalExerciseName: {
+        fontSize: wp("4.8%"),
+        fontWeight: "700",
+        color: "#283235",
+        marginBottom: hp("1.2%"),
+    },
+    modalBadgeRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginBottom: hp("2%"),
+    },
+    modalBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F4F7F8",
+        paddingHorizontal: wp("3%"),
+        paddingVertical: hp("0.7%"),
+        borderRadius: wp("4%"),
+        marginRight: wp("2%"),
+        marginBottom: hp("0.8%"),
+    },
+    modalBadgeText: {
+        fontSize: wp("3%"),
+        fontWeight: "600",
+        color: "#4A5558",
+        marginLeft: wp("1.5%"),
+    },
+    modalSection: {
+        marginBottom: hp("1.8%"),
+    },
+    modalSectionTitle: {
+        fontSize: wp("3.7%"),
+        fontWeight: "700",
+        color: "#283235",
+        marginBottom: hp("1.2%"),
+    },
+    modalStepItem: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginBottom: hp("1.4%"),
+    },
+    stepNumberBadge: {
+        width: wp("6%"),
+        height: wp("6%"),
+        borderRadius: wp("3%"),
+        backgroundColor: "#1BC3C8",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: wp("3%"),
+        marginTop: hp("0.2%"),
+    },
+    stepNumberText: {
+        color: "#FFFFFF",
+        fontWeight: "700",
+        fontSize: wp("3%"),
+    },
+    stepDescText: {
+        flex: 1,
+        fontSize: wp("3.3%"),
+        color: "#4B565A",
+        lineHeight: wp("4.8%"),
+    },
+    modalWarningBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ECFDF5",
+        padding: wp("3.5%"),
+        borderRadius: wp("3%"),
+        borderWidth: 1,
+        borderColor: "#A7F3D0",
+        marginTop: hp("0.5%"),
+        marginBottom: hp("1%"),
+    },
+    modalWarningTitle: {
+        fontSize: wp("3.3%"),
+        fontWeight: "700",
+        color: "#065F46",
+    },
+    modalWarningDesc: {
+        fontSize: wp("3%"),
+        color: "#047857",
+        marginTop: hp("0.3%"),
+        lineHeight: wp("4.3%"),
+    },
+    modalSubmitButton: {
+        backgroundColor: "#1BC3C8",
+        paddingVertical: hp("1.6%"),
+        borderRadius: wp("3%"),
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: hp("0.5%"),
+    },
+    modalSubmitText: {
+        color: "#FFFFFF",
+        fontSize: wp("3.8%"),
+        fontWeight: "700",
     },
 
 });

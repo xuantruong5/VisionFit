@@ -1,13 +1,5 @@
-import React, { useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  Switch,
-} from 'react-native';
+﻿import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Switch, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -17,10 +9,11 @@ interface ExerciseDetailScreenProps {
 }
 
 const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation, route }) => {
-  const { exercise, categoryName } = route.params || {};
+  const { exercise } = route.params || {};
   const [activeTab, setActiveTab] = useState<'info' | 'muscles' | 'history' | 'progress'>('info');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [fontSizeScale, setFontSizeScale] = useState(1);
+  const [videoMode, setVideoMode] = useState<'correct' | 'wrong'>('correct');
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('day');
   const [showOnDashboard, setShowOnDashboard] = useState(false);
   const [showAllPrograms, setShowAllPrograms] = useState(true);
@@ -28,31 +21,20 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
   const toggleFontSize = () => {
     setFontSizeScale((prev) => (prev === 1 ? 1.2 : prev === 1.2 ? 1.4 : 1));
   };
-
-  const currentExercise = exercise || {
-    name: 'Bài fly ép ngực với máy',
-    englishName: 'Seated cable fly',
-    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80',
-    description:
-      'Tiếng Anh là Seated cable fly. Đây là một bài tập giúp bạn tập trung phát triển hai nhóm cơ ngực lớn một cách riêng biệt. Chuyển động của bài tập này là tự nhiên đối với các cơ ngực lớn vì chức năng chính của chúng là dùng để kết hợp hai tay lại với nhau. Tùy theo độ nghiêng khi chuyển động mà trọng tâm lực sẽ tác động lên ngực trên, ngực giữa hay ngực dưới nhiều hơn.',
-    musclesDistribution: [
-      { name: 'Ngực', percent: 80, color: '#EF4444' },
-      { name: 'Cơ delta trước', percent: 45, color: '#8B5CF6' },
-      { name: 'Đầu xương đòn của cơ ngực lớn', percent: 70, color: '#3B82F6' },
-      { name: 'Đầu ức sườn của cơ ngực lớn', percent: 85, color: '#EF4444' },
-      { name: 'Cơ ngực bé', percent: 60, color: '#10B981' },
-    ],
+  const currentExercise = {
+    ...exercise,
+    name: exercise?.ten_bai_tap,
+    description: exercise?.mo_ta,
+    video: exercise?.video_huong_dan,
+    instructions: exercise?.huong_dan,
+    warnings: exercise?.canh_bao,
   };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeftGroup}>
-          <TouchableOpacity
-            style={styles.headerIconBtn}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#1F2937" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconBtn} onPress={toggleFontSize}>
@@ -60,18 +42,11 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.headerTitle}>{categoryName || 'Ngực'}</Text>
+        <Text style={styles.headerTitle}>Thông Tin Chi Tiết</Text>
 
         <View style={styles.headerRightGroup}>
-          <TouchableOpacity
-            style={styles.headerIconBtn}
-            onPress={() => setIsBookmarked(!isBookmarked)}
-          >
-            <Ionicons
-              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={24}
-              color={isBookmarked ? '#0D7F8D' : '#374151'}
-            />
+          <TouchableOpacity style={styles.headerIconBtn} onPress={() => setIsBookmarked(!isBookmarked)}>
+            <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={24} color={isBookmarked ? '#0D7F8D' : '#374151'}/>
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconBtn}>
             <Ionicons name="play-outline" size={24} color="#0D7F8D" />
@@ -81,37 +56,24 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
 
       {/* Sub-Tabs: Thông tin, Cơ bắp, Lịch sử, Tiến độ */}
       <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === 'info' && styles.tabItemActive]}
-          onPress={() => setActiveTab('info')}
-        >
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'info' && styles.tabItemActive]} onPress={() => setActiveTab('info')} >
           <Text style={[styles.tabText, activeTab === 'info' && styles.tabTextActive]}>
             Thông tin
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === 'muscles' && styles.tabItemActive]}
-          onPress={() => setActiveTab('muscles')}
-        >
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'muscles' && styles.tabItemActive]} onPress={() => setActiveTab('muscles')}>
           <Text style={[styles.tabText, activeTab === 'muscles' && styles.tabTextActive]}>
             Cơ bắp
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === 'history' && styles.tabItemActive]}
-          onPress={() => setActiveTab('history')}
-        >
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'history' && styles.tabItemActive]} onPress={() => setActiveTab('history')} >
           <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
             Lịch sử
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === 'progress' && styles.tabItemActive]}
-          onPress={() => setActiveTab('progress')}
-        >
+        <TouchableOpacity style={[styles.tabItem, activeTab === 'progress' && styles.tabItemActive]} onPress={() => setActiveTab('progress')} >
           <Text style={[styles.tabText, activeTab === 'progress' && styles.tabTextActive]}>
             Tiến độ
           </Text>
@@ -119,53 +81,137 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
       </View>
 
       {/* Nội dung theo Tab */}
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* ================= TAB 1: THÔNG TIN ================= */}
         {activeTab === 'info' && (
           <View>
-            {/* Hình ảnh/Minh họa bài tập */}
+            {/* Bộ chọn Video đúng / Video sai */}
+            {currentExercise.video_sai ? (
+              <View style={styles.videoModeToggleRow}>
+                <TouchableOpacity style={[ styles.videoModeToggleBtn, videoMode === 'correct' && styles.videoModeToggleBtnCorrect, ]} onPress={() => setVideoMode('correct')} activeOpacity={0.8}>
+                  <Ionicons name="checkmark-circle" size={16} color={videoMode === 'correct' ? '#FFFFFF' : '#10B981'} />
+                  <Text style={[ styles.videoModeToggleText, videoMode === 'correct' && styles.videoModeToggleTextActive, ]} >
+                    Video đúng (Kỹ thuật chuẩn)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.videoModeToggleBtn, videoMode === 'wrong' && styles.videoModeToggleBtnWrong,]} onPress={() => setVideoMode('wrong')} activeOpacity={0.8}>
+                  <Ionicons name="close-circle" size={16} color={videoMode === 'wrong' ? '#FFFFFF' : '#EF4444'} />
+                  <Text style={[ styles.videoModeToggleText, videoMode === 'wrong' && styles.videoModeToggleTextActive,]}>
+                    Video sai (Lỗi thường gặp)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            {/* Hình ảnh/Minh họa bài tập (GIF Animation) */}
             <View style={styles.imageBox}>
-              <Image
-                source={{ uri: currentExercise.image }}
-                style={styles.exerciseHeroImage}
-                resizeMode="contain"
-              />
+              {(
+                videoMode === 'correct'
+                  ? currentExercise.video_huong_dan
+                  : currentExercise.video_sai
+              ) ? (
+                <Image source={{ uri: videoMode === 'correct' ? currentExercise.video_huong_dan : currentExercise.video_sai, }}
+                  style={styles.exerciseHeroImage} resizeMode="contain" onError={() => console.log('Video hướng dẫn bị lỗi')} />
+              ) : (
+                <Text>Video hướng dẫn bị lỗi</Text>
+              )}
+
+              <View style={[ styles.videoBadge, videoMode === 'correct' ? styles.videoBadgeCorrect : styles.videoBadgeWrong,]} >
+                <Ionicons name={videoMode === 'correct' ? 'checkmark' : 'alert-outline'} size={12} color="#FFFFFF"/>
+                <Text style={styles.videoBadgeText}>
+                  {videoMode === 'correct' ? 'Động tác đúng' : 'Lỗi sai cần tránh'}
+                </Text>
+              </View>
             </View>
 
             {/* Tên bài tập */}
-            <Text style={[styles.exerciseNameText, { fontSize: 20 * fontSizeScale }]}>
+            <Text style={[ styles.exerciseNameText, { fontSize: 20 * fontSizeScale }, ]} >
               {currentExercise.name}
             </Text>
 
             {/* Mô tả chi tiết */}
-            <Text style={[styles.bodyDescription, { fontSize: 14 * fontSizeScale }]}>
+            <Text style={[styles.bodyDescription, { fontSize: 14 * fontSizeScale }]} >
               {currentExercise.description}
             </Text>
 
+       
             {/* Hướng dẫn */}
             <Text style={styles.sectionHeaderTitle}>Hướng dẫn</Text>
-            <View style={styles.guideStep}>
-              <Text style={styles.stepNum}>1.</Text>
-              <Text style={[styles.stepText, { fontSize: 14 * fontSizeScale }]}>
-                Điều chỉnh ghế ngồi sao cho tay cầm ngang tầm giữa ngực. Lưng và đầu áp sát vào đệm tựa.
-              </Text>
+
+            {currentExercise.instructions ? (
+              currentExercise.instructions
+                .split(/[.,]/)
+                .map((item: string) => item.trim())
+                .filter((item: string) => item.length > 0)
+                .map((item: string, index: number) => (
+                  <View key={index} style={styles.instructionCard}>
+                    <View style={styles.instructionNumber}>
+                      <Text style={styles.instructionNumberText}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <Text style={[ styles.instructionText,{ fontSize: 14 * fontSizeScale }, ]} >
+                      {item}.
+                    </Text>
+                  </View>
+                ))
+            ) : null}
+            {/* Cảnh báo */}
+            {currentExercise.warnings ? (
+              <>
+                <View style={styles.warningTitleRow}>
+                  <Ionicons name="warning" size={24} color="#F4778A" />
+                  <Text style={styles.warningTitle}>CẢNH BÁO!</Text>
+                </View>
+
+                <View style={styles.warningCard}>
+                  {currentExercise.warnings
+                    .replace(/\\n/g, '\n')
+                    .split(/\n|•/)
+                    .map((item: string) => item.trim())
+                    .filter((item: string) => item.length > 0)
+                    .map((item: string, index: number) => (
+                      <View key={index} style={styles.warningItem}>
+                        <View style={styles.warningDot} />
+
+                        <Text style={[styles.warningItemText, { fontSize: 14 * fontSizeScale }, ]} >
+                          {item.replace(/[.]$/, '')}.
+                        </Text>
+                      </View>
+                    ))}
+                </View>
+              </>
+            ) : null}
+
+            {/* Thiết bị và nơi tập */}
+            <View style={styles.exerciseTags}>
+              {currentExercise.thiet_bi ? (
+                <View style={[styles.exerciseTag, styles.equipmentTag]}>
+                  <Text style={styles.exerciseTagText}>
+                    {currentExercise.thiet_bi}
+                  </Text>
+                </View>
+              ) : null}
+
+              {(currentExercise.noi_tap || '')
+                .split(',')
+                .map((item: string) => item.trim())
+                .filter((item: string) => item.length > 0)
+                .map((item: string, index: number) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.exerciseTag,
+                      item.toLowerCase() === 'gym'
+                        ? styles.gymTag
+                        : styles.homeTag,
+                    ]}
+                  >
+                    <Text style={styles.exerciseTagText}>{item}</Text>
+                  </View>
+                ))}
             </View>
-            <View style={styles.guideStep}>
-              <Text style={styles.stepNum}>2.</Text>
-              <Text style={[styles.stepText, { fontSize: 14 * fontSizeScale }]}>
-                Hít vào, từ từ ép hai tay cầm về phía trước ngực với khuỷu tay hơi cong nhẹ tự nhiên.
-              </Text>
-            </View>
-            <View style={styles.guideStep}>
-              <Text style={styles.stepNum}>3.</Text>
-              <Text style={[styles.stepText, { fontSize: 14 * fontSizeScale }]}>
-                Giữ siết cơ ngực 1 giây ở điểm ép chặt nhất, sau đó thở ra và từ từ mở rộng hai tay về vị trí ban đầu.
-              </Text>
-            </View>
+
           </View>
         )}
 
@@ -246,26 +292,17 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
           <View>
             {/* Bộ lọc Ngày - Tuần - Tháng */}
             <View style={styles.timeFilterPill}>
-              <TouchableOpacity
-                style={[styles.pillBtn, timeFilter === 'day' && styles.pillBtnActive]}
-                onPress={() => setTimeFilter('day')}
-              >
+              <TouchableOpacity style={[styles.pillBtn, timeFilter === 'day' && styles.pillBtnActive]} onPress={() => setTimeFilter('day')}>
                 <Text style={[styles.pillBtnText, timeFilter === 'day' && styles.pillBtnTextActive]}>
                   Ngày
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.pillBtn, timeFilter === 'week' && styles.pillBtnActive]}
-                onPress={() => setTimeFilter('week')}
-              >
+              <TouchableOpacity style={[styles.pillBtn, timeFilter === 'week' && styles.pillBtnActive]} onPress={() => setTimeFilter('week')}>
                 <Text style={[styles.pillBtnText, timeFilter === 'week' && styles.pillBtnTextActive]}>
                   Tuần
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.pillBtn, timeFilter === 'month' && styles.pillBtnActive]}
-                onPress={() => setTimeFilter('month')}
-              >
+              <TouchableOpacity style={[styles.pillBtn, timeFilter === 'month' && styles.pillBtnActive]}onPress={() => setTimeFilter('month')} >
                 <Text style={[styles.pillBtnText, timeFilter === 'month' && styles.pillBtnTextActive]}>
                   Tháng
                 </Text>
@@ -291,12 +328,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             {/* Tùy chọn cài đặt */}
             <View style={styles.settingRow}>
               <Text style={styles.settingLabel}>Hiển thị trên Trang tổng quan</Text>
-              <Switch
-                value={showOnDashboard}
-                onValueChange={setShowOnDashboard}
-                trackColor={{ false: '#E2E8F0', true: '#0D7F8D' }}
-                thumbColor="#FFFFFF"
-              />
+              <Switch value={showOnDashboard} onValueChange={setShowOnDashboard} trackColor={{ false: '#E2E8F0', true: '#0D7F8D' }} thumbColor="#FFFFFF"/>
             </View>
 
             <View style={styles.settingRow}>
@@ -305,12 +337,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                   Hiển thị tất cả dữ liệu từ tất cả các chương trình tập luyện
                 </Text>
               </View>
-              <Switch
-                value={showAllPrograms}
-                onValueChange={setShowAllPrograms}
-                trackColor={{ false: '#E2E8F0', true: '#00A896' }}
-                thumbColor="#FFFFFF"
-              />
+              <Switch value={showAllPrograms} onValueChange={setShowAllPrograms} trackColor={{ false: '#E2E8F0', true: '#00A896' }} thumbColor="#FFFFFF"/>
             </View>
 
             <View style={styles.infoNoteRow}>
@@ -331,11 +358,11 @@ export default ExerciseDetailScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    // backgroundColor: '#F4FAFB',
   },
   header: {
     height: 64,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -378,7 +405,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#264653',
   },
   tabText: {
-    fontSize: 13,
+    fontSize: 19,
     fontWeight: '600',
     color: '#4B5563',
   },
@@ -391,11 +418,11 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingTop: 12,
-    paddingBottom: 50,
+    paddingBottom: 170,
   },
   imageBox: {
     width: '100%',
-    height: 250,
+    height: 300,
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
     justifyContent: 'center',
@@ -404,8 +431,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   exerciseHeroImage: {
-    width: '90%',
-    height: '90%',
+    width: '100%',
+    height: '100%',
   },
   exerciseNameText: {
     fontSize: 20,
@@ -610,5 +637,193 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     lineHeight: 16,
+  },
+  videoModeToggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  videoModeToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    gap: 6,
+  },
+  videoModeToggleBtnCorrect: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  videoModeToggleBtnWrong: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
+  },
+  videoModeToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  videoModeToggleTextActive: {
+    color: '#FFFFFF',
+  },
+  videoBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  videoBadgeCorrect: {
+    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+  },
+  videoBadgeWrong: {
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+  },
+  videoBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  warningBox: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+  },
+  warningText: {
+    flex: 1,
+    color: '#991B1B',
+    lineHeight: 20,
+  },
+  // Hướng dẫn từng bước
+  instructionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F6FC',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+
+  instructionNumber: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+
+  instructionNumberText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#64839D',
+  },
+
+  instructionText: {
+    flex: 1,
+    color: '#333333',
+    lineHeight: 24,
+  },
+
+  // Tiêu đề cảnh báo
+  warningTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+
+  warningTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#F4778A',
+  },
+
+  // Khung cảnh báo màu trắng
+  warningCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+  },
+
+  warningItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+
+  warningDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#F4778A',
+    marginTop: 7,
+    marginRight: 14,
+  },
+
+  warningItemText: {
+    flex: 1,
+    color: '#555B65',
+    lineHeight: 23,
+  },
+
+  // Thẻ thiết bị và nơi tập
+  exerciseTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  exerciseTag: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+  },
+
+  equipmentTag: {
+    backgroundColor: '#FFF1DF',
+  },
+
+  gymTag: {
+    backgroundColor: '#E5F1FC',
+  },
+
+  homeTag: {
+    backgroundColor: '#E7F6E5',
+  },
+
+  exerciseTagText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#536D83',
   },
 });

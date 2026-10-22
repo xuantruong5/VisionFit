@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
 const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const navHook = useNavigation<any>();
@@ -11,6 +11,8 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const [program, setProgram] = useState<any>(null);
   const [apiData, setApiData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [isReversed, setIsReversed] = useState(false);
   const getProgramExercises = async () => {
     try {
       const res = await apiFitlife.get("/client/list-program-exercises");
@@ -30,9 +32,11 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    getProgramExercises();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getProgramExercises();
+    }, [])
+  );
 
   const handleDayPress = (day: any) => {
     if (day.isLocked) return;
@@ -91,7 +95,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
         {/* ================= LIST HEADER ================= */}
         <View style={styles.listHeaderRow}>
           <Text style={styles.listHeaderTitle}>Ngày tập luyện</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsReversed(prev => !prev)}>
             <Ionicons name="swap-vertical" size={wp("5.5%")} color="#18BEC3" />
           </TouchableOpacity>
         </View>
@@ -107,7 +111,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
               Chưa có ngày tập luyện.
             </Text>
           ) : (
-            apiData.map((day: any) => {
+            (isReversed ? [...apiData].reverse() : apiData).map((day: any) => {
               const isUnlocked = Number(day.tinh_trang) === 1;
               return (
                 <TouchableOpacity
@@ -116,13 +120,18 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                   activeOpacity={isUnlocked ? 0.7 : 1}
                   onPress={() => {
                     if (!isUnlocked) return;
-                    navigation.navigate("ExercisePage", {
+                    const params = {
                       ngayThu: day.ngay_thu,
                       dayType: day.ten_ngay_tap,
+                      thoi_gian_phut: day.thoi_gian_phut,
                       id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
                       id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
                       id_chuong_trinh: day.id_chuong_trinh,
-                    });
+                    };
+                    console.log("===== DỮ LIỆU GỬI SANG ExercisePage =====");
+                    console.log("Ngày tập:", day);
+                    console.log("Params:", JSON.stringify(params, null, 2));
+                    navigation.navigate("ExercisePage", params);
                   }}
                 >
                   {/* Chỉ icon thay đổi theo trạng thái */}

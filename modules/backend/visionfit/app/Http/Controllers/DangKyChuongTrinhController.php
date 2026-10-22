@@ -101,6 +101,11 @@ class DangKyChuongTrinhController extends Controller
             $idMucTieuDinhDuong,
             $khauPhanMau
         ) {
+            DKChuongTrinh::where('id_hoi_vien', $idHoiVien)
+                ->where('tinh_trang', 1)
+                ->update([
+                    'tinh_trang' => 0,
+            ]);
             $dangKy = DKChuongTrinh::create([
                 'id_hoi_vien' => $idHoiVien,
                 'id_chuong_trinh' => $idChuongTrinh,
@@ -109,7 +114,7 @@ class DangKyChuongTrinhController extends Controller
                 'ngay_bat_dau' => $ngayBatDau->toDateString(),
                 'ngay_du_kien_ket_thuc' => $ngayKetThuc->toDateString(),
                 'phan_tram_hoan_thanh' => 0,
-                'tinh_trang' => 0,
+                'tinh_trang' => 1,
             ]);
             $this->taoLichTap($dangKy->id);
             // 3. Tạo kế hoạch ăn
@@ -304,6 +309,7 @@ class DangKyChuongTrinhController extends Controller
         $idHoiVien = $user->id;
         // 3. Lấy danh sách chương trình đã đăng ký và thông tin nơi tập
         $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+            ->where('dang_ky_chuong_trinh.tinh_trang', 1)
             ->join( 'chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=', 'ct.id')
             ->leftJoin( 'cap_do as cd','dang_ky_chuong_trinh.id_cap_do','=', 'cd.id')
             ->leftJoin( 'noi_tap as nt','dang_ky_chuong_trinh.id_noi_tap','=','nt.id')
@@ -311,6 +317,49 @@ class DangKyChuongTrinhController extends Controller
             ->select(
                 'dang_ky_chuong_trinh.id',
                 'dang_ky_chuong_trinh.id_chuong_trinh',
+                'dang_ky_chuong_trinh.tinh_trang',
+                'ct.ten_chuong_trinh',
+                'nt.ten_noi_tap',
+                'ct.so_sao',
+                'cd.ten_cap_do',
+                'ct.so_ngay',
+                'ct.so_buoi_moi_tuan',
+                'ct.anh_dai_dien',
+                'lt.ngay_tap',
+            )
+            ->orderByDesc('dang_ky_chuong_trinh.id')
+            ->orderBy('lt.ngay_tap')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy danh sách chương trình thành công',
+            'data' => $data,
+        ], 200);
+    }
+
+    public function getAllListPrograms()
+    {
+        // 1. Lấy người dùng đang đăng nhập
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+        // 2. Lấy ID hội viên
+        $idHoiVien = $user->id;
+        // 3. Lấy danh sách chương trình đã đăng ký và thông tin nơi tập
+        $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+            ->join( 'chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=', 'ct.id')
+            ->leftJoin( 'cap_do as cd','dang_ky_chuong_trinh.id_cap_do','=', 'cd.id')
+            ->leftJoin( 'noi_tap as nt','dang_ky_chuong_trinh.id_noi_tap','=','nt.id')
+            ->leftJoin( 'lich_tap as lt','dang_ky_chuong_trinh.id','=','lt.id_dang_ky_chuong_trinh')
+            ->select(
+                'dang_ky_chuong_trinh.id',
+                'dang_ky_chuong_trinh.id_chuong_trinh',
+                'dang_ky_chuong_trinh.tinh_trang',
                 'ct.ten_chuong_trinh',
                 'nt.ten_noi_tap',
                 'ct.so_sao',
@@ -342,6 +391,7 @@ class DangKyChuongTrinhController extends Controller
         }
         $idHoiVien = $user->id;
         $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $idHoiVien)
+            ->where('dang_ky_chuong_trinh.tinh_trang', 1)
             ->join( 'chuong_trinh_tap as ct', 'dang_ky_chuong_trinh.id_chuong_trinh', '=', 'ct.id' )
             ->join('chuong_trinh_bai_tap as ctbt', 'ct.id','=','ctbt.id_chuong_trinh')
             ->leftJoin( 'cap_do as cd','dang_ky_chuong_trinh.id_cap_do','=', 'cd.id')
@@ -373,6 +423,59 @@ class DangKyChuongTrinhController extends Controller
             'data' => $data,
         ], 200);
     }
+    
+   public function getExercises($id)
+    {
+        // 1. Lấy hội viên đang đăng nhập
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+        $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+            ->where('dang_ky_chuong_trinh.tinh_trang', 1)
+            ->join( 'chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=','ct.id')
+            ->join('chuong_trinh_bai_tap as ctbt','ct.id','=','ctbt.id_chuong_trinh' )
+            ->where('ctbt.id', $id)
+            ->join('bai_tap as bt','ctbt.id','=','bt.id_chuong_trinh_bai_tap')
+            ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap'
+            )
+            ->select(
+                'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
+                'dang_ky_chuong_trinh.id_chuong_trinh',
+                'ctbt.id as id_chuong_trinh_bai_tap',
+                'ctbt.ten_ngay_tap',
+                'bt.id as id_bai_tap',
+                'bt.ten_bai_tap',
+                'bt.mo_ta as mo_ta_bai_tap',
+                'bt.thoi_gian_phut',
+                'bt.rep_yeu_cau',
+                'bt.set_yeu_cau',
+                'bt.giay_yeu_cau',
+                'bt.anh_dai_dien as anh_bai_tap',
+                'bt.muc_ta_toi_thieu',
+                'bt.thiet_bi',
+                'ctct.video_huong_dan',
+                'ctct.video_sai',
+                'ctct.huong_dan',
+                'ctct.canh_bao',
+                'ctct.noi_tap',
+                'ctct.mo_ta',
+            )
+            ->orderBy('bt.id')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy danh sách bài tập thành công',
+            'data' => $data,
+        ], 200);
+    }
+
+
+
 
     public function getListMealPlans()
     {
@@ -389,74 +492,57 @@ class DangKyChuongTrinhController extends Controller
 
         // 3. Lấy kế hoạch ăn theo chương trình đã đăng ký
         $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $idHoiVien)
-    ->join(
-        'ke_hoach_an as kha',
-        'dang_ky_chuong_trinh.id',
-        '=',
-        'kha.id_dang_ky_chuong_trinh'
-    )
-    ->leftJoin(
-        'khau_phan_an as kpa',
-        'kha.id',
-        '=',
-        'kpa.id_ke_hoach_an'
-    )
-    ->leftJoin(
-        'mon_an as ma',
-        'kpa.id_mon_an',
-        '=',
-        'ma.id'
-    )
-    ->leftJoin(
-        'muc_tieu_dinh_duong as mtd',
-        'kpa.id_muc_tieu_dinh_duong',
-        '=',
-        'mtd.id'
-    )
-    ->where('kha.tinh_trang', 1)
-    ->select(
-        // Kế hoạch ăn
-        'kha.id as id_ke_hoach_an',
-        'kha.id_chuong_trinh',
-        'kha.ten_ke_hoach',
-        'kha.tinh_trang',
+        ->where('dang_ky_chuong_trinh.tinh_trang', 1)
+        ->join( 'ke_hoach_an as kha','dang_ky_chuong_trinh.id', '=', 'kha.id_dang_ky_chuong_trinh')
+        ->leftJoin( 'khau_phan_an as kpa','kha.id', '=','kpa.id_ke_hoach_an')
+        ->leftJoin('mon_an as ma','kpa.id_mon_an','=', 'ma.id'
+        )
+        ->leftJoin( 'muc_tieu_dinh_duong as mtd', 'kpa.id_muc_tieu_dinh_duong', '=', 'mtd.id'
+        )
+        ->where('kha.tinh_trang', 1)
+        ->select(
+            // Kế hoạch ăn
+            'kha.id as id_ke_hoach_an',
+            'kha.id_chuong_trinh',
+            'kha.ten_ke_hoach',
+            'kha.tinh_trang',
 
-        // Mục tiêu dinh dưỡng
-        'mtd.muc_tieu_the_trang',
-        'mtd.muc_tieu_calo',
-        'mtd.protein_muc_tieu',
-        'mtd.carb_muc_tieu',
-        'mtd.fat_muc_tieu',
+            // Mục tiêu dinh dưỡng
+            'mtd.muc_tieu_the_trang',
+            'mtd.muc_tieu_calo',
+            'mtd.protein_muc_tieu',
+            'mtd.carb_muc_tieu',
+            'mtd.fat_muc_tieu',
 
-        // Khẩu phần ăn
-        'kpa.id as id_khau_phan_an',
-        'kpa.ngay_thu',
-        'kpa.ngay_an',
-        'kpa.gio_an',
-        'kpa.bua_an',
-        'kpa.so_luong',
-        'kpa.ghi_chu',
+            // Khẩu phần ăn
+            'kpa.id as id_khau_phan_an',
+            'kpa.ngay_thu',
+            'kpa.ngay_an',
+            'kpa.gio_an',
+            'kpa.bua_an',
+            'kpa.so_luong',
+            'kpa.ghi_chu',
 
-        // Thông tin món ăn
-        'ma.id as id_mon_an',
-        'ma.ten_mon_an',
-        'ma.mo_ta',
-        'ma.anh_dai_dien',
-        'ma.calo',
-        'ma.khoi_luong_gram',
-        'ma.fat',
-        'ma.carb',
-        'ma.protein',
-        'ma.nguyen_lieu',
-        'ma.gia_vi',
-        'ma.thoi_gian_nau',
-        'ma.huong_dan_nau',
-        'ma.loai_bua'
-    )
-    ->orderBy('kha.id')
-    ->orderBy('kpa.ngay_thu')
-    ->orderBy('kpa.gio_an')
-    ->get();
+            // Thông tin món ăn
+            'ma.id as id_mon_an',
+            'ma.ten_mon_an',
+            'ma.mo_ta',
+            'ma.anh_dai_dien',
+            'ma.calo',
+            'ma.khoi_luong_gram',
+            'ma.fat',
+            'ma.carb',
+            'ma.protein',
+            'ma.nguyen_lieu',
+            'ma.gia_vi',
+            'ma.thoi_gian_nau',
+            'ma.huong_dan_nau',
+            'ma.loai_bua'
+        )
+        ->orderBy('kha.id')
+        ->orderBy('kpa.ngay_thu')
+        ->orderBy('kpa.gio_an')
+        ->get();
 
         return response()->json([
             'success' => true,
@@ -466,4 +552,242 @@ class DangKyChuongTrinhController extends Controller
             'data' => $data,
         ]);
     }
+
+    
+    public function destroy($id)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+        $idHoiVien = $user->id;
+        $dangKy = DKChuongTrinh::where('id', $id)
+            ->where('id_hoi_vien', $idHoiVien)
+            ->first();
+        if (!$dangKy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy đăng ký chương trình hoặc bạn không có quyền xóa.',
+            ], 404);
+        }
+        $dangHoatDong = $dangKy->tinh_trang == 1;
+        $dangKy->delete();
+        if ($dangHoatDong) {
+        // Tìm chương trình còn lại
+            $chuongTrinhConLai = DKChuongTrinh::where('id_hoi_vien', $idHoiVien)
+                ->orderBy('id', 'desc')
+                ->first();
+            // Nếu còn chương trình thì kích hoạt
+            if ($chuongTrinhConLai) {
+                $chuongTrinhConLai->tinh_trang = 1;
+                $chuongTrinhConLai->save();
+            }
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Xóa đăng ký chương trình tập thành công.',
+        ], 200);
+    }
+
+    public function activateProgram($id)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+        $idHoiVien = $user->id;
+        $program = DB::table('dang_ky_chuong_trinh')
+            ->where('id', $id)
+            ->where('id_hoi_vien', $idHoiVien)
+            ->first();
+
+        if (!$program) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy chương trình đã đăng ký',
+            ], 404);
+        }
+        DB::transaction(function () use ($idHoiVien, $id) {
+            // Chuyển tất cả chương trình của hội viên về không hoạt động
+            DB::table('dang_ky_chuong_trinh')
+                ->where('id_hoi_vien', $idHoiVien)
+                ->update([
+                    'tinh_trang' => 0,
+                ]);
+            // Kích hoạt chương trình được chọn
+            DB::table('dang_ky_chuong_trinh')
+                ->where('id', $id)
+                ->where('id_hoi_vien', $idHoiVien)
+                ->update([
+                    'tinh_trang' => 1,
+                ]);
+        });
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã chuyển chương trình đang hoạt động',
+            'data' => [
+                'id_dang_ky_chuong_trinh' => $id,
+                'tinh_trang' => 1,
+            ],
+        ]);
+
+    }
+
+
+    // api tổng hợp
+    // public function getMyProgramDetail()
+    // {
+        
+    //     $user = Auth::guard('sanctum')->user();
+    //     if (!$user) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Chưa đăng nhập',
+    //         ], 401);
+    //     }
+
+       
+    //     $programs = DKChuongTrinh::where( 'dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+    //         ->where('dang_ky_chuong_trinh.tinh_trang', 1)
+    //         ->join('chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh', '=','ct.id')
+    //         ->leftJoin( 'cap_do as cd','dang_ky_chuong_trinh.id_cap_do', '=','cd.id')
+    //         ->leftJoin( 'noi_tap as nt','dang_ky_chuong_trinh.id_noi_tap','=','nt.id')
+    //         ->select(
+    //             'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
+    //             'dang_ky_chuong_trinh.id_chuong_trinh',
+    //             'ct.ten_chuong_trinh',
+    //             'ct.so_sao',
+    //             'ct.so_ngay',
+    //             'ct.so_buoi_moi_tuan',
+    //             'ct.anh_dai_dien',
+    //             'cd.ten_cap_do',
+    //             'nt.ten_noi_tap'
+    //         )
+    //         ->orderByDesc('dang_ky_chuong_trinh.id')
+    //         ->get();
+
+        
+       
+
+       
+    //     foreach ($programs as $program) {
+    //          $program->lich_tap = DB::table('lich_tap as lt')
+    //         ->where(
+    //             'lt.id_dang_ky_chuong_trinh',
+    //             $program->id_dang_ky_chuong_trinh
+    //         )
+    //         ->select(
+    //             'lt.id',
+    //             'lt.id_chuong_trinh',
+    //             'lt.id_hoi_vien',
+    //             'lt.ngay_thu',
+    //             'lt.ngay_tap'
+    //         )
+    //         ->orderBy('lt.ngay_tap')
+    //         ->get();
+    //         $program->ngay_tap = DB::table('chuong_trinh_bai_tap as ctbt')
+    //             ->where('ctbt.id_chuong_trinh', $program->id_chuong_trinh)
+    //             ->select(
+    //                 'ctbt.id as id_chuong_trinh_bai_tap',
+    //                 'ctbt.ngay_thu',
+    //                 'ctbt.ten_ngay_tap',
+    //                 'ctbt.thoi_gian_phut',
+    //                 'ctbt.cho_phep_bo_qua',
+    //                 'ctbt.tinh_trang'
+    //             )
+    //             ->orderBy('ctbt.ngay_thu')
+    //             ->get();
+
+    //         foreach ($program->ngay_tap as $day) {
+    //             $day->bai_tap = DB::table('bai_tap as bt')
+    //                 ->leftJoin('chi_tiet_bai_tap as ctct','bt.id', '=', 'ctct.id_bai_tap')
+    //                 ->where('bt.id_chuong_trinh_bai_tap', $day->id_chuong_trinh_bai_tap )
+    //                 ->select(
+    //                     'bt.id as id_bai_tap',
+    //                     'bt.ten_bai_tap',
+    //                     'bt.mo_ta as mo_ta_bai_tap',
+    //                     'bt.thoi_gian_phut',
+    //                     'bt.rep_yeu_cau',
+    //                     'bt.set_yeu_cau',
+    //                     'bt.anh_dai_dien as anh_bai_tap',
+    //                     'bt.muc_ta_toi_thieu',
+    //                     'ctct.video_huong_dan',
+    //                     'ctct.video_sai',
+    //                     'ctct.huong_dan',
+    //                     'ctct.canh_bao'
+    //                 )
+    //                 ->orderBy('bt.id')
+    //                 ->get();
+    //         }
+
+    //         $program->ke_hoach_an = DB::table('ke_hoach_an as kha')
+    //             ->where( 'kha.id_dang_ky_chuong_trinh',$program->id_dang_ky_chuong_trinh)
+    //             ->where('kha.tinh_trang', 1)
+    //             ->select(
+    //                 'kha.id as id_ke_hoach_an',
+    //                 'kha.id_chuong_trinh',
+    //                 'kha.ten_ke_hoach',
+    //                 'kha.tinh_trang'
+    //             )
+    //             ->get();
+
+    //         foreach ($program->ke_hoach_an as $mealPlan) {
+    //             $mealPlan->mon_an = DB::table('khau_phan_an as kpa')
+    //                 ->leftJoin('mon_an as ma', 'kpa.id_mon_an', '=','ma.id')
+    //                 ->leftJoin('muc_tieu_dinh_duong as mtd','kpa.id_muc_tieu_dinh_duong', '=', 'mtd.id')
+    //                 ->where('kpa.id_ke_hoach_an', $mealPlan->id_ke_hoach_an)
+    //                 ->select(
+    //                     'kpa.id as id_khau_phan_an',
+    //                     'kpa.ngay_thu',
+    //                     'kpa.ngay_an',
+    //                     'kpa.gio_an',
+    //                     'kpa.bua_an',
+    //                     'kpa.so_luong',
+    //                     'kpa.ghi_chu',
+    //                     'ma.id as id_mon_an',
+    //                     'ma.ten_mon_an',
+    //                     'ma.mo_ta',
+    //                     'ma.anh_dai_dien',
+    //                     'ma.calo',
+    //                     'ma.khoi_luong_gram',
+    //                     'ma.fat',
+    //                     'ma.carb',
+    //                     'ma.protein',
+    //                     'ma.nguyen_lieu',
+    //                     'ma.gia_vi',
+    //                     'ma.thoi_gian_nau',
+    //                     'ma.huong_dan_nau',
+    //                     'ma.loai_bua',
+    //                     'mtd.muc_tieu_the_trang',
+    //                     'mtd.muc_tieu_calo',
+    //                     'mtd.protein_muc_tieu',
+    //                     'mtd.carb_muc_tieu',
+    //                     'mtd.fat_muc_tieu'
+    //                 )
+    //                 ->orderBy('kpa.ngay_thu')
+    //                 ->orderBy('kpa.gio_an')
+    //                 ->get();
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Lấy thông tin chương trình thành công',
+    //         'data' => $programs,
+    //     ], 200);
+    // }
+
+
+
+
+
+
+
+
 }

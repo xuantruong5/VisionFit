@@ -16,14 +16,24 @@ class ClientMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user   = Auth::guard('client')->user() ?: Auth::guard('sanctum')->user();
-        if($user && $user instanceof \App\Models\Client && $user->tinh_trang == 1) {
+        $user = Auth::guard("client")->user() ?: Auth::guard("sanctum")->user();
+        if ($user && $user instanceof \App\Models\Client && $user->tinh_trang == 1) {
             return $next($request);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Bạn cần đăng nhập để thực hiện chức năng này'
-            ]);
         }
+
+        // H? tr? m�i tru?ng local/dev khi test tr?c ti?p c�c m�n h�nh kh�ng qua Login
+        if (app()->environment("local")) {
+            $defaultClient = \App\Models\Client::where("tinh_trang", 1)->first();
+            if ($defaultClient) {
+                Auth::guard("client")->setUser($defaultClient);
+                return $next($request);
+            }
+        }
+
+        return response()->json([
+            "status" => false,
+            "message" => "B?n c?n dang nh?p d? th?c hi?n ch?c nang n�y"
+        ], 401);
     }
 }
+
