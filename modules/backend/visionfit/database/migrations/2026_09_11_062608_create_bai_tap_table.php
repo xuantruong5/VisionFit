@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('bai_tap', function (Blueprint $table) {
             $table->id();
-            $table->integer('id_chuong_trinh_bai_tap');
             $table->string('ma_bai_tap', 50)->unique();
             $table->string('ten_bai_tap');
             $table->text('mo_ta')->nullable();

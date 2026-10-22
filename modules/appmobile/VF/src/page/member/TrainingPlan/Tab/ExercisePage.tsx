@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, DeviceEventEmitter, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import apiFitlife from "../../../../general/api";
@@ -20,6 +20,9 @@ type Exercise = {
   canh_bao: string;
   noi_tap: string;
   mo_ta: string;
+  thu_tu: number;
+  total_exercises: number;
+
 
   // Các trường phục vụ hiển thị danh sách
   name: string;
@@ -37,13 +40,29 @@ const ExercisePage = ({ navigation, route }: any) => {
   const idDangKy = route?.params?.id_dang_ky_chuong_trinh;
   const idNgayTap = route?.params?.id_chuong_trinh_bai_tap;
   const [skipping, setSkipping] = useState(false);
- 
+
+  // đồng hồ khi bắt đầu 
+  const [isTraining, setIsTraining] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  // Tổng thời gian nghỉ, tính bằng giây
+  const [totalRestSeconds, setTotalRestSeconds] = useState(0);
+  const [showTimeSummary, setShowTimeSummary] = useState(false);
+
+  // Thời điểm bắt đầu nghỉ
+  const restStartRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // tổng số bài tập 
+  const [totalExercises, setTotalExercises] = useState<number>(0);
+
 
   const fetchExercises = async () => {
     try {
       setLoading(true);
       const res = await apiFitlife.get(`/client/list-program-exercises/${idNgayTap}`);
       if (res.data.success && Array.isArray(res.data.data)) {
+        setTotalExercises(Number(res.data.total_exercises ?? 0));
         const dataNgayTap = res.data.data.filter(
           (item: any) =>
             Number(item.id_chuong_trinh_bai_tap) === Number(idNgayTap)
@@ -71,13 +90,15 @@ const ExercisePage = ({ navigation, route }: any) => {
             canh_bao: item.canh_bao ?? "",
             noi_tap: item.noi_tap ?? "",
             mo_ta: item.mo_ta ?? "",
+            thu_tu: item.thu_tu ?? "",
+            total_exercises: Number(res.data.total_exercises ?? 0),
 
           })
         );
-          setExercises(danhSachBaiTap);
-        } else {
-          setExercises([]);
-        }
+        setExercises(danhSachBaiTap);
+      } else {
+        setExercises([]);
+      }
     } catch (error: any) {
       console.log("LỖI API:", error.response?.data ?? error.message);
     } finally {
@@ -107,6 +128,9 @@ const ExercisePage = ({ navigation, route }: any) => {
 
   const handleExercisePress = (exercise: Exercise) => {
     navigation?.navigate("ReportPage", {
+      elapsedSeconds,
+      isTraining,
+      total_exercises: totalExercises,
       exercise: {
         id_bai_tap: exercise.id_bai_tap,
         ten_bai_tap: exercise.ten_bai_tap,
@@ -122,13 +146,128 @@ const ExercisePage = ({ navigation, route }: any) => {
         canh_bao: exercise.canh_bao,
         noi_tap: exercise.noi_tap,
         mo_ta: exercise.mo_ta,
+        thu_tu: exercise.thu_tu ?? "",
       },
     });
   };
 
+
+
+
+
+
+  useEffect(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null;}
+    if (!isTraining) return;
+    timerRef.current = setInterval(() => { 
+      setElapsedSeconds((prev) => 
+        { const next = prev + 1;
+          return next;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isTraining]);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String( remainingSeconds).padStart(2, "0")}`;};
   const handleStart = () => {
-    console.log("Bắt đầu tập luyện...");
+    // KẾT THÚC BUỔI TẬP HIỆN TẠI
+    if (hasStarted) {
+      // Dừng đồng hồ tập
+      setIsTraining(false);
+      setHasStarted(false);
+      setShowTimeSummary(true);
+      // Chốt khoảng nghỉ cuối cùng nếu đang nghỉ
+      if (restStartRef.current !== null) {
+        const restDuration = Math.floor(
+          (Date.now() - restStartRef.current) / 1000
+        );
+        setTotalRestSeconds((prev) => prev + restDuration);
+        restStartRef.current = null;
+      }
+      // Báo ReportPage dừng đồng hồ
+      DeviceEventEmitter.emit("workout-session-finish");
+      return;
+    }
+
+    // BẮT ĐẦU BUỔI TẬP MỚI: RESET TOÀN BỘ THỜI GIAN
+    setElapsedSeconds(0);
+    setTotalRestSeconds(0);
+    setShowTimeSummary(false);
+    setHasStarted(true);
+    setIsTraining(true);
+    restStartRef.current = null;
+    // Tìm bài tập đầu tiên
+    const firstExercise = exercises.find(
+      (exercise) => Number(exercise.thu_tu) === 1
+    );
+    if (!firstExercise) {
+      console.log("Không tìm thấy bài tập có thứ tự 1");
+      setHasStarted(false);
+      setIsTraining(false);
+      return;
+    }
+
+    navigation.navigate("ReportPage", {
+      elapsedSeconds: 0,
+      isTraining: true,
+      exercise: {
+        id_bai_tap: firstExercise.id_bai_tap,
+        ten_bai_tap: firstExercise.ten_bai_tap,
+        thoi_gian_phut: firstExercise.thoi_gian_phut,
+        rep_yeu_cau: firstExercise.rep_yeu_cau,
+        set_yeu_cau: firstExercise.set_yeu_cau,
+        giay_yeu_cau: firstExercise.giay_yeu_cau,
+        muc_ta_toi_thieu: firstExercise.muc_ta_toi_thieu,
+        thiet_bi: firstExercise.thiet_bi,
+        video_huong_dan: firstExercise.video_huong_dan,
+        video_sai: firstExercise.video_sai,
+        huong_dan: firstExercise.huong_dan,
+        canh_bao: firstExercise.canh_bao,
+        noi_tap: firstExercise.noi_tap,
+        mo_ta: firstExercise.mo_ta,
+        thu_tu: firstExercise.thu_tu,
+      },
+    });
   };
+
+  // nhận tạm nghỉ từ trang ReportPage xang 
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(
+      "workout-training-change",
+      (running: boolean) => {
+        if (running) {
+          // Tiếp tục tập: kết thúc khoảng nghỉ
+          if (restStartRef.current !== null) {
+            const restDuration = Math.floor(
+              (Date.now() - restStartRef.current) / 1000
+            );
+
+            setTotalRestSeconds((prev) => prev + restDuration);
+            restStartRef.current = null;
+          }
+
+          setIsTraining(true);
+        } else {
+          // Tạm nghỉ: chỉ ghi nhận thời điểm bắt đầu nghỉ
+          if (restStartRef.current === null) {
+            restStartRef.current = Date.now();
+          }
+
+          setIsTraining(false);
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  }, []);
 
 
 
@@ -142,12 +281,18 @@ const ExercisePage = ({ navigation, route }: any) => {
           <Ionicons name="arrow-back" size={wp("5.5%")} color="#607D8B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bài tập </Text>
-        <TouchableOpacity activeOpacity={0.7} style={styles.moreButton} onPress={handleSkip}disabled={skipping}>
-            {skipping ? (
-              <ActivityIndicator size="small" color="#607D8B" />
-            ) : (
-              <Text style={styles.skipText}>Bỏ qua</Text>
-            )}
+        <TouchableOpacity activeOpacity={0.7}
+          style={[styles.moreButton, hasStarted && { backgroundColor: "#EAF9FB" },]} onPress={handleSkip}
+          disabled={skipping || hasStarted}>
+          {skipping ? (
+            <ActivityIndicator size="small" color="#607D8B" />
+          ) : hasStarted ? (
+            <Text style={{ color: "#0D7F8D", fontWeight: "700" }}>
+              {formatTime(elapsedSeconds)}
+            </Text>
+          ) : (
+            <Text style={styles.skipText}>Bỏ qua</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -193,7 +338,7 @@ const ExercisePage = ({ navigation, route }: any) => {
               <View style={styles.metaDivider} />
               <Ionicons name="barbell-outline" size={wp("3.2%")} color="#8FA9B2" />
               <Text style={styles.sessionMetaText}>
-                10 bài
+                {totalExercises} bài
               </Text>
             </View>
           </View>
@@ -232,7 +377,7 @@ const ExercisePage = ({ navigation, route }: any) => {
                 <TouchableOpacity activeOpacity={0.75} style={styles.exerciseItem} onPress={() => handleExercisePress(exercise)}>
                   {/* Image */}
                   <View style={styles.exerciseImageWrapper}>
-                    <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain"/>
+                    <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain" />
                   </View>
 
                   {/* Info */}
@@ -248,20 +393,15 @@ const ExercisePage = ({ navigation, route }: any) => {
                       </View>
 
                       <View style={[styles.tagPill, styles.tagPillGray]}>
-                        <Ionicons name="body-outline" size={wp("3%")} color="#8FA9B2"/>
+                        <Ionicons name="body-outline" size={wp("3%")} color="#8FA9B2" />
                         <Text style={[styles.tagText, styles.tagTextGray]}>
                           {exercise.duration}
                         </Text>
                       </View>
                     </View>
                   </View>
-
                   {/* Arrow */}
-                  <Ionicons
-                    name="chevron-forward"
-                    size={wp("5%")}
-                    color="#18BEC3"
-                  />
+                  <Ionicons name="chevron-forward" size={wp("5%")} color="#18BEC3" />
                 </TouchableOpacity>
 
                 {/* Divider: không hiển thị sau bài cuối */}
@@ -285,19 +425,55 @@ const ExercisePage = ({ navigation, route }: any) => {
             nước trong suốt buổi tập để duy trì năng lượng tốt nhất.
           </Text>
         </View>
+
+
+
+
+
+
+
+
+        {/* nhap tinh thoi gian  */}
+        {showTimeSummary && (
+          <View style={styles.timeSummary}>
+            <View style={styles.timeSummaryItem}>
+              <Ionicons
+                name="barbell-outline"
+                size={wp("5%")}
+                color="#0D7F8D"
+              />
+              <Text style={styles.timeSummaryLabel}>
+                Tổng thời gian tập
+              </Text>
+              <Text style={styles.timeSummaryValue}>
+                {formatTime(elapsedSeconds)}
+              </Text>
+            </View>
+
+            <View style={styles.timeSummaryItem}>
+              <Ionicons
+                name="pause-circle-outline"
+                size={wp("5%")}
+                color="#E8A020"
+              />
+              <Text style={styles.timeSummaryLabel}>
+                Tổng thời gian nghỉ
+              </Text>
+              <Text style={styles.timeSummaryValue}>
+                {formatTime(totalRestSeconds)}
+              </Text>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {/* ================= BOTTOM AREA ================= */}
 
       <View style={styles.bottomArea}>
-        <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, progressPercent === 100 && styles.startButtonDone,]} onPress={handleStart}>
-          <Ionicons name={progressPercent === 100 ? "checkmark-circle" : "play"} size={wp("5%")} color="#FFFFFF" style={styles.startIcon} />
+        <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, isTraining && styles.startButtonStop,]} onPress={handleStart} >
+          <Ionicons name={isTraining ? "stop-circle" : "play"} size={wp("5%")} color="#FFFFFF" style={styles.startIcon} />
           <Text style={styles.startButtonText}>
-            {progressPercent === 100
-              ? "HOÀN THÀNH BUỔI TẬP"
-              : progressPercent > 0
-                ? "TIẾP TỤC TẬP"
-                : "BẮT ĐẦU TẬP"}
+            {isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -727,6 +903,39 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.5,
   },
+  startButtonStop: {
+    backgroundColor: "#E53935",
+    shadowColor: "#C62828",
+  },
+  timeSummary: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    borderRadius: wp("4%"),
+    padding: wp("4%"),
+    marginBottom: hp("2%"),
+    borderWidth: 1,
+    borderColor: "#DFF0F3",
+  },
+
+  timeSummaryItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: hp("0.5%"),
+  },
+
+  timeSummaryLabel: {
+    fontSize: wp("3%"),
+    color: "#607D8B",
+    textAlign: "center",
+  },
+
+  timeSummaryValue: {
+    fontSize: wp("5%"),
+    fontWeight: "800",
+    color: "#0D7F8D",
+  },
+
 });
 
 export default ExercisePage;

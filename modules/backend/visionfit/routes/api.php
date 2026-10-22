@@ -124,6 +124,11 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/chuong-trinh-bai-tap/{id}/bo-qua', [ChuongTrinhBaiTapController::class, 'changeSkip']);
     // Route::get('/my-program-detail',[DangKyChuongTrinhController::class, 'getMyProgramDetail']); // api tổng hợp  
 
+    Route::get('/provinces', [MembersController::class, 'getProvinces']);
+    Route::get('/provinces/{code}/wards', [MembersController::class, 'getWards']);
+    Route::get('/provinces/{code}/gyms', [MembersController::class, 'getGymsByProvince']);
+    Route::get('/wards/{id}/gyms', [MembersController::class,'getGymsByWard']);
+
 
 
 

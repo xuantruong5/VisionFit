@@ -22,6 +22,7 @@ return new class extends Migration
 
             $table->string('so_dien_thoai')->nullable();
             $table->string('website')->nullable();
+            $table->string('hinh_anh', 2048)->nullable();
 
             $table->string('nguon_du_lieu')->default('OpenStreetMap');
             $table->string('osm_type', 20);
