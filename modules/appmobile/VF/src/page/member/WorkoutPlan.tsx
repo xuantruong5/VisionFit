@@ -27,7 +27,7 @@ const WorkoutPlan = ({ navigation, route }: any) => {
   };
   const currentGoals = goals.filter((goal) => {
     const g = Number(goal.gioi_tinh_ap_dung);
-    return selectedGender === 'male' ? (g === 0 || g === 2) : (g === 1 || g === 2);
+    return selectedGender === 'male'? g === 0: g === 1;
   });
 
   return (
@@ -61,7 +61,7 @@ const WorkoutPlan = ({ navigation, route }: any) => {
                   ...existingParams,
                   goalId: goal.id,
                   goalName: goal.ten_chuong_trinh,
-                  gender: selectedGender === 'male' ? 'Nam' : 'Nữ' // Keep this for WorkoutLocationScreen's internal logic
+                  gender: selectedGender === 'male' ? 0 : 1, // Keep this for WorkoutLocationScreen's internal logic
                 });
               }}
               activeOpacity={0.8}

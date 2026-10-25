@@ -138,10 +138,32 @@ class MembersController extends Controller
     }
     public function getCapDoChuongTrinh(Request $request)
     {
-        $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do','=','cap_do.id')
+        $tenChuongTrinh = $request->input('ten_chuong_trinh');
+        $gioiTinh = $request->input('gioi_tinh_ap_dung');
+
+        $data = ChuongTrinhTap::join(
+            'cap_do',
+            'chuong_trinh_tap.id_cap_do',
+            '=',
+            'cap_do.id'
+        )
+            ->where('chuong_trinh_tap.ten_chuong_trinh', $tenChuongTrinh)
+            ->where('chuong_trinh_tap.gioi_tinh_ap_dung', $gioiTinh)
             ->where('chuong_trinh_tap.tinh_trang', 1)
-            ->select('cap_do.id','cap_do.ten_cap_do','cap_do.mo_ta','cap_do.hinh_anh' ,'chuong_trinh_tap.so_sao', 'chuong_trinh_tap.ten_chuong_trinh',)
-            ->distinct()
+            ->select(
+                'chuong_trinh_tap.id as id_chuong_trinh',
+                'chuong_trinh_tap.id_cap_do',
+                'cap_do.ten_cap_do',
+                'cap_do.mo_ta as mo_ta_cap_do',
+                'cap_do.hinh_anh',
+                'chuong_trinh_tap.so_sao',
+                'chuong_trinh_tap.ten_chuong_trinh',
+                'chuong_trinh_tap.mo_ta as mo_ta_chuong_trinh',
+                'chuong_trinh_tap.so_ngay',
+                'chuong_trinh_tap.so_buoi_moi_tuan',
+                'chuong_trinh_tap.id_noi_tap'
+            )
+            ->orderBy('chuong_trinh_tap.id_cap_do')
             ->get();
 
         return response()->json([

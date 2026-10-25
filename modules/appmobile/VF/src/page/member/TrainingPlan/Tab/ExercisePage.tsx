@@ -355,7 +355,7 @@ const ExercisePage = ({ navigation, route }: any) => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
           <Text style={styles.sectionSubtitle}>
-            0/10 hoàn thành
+            0/{totalExercises} hoàn thành
           </Text>
         </View>
 

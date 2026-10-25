@@ -296,7 +296,7 @@ const App = () => {
         {/* cua member */}
         <Stack.Screen name="GenderSelection" component={GenderSelection} />
         <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
-
+ 
         <Stack.Screen name="PhongTap" component={PhongTap} />
         {/* <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />

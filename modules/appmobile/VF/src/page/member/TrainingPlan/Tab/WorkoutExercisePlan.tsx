@@ -67,7 +67,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
 
               <View style={styles.bannerInfoRow}>
                 <Ionicons name="home" size={wp("3.5%")} color="#FFFFFF" />
-                <Text style={styles.bannerInfoText}> Tại nhà </Text>
+                <Text style={styles.bannerInfoText}> {program?.ten_noi_tap ?? "Chưa xác định"} </Text>
                 <View style={styles.starsContainer}>
                   <Ionicons name="star-outline" size={wp("3%")} color="#FFFFFF" />
                   <Ionicons name="star-outline" size={wp("3%")} color="#FFFFFF" />

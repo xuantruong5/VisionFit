@@ -122,7 +122,7 @@ const ReportPage = ({ navigation, route }: any) => {
                     ) : (
                         <Text style={styles.headerTimerStartText}>
                             Bắt đầu
-                        </Text>
+                        </Text> 
                     )}
                 </TouchableOpacity>
             </View>
