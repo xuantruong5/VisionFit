@@ -425,31 +425,91 @@ class DangKyChuongTrinhController extends Controller
         ], 200);
     }
     
-   public function getExercises($id)
+   
+    public function getExercises($id)
     {
         // 1. Lấy hội viên đang đăng nhập
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chưa đăng nhập',
             ], 401);
         }
-        $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+
+        // 2. Lấy bài tập thuộc ngày tập của chương trình đang đăng ký
+        $data = DKChuongTrinh::where(
+                'dang_ky_chuong_trinh.id_hoi_vien',
+                $user->id
+            )
             ->where('dang_ky_chuong_trinh.tinh_trang', 1)
-            ->join('chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh','=','ct.id')
-            ->join('chuong_trinh_bai_tap as ctbt','ct.id','=','ctbt.id_chuong_trinh')
-            // Nối buổi tập với bảng trung gian chi tiết
-            ->join('chuong_trinh_bai_tap_chi_tiet as ctbtct','ctbt.id','=','ctbtct.id_chuong_trinh_bai_tap')
-            // Nối bảng trung gian với danh mục bài tập
-            ->join('bai_tap as bt','ctbtct.id_bai_tap','=','bt.id')
-            ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap')
+
+            ->join(
+                'chuong_trinh_tap as ct',
+                'dang_ky_chuong_trinh.id_chuong_trinh',
+                '=',
+                'ct.id'
+            )
+
+            ->join(
+                'chuong_trinh_bai_tap as ctbt',
+                'ct.id',
+                '=',
+                'ctbt.id_chuong_trinh'
+            )
+
+            // Chỉ lấy bài tập có trong ngày tập
+            ->join(
+                'chuong_trinh_bai_tap_chi_tiet as ctbtct',
+                'ctbt.id',
+                '=',
+                'ctbtct.id_chuong_trinh_bai_tap'
+            )
+
+            // Nối danh mục bài tập
+            ->join(
+                'bai_tap as bt',
+                'ctbtct.id_bai_tap',
+                '=',
+                'bt.id'
+            )
+
+            // Lọc theo cấp độ và nơi tập đã đăng ký
+            ->join('bai_tap_phan_loai as btpl', function ($join) {
+                $join->on('bt.id', '=', 'btpl.id_bai_tap')
+                    ->on(
+                        'dang_ky_chuong_trinh.id_cap_do',
+                        '=',
+                        'btpl.id_cap_do'
+                    )
+                    ->on(
+                        'dang_ky_chuong_trinh.id_noi_tap',
+                        '=',
+                        'btpl.id_noi_tap'
+                    );
+            })
+
+            // Lấy thông tin chi tiết bài tập
+            ->leftJoin(
+                'chi_tiet_bai_tap as ctct',
+                'bt.id',
+                '=',
+                'ctct.id_bai_tap'
+            )
+
+            // Đúng ngày tập được yêu cầu
             ->where('ctbt.id', $id)
+
             ->select(
                 'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
                 'dang_ky_chuong_trinh.id_chuong_trinh',
+                'dang_ky_chuong_trinh.id_cap_do',
+                'dang_ky_chuong_trinh.id_noi_tap',
+
                 'ctbt.id as id_chuong_trinh_bai_tap',
                 'ctbt.ten_ngay_tap',
+
                 'bt.id as id_bai_tap',
                 'bt.ten_bai_tap',
                 'bt.mo_ta as mo_ta_bai_tap',
@@ -460,24 +520,28 @@ class DangKyChuongTrinhController extends Controller
                 'bt.anh_dai_dien as anh_bai_tap',
                 'bt.muc_ta_toi_thieu',
                 'bt.thiet_bi',
+
                 'ctct.video_huong_dan',
                 'ctct.video_sai',
                 'ctct.huong_dan',
                 'ctct.canh_bao',
                 'ctct.noi_tap',
                 'ctct.mo_ta',
+
                 'ctbtct.thu_tu'
             )
+
             ->orderBy('ctbtct.thu_tu')
             ->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'Lấy danh sách bài tập thành công',
+            'message' => 'Lấy danh sách bài tập phù hợp với cấp độ và nơi tập thành công',
             'total_exercises' => $data->count(),
             'data' => $data,
         ], 200);
     }
+
 
 
 

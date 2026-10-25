@@ -6,33 +6,48 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useRoute } from '@react-navigation/native';
 import apiFitlife from '../../general/api';
 import LinearGradient from 'react-native-linear-gradient';
-const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
-  const { goalId,goalName,gender,id_noi_tap,ten_noi_tap, } = route.params || {};
+const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
+  const { goalId, goalName, gender, id_noi_tap, ten_noi_tap, } = route.params || {};
+ 
   const [difficulties, setDifficulties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchDifficulties = async () => {
       try {
         setLoading(true);
-        const res = await apiFitlife.get('/client/chuong-trinh-tap/cap-do');
+
+        const res = await apiFitlife.get(
+          '/client/chuong-trinh-tap/cap-do',
+          {
+            params: {
+              ten_chuong_trinh: goalName?.trim(),
+              gioi_tinh_ap_dung: gender,
+              id_noi_tap: id_noi_tap,
+            },
+          },
+        );
+
         const data = res.data?.data || [];
-        // Lọc cấp độ theo chương trình đã chọn
-        const filteredData = goalName
-          ? data.filter(
-            (item: any) => item.ten_chuong_trinh === goalName,
-          )
-          : data;
-        setDifficulties(filteredData);
-      } catch (error) {
-        console.log('Lỗi lấy cấp độ:', error);
+
+        setDifficulties(data);
+      } catch (error: any) {
+        console.log(
+          'Lỗi lấy cấp độ:',
+          error.response?.data || error.message,
+        );
         setDifficulties([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDifficulties();
-  }, [goalName]);
+    if (goalName && gender !== undefined && id_noi_tap !== undefined) {
+      fetchDifficulties();
+    } else {
+      setDifficulties([]);
+      setLoading(false);
+    }
+  }, [goalName, gender, id_noi_tap]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -66,10 +81,35 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
           ) : (
           difficulties.map((item, index) => {
             return (
-              <TouchableOpacity key={`${item.id}-${item.ten_chuong_trinh}`} style={styles.card} activeOpacity={0.88}
-                onPress={() => navigation.navigate('WorkoutProgramDetailScreen', { ...route.params, goalId, goalName, gender, id_noi_tap, ten_noi_tap, capDoId: item.id, capDoName: item.ten_cap_do, })} >
+              <TouchableOpacity key={`${item.id_chuong_trinh}-${item.id_cap_do}`} style={styles.card} activeOpacity={0.88}
+                onPress={() =>
+                  navigation.navigate('WorkoutProgramDetailScreen', {
+                    ...route.params,
+
+                    // ID bản ghi chương trình thuộc cấp độ đã chọn
+                    goalId: item.id_chuong_trinh,
+
+                    // Thông tin cấp độ
+                    capDoId: item.id_cap_do,
+                    capDoName: item.ten_cap_do,
+                    gender: gender, // 0 = Nam, 1 = Nữ
+
+                    // Thông tin chương trình
+                    goalName: item.ten_chuong_trinh,
+
+                    // Nơi tập đã chọn
+                    id_noi_tap,
+                    ten_noi_tap,
+
+                    // Mô tả và thời lượng của cấp độ
+                    mo_ta_chuong_trinh: item.mo_ta_chuong_trinh,
+                    so_ngay: item.so_ngay,
+                    so_buoi_moi_tuan: item.so_buoi_moi_tuan,
+                  })
+                }
+              >
                 <ImageBackground
-                  source={item.hinh_anh? { uri: item.hinh_anh }: undefined}
+                  source={item.hinh_anh ? { uri: item.hinh_anh } : undefined}
                   style={styles.cardImage} imageStyle={styles.cardImageStyle}>
                   <LinearGradient
                     colors={[
@@ -103,7 +143,7 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
                     </Text>
 
                     <Text style={styles.description}>
-                      {item.mo_ta}
+                      {item.mo_ta_cap_do}
                     </Text>
                   </View>
                 </ImageBackground>
@@ -207,7 +247,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 9,
     elevation: 5,
-    
+
   },
   cardImage: {
     flex: 1,

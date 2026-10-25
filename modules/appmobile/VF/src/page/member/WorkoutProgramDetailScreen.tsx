@@ -7,6 +7,7 @@ import ImageTextGradient from '../../components/ImageTextGradient';
 
 const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
     const { goalId, goalName, gender, capDoName, capDoId, id_noi_tap, ten_noi_tap, } = route.params || {};
+    
     const [program, setProgram] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
@@ -48,6 +49,8 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
         const fetchProgram = async () => {
             try {
                 const res = await apiFitlife.get(`/client/chuong-trinh-tap/${goalId}`);
+                    console.log('Dữ liệu chương trình:', res.data?.data);
+                    console.log('Ảnh đại diện:', res.data?.data?.anh_dai_dien);
                 setProgram(res.data?.data || null);
             } catch (error) {
                 console.log('Lỗi lấy chương trình:', error);
@@ -60,10 +63,11 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
     }, [goalId]);
 
     const genderLabel =
-        gender === 'Nữ' ? 'Dành cho nữ' :
-            gender === 'Nam' ? 'Dành cho nam' : 'Tất cả';
+    Number(gender) === 0 ? 'Dành cho nam' :
+    Number(gender) === 1 ? 'Dành cho nữ' :
+        'Chưa xác định';
 
-    const genderIcon = gender === 'Nữ' ? 'female-outline' : 'male-outline';
+    const genderIcon =Number(gender) === 1 ? 'female-outline' : 'male-outline';
 
     // const locationLabel =
     //     noitap === 'Phòng gym' || noitap === 'GYM' ? 'Tại gym' :

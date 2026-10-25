@@ -8,6 +8,7 @@ import apiFitlife from '../../general/api';
 
 const WorkoutLocationScreen = ({ navigation, route }: any) => {
   const { goalId, goalName, gender } = (route.params as any) || {};
+
   const [noiTapList, setNoiTapList] = useState<{ id: number; ten_noi_tap: string; mo_ta: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   // Ảnh theo giới tính
@@ -15,8 +16,8 @@ const WorkoutLocationScreen = ({ navigation, route }: any) => {
   const gymImageFemale = 'https://photo.znews.vn/w660/Uploaded/gtnvzv/2024_03_14/gym.jpg';
   const homeImageMale = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSujSVeA5kR_ZONbeZ3emZB_cuq_7ScD-hOusBOLzDeZhCx8KiTkSkr6fw&s=10';
   const homeImageFemale = 'https://media.istockphoto.com/id/1352616555/vi/anh/ng%C6%B0%E1%BB%9Di-ph%E1%BB%A5-n%E1%BB%AF-th%E1%BB%83-thao-t%E1%BA%ADp-th%E1%BB%83-d%E1%BB%A5c-t%E1%BA%A1i-nh%C3%A0.jpg?s=612x612&w=0&k=20&c=qgB4DoAqe9nMYRHhqI7KD3g9qASxXjF5_AN7nQfsgpc=';
-  const gymImage = gender === 'Nữ' ? gymImageFemale : gymImageMale;
-  const homeImage = gender === 'Nữ' ? homeImageFemale : homeImageMale;
+  const gymImage = gender === 1 ? gymImageFemale : gymImageMale;
+  const homeImage = gender === 1 ? homeImageFemale : homeImageMale;
 
   // Gọi API lấy danh sách nơi tập
   useEffect(() => {
