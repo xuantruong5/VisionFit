@@ -45,9 +45,9 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
       dayType: day.type,
       ngayThu: day.ngayThu,
       id_chuong_trinh_bai_tap: day.id,
-      id_dang_ky_chuong_trinh:
-        program?.id_dang_ky_chuong_trinh,
+      id_dang_ky_chuong_trinh:program?.id_dang_ky_chuong_trinh,
       id_chuong_trinh: program?.id_chuong_trinh,
+      
     });
   };
   return (
@@ -127,10 +127,11 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                       id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
                       id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
                       id_chuong_trinh: day.id_chuong_trinh,
+                      id_lich_tap: day.id_lich_tap, // BỔ SUNG DÒNG NÀY
                     };
-                    console.log("===== DỮ LIỆU GỬI SANG ExercisePage =====");
-                    console.log("Ngày tập:", day);
-                    console.log("Params:", JSON.stringify(params, null, 2));
+                    // console.log("===== DỮ LIỆU GỬI SANG ExercisePage =====");
+                    // console.log("Ngày tập:", day);
+                    // console.log("Params:", JSON.stringify(params, null, 2));
                     navigation.navigate("ExercisePage", params);
                   }}
                 >
@@ -142,7 +143,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                       </View>
                     ) : (
                       <View style={styles.lockCircle}>
-                        <Ionicons name="lock-closed-outline" size={wp("6%")} color="#FF9EA7"style={{ opacity: 0.5 }} />
+                        <Ionicons name="lock-closed-outline" size={wp("6%")} color="#FF9EA7" style={{ opacity: 0.5 }} />
                       </View>
                     )}
                   </View>
@@ -155,9 +156,15 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                     <Text style={styles.dayTypeText}>
                       {day.ten_ngay_tap}
                     </Text>
+                    <Text style={styles.sessionText}>
+                      Buổi tập thứ {day.buoi_thuc_te}
+                    </Text>
+                    <Text style={styles.dateText}>
+                      {day.thu_tap} · {day.ngay_tap_hien_thi}
+                    </Text>
                   </View>
                   {isUnlocked && (
-                    <View style={{ width: wp("3%"), height: wp("3%"), borderRadius: wp("1.5%"), backgroundColor: "#18BEC3",}}/>
+                    <View style={{ width: wp("3%"), height: wp("3%"), borderRadius: wp("1.5%"), backgroundColor: "#18BEC3", }} />
                   )}
                 </TouchableOpacity>
               );
@@ -377,6 +384,20 @@ const styles = StyleSheet.create({
     fontSize: wp("4.5%"),
     fontWeight: "700",
   },
+  sessionText: {
+    color: "#18BEC3",
+    fontSize: wp("3.5%"),
+    fontWeight: "400",
+    marginTop: hp("0.5%"),
+  },
+
+  dateText: {
+    color: "#777777",
+    fontSize: wp("3.5%"),
+    fontWeight: "400",
+    marginTop: hp("0.5%"),
+  },
+
 
   activeDot: {
     width: wp("3%"),
@@ -397,8 +418,8 @@ const styles = StyleSheet.create({
   },
 
 
-  
-  
+
+
 });
 
 export default WorkoutExercisePlan;

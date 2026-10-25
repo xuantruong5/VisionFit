@@ -13,7 +13,7 @@ use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\DangKyChuongTrinhController;
 use App\Http\Controllers\ChuongTrinhBaiTapController;
 use App\Http\Controllers\PhongGymController;
-
+use App\Http\Controllers\BuoiTapController;
 
 
 
@@ -128,6 +128,15 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/provinces/{code}/wards', [MembersController::class, 'getWards']);
     Route::get('/provinces/{code}/gyms', [MembersController::class, 'getGymsByProvince']);
     Route::get('/wards/{id}/gyms', [MembersController::class,'getGymsByWard']);
+
+
+
+    // đếm thời gian bài tập và mức độ hoàn thành 
+    Route::post('/buoi-tap/bat-dau', [BuoiTapController::class, 'batDau']);
+    Route::post('/buoi-tap/{id}/khoi-tao-tien-do', [BuoiTapController::class, 'khoiTaoTienDo']);
+    Route::post('/buoi-tap/{id}/tien-do/{idTienDo}',[BuoiTapController::class, 'capNhatTienDo']);
+    Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/hoan-thanh',[BuoiTapController::class, 'hoanThanhBaiTap']);
+    Route::post('/buoi-tap/{id}/ket-thuc',[BuoiTapController::class, 'ketThuc']);
 
 
 

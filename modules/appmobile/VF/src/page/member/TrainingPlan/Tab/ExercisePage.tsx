@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, DeviceEventEmitter, } from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, DeviceEventEmitter, Alert, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import apiFitlife from "../../../../general/api";
@@ -40,6 +40,7 @@ const ExercisePage = ({ navigation, route }: any) => {
   const idDangKy = route?.params?.id_dang_ky_chuong_trinh;
   const idNgayTap = route?.params?.id_chuong_trinh_bai_tap;
   const [skipping, setSkipping] = useState(false);
+  const workoutStartRef = useRef<Date | null>(null);
 
   // đồng hồ khi bắt đầu 
   const [isTraining, setIsTraining] = useState(false);
@@ -56,6 +57,12 @@ const ExercisePage = ({ navigation, route }: any) => {
   // tổng số bài tập 
   const [totalExercises, setTotalExercises] = useState<number>(0);
 
+  // gán api bắt đầu 
+  const [idBuoiTap, setIdBuoiTap] = useState<number | null>(null);
+  const [progressByExercise, setProgressByExercise] = useState<Record<number, number>>({});
+  const [progressStatusByExercise, setProgressStatusByExercise] =useState<Record<number, number>>({});
+  const [endingSession, setEndingSession] = useState(false);
+
 
   const fetchExercises = async () => {
     try {
@@ -70,7 +77,8 @@ const ExercisePage = ({ navigation, route }: any) => {
 
         const danhSachBaiTap: Exercise[] = dataNgayTap.map(
           (item: any) => ({
-            id: item.id_bai_tap,
+            id: Number(item.id_bai_tap ?? item.id),
+            id_bai_tap: Number(item.id_bai_tap ?? item.id),
             name: item.ten_bai_tap,
             sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${item.muc_ta_toi_thieu ?? 0}`,
             duration: `${item.thoi_gian_phut ?? 0} phút`,
@@ -90,12 +98,20 @@ const ExercisePage = ({ navigation, route }: any) => {
             canh_bao: item.canh_bao ?? "",
             noi_tap: item.noi_tap ?? "",
             mo_ta: item.mo_ta ?? "",
-            thu_tu: item.thu_tu ?? "",
+            thu_tu: Number(item.thu_tu ?? 0),
             total_exercises: Number(res.data.total_exercises ?? 0),
-
-          })
-        );
+          }))
+          .sort((a, b) => a.thu_tu - b.thu_tu);
         setExercises(danhSachBaiTap);
+        console.log(
+          "DANH SÁCH BÀI TẬP SAU KHI MAP:",
+          danhSachBaiTap.map((e) => ({
+            id: e.id,
+            id_bai_tap: e.id_bai_tap,
+            ten_bai_tap: e.ten_bai_tap,
+            thu_tu: e.thu_tu,
+          }))
+);
       } else {
         setExercises([]);
       }
@@ -105,6 +121,77 @@ const ExercisePage = ({ navigation, route }: any) => {
       setLoading(false);
     }
   };
+
+
+  const taoBuoiTap = async () => {
+    console.log("ExercisePage route.params:", route?.params);
+    const idLichTap = route?.params?.id_lich_tap;
+    console.log("id_lich_tap:", idLichTap);
+    console.log("id_chuong_trinh_bai_tap:", idNgayTap);
+
+      if (!idLichTap || !idNgayTap) {
+        Alert.alert(
+          "Thiếu dữ liệu",
+          "Không tìm thấy id_lich_tap hoặc id_chuong_trinh_bai_tap."
+        );
+        return null;
+      }
+
+      // 1. Tạo buổi tập
+      const resBatDau = await apiFitlife.post(
+        "/client/buoi-tap/bat-dau",
+        {
+          id_lich_tap: Number(idLichTap),
+          id_chuong_trinh_bai_tap: Number(idNgayTap),
+        }
+      );
+
+      const buoiTap = resBatDau.data?.data?.buoi_tap;
+      const idMoi = Number(
+        resBatDau.data?.data?.id_buoi_tap ?? buoiTap?.id
+      );
+
+      if (!resBatDau.data?.success || !idMoi) {
+        throw new Error("Không tạo được buổi tập.");
+      }
+
+      // 2. Khởi tạo tiến độ cho các bài của buổi tập
+      const resTienDo = await apiFitlife.post(
+        `/client/buoi-tap/${idMoi}/khoi-tao-tien-do`
+      );
+
+      if (!resTienDo.data?.success) {
+        throw new Error(
+          resTienDo.data?.message ?? "Không khởi tạo được tiến độ."
+        );
+      }
+
+      // 3. Ánh xạ ID bài tập -> ID bản ghi tiến độ
+      const danhSachTienDo = resTienDo.data?.data?.danh_sach_tien_do ?? [];
+
+      const progressMap: Record<number, number> = {};
+      const statusMap: Record<number, number> = {};
+
+      danhSachTienDo.forEach((item: any) => { 
+        const idBaiTap = Number(item.id_bai_tap);
+        progressMap[idBaiTap] = Number(item.id_tien_do_bai_tap);
+        statusMap[idBaiTap] = Number(item.tinh_trang ?? 0);
+      });
+
+      console.log("PROGRESS MAP:", progressMap);
+      console.log("PROGRESS STATUS MAP:", statusMap);
+
+      setIdBuoiTap(idMoi);
+      setProgressByExercise(progressMap);
+      setProgressStatusByExercise(statusMap);
+
+      return {
+        idBuoiTap: idMoi,
+        progressMap,
+        statusMap,
+      };
+    };
+
 
   const handleSkip = async () => {
     try {
@@ -122,12 +209,33 @@ const ExercisePage = ({ navigation, route }: any) => {
   useEffect(() => {
     fetchExercises();
   }, [idDangKy, idNgayTap]);
-  const completedCount = exercises.filter((e) => e.completed).length;
-  const progressPercent = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
+  const completedCount = exercises.filter((exercise) =>Number(progressStatusByExercise[Number(exercise.id_bai_tap)]) === 2).length;
+  const progressPercent =exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
 
 
+  
   const handleExercisePress = (exercise: Exercise) => {
-    navigation?.navigate("ReportPage", {
+    if (!idBuoiTap) {
+      Alert.alert(
+        "Chưa bắt đầu",
+        "Hãy nhấn BẮT ĐẦU TẬP trước khi mở bài tập."
+      );
+      return;
+    }
+
+    const idTienDo = progressByExercise[Number(exercise.id_bai_tap)];
+
+    if (!idTienDo) {
+      Alert.alert(
+        "Lỗi tiến độ",
+        "Không tìm thấy bản ghi tiến độ của bài tập này."
+      );
+      return;
+    }
+
+    navigation.navigate("ReportPage", {
+      id_buoi_tap: idBuoiTap,
+      id_tien_do_bai_tap: idTienDo,
       elapsedSeconds,
       isTraining,
       total_exercises: totalExercises,
@@ -156,13 +264,14 @@ const ExercisePage = ({ navigation, route }: any) => {
 
 
 
+
   useEffect(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null;}
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     if (!isTraining) return;
-    timerRef.current = setInterval(() => { 
-      setElapsedSeconds((prev) => 
-        { const next = prev + 1;
-          return next;
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds((prev) => {
+        const next = prev + 1;
+        return next;
       });
     }, 1000);
     return () => {
@@ -176,67 +285,161 @@ const ExercisePage = ({ navigation, route }: any) => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String( remainingSeconds).padStart(2, "0")}`;};
-  const handleStart = () => {
-    // KẾT THÚC BUỔI TẬP HIỆN TẠI
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  };
+  
+  const handleStart = async () => {
+    // Kết thúc buổi tập đang diễn ra
     if (hasStarted) {
-      // Dừng đồng hồ tập
-      setIsTraining(false);
-      setHasStarted(false);
-      setShowTimeSummary(true);
-      // Chốt khoảng nghỉ cuối cùng nếu đang nghỉ
+      if (!idBuoiTap || endingSession) return;
+
+      setEndingSession(true);
+
+      let restSeconds = totalRestSeconds;
+
       if (restStartRef.current !== null) {
-        const restDuration = Math.floor(
+        restSeconds += Math.floor(
           (Date.now() - restStartRef.current) / 1000
         );
-        setTotalRestSeconds((prev) => prev + restDuration);
-        restStartRef.current = null;
       }
-      // Báo ReportPage dừng đồng hồ
-      DeviceEventEmitter.emit("workout-session-finish");
+
+      try {
+        const res = await apiFitlife.post(
+          `/client/buoi-tap/${idBuoiTap}/ket-thuc`,
+          { tong_thoi_gian_nghi: restSeconds }
+        );
+
+        if (!res.data?.success) {
+          throw new Error(
+            res.data?.message ?? "Không thể kết thúc buổi tập."
+          );
+        }
+
+        setIsTraining(false);
+        setHasStarted(false);
+        setShowTimeSummary(true);
+        setTotalRestSeconds(restSeconds);
+        restStartRef.current = null;
+
+        DeviceEventEmitter.emit("workout-session-finish");
+
+        Alert.alert(
+          "Thành công",
+          `Đã lưu buổi tập. Hoàn thành ${
+            res.data?.data?.phan_tram_hoan_thanh ?? 0
+          }%.`
+        );
+      } catch (error: any) {
+        Alert.alert(
+          "Lỗi",
+          error.response?.data?.message ??
+            error.message ??
+            "Không thể kết thúc buổi tập."
+        );
+      } finally {
+        setEndingSession(false);
+      }
+
       return;
     }
-
-    // BẮT ĐẦU BUỔI TẬP MỚI: RESET TOÀN BỘ THỜI GIAN
-    setElapsedSeconds(0);
-    setTotalRestSeconds(0);
-    setShowTimeSummary(false);
-    setHasStarted(true);
-    setIsTraining(true);
-    restStartRef.current = null;
-    // Tìm bài tập đầu tiên
-    const firstExercise = exercises.find(
-      (exercise) => Number(exercise.thu_tu) === 1
+    // Bắt đầu phiên tập mới
+    const sortedExercises = [...exercises].sort(
+      (a, b) => Number(a.thu_tu) - Number(b.thu_tu)
     );
-    if (!firstExercise) {
-      console.log("Không tìm thấy bài tập có thứ tự 1");
-      setHasStarted(false);
-      setIsTraining(false);
+
+    if (sortedExercises.length === 0) {
+      Alert.alert("Thông báo", "Danh sách bài tập đang trống.");
       return;
     }
 
-    navigation.navigate("ReportPage", {
-      elapsedSeconds: 0,
-      isTraining: true,
-      exercise: {
-        id_bai_tap: firstExercise.id_bai_tap,
-        ten_bai_tap: firstExercise.ten_bai_tap,
-        thoi_gian_phut: firstExercise.thoi_gian_phut,
-        rep_yeu_cau: firstExercise.rep_yeu_cau,
-        set_yeu_cau: firstExercise.set_yeu_cau,
-        giay_yeu_cau: firstExercise.giay_yeu_cau,
-        muc_ta_toi_thieu: firstExercise.muc_ta_toi_thieu,
-        thiet_bi: firstExercise.thiet_bi,
-        video_huong_dan: firstExercise.video_huong_dan,
-        video_sai: firstExercise.video_sai,
-        huong_dan: firstExercise.huong_dan,
-        canh_bao: firstExercise.canh_bao,
-        noi_tap: firstExercise.noi_tap,
-        mo_ta: firstExercise.mo_ta,
-        thu_tu: firstExercise.thu_tu,
-      },
-    });
+    try {
+      // Tạo phiên tập và lấy tiến độ đã lưu từ BE
+      const session = await taoBuoiTap();
+
+      if (!session) return;
+
+      // Tìm bài chưa hoàn thành đầu tiên theo thứ tự
+      const baiTiepTheo = sortedExercises.find(
+        (exercise) =>
+          Number(session.statusMap[Number(exercise.id_bai_tap)] ?? 0) !== 2
+      );
+
+      // Nếu mọi bài đã hoàn thành, đóng phiên vừa tạo để không
+      // để lại một phiên đang tập nhưng người dùng không thực sự tập.
+      if (!baiTiepTheo) {
+        try {
+          await apiFitlife.post(
+            `/client/buoi-tap/${session.idBuoiTap}/ket-thuc`,
+            { tong_thoi_gian_nghi: 0 }
+          );
+        } catch (error) {
+          console.log("Lỗi đóng phiên tập rỗng:", error);
+        }
+
+        setIdBuoiTap(null);
+
+        Alert.alert(
+          "Đã hoàn thành",
+          "Bạn đã hoàn thành tất cả bài tập trong ngày này."
+        );
+        return;
+      }
+
+      const idTienDo =
+        session.progressMap[Number(baiTiepTheo.id_bai_tap)];
+
+      if (!idTienDo) {
+        Alert.alert(
+          "Lỗi tiến độ",
+          `Không tìm thấy tiến độ của bài tập ${baiTiepTheo.ten_bai_tap}.`
+        );
+        return;
+      }
+
+      // Khởi tạo đồng hồ của phiên hiện tại
+      workoutStartRef.current = new Date();
+      setElapsedSeconds(0);
+      setTotalRestSeconds(0);
+      setShowTimeSummary(false);
+      setHasStarted(true);
+      setIsTraining(true);
+      restStartRef.current = null;
+
+      // Mở bài chưa hoàn thành đầu tiên
+      navigation.navigate("ReportPage", {
+        id_buoi_tap: session.idBuoiTap,
+        id_tien_do_bai_tap: idTienDo,
+        elapsedSeconds: 0,
+        isTraining: true,
+        total_exercises: totalExercises,
+        exercise: {
+          id_bai_tap: baiTiepTheo.id_bai_tap,
+          ten_bai_tap: baiTiepTheo.ten_bai_tap,
+          thoi_gian_phut: baiTiepTheo.thoi_gian_phut,
+          rep_yeu_cau: baiTiepTheo.rep_yeu_cau,
+          set_yeu_cau: baiTiepTheo.set_yeu_cau,
+          giay_yeu_cau: baiTiepTheo.giay_yeu_cau,
+          muc_ta_toi_thieu: baiTiepTheo.muc_ta_toi_thieu,
+          thiet_bi: baiTiepTheo.thiet_bi,
+          video_huong_dan: baiTiepTheo.video_huong_dan,
+          video_sai: baiTiepTheo.video_sai,
+          huong_dan: baiTiepTheo.huong_dan,
+          canh_bao: baiTiepTheo.canh_bao,
+          noi_tap: baiTiepTheo.noi_tap,
+          mo_ta: baiTiepTheo.mo_ta,
+          thu_tu: baiTiepTheo.thu_tu,
+        },
+      });
+    } catch (error: any) {
+      Alert.alert(
+        "Không thể bắt đầu",
+        error.response?.data?.message ??
+          error.message ??
+          "Có lỗi khi tạo buổi tập."
+      );
+    }
   };
+
 
   // nhận tạm nghỉ từ trang ReportPage xang 
   useEffect(() => {
@@ -345,7 +548,7 @@ const ExercisePage = ({ navigation, route }: any) => {
 
           {/* Right: Completed badge */}
           <View style={styles.completedBadge}>
-            <Text style={styles.completedCount}>0</Text>
+            <Text style={styles.completedCount}>{completedCount}</Text>
             <Text style={styles.completedLabel}>xong</Text>
           </View>
         </View>
@@ -355,7 +558,7 @@ const ExercisePage = ({ navigation, route }: any) => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
           <Text style={styles.sectionSubtitle}>
-            0/{totalExercises} hoàn thành
+            {completedCount}/{exercises.length} hoàn thành
           </Text>
         </View>
 
@@ -401,7 +604,21 @@ const ExercisePage = ({ navigation, route }: any) => {
                     </View>
                   </View>
                   {/* Arrow */}
-                  <Ionicons name="chevron-forward" size={wp("5%")} color="#18BEC3" />
+                  {Number(
+                    progressStatusByExercise[Number(exercise.id_bai_tap)] ?? 0
+                  ) === 2 ? (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={wp("6%")}
+                      color="#18BEC3"
+                    />
+                  ) : (
+                    <Ionicons
+                      name="chevron-forward"
+                      size={wp("5%")}
+                      color="#18BEC3"
+                    />
+                  )}
                 </TouchableOpacity>
 
                 {/* Divider: không hiển thị sau bài cuối */}
@@ -473,7 +690,7 @@ const ExercisePage = ({ navigation, route }: any) => {
         <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, isTraining && styles.startButtonStop,]} onPress={handleStart} >
           <Ionicons name={isTraining ? "stop-circle" : "play"} size={wp("5%")} color="#FFFFFF" style={styles.startIcon} />
           <Text style={styles.startButtonText}>
-            {isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
+            {endingSession ? "ĐANG LƯU..." : isTraining ? "KẾT THÚC TẬP": "BẮT ĐẦU TẬP"}
           </Text>
         </TouchableOpacity>
       </View>
