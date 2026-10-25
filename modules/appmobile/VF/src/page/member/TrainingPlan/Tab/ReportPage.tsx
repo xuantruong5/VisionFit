@@ -1,10 +1,11 @@
 ﻿import React, { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, TextInput, DeviceEventEmitter, } from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, TextInput, DeviceEventEmitter, Alert, ActivityIndicator, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import Svg, { Circle } from "react-native-svg";
 import Video from "react-native-video";
+import apiFitlife from "../../../../general/api";
 const ReportPage = ({ navigation, route }: any) => {
     // const [time, setTime] = useState(9);
     const [isRunning, setIsRunning] = useState(false);
@@ -47,6 +48,15 @@ const ReportPage = ({ navigation, route }: any) => {
     const [time, setTime] = useState(0);
 
 
+    // kết nối api hoàn thành %
+
+    const idBuoiTap = route?.params?.id_buoi_tap;
+    const idTienDo = route?.params?.id_tien_do_bai_tap;
+    const [savingProgress, setSavingProgress] = useState(false);
+    const [completingExercise, setCompletingExercise] = useState(false);
+
+
+
 
 
 
@@ -84,15 +94,133 @@ const ReportPage = ({ navigation, route }: any) => {
     };
 
 
-    const handleAddSet = () => {
-        if (showMinutes) {
-            setSavedMinutes((prev) =>
-                String(Number(prev ?? 0) + Number(minutesValue || 0))
+    
+    
+    const handleAddSet = async () => {
+         console.log("DEBUG TIẾN ĐỘ:", {
+        idBuoiTap,
+        idTienDo,
+        idBaiTap: exercise?.id_bai_tap,
+        tenBaiTap: exercise?.ten_bai_tap,
+        thuTu: exercise?.thu_tu,
+    });
+
+        if (!idBuoiTap || !idTienDo) {
+            Alert.alert("Lỗi", "Thiếu ID buổi tập hoặc ID tiến độ bài tập.");
+            return;
+        }
+
+        if (savingProgress || completingExercise) return;
+
+        const targetSets = Number(exercise?.set_yeu_cau ?? 0);
+        const targetMinutes = Number(exercise?.thoi_gian_phut ?? 0);
+
+        // Xác định tiến độ kế tiếp
+        const nextSetCount = hasSet
+            ? Math.min(setCount + 1, targetSets)
+            : setCount;
+
+        const currentMinutes = Number(savedMinutes ?? 0);
+
+        // Mỗi lần bấm +, cộng số phút người dùng nhập
+        const minutesToAdd = Number(minutesValue || 0);
+
+        const nextSavedMinutes = showMinutes
+            ? Math.min(currentMinutes + minutesToAdd, targetMinutes)
+            : currentMinutes;
+
+        // Không cho cộng khi đã đạt mục tiêu
+        if (hasSet && setCount >= targetSets) {
+            Alert.alert("Thông báo", "Bạn đã hoàn thành đủ số set.");
+            return;
+        }
+
+        if (showMinutes && currentMinutes >= targetMinutes) {
+            Alert.alert("Thông báo", "Bạn đã hoàn thành đủ số phút.");
+            return;
+        }
+
+        if (showMinutes && minutesToAdd <= 0) {
+            Alert.alert("Thông báo", "Vui lòng nhập số phút hợp lệ.");
+            return;
+        }
+
+        const payload = {
+            so_set_thuc_te: nextSetCount,
+            so_rep_thuc_te: Number(repValue || 0),
+            so_phut_thuc_te: showMinutes
+                ? nextSavedMinutes
+                : Number(minutesValue || 0),
+            thoi_gian_thuc_te_giay: hasSeconds
+                ? Number(secondsValue || 0)
+                : showMinutes
+                    ? nextSavedMinutes * 60
+                    : 0,
+            trong_luong_ta_thuc_te: Number(weightValue || 0),
+        };
+
+        try {
+            setSavingProgress(true);
+
+            // Bước 1: Lưu tiến độ
+            const res = await apiFitlife.post(
+                `/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}`,
+                payload
             );
-        } else {
-            setSetCount((prev) => prev + 1);
+
+            if (!res.data?.success) {
+                throw new Error(
+                    res.data?.message ?? "Không cập nhật được tiến độ."
+                );
+            }
+
+            // Cập nhật giao diện sau khi API lưu thành công
+            if (hasSet) {
+                setSetCount(nextSetCount);
+            }
+
+            if (showMinutes) {
+                setSavedMinutes(String(nextSavedMinutes));
+            }
+
+            // Bước 2: Kiểm tra đã đạt mục tiêu chưa
+            const isCompleted = hasSet
+                ? nextSetCount >= targetSets
+                : showMinutes
+                    ? nextSavedMinutes >= targetMinutes
+                    : false;
+
+            // Bước 3: Đạt mục tiêu thì gọi API hoàn thành
+            if (isCompleted) {
+                setCompletingExercise(true);
+
+                const completeRes = await apiFitlife.post(
+                    `/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}/hoan-thanh`
+                );
+
+                if (!completeRes.data?.success) {
+                    throw new Error(
+                        completeRes.data?.message ??
+                        "Lưu tiến độ được nhưng chưa thể hoàn thành bài tập."
+                    );
+                }
+
+                Alert.alert("Hoàn thành", "Bạn đã hoàn thành bài tập!");
+            }
+        } catch (error: any) {
+            Alert.alert(
+                "Lỗi lưu tiến độ",
+                error.response?.data?.message ??
+                    error.message ??
+                    "Không thể lưu kết quả bài tập."
+            );
+        } finally {
+            setSavingProgress(false);
+            setCompletingExercise(false);
         }
     };
+
+
 
     return (
         <View style={styles.container}>
@@ -283,9 +411,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                 {hasSet
                                     ? `${setCount}/${exercise?.set_yeu_cau}`
                                     : showMinutes
-                                        ? savedMinutes === null
-                                            ? exercise?.thoi_gian_phut
-                                            : `${savedMinutes}/${exercise?.thoi_gian_phut}`
+                                        ? `${savedMinutes ?? 0}/${exercise?.thoi_gian_phut}`
                                         : "0"}
                             </Text>
                         </View>
@@ -375,8 +501,12 @@ const ReportPage = ({ navigation, route }: any) => {
                         )}
                     </View>
                 ) : null}
-                <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} >
-                    <Ionicons name="add" size={wp("8%")} color="#FFFFFF" />
+                <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} disabled={savingProgress} >
+                    {savingProgress ? (
+                        <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                        <Ionicons name="add" size={wp("8%")} color="#FFFFFF" />
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

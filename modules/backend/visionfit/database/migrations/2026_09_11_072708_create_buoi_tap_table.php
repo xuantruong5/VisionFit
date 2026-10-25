@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('buoi_tap', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_hoi_vien');
-            $table->unsignedBigInteger('id_lich_tap');
+            $table->unsignedBigInteger('id_hoi_vien')->nullable();
+            $table->unsignedBigInteger('id_lich_tap')->nullable();
+            $table->unsignedBigInteger('id_chuong_trinh_bai_tap')->nullable();
+            $table->date('ngay_tap')->nullable();
             $table->dateTime('thoi_gian_bat_dau');
-            $table->dateTime('thoi_gian_ket_thuc');
+            $table->dateTime('thoi_gian_ket_thuc')->nullable();
             $table->integer('tong_thoi_gian_giay')->nullable();
+            $table->integer('tong_thoi_gian_nghi')->default(0);
             $table->integer('tong_so_lan_lap')->nullable();
             $table->decimal('calo_tieu_thu', 8, 2)->nullable();
             $table->decimal('phan_tram_hoan_thanh', 5, 2)->nullable();

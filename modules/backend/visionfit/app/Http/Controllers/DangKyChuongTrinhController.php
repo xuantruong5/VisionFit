@@ -390,13 +390,13 @@ class DangKyChuongTrinhController extends Controller
                 'message' => 'Chưa đăng nhập',
             ], 401);
         }
-        $idHoiVien = $user->id;
-        $data = DKChuongTrinh::where('dang_ky_chuong_trinh.id_hoi_vien', $idHoiVien)
+        // 1. Lấy toàn bộ giáo án của chương trình đang đăng ký
+        $data = DKChuongTrinh::where( 'dang_ky_chuong_trinh.id_hoi_vien', $user->id )
             ->where('dang_ky_chuong_trinh.tinh_trang', 1)
-            ->join( 'chuong_trinh_tap as ct', 'dang_ky_chuong_trinh.id_chuong_trinh', '=', 'ct.id' )
-            ->join('chuong_trinh_bai_tap as ctbt', 'ct.id','=','ctbt.id_chuong_trinh')
-            ->leftJoin( 'cap_do as cd','dang_ky_chuong_trinh.id_cap_do','=', 'cd.id')
-            ->leftJoin( 'noi_tap as nt','dang_ky_chuong_trinh.id_noi_tap','=','nt.id')
+            ->join('chuong_trinh_tap as ct','dang_ky_chuong_trinh.id_chuong_trinh','=','ct.id' )
+            ->join( 'chuong_trinh_bai_tap as ctbt', 'ct.id','=','ctbt.id_chuong_trinh' )
+            ->leftJoin( 'cap_do as cd', 'dang_ky_chuong_trinh.id_cap_do','=', 'cd.id')
+            ->leftJoin( 'noi_tap as nt','dang_ky_chuong_trinh.id_noi_tap', '=','nt.id')
             ->select(
                 'dang_ky_chuong_trinh.id as id_dang_ky_chuong_trinh',
                 'dang_ky_chuong_trinh.id_chuong_trinh',
@@ -407,6 +407,7 @@ class DangKyChuongTrinhController extends Controller
                 'ct.so_ngay',
                 'ct.so_buoi_moi_tuan',
                 'ct.anh_dai_dien',
+
                 'ctbt.id as id_chuong_trinh_bai_tap',
                 'ctbt.ngay_thu',
                 'ctbt.ten_ngay_tap',
@@ -418,9 +419,41 @@ class DangKyChuongTrinhController extends Controller
             ->orderBy('ctbt.ngay_thu')
             ->get();
 
+        if ($data->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Chưa có chương trình đang hoạt động',
+                'data' => [],
+            ], 200);
+        }
+
+        // 2. Lấy lịch tập thực tế theo đăng ký
+        $idDangKy = $data->first()->id_dang_ky_chuong_trinh;
+        $lichTap = DB::table('lich_tap')
+            ->where('id_dang_ky_chuong_trinh', $idDangKy)
+            ->orderBy('ngay_tap')
+            ->get()
+            ->values();
+
+        // 3. Bổ sung thông tin lịch tập vào từng buổi giáo án
+        foreach ($data as $index => $buoi) {
+            $lich = $lichTap->get($index);
+            $buoi->buoi_thuc_te = $lich ? $index + 1 : null;
+            $buoi->id_lich_tap = $lich->id ?? null;
+            $buoi->ngay_tap = $lich->ngay_tap ?? null;
+            if ($lich && $lich->ngay_tap) {
+                $ngayTap = \Carbon\Carbon::parse($lich->ngay_tap);
+                $buoi->ngay_tap_hien_thi = $ngayTap->format('d/m/Y');
+                $buoi->thu_tap = match ($ngayTap->dayOfWeekIso) { 1 => 'Thứ 2', 2 => 'Thứ 3', 3 => 'Thứ 4', 4 => 'Thứ 5', 5 => 'Thứ 6', 6 => 'Thứ 7', 7 => 'Chủ nhật', };
+            } else {
+                $buoi->ngay_tap_hien_thi = null;
+                $buoi->thu_tap = null;
+            }
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Lấy danh sách ngày tập thành công',
+            'message' => 'Lấy danh sách ngày tập và lịch tập thành công',
             'data' => $data,
         ], 200);
     }
@@ -430,51 +463,21 @@ class DangKyChuongTrinhController extends Controller
     {
         // 1. Lấy hội viên đang đăng nhập
         $user = Auth::guard('sanctum')->user();
-
         if (!$user) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chưa đăng nhập',
             ], 401);
         }
-
         // 2. Lấy bài tập thuộc ngày tập của chương trình đang đăng ký
-        $data = DKChuongTrinh::where(
-                'dang_ky_chuong_trinh.id_hoi_vien',
-                $user->id
-            )
+        $data = DKChuongTrinh::where( 'dang_ky_chuong_trinh.id_hoi_vien', $user->id )
             ->where('dang_ky_chuong_trinh.tinh_trang', 1)
-
-            ->join(
-                'chuong_trinh_tap as ct',
-                'dang_ky_chuong_trinh.id_chuong_trinh',
-                '=',
-                'ct.id'
-            )
-
-            ->join(
-                'chuong_trinh_bai_tap as ctbt',
-                'ct.id',
-                '=',
-                'ctbt.id_chuong_trinh'
-            )
-
+            ->join( 'chuong_trinh_tap as ct', 'dang_ky_chuong_trinh.id_chuong_trinh','=', 'ct.id')
+            ->join( 'chuong_trinh_bai_tap as ctbt','ct.id','=','ctbt.id_chuong_trinh')
             // Chỉ lấy bài tập có trong ngày tập
-            ->join(
-                'chuong_trinh_bai_tap_chi_tiet as ctbtct',
-                'ctbt.id',
-                '=',
-                'ctbtct.id_chuong_trinh_bai_tap'
-            )
-
+            ->join( 'chuong_trinh_bai_tap_chi_tiet as ctbtct','ctbt.id','=','ctbtct.id_chuong_trinh_bai_tap')
             // Nối danh mục bài tập
-            ->join(
-                'bai_tap as bt',
-                'ctbtct.id_bai_tap',
-                '=',
-                'bt.id'
-            )
-
+            ->join( 'bai_tap as bt','ctbtct.id_bai_tap','=','bt.id')
             // Lọc theo cấp độ và nơi tập đã đăng ký
             ->join('bai_tap_phan_loai as btpl', function ($join) {
                 $join->on('bt.id', '=', 'btpl.id_bai_tap')
@@ -490,14 +493,23 @@ class DangKyChuongTrinhController extends Controller
                     );
             })
 
-            // Lấy thông tin chi tiết bài tập
-            ->leftJoin(
-                'chi_tiet_bai_tap as ctct',
-                'bt.id',
-                '=',
-                'ctct.id_bai_tap'
-            )
+//             ->join(
+//     'bai_tap_phan_loai as btpl',
+//     'bt.id',
+//     '=',
+//     'btpl.id_bai_tap'
+// )
+// ->whereColumn(
+//     'dang_ky_chuong_trinh.id_cap_do',
+//     'btpl.id_cap_do'
+// )
+// ->whereColumn(
+//     'dang_ky_chuong_trinh.id_noi_tap',
+//     'btpl.id_noi_tap'
+// )
 
+            // Lấy thông tin chi tiết bài tập
+            ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap' )
             // Đúng ngày tập được yêu cầu
             ->where('ctbt.id', $id)
 
