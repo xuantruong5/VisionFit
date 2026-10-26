@@ -413,28 +413,182 @@ class BuoiTapController extends Controller
         $tienDo->tinh_trang = 2;
         $tienDo->save();
         // 5. Tính lại phần trăm tích lũy của toàn chương trình.
-        $thongKe = $this->capNhatPhanTramTichLuy( $buoiTap, $tienDo);
+        
+        // Lấy toàn bộ tiến độ bài tập trong ngày tập hiện tại
+        $tienDos = TienDoBaiTap::where('id_dang_ky_chuong_trinh', $tienDo->id_dang_ky_chuong_trinh )
+            ->where( 'id_chuong_trinh_bai_tap', $buoiTap->id_chuong_trinh_bai_tap)
+            ->get();
+
+        $tongSoBai = $tienDos->count();
+        $soBaiHoanThanh = $tienDos
+            ->where('tinh_trang', 2)
+            ->count();
+
+        // Kiểm tra đã hoàn thành tất cả bài tập chưa
+        $laBaiCuoi = $tongSoBai > 0 && $soBaiHoanThanh === $tongSoBai;
+
+        // Cập nhật phần trăm hoàn thành
+        $thongKe = $this->capNhatPhanTramTichLuy(  $buoiTap, $tienDo );
 
         return response()->json([
             'success' => true,
-            'message' => 'Hoàn thành bài tập thành công',
+            'message' => $laBaiCuoi
+                ? 'Đây là bài tập cuối cùng rồi. Bạn có muốn kết thúc buổi tập không?'
+                : 'Hoàn thành bài tập thành công',
             'data' => [
                 'id_buoi_tap' => $buoiTap->id,
                 'id_tien_do_bai_tap' => $tienDo->id,
                 'id_bai_tap' => $tienDo->id_bai_tap,
-                'phan_tram_bai_tap' => (float) $tienDo->phan_tram_hoan_thanh,
-                'tong_so_bai_tap' => $thongKe['tong_so_bai_tap'],
-                'so_bai_hoan_thanh' => $thongKe['so_bai_hoan_thanh'],
-                'phan_tram_hoan_thanh' =>  $thongKe['phan_tram_hoan_thanh'],
+                'phan_tram_bai_tap' => 100,
+                'tong_so_bai_tap' => $tongSoBai,
+                'so_bai_hoan_thanh' => $soBaiHoanThanh,
+                'phan_tram_hoan_thanh' => $thongKe['phan_tram_hoan_thanh'],
                 'tinh_trang' => $tienDo->tinh_trang,
+                'la_bai_cuoi' => $laBaiCuoi,
             ],
         ], 200);
     }
 
+    // public function ketThuc(KetThucBuoiTapRequest $request, $id)
+    // {
+    //     // 1. Kiểm tra người dùng đăng nhập
+    //     $user = Auth::guard('sanctum')->user();
+    //     if (!$user) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Chưa đăng nhập',
+    //         ], 401);
+    //     }
+
+    //     // 2. Lấy dữ liệu Request đã kiểm tra
+    //     $data = $request->validated();
+    //     // 3. Tìm buổi tập thuộc hội viên đang đăng nhập
+    //     $buoiTap = BuoiTap::where('id', $id)
+    //         ->where('id_hoi_vien', $user->id)
+    //         ->first();
+
+    //     if (!$buoiTap) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Không tìm thấy buổi tập',
+    //         ], 404);
+    //     }
+
+    //     // 4. Kiểm tra trạng thái buổi tập
+    //     if ($buoiTap->tinh_trang != 1) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Buổi tập không ở trạng thái đang tập',
+    //         ], 422);
+    //     }
+
+    //     // 5. Kiểm tra thời gian bắt đầu
+    //     if (!$buoiTap->thoi_gian_bat_dau) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Buổi tập chưa có thời gian bắt đầu',
+    //         ], 422);
+    //     }
+
+    //     // 6. Tính tổng thời gian buổi tập
+    //     $now = now();
+    //     $batDau = Carbon::parse($buoiTap->thoi_gian_bat_dau);
+    //     $tongThoiGian = max( 0, $batDau->diffInSeconds($now));
+
+        
+    //     // 7. Tìm chương trình bài tập hiện tại.
+    //     $chuongTrinhBaiTap = ChuongTrinhBaiTap::find( $buoiTap->id_chuong_trinh_bai_tap);
+    //     if (!$chuongTrinhBaiTap) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Không tìm thấy chương trình bài tập',
+    //         ], 404);
+    //     }
+
+    //     // 8. Tìm đăng ký chương trình của hội viên.
+    //     $dangKy = DKChuongTrinh::where( 'id_hoi_vien', $user->id)
+    //         ->where( 'id_chuong_trinh', $chuongTrinhBaiTap->id_chuong_trinh)
+    //         ->where('tinh_trang', 1)
+    //         ->first();
+    //     if (!$dangKy) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Không tìm thấy đăng ký chương trình',
+    //         ], 404);
+    //     }
+
+    //     // 9. Lấy TOÀN BỘ tiến độ tích lũy của chương trình.
+    //     // Không lọc theo id_buoi_tap vì các bản ghi tiến độ
+    //     // được dùng chung qua nhiều buổi tập.
+    //     $tienDos = TienDoBaiTap::where( 'id_dang_ky_chuong_trinh', $dangKy->id)
+    //         ->where( 'id_chuong_trinh_bai_tap', $buoiTap->id_chuong_trinh_bai_tap)
+    //         ->get();
+    //     $tongSoBai = $tienDos->count();
+    //     $tongSoLanLap = (int) $tienDos->sum( 'so_rep_thuc_te');
+    //     $soBaiHoanThanh = $tienDos
+    //         ->where('tinh_trang', 2)
+    //         ->count();
+
+    //     // 10. Tính phần trăm tích lũy từ tiến độ đã lưu.
+    //     $tongPhanTram = (float) $tienDos->sum( 'phan_tram_hoan_thanh');
+
+    //     $phanTram = $tongSoBai > 0 ? round($tongPhanTram / $tongSoBai, 2) : 0;
+
+    //     // 11. Xác định trạng thái kết thúc buổi tập.
+    //     // 2 = tất cả bài tập hoàn thành.
+    //     // 3 = kết thúc nhưng còn bài chưa hoàn thành.
+    //     $tinhTrang = ( $tongSoBai > 0 && $soBaiHoanThanh === $tongSoBai ) ? 2 : 3;
+
+    //     // 12. Lưu thông tin kết thúc buổi tập.
+    //     $buoiTap->thoi_gian_ket_thuc = $now;
+    //     $buoiTap->tong_thoi_gian_giay = $tongThoiGian;
+
+    //     if (array_key_exists('tong_thoi_gian_nghi', $data)) {
+    //         $buoiTap->tong_thoi_gian_nghi =
+    //             $data['tong_thoi_gian_nghi'];
+    //     }
+
+    //     $buoiTap->tong_so_lan_lap = $tongSoLanLap;
+    //     $buoiTap->phan_tram_hoan_thanh = $phanTram;
+    //     $buoiTap->tinh_trang = $tinhTrang;
+    //     $buoiTap->save();
+
+    //     // 13. Trả danh sách tiến độ tích lũy.
+    //     $chiTietTienDo = $tienDos->map(function ($item) {
+    //         return [
+    //             'id_tien_do_bai_tap' => $item->id,
+    //             'id_bai_tap' => $item->id_bai_tap,
+    //             'phan_tram_hoan_thanh' => (float) $item->phan_tram_hoan_thanh,
+    //             'tinh_trang' => $item->tinh_trang,
+    //         ];
+    //     })->values();
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Kết thúc buổi tập thành công',
+    //         'data' => [
+    //             'id_buoi_tap' => $buoiTap->id,
+    //             'thoi_gian_bat_dau' => $buoiTap->thoi_gian_bat_dau,
+    //             'thoi_gian_ket_thuc' => $buoiTap->thoi_gian_ket_thuc,
+    //             'tong_thoi_gian_giay' => $tongThoiGian,
+    //             'tong_thoi_gian_nghi' => $buoiTap->tong_thoi_gian_nghi,
+    //             'tong_so_lan_lap' => $tongSoLanLap,
+    //             'phan_tram_hoan_thanh' => $phanTram,
+    //             'tong_so_bai_tap' => $tongSoBai,
+    //             'so_bai_hoan_thanh' => $soBaiHoanThanh,
+    //             'tinh_trang' => $tinhTrang,
+    //             'chi_tiet_tien_do' => $chiTietTienDo,
+    //         ],
+    //     ], 200);
+
+    // }
+
+
+    
     public function ketThuc(KetThucBuoiTapRequest $request, $id)
     {
-        // 1. Kiểm tra người dùng đăng nhập
+        // 1. Kiểm tra đăng nhập
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -442,9 +596,9 @@ class BuoiTapController extends Controller
             ], 401);
         }
 
-        // 2. Lấy dữ liệu Request đã kiểm tra
         $data = $request->validated();
-        // 3. Tìm buổi tập thuộc hội viên đang đăng nhập
+
+        // 2. Tìm buổi tập của hội viên
         $buoiTap = BuoiTap::where('id', $id)
             ->where('id_hoi_vien', $user->id)
             ->first();
@@ -456,15 +610,13 @@ class BuoiTapController extends Controller
             ], 404);
         }
 
-        // 4. Kiểm tra trạng thái buổi tập
-        if ($buoiTap->tinh_trang != 1) {
+        if ((int) $buoiTap->tinh_trang !== 1) {
             return response()->json([
                 'success' => false,
                 'message' => 'Buổi tập không ở trạng thái đang tập',
             ], 422);
         }
 
-        // 5. Kiểm tra thời gian bắt đầu
         if (!$buoiTap->thoi_gian_bat_dau) {
             return response()->json([
                 'success' => false,
@@ -472,14 +624,16 @@ class BuoiTapController extends Controller
             ], 422);
         }
 
-        // 6. Tính tổng thời gian buổi tập
+        // 3. Tính thời gian tập
         $now = now();
         $batDau = Carbon::parse($buoiTap->thoi_gian_bat_dau);
-        $tongThoiGian = max( 0, $batDau->diffInSeconds($now));
+        $tongThoiGian = max(0, $batDau->diffInSeconds($now));
 
-        
-        // 7. Tìm chương trình bài tập hiện tại.
-        $chuongTrinhBaiTap = ChuongTrinhBaiTap::find( $buoiTap->id_chuong_trinh_bai_tap);
+        // 4. Tìm chương trình bài tập hiện tại
+        $chuongTrinhBaiTap = ChuongTrinhBaiTap::find(
+            $buoiTap->id_chuong_trinh_bai_tap
+        );
+
         if (!$chuongTrinhBaiTap) {
             return response()->json([
                 'success' => false,
@@ -487,11 +641,12 @@ class BuoiTapController extends Controller
             ], 404);
         }
 
-        // 8. Tìm đăng ký chương trình của hội viên.
-        $dangKy = DKChuongTrinh::where( 'id_hoi_vien', $user->id)
-            ->where( 'id_chuong_trinh', $chuongTrinhBaiTap->id_chuong_trinh)
+        // 5. Tìm đăng ký chương trình của hội viên
+        $dangKy = DKChuongTrinh::where('id_hoi_vien', $user->id)
+            ->where('id_chuong_trinh', $chuongTrinhBaiTap->id_chuong_trinh)
             ->where('tinh_trang', 1)
             ->first();
+
         if (!$dangKy) {
             return response()->json([
                 'success' => false,
@@ -499,29 +654,42 @@ class BuoiTapController extends Controller
             ], 404);
         }
 
-        // 9. Lấy TOÀN BỘ tiến độ tích lũy của chương trình.
-        // Không lọc theo id_buoi_tap vì các bản ghi tiến độ
-        // được dùng chung qua nhiều buổi tập.
-        $tienDos = TienDoBaiTap::where( 'id_dang_ky_chuong_trinh', $dangKy->id)
-            ->where( 'id_chuong_trinh_bai_tap', $buoiTap->id_chuong_trinh_bai_tap)
+        // 6. Lấy tiến độ của tất cả bài tập trong ngày hiện tại
+        $tienDos = TienDoBaiTap::where(
+            'id_dang_ky_chuong_trinh',
+            $dangKy->id
+        )
+            ->where(
+                'id_chuong_trinh_bai_tap',
+                $buoiTap->id_chuong_trinh_bai_tap
+            )
             ->get();
+
         $tongSoBai = $tienDos->count();
-        $tongSoLanLap = (int) $tienDos->sum( 'so_rep_thuc_te');
+
+        $tongSoLanLap = (int) $tienDos->sum('so_rep_thuc_te');
+
         $soBaiHoanThanh = $tienDos
             ->where('tinh_trang', 2)
             ->count();
 
-        // 10. Tính phần trăm tích lũy từ tiến độ đã lưu.
-        $tongPhanTram = (float) $tienDos->sum( 'phan_tram_hoan_thanh');
+        $tongPhanTram = (float) $tienDos->sum(
+            'phan_tram_hoan_thanh'
+        );
 
-        $phanTram = $tongSoBai > 0 ? round($tongPhanTram / $tongSoBai, 2) : 0;
+        $phanTram = $tongSoBai > 0
+            ? round($tongPhanTram / $tongSoBai, 2)
+            : 0;
 
-        // 11. Xác định trạng thái kết thúc buổi tập.
-        // 2 = tất cả bài tập hoàn thành.
-        // 3 = kết thúc nhưng còn bài chưa hoàn thành.
-        $tinhTrang = ( $tongSoBai > 0 && $soBaiHoanThanh === $tongSoBai ) ? 2 : 3;
+        // 7. Xác định trạng thái kết thúc buổi tập
+        // 2 = tất cả bài tập hoàn thành
+        // 3 = còn bài tập chưa hoàn thành
+        $tinhTrang = (
+            $tongSoBai > 0
+            && $soBaiHoanThanh === $tongSoBai
+        ) ? 2 : 3;
 
-        // 12. Lưu thông tin kết thúc buổi tập.
+        // 8. Lưu kết quả buổi tập
         $buoiTap->thoi_gian_ket_thuc = $now;
         $buoiTap->tong_thoi_gian_giay = $tongThoiGian;
 
@@ -535,15 +703,39 @@ class BuoiTapController extends Controller
         $buoiTap->tinh_trang = $tinhTrang;
         $buoiTap->save();
 
-        // 13. Trả danh sách tiến độ tích lũy.
+        // 9. Nếu hoàn thành tất cả bài tập, mở ngày tập tiếp theo
+        $ngayTiepTheo = null;
+
+        if ($tinhTrang === 2) {
+            $ngayTiepTheo = ChuongTrinhBaiTap::where(
+                'id_chuong_trinh',
+                $chuongTrinhBaiTap->id_chuong_trinh
+            )
+                ->where(
+                    'ngay_thu',
+                    '>',
+                    $chuongTrinhBaiTap->ngay_thu
+                )
+                ->orderBy('ngay_thu')
+                ->first();
+
+            if ($ngayTiepTheo) {
+                $ngayTiepTheo->tinh_trang = 1;
+                $ngayTiepTheo->save();
+            }
+        }
+
+        // 10. Chi tiết tiến độ
         $chiTietTienDo = $tienDos->map(function ($item) {
             return [
                 'id_tien_do_bai_tap' => $item->id,
                 'id_bai_tap' => $item->id_bai_tap,
-                'phan_tram_hoan_thanh' => (float) $item->phan_tram_hoan_thanh,
+                'phan_tram_hoan_thanh' =>
+                    (float) $item->phan_tram_hoan_thanh,
                 'tinh_trang' => $item->tinh_trang,
             ];
         })->values();
+
         return response()->json([
             'success' => true,
             'message' => 'Kết thúc buổi tập thành công',
@@ -559,9 +751,213 @@ class BuoiTapController extends Controller
                 'so_bai_hoan_thanh' => $soBaiHoanThanh,
                 'tinh_trang' => $tinhTrang,
                 'chi_tiet_tien_do' => $chiTietTienDo,
+
+                // Thông tin ngày tập tiếp theo
+                'da_mo_ngay_tiep_theo' => $ngayTiepTheo !== null,
+                'ngay_tiep_theo' => $ngayTiepTheo ? [
+                    'id' => $ngayTiepTheo->id,
+                    'ngay_thu' => $ngayTiepTheo->ngay_thu,
+                    'tinh_trang' => $ngayTiepTheo->tinh_trang,
+                ] : null,
             ],
         ], 200);
-
     }
+
+
+
+    
+    
+   
+
+
+    public function getLatestProgress(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không xác định được hội viên đăng nhập',
+            ], 401);
+        }
+
+        $idLichTap = $request->id_lich_tap;
+        $idChuongTrinhBaiTap = $request->id_chuong_trinh_bai_tap;
+        
+        $buoiTap = BuoiTap::where('id_hoi_vien', $user->id)
+            ->where('id_lich_tap', $idLichTap)
+            ->where('id_chuong_trinh_bai_tap', $idChuongTrinhBaiTap)
+            ->orderByDesc('thoi_gian_bat_dau')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$buoiTap) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Chưa có dữ liệu tập luyện',
+                'data' => [
+                    'phan_tram_hoan_thanh' => 0,
+                    'id_buoi_tap' => null,
+                    'tong_so_bai' => 0,
+                    'so_bai_hoan_thanh' => 0,
+                    'danh_sach_bai_tap' => [],
+                ],
+            ]);
+        }
+
+        $tongSoBai = TienDoBaiTap::where( 'id_chuong_trinh_bai_tap', $idChuongTrinhBaiTap)
+            ->select('id_bai_tap')
+            ->distinct()
+            ->count('id_bai_tap');
+
+        $soBaiHoanThanh = TienDoBaiTap::where('id_chuong_trinh_bai_tap', $idChuongTrinhBaiTap)
+            ->where('phan_tram_hoan_thanh', '>=', 100)
+            ->select('id_bai_tap')
+            ->distinct()
+            ->count('id_bai_tap');
+
+        $idTienDoMoiNhat = TienDoBaiTap::where('id_chuong_trinh_bai_tap', $idChuongTrinhBaiTap)
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('id_bai_tap')
+            ->pluck('id');
+
+        $danhSachBaiTap = TienDoBaiTap::whereIn('id', $idTienDoMoiNhat)
+            ->select('id_bai_tap', 'phan_tram_hoan_thanh', 'tinh_trang')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy tiến độ tập luyện thành công',
+            'data' => ['phan_tram_hoan_thanh' => (float) $buoiTap->phan_tram_hoan_thanh,
+                'id_buoi_tap' => $buoiTap->id,
+                'tong_so_bai' => $tongSoBai,
+                'so_bai_hoan_thanh' => $soBaiHoanThanh,
+                'danh_sach_bai_tap' => $danhSachBaiTap,
+            ],
+        ]);
+    }
+
+    public function getProgressPercent(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+
+        $ids = $request->query('ids', []);
+
+        $data = BuoiTap::where('id_hoi_vien', $user->id)
+            ->whereIn('id_chuong_trinh_bai_tap', $ids)
+            ->select(
+                'id_lich_tap',
+                'id_chuong_trinh_bai_tap',
+                'phan_tram_hoan_thanh'
+            )
+            ->orderByDesc('id')
+            ->get()
+            ->unique('id_chuong_trinh_bai_tap')
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
+
+
+
+
+
+
+
+
+
+
+   public function getHuanLuyenTiepTheo()
+{
+    // 1. Lấy hội viên đang đăng nhập
+    $user = Auth::guard('sanctum')->user();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Chưa đăng nhập',
+        ], 401);
+    }
+
+    // 2. Lấy chương trình hội viên đang đăng ký
+    $dangKy = DKChuongTrinh::where('id_hoi_vien', $user->id)
+        ->whereIn('tinh_trang', [0, 1, 3])
+        ->latest('id')
+        ->first();
+
+    if (!$dangKy) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Bạn chưa đăng ký chương trình tập',
+            'data' => [
+                'tong_ngay_da_hoan_thanh' => 0,
+                'tong_ngay_tap' => 0,
+                'huan_luyen_tiep_theo' => [],
+            ],
+        ]);
+    }
+
+    // 3. Lấy toàn bộ ngày tập của chương trình
+    $ngayTap = ChuongTrinhBaiTap::where(
+        'id_chuong_trinh',
+        $dangKy->id_chuong_trinh
+    )
+        ->orderBy('id', 'asc')
+        ->get();
+
+    // 4. Lấy ID những ngày đã hoàn thành
+    $idNgayDaHoanThanh = BuoiTap::where(
+        'id_hoi_vien',
+        $user->id
+    )
+        ->whereIn(
+            'id_chuong_trinh_bai_tap',
+            $ngayTap->pluck('id')->toArray()
+        )
+        ->where('tinh_trang', 2)
+        ->select('id_chuong_trinh_bai_tap')
+        ->distinct()
+        ->pluck('id_chuong_trinh_bai_tap')
+        ->toArray();
+
+    // 5. Đếm tổng ngày tập đã hoàn thành
+    $tongNgayDaHoanThanh = count($idNgayDaHoanThanh);
+
+    // 6. Lấy 3 ngày chưa hoàn thành tiếp theo
+    $tiepTheo = ChuongTrinhBaiTap::where(
+        'id_chuong_trinh',
+        $dangKy->id_chuong_trinh
+    )
+        ->whereNotIn('id', $idNgayDaHoanThanh)
+        ->orderBy('id', 'asc')
+        ->limit(3)
+        ->get();
+
+    // 7. Trả kết quả
+    return response()->json([
+        'success' => true,
+        'message' => 'Lấy tiến độ thành công',
+        'data' => [
+            'tong_ngay_da_hoan_thanh' => $tongNgayDaHoanThanh,
+            'tong_ngay_tap' => $ngayTap->count(),
+            'huan_luyen_tiep_theo' => $tiepTheo,
+        ],
+    ]);
+}
+
+
+
+
+
+
 
 }

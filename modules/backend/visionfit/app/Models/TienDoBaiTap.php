@@ -18,6 +18,7 @@ class TienDoBaiTap extends Model
         'so_rep_thuc_te',
         'thoi_gian_thuc_te_giay',
         'trong_luong_ta_thuc_te',
+        'phan_tram_hoan_thanh',
         'ly_do_bo_qua',
         'tinh_trang',
     ];
