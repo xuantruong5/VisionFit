@@ -492,22 +492,6 @@ class DangKyChuongTrinhController extends Controller
                         'btpl.id_noi_tap'
                     );
             })
-
-//             ->join(
-//     'bai_tap_phan_loai as btpl',
-//     'bt.id',
-//     '=',
-//     'btpl.id_bai_tap'
-// )
-// ->whereColumn(
-//     'dang_ky_chuong_trinh.id_cap_do',
-//     'btpl.id_cap_do'
-// )
-// ->whereColumn(
-//     'dang_ky_chuong_trinh.id_noi_tap',
-//     'btpl.id_noi_tap'
-// )
-
             // Lấy thông tin chi tiết bài tập
             ->leftJoin('chi_tiet_bai_tap as ctct','bt.id','=','ctct.id_bai_tap' )
             // Đúng ngày tập được yêu cầu
@@ -543,8 +527,14 @@ class DangKyChuongTrinhController extends Controller
                 'ctbtct.thu_tu'
             )
 
-            ->orderBy('ctbtct.thu_tu')
-            ->get();
+            ->where('ctbt.id', $id)
+            ->orderBy('ctbtct.thu_tu', 'asc')
+            ->get()
+            ->values()
+            ->map(function ($item, $index) {
+                $item->thu_tu = $index + 1;
+                return $item;
+            });
 
         return response()->json([
             'success' => true,

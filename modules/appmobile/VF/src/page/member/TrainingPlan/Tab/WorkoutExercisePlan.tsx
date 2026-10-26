@@ -13,30 +13,145 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const [loading, setLoading] = useState(true);
 
   const [isReversed, setIsReversed] = useState(false);
+  const [progressByDay, setProgressByDay] = useState<Record<number, number>>({});
+  const [tongNgayDaHoanThanh, setTongNgayDaHoanThanh] = useState(0);
+  const [tongNgayTap, setTongNgayTap] = useState(0);
+
   const getProgramExercises = async () => {
+    setLoading(true);
     try {
       const res = await apiFitlife.get("/client/list-program-exercises");
       if (!res.data.success || !Array.isArray(res.data.data)) {
         setProgram(null);
         setApiData([]);
+        setProgressByDay({});
         return;
       }
-      setApiData(res.data.data);
-      if (res.data.data.length > 0) {
-        setProgram(res.data.data[0]);
-      }
+      const days = res.data.data;
+
+      // Hiển thị danh sách ngay khi API chính trả về
+      setApiData(days);
+      setProgram(days.length > 0 ? days[0] : null);
+
+      // Mặc định 0% để giao diện không phải đợi API tiến độ
+      const initialProgress: Record<number, number> = {};
+
+      days.forEach((day: any) => {
+        const id = Number(day.id_chuong_trinh_bai_tap);
+
+        if (id > 0) {
+          initialProgress[id] = 0;
+        }
+      });
+
+      setProgressByDay(initialProgress);
+
+      // Không await: không chặn trạng thái loading
+      getProgressByDay(days).catch((error) => {
+        console.log("Lỗi tải tiến độ:", error);
+      });
     } catch (error) {
+      console.log("Lỗi lấy chương trình tập:", error);
       setProgram(null);
       setApiData([]);
+      setProgressByDay({});
     } finally {
       setLoading(false);
     }
   };
+  const getCompletedDays = async () => {
+    try {
+      const res = await apiFitlife.get("/client/huan-luyen-tiep-theo");
+
+      if (res.data?.success) {
+        const data = res.data.data;
+        setTongNgayDaHoanThanh( Number(data?.tong_ngay_da_hoan_thanh ?? 0) );
+        setTongNgayTap( Number(data?.tong_ngay_tap ?? 0));
+      }
+    } catch (error: any) {
+      console.log(
+        "Lỗi lấy tiến độ huấn luyện:",
+        error.response?.data ?? error.message
+      );
+    }
+  };
+
+
+
+
+  const getProgressByDay = async (days: any[]) => {
+    try {
+      if (days.length === 0) {
+        setProgressByDay({});
+        return;
+      }
+      const ids = [
+        ...new Set(
+          days
+            .map((day: any) =>
+              Number(day.id_chuong_trinh_bai_tap)
+            )
+            .filter((id: number) => Number.isFinite(id) && id > 0)
+        ),
+      ];
+
+      if (ids.length === 0) {
+        setProgressByDay({});
+        return;
+      }
+
+      const res = await apiFitlife.get(
+        "/client/buoi-tap/phan-tram-hoan-thanh-tat-ca",
+        {
+          params: {
+            ids,
+          },
+        }
+      );
+
+      console.log("API phần trăm hoàn thành:", res.data);
+
+      if (!res.data.success || !Array.isArray(res.data.data)) {
+        return;
+      }
+
+      const progressMap: Record<number, number> = {};
+      ids.forEach((id) => {
+        progressMap[id] = 0;
+      });
+
+      res.data.data.forEach((item: any) => {
+        const id = Number(item.id_chuong_trinh_bai_tap);
+        const percent = Number(item.phan_tram_hoan_thanh ?? 0);
+
+        if (Number.isFinite(id) && id > 0) {
+          progressMap[id] = Math.max(
+            0,
+            Math.min(100, percent)
+          );
+        }
+      });
+
+      setProgressByDay(progressMap);
+    } catch (error: any) {
+      console.log(
+        "Lỗi lấy phần trăm hoàn thành:",
+        error.response?.data ?? error.message
+      );
+    }
+  };
+
+
+
+
   useFocusEffect(
     useCallback(() => {
       getProgramExercises();
+      getCompletedDays();
     }, [])
   );
+
+
 
   const handleDayPress = (day: any) => {
     if (day.isLocked) return;
@@ -45,9 +160,9 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
       dayType: day.type,
       ngayThu: day.ngayThu,
       id_chuong_trinh_bai_tap: day.id,
-      id_dang_ky_chuong_trinh:program?.id_dang_ky_chuong_trinh,
+      id_dang_ky_chuong_trinh: program?.id_dang_ky_chuong_trinh,
       id_chuong_trinh: program?.id_chuong_trinh,
-      
+
     });
   };
   return (
@@ -82,7 +197,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
               </Text>
 
               <Text style={styles.bannerInfoText}>
-                Tập luyện hoàn tất: 0
+                Tập luyện hoàn tất: {tongNgayDaHoanThanh}/{tongNgayTap} ngày
               </Text>
             </View>
 
@@ -138,9 +253,20 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                   {/* Chỉ icon thay đổi theo trạng thái */}
                   <View style={styles.dayCardIconWrapper}>
                     {isUnlocked ? (
-                      <View style={styles.progressCircle}>
-                        <Text style={styles.progressText}>0%</Text>
-                      </View>
+                      (() => {
+                        const progress = progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0;
+                        const progressColor = progress <= 0 ? "#FF5262"
+                          : progress < 50
+                            ? "#F4C542"
+                            : "#18BEC3";
+                        return (
+                          <View style={[ styles.progressCircle, { borderColor: progressColor }, ]} >
+                            <Text style={[ styles.progressText,  { color: progressColor }, ]} >
+                              {progress}%
+                            </Text>
+                          </View>
+                        );
+                      })()
                     ) : (
                       <View style={styles.lockCircle}>
                         <Ionicons name="lock-closed-outline" size={wp("6%")} color="#FF9EA7" style={{ opacity: 0.5 }} />
@@ -352,8 +478,8 @@ const styles = StyleSheet.create({
   },
 
   progressCircle: {
-    width: wp("12%"),
-    height: wp("12%"),
+    width: wp("13%"),
+    height: wp("13.2%"),
     borderRadius: wp("6%"),
     borderWidth: 2,
     borderColor: "#FFB0B7",

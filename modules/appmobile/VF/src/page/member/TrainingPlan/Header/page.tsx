@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
@@ -7,9 +7,17 @@ import DietScreen from "../Tab/DietScreen";
 import WorkoutExercisePlan from "../Tab/WorkoutExercisePlan";
 import MyPlansModal from "./MyPlansModal";
 
-const HeaderPage = ({ navigation }: any) => {
+const HeaderPage = ({ navigation,route  }: any) => {
     const [activeTab, setActiveTab] = useState("Trang tổng quan");
     const [myPlansVisible, setMyPlansVisible] = useState(false);
+    useEffect(() => {
+        if (route?.params?.initialTab) {
+            setActiveTab(route.params.initialTab);
+
+            // Xóa tham số để tránh tự chuyển tab lại khi component cập nhật
+            navigation.setParams({ initialTab: undefined });
+        }
+    }, [route?.params?.initialTab, navigation]);
 
     return (
         <View style={styles.container}>

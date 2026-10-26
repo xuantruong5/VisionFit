@@ -8,8 +8,15 @@ import apiFitlife from "../../../../general/api";
 const DashboardScreen = () => {
     const [program, setProgram] = useState<any>(null);
     const [trainingDates, setTrainingDates] = useState<string[]>([]);
+    const [tongNgayDaHoanThanh, setTongNgayDaHoanThanh] = useState(0);
+    const [tongNgayTap, setTongNgayTap] = useState(0);
+    const [workouts, setWorkouts] = useState<any[]>([]);
+
+
+
+
     // Hàm lấy danh sách chương trình
-   const getListPrograms = async () => {
+    const getListPrograms = async () => {
         try {
             const res = await apiFitlife.get("/client/list-programs");
             if (res.data.success && res.data.data.length > 0) {
@@ -26,8 +33,35 @@ const DashboardScreen = () => {
             console.log("Lỗi lấy chương trình tập:", error);
         }
     };
+
+    const getHuanLuyenTiepTheo = async () => {
+        try {
+            const res = await apiFitlife.get("/client/huan-luyen-tiep-theo");
+
+            if (res.data.success) {
+                const data = res.data.data;
+                setTongNgayDaHoanThanh(Number(data.tong_ngay_da_hoan_thanh || 0));
+                setTongNgayTap(Number(data.tong_ngay_tap || 0));
+                setWorkouts(Array.isArray(data.huan_luyen_tiep_theo) ? data.huan_luyen_tiep_theo : []);
+                console.log(
+                    "Huấn luyện tiếp theo:",
+                    data.huan_luyen_tiep_theo
+                );
+            }
+        } catch (error: any) {
+            console.log(
+                "Lỗi lấy huấn luyện tiếp theo:",
+                error.response?.data || error.message
+            );
+        }
+    };
+
+
+
+
     useEffect(() => {
         getListPrograms();
+        getHuanLuyenTiepTheo();
     }, []);
 
     // lấy lịch 
@@ -50,26 +84,6 @@ const DashboardScreen = () => {
 
 
 
-    const workouts = [
-        {
-            day: "1 ngày tập luyện",
-            title: "ngực + cơ tay sau",
-            progress: "0%",
-            locked: false,
-        },
-        {
-            day: "2 ngày tập luyện",
-            title: "lưng + cơ tay trước",
-            progress: "",
-            locked: true,
-        },
-        {
-            day: "3 ngày tập luyện",
-            title: "chân + vai",
-            progress: "",
-            locked: true,
-        },
-    ];
 
 
     return (
@@ -87,7 +101,7 @@ const DashboardScreen = () => {
                 {/* Banner chương trình */}
                 <View style={styles.programCard}>
                     <ImageBackground
-                       source={{ uri: program?.anh_dai_dien}}
+                        source={{ uri: program?.anh_dai_dien }}
                         style={styles.programImage} imageStyle={styles.programImageStyle} >
                         {/* Lớp phủ tối */}
                         <View style={styles.overlay} />
@@ -97,7 +111,7 @@ const DashboardScreen = () => {
                             </Text>
 
                             <View style={styles.programInfoRow}>
-                                <Ionicons name="move-outline"size={wp("4.5%")} color="#fff"/>
+                                <Ionicons name="move-outline" size={wp("4.5%")} color="#fff" />
 
                                 <Text style={styles.programInfo}>
                                     {program?.ten_noi_tap || "Chưa xác định nơi tập"}
@@ -106,7 +120,7 @@ const DashboardScreen = () => {
                                 <View style={styles.stars}>
                                     {[1, 2, 3, 4, 5].map((item) => (
                                         <Ionicons key={item}
-                                            name={ item <= (program?.so_sao || 0) ? "star" : "star-outline" } size={wp("5%")} color="#fff" />
+                                            name={item <= (program?.so_sao || 0) ? "star" : "star-outline"} size={wp("5%")} color="#fff" />
                                     ))}
                                 </View>
 
@@ -122,7 +136,7 @@ const DashboardScreen = () => {
                             </Text>
 
                             <Text style={styles.completed}>
-                                Tập luyện hoàn tất: 0
+                                Tập luyện hoàn tất: {tongNgayDaHoanThanh}/{tongNgayTap} ngày
                             </Text>
                         </View>
                         {/* Nút chia sẻ */}
@@ -135,37 +149,56 @@ const DashboardScreen = () => {
                 <Text style={styles.sectionTitle}>
                     Huấn luyện tiếp theo
                 </Text>
-                {/* Danh sách buổi tập */}
+                {/* Danh sách buổi tập lấy từ API */}
                 <View style={styles.workoutList}>
-                    {workouts.map((item, index) => (
-                        <TouchableOpacity key={index} activeOpacity={0.8} style={styles.workoutCard} >
-                            {/* Vòng tiến độ */}
-                            {item.locked ? (
-                                <View style={styles.lockCircle}>
-                                    <Ionicons name="lock-closed-outline" size={wp("7%")} color="#F5C4C8" />
-                                </View>
-                            ) : (
-                                <View style={styles.progressCircle}>
-                                    <Text style={styles.progressText}>
-                                        {item.progress}
-                                    </Text>
-                                </View>
-                            )}
-                            {/* Nội dung */}
-                            <View style={styles.workoutInfo}>
-                                <Text style={styles.workoutDay}>
-                                    {item.day}
-                                </Text>
-                                <Text style={styles.workoutTitle}>
-                                    {item.title}
-                                </Text>
-                            </View>
-                            {/* Chấm trạng thái */}
-                            {!item.locked && (
-                                <View style={styles.statusDot} />
-                            )}
-                        </TouchableOpacity>
-                    ))}
+                    {workouts.length > 0 ? (
+                        workouts.map((item) => {
+                            const isLocked = Number(item.tinh_trang) === 0;
+                            return (
+                                <TouchableOpacity key={item.id} activeOpacity={0.8} style={styles.workoutCard}
+                                    onPress={() => {
+                                        console.log(
+                                            "Chọn ngày tập:",
+                                            item.ngay_thu,
+                                            item.ten_ngay_tap
+                                        );
+                                    }}
+                                >
+                                    {/* Vòng tròn trạng thái */}
+                                    {isLocked ? (
+                                        <View style={styles.lockCircle}>
+                                            <Ionicons name="lock-closed-outline" size={wp("7%")} color="#F5C4C8" />
+                                        </View>
+                                    ) : (
+                                        <View style={styles.progressCircle}>
+                                            <Text style={styles.progressText}>
+                                                0%
+                                            </Text>
+                                        </View>
+                                    )}
+
+                                    {/* Thông tin buổi tập */}
+                                    <View style={styles.workoutInfo}>
+                                        <Text style={styles.workoutDay}>
+                                             {item.ngay_thu} Ngày tập luyện
+                                        </Text>
+                                        <Text style={styles.workoutTitle}>
+                                            {item.ten_ngay_tap}
+                                        </Text>
+                                    </View>
+                                    {/* Chấm trạng thái */}
+                                    {!isLocked && (
+                                        <View style={styles.statusDot} />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })
+                    ) : (
+                        <Text style={{ color: "#7590A6", fontSize: wp("3.8%"), textAlign: "center", paddingVertical: hp("2%"), }}
+                        >
+                            Chưa có buổi tập tiếp theo.
+                        </Text>
+                    )}
                 </View>
 
                 {/* Lịch tập luyện */}
