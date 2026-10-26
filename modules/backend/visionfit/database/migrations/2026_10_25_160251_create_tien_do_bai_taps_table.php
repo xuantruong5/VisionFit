@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('trong_luong_ta_thuc_te', 6, 2)->nullable();
             $table->text('ly_do_bo_qua')->nullable();
             $table->integer('tinh_trang')->nullable();
+            $table->decimal('phan_tram_hoan_thanh', 5, 2)->default(0);
             $table->timestamps();
         });
     }
