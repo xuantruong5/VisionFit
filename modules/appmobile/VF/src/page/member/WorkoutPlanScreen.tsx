@@ -15,9 +15,16 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
       <View style={styles.header}>
         <View style={styles.headerPlaceholder} />
 
-        <Text style={styles.headerTitle}>Chọn kế hoạch tập luyện của bạn</Text>
+        <Text style={styles.headerTitle}>Chọn kế hoạch tập luyện</Text>
 
-        <View style={styles.headerPlaceholder} />
+        <TouchableOpacity
+          style={styles.aiHeaderBtn}
+          onPress={() => navigation.navigate('AiConsultationScreen')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+          <Text style={styles.aiHeaderBtnText}>AI</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
@@ -75,6 +82,21 @@ const styles = StyleSheet.create({
 
   headerPlaceholder: {
     width: 44,
+  },
+  aiHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0D7F8D',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    elevation: 2,
+  },
+  aiHeaderBtnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginLeft: 4,
   },
   content: {
     flex: 1,

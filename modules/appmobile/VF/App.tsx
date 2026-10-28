@@ -1,4 +1,4 @@
-﻿import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { Alert, Animated, View, Text } from "react-native";
@@ -10,8 +10,6 @@ import WorkoutPlanScreen from "./src/page/member/WorkoutPlanScreen";
 import Homepage from "./src/page/trainners/HomePage";
 import AuthScreen from "./src/page/member/AuthScreen";
 import Login from "./src/page/login";
-import GenderSelection from "./src/page/member/GenderSelection";
-import BodyMetrics from "./src/page/member/BodyMetrics";
 import PhongTap from "./src/page/member/PhongTap";
 import TrainerAuthScreen from "./src/page/trainners/TrainerAuthScreen";
 import Dashboard from "./src/page/trainners/Dashboard";
@@ -62,6 +60,7 @@ import OnboardingScreen1 from "./src/page/screens/OnboardingScreen1";
 import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
 import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
 import ExerciseDetailScreen from "./src/page/member/TrainingPlan/Tab/ExerciseDetailScreen";
+import AiConsultationScreen from "./src/page/member/AiConsultationScreen";
 
 
 
@@ -76,6 +75,7 @@ function MemberWorkoutNavigator() {
     <MemberWorkoutStack.Navigator initialRouteName="ExercisePage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+      <MemberWorkoutStack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
 
       <MemberWorkoutStack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
 
@@ -284,9 +284,10 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="AiConsultationScreen"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
+        <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
         <Stack.Screen name="Onloading" component={Onloading}/>
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} />
@@ -294,9 +295,6 @@ const App = () => {
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="AuthScreen" component={AuthScreen} />
         {/* cua member */}
-        <Stack.Screen name="GenderSelection" component={GenderSelection} />
-        <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
- 
         <Stack.Screen name="PhongTap" component={PhongTap} />
         {/* <Stack.Screen name="headerPage" component={headerPage} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
