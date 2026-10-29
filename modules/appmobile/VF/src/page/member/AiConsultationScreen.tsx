@@ -15,6 +15,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
 
+import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
+
 // Định nghĩa các tùy chọn
 const ACTIVITY_LEVELS = [
   { id: 1.2, title: 'Ít vận động', desc: 'Làm việc văn phòng, ít đi lại' },
@@ -212,16 +215,10 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => (navigation?.canGoBack() ? navigation.goBack() : null)}
-        >
-          <Ionicons name="chevron-back" size={24} color="#0D7F8D" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Hồ Sơ & Yêu Cầu AI</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <AppHeader
+        title="Hồ Sơ & Yêu Cầu AI"
+        onBack={() => (navigation?.canGoBack() ? navigation.goBack() : null)}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -586,7 +583,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   aiBanner: {
     backgroundColor: '#0D7F8D',

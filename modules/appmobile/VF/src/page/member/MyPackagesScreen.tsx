@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppHeader from '../../components/AppHeader';
 
 const C = {
   primary: '#0D7F8D',
@@ -73,14 +74,13 @@ const MyPackagesScreen = ({ navigation }: any) => {
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={23} color={C.text} />
-        </TouchableOpacity>
-
-        <Text style={s.headerTitle}>Gói tập của tôi</Text>
-        <Ionicons name="barbell-outline" size={24} color={C.primary} />
-      </View>
+      <AppHeader
+        title="Gói tập của tôi"
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <Ionicons name="barbell-outline" size={22} color={C.primary} />
+        }
+      />
 
       {loading ? (
         <View style={s.center}>

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppHeader from '../../components/AppHeader';
 
 const C = {
     primary: '#0D7F8D',
@@ -143,13 +144,13 @@ const PaymentScreen = ({ navigation, route }: any) => {
             <StatusBar barStyle="dark-content" />
 
             {/* Header */}
-            <View style={s.header}>
-                <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={23} color={C.text} />
-                </TouchableOpacity>
-                <Text style={s.headerTitle}>Thanh toán</Text>
-                <Ionicons name="card-outline" size={24} color={C.primary} />
-            </View>
+            <AppHeader
+                title="Thanh toán"
+                onBack={() => navigation.goBack()}
+                rightComponent={
+                    <Ionicons name="card-outline" size={22} color={C.primary} />
+                }
+            />
 
             {/* Progress */}
             <View style={s.progress}>

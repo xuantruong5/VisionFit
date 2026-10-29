@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppHeader from '../../components/AppHeader';
 
 const C = {
   primary: '#0D7F8D', dark: '#075865', bg: '#F4FAFB',
@@ -122,13 +123,14 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
 
-      <View style={s.header}>
-        <TouchableOpacity style={s.back} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={23} color={C.text} />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Xem lại đăng ký</Text>
-        <Ionicons name="reader-outline" size={23} color={C.primary} />
-      </View>
+      {/* Header */}
+      <AppHeader
+        title="Xem lại đăng ký"
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <Ionicons name="reader-outline" size={22} color={C.primary} />
+        }
+      />
 
       <View style={s.progress}>
         <View style={s.between}>

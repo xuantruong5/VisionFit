@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu hồ sơ ban đầu (Frontend Mock Data)
 const INITIAL_MEMBER = {
@@ -156,30 +158,14 @@ const MemberProfile = ({ navigation }: any) => {
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle="dark-content" />
 
-            {/* HEADER - TƯƠNG ĐỒNG WORKOUTPLANSCREEN */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => (navigation?.canGoBack?.() ? navigation.goBack() : null)}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons
-                        name={navigation?.canGoBack?.() ? 'chevron-back' : 'person-circle-outline'}
-                        size={26}
-                        color="#075E68"
-                    />
-                </TouchableOpacity>
-
-                <Text style={styles.headerTitle}>Hồ sơ hội viên</Text>
-
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => setShowCardModal(true)}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name="qr-code-outline" size={24} color="#0D7F8D" />
-                </TouchableOpacity>
-            </View>
+            {/* HEADER ĐỒNG BỘ */}
+            <AppHeader
+                title="Hồ sơ hội viên"
+                showBack={navigation?.canGoBack?.()}
+                onBack={() => navigation?.goBack?.()}
+                rightIcon="qr-code-outline"
+                onRightPress={() => setShowCardModal(true)}
+            />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -858,7 +844,7 @@ const styles = StyleSheet.create({
     },
 
     scrollContent: {
-        paddingBottom: 40,
+        paddingBottom: 110,
     },
 
     // HEADER THIẾT KẾ ĐỒNG BỘ VỚI WORKOUTPLANSCREEN

@@ -5,6 +5,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
+import { COLORS, SHADOWS } from "../../../../general/theme";
 
 const DietScreen = () => {
     // do trang header dang reder trực tiếp nên mới dùng cách này còn kh mọi người cứ dùng cách cũ 
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
     },
 
     selectedDay: {
-        backgroundColor: "#18B9B8",
+        backgroundColor: COLORS.primary,
     },
 
     dayText: {
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
         borderRadius: wp("1.8%"),
     },
     activeTabButton: {
-        backgroundColor: "#58758C",
+        backgroundColor: COLORS.primary,
     },
     tabText: {
         fontSize: wp("3.1%"),

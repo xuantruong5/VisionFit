@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView, } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
-import { Alert } from 'react-native';
+import AppHeader from "../../components/AppHeader";
+import { COLORS, SHADOWS } from "../../general/theme";
+
 const AuthScreen = ({ navigation }: any) => {
     const [isRegister, setIsRegister] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
@@ -11,7 +14,6 @@ const AuthScreen = ({ navigation }: any) => {
     const [password, setPassword] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-
 
     const handleLogin = async () => {
         if (!email.trim() || !password) {
@@ -76,33 +78,36 @@ const AuthScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} >
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={25} color="#11343A" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>
-                        Đăng nhập/Đăng ký
-                    </Text>
-                    <View style={styles.headerRight} />
-                </View>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <AppHeader
+                title="Tài khoản VisionFit"
+                onBack={() => navigation.goBack()}
+                showBack={navigation?.canGoBack?.()}
+            />
+
+            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 {/* Tab Đăng ký / Đăng nhập */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
-                        style={[styles.tab, isRegister && styles.activeTab,]} onPress={() => setIsRegister(true)} >
-                        <Text
-                            style={[styles.tabText, isRegister && styles.activeTabText,]} >
+                        style={[styles.tab, isRegister && styles.activeTab]}
+                        onPress={() => setIsRegister(true)}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={[styles.tabText, isRegister && styles.activeTabText]}>
                             Đăng ký
                         </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.tab, !isRegister && styles.activeTab,]} onPress={() => setIsRegister(false)} >
-                        <Text style={[styles.tabText, !isRegister && styles.activeTabText,]} >
+                    <TouchableOpacity
+                        style={[styles.tab, !isRegister && styles.activeTab]}
+                        onPress={() => setIsRegister(false)}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={[styles.tabText, !isRegister && styles.activeTabText]}>
                             Đăng nhập
                         </Text>
                     </TouchableOpacity>
                 </View>
+
                 {/* Email */}
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Email</Text>
@@ -113,7 +118,8 @@ const AuthScreen = ({ navigation }: any) => {
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
-                        autoCapitalize="none" />
+                        autoCapitalize="none"
+                    />
                 </View>
 
                 {/* Mật khẩu */}
@@ -126,13 +132,18 @@ const AuthScreen = ({ navigation }: any) => {
                             placeholderTextColor="#71949A"
                             value={password}
                             onChangeText={setPassword}
-                            secureTextEntry={!showPassword} />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton} >
+                            secureTextEntry={!showPassword}
+                        />
+                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
                             <Ionicons
-                                name={showPassword ? "eye-outline" : "eye-off-outline"} size={25} color="#71949A" />
+                                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                size={22}
+                                color="#71949A"
+                            />
                         </TouchableOpacity>
                     </View>
                 </View>
+
                 {/* Form Đăng ký */}
                 {isRegister && (
                     <>
@@ -158,8 +169,7 @@ const AuthScreen = ({ navigation }: any) => {
                         </View>
                         <View style={styles.policyContainer}>
                             <Text style={styles.policyText}>
-                                Bằng việc tiếp tục sử dụng Fitness Online,
-                                bạn đồng ý chấp nhận
+                                Bằng việc tiếp tục sử dụng VisionFit, bạn đồng ý với
                             </Text>
                             <View style={styles.policyLinks}>
                                 <TouchableOpacity>
@@ -175,22 +185,23 @@ const AuthScreen = ({ navigation }: any) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.mainButton} onPress={() => { console.log("Đăng ký"); }} >
+                        <TouchableOpacity style={styles.mainButton} onPress={() => { console.log("Đăng ký"); }} activeOpacity={0.85}>
                             <Text style={styles.mainButtonText}>
                                 ĐĂNG KÝ
                             </Text>
                         </TouchableOpacity>
                     </>
                 )}
+
                 {/* Form Đăng nhập */}
                 {!isRegister && (
                     <>
-                        <TouchableOpacity style={styles.forgotContainer} >
+                        <TouchableOpacity style={styles.forgotContainer}>
                             <Text style={styles.forgotText}>
                                 Quên mật khẩu?
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.mainButton} onPress={handleLogin} >
+                        <TouchableOpacity style={styles.mainButton} onPress={handleLogin} activeOpacity={0.85}>
                             <Text style={styles.mainButtonText}>
                                 ĐĂNG NHẬP
                             </Text>
@@ -201,149 +212,134 @@ const AuthScreen = ({ navigation }: any) => {
         </SafeAreaView>
     );
 };
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.background,
     },
-
     content: {
-        paddingHorizontal: 24,
-        paddingTop: 50,
+        paddingHorizontal: 22,
+        paddingTop: 16,
         paddingBottom: 40,
     },
-    header: {
-        height: 70,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    backButton: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "#EAF9FB",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    headerRight: {
-        width: 46,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "700",
-
-    },
     tabContainer: {
-        height: 56,
-        backgroundColor: "#FFFFFF",
-        borderRadius: 30,
+        height: 52,
+        backgroundColor: COLORS.surfaceTeal,
+        borderRadius: 26,
         flexDirection: "row",
-        padding: 3,
-        marginTop: 8,
-        marginBottom: 38,
+        padding: 4,
+        marginTop: 4,
+        marginBottom: 28,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
-
     tab: {
         flex: 1,
-        borderRadius: 28,
+        borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",
     },
-
     activeTab: {
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
+        ...SHADOWS.card,
     },
-
     tabText: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: "600",
-        color: "#71949A",
+        color: COLORS.textMuted,
     },
     activeTabText: {
+        color: "#FFFFFF",
+        fontWeight: "700",
     },
     inputGroup: {
-        marginBottom: 27,
+        marginBottom: 20,
     },
     label: {
-        fontSize: 17,
-        fontWeight: "500",
-        marginBottom: 9,
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textDark,
+        marginBottom: 8,
     },
     input: {
-        height: 55,
-        borderBottomWidth: 1,
-        borderBottomColor: "#dedede",
-        fontSize: 17,
-        paddingHorizontal: 0,
+        height: 52,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        fontSize: 15,
+        paddingHorizontal: 16,
+        color: COLORS.textDark,
     },
     passwordContainer: {
-        height: 55,
-        borderBottomWidth: 1,
-        borderBottomColor: "#dedede",
+        height: 52,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         flexDirection: "row",
         alignItems: "center",
+        paddingHorizontal: 16,
     },
     passwordInput: {
         flex: 1,
-        height: 55,
-        fontSize: 17,
-
-        paddingHorizontal: 0,
+        height: 52,
+        fontSize: 15,
+        color: COLORS.textDark,
     },
     eyeButton: {
-        width: 40,
-        height: 50,
+        width: 36,
+        height: 40,
         alignItems: "center",
         justifyContent: "center",
     },
     policyContainer: {
-        marginTop: 8,
-        marginBottom: 30,
+        marginTop: 10,
+        marginBottom: 24,
         alignItems: "center",
     },
-
     policyText: {
-        fontSize: 14,
-        lineHeight: 21,
-        color: "#71949A",
+        fontSize: 13,
+        lineHeight: 19,
+        color: COLORS.textMuted,
         textAlign: "center",
     },
-
     policyLinks: {
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
         marginTop: 2,
     },
-
     linkText: {
-        color: "#40aaa9",
-        fontSize: 14,
-        fontWeight: "500",
+        color: COLORS.primary,
+        fontSize: 13,
+        fontWeight: "600",
     },
     mainButton: {
-        height: 56,
-        borderRadius: 8,
-        backgroundColor: "#0D7F8D",
+        height: 52,
+        borderRadius: 14,
+        backgroundColor: COLORS.primary,
         alignItems: "center",
         justifyContent: "center",
-        // marginTop: 5,
+        marginTop: 6,
+        ...SHADOWS.card,
     },
     mainButtonText: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "700",
-        color: "#71949A",
+        color: "#FFFFFF",
+        letterSpacing: 0.5,
     },
     forgotContainer: {
         marginTop: 4,
-        marginBottom: 30,
+        marginBottom: 26,
+        alignItems: "flex-end",
     },
-
     forgotText: {
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: "600",
-        color: "#075E68",
+        color: COLORS.primary,
     },
 });
 

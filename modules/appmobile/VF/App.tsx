@@ -61,6 +61,13 @@ import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
 import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
 import ExerciseDetailScreen from "./src/page/member/TrainingPlan/Tab/ExerciseDetailScreen";
 import AiConsultationScreen from "./src/page/member/AiConsultationScreen";
+import PTListScreen from "./src/page/member/PTListScreen";
+import WorkoutSelectionScreen from "./src/page/member/WorkoutSelectionScreen";
+import RegistrationReviewScreen from "./src/page/member/RegistrationReviewScreen";
+import PaymentScreen from "./src/page/member/PaymentScreen";
+import RegistrationSuccessScreen from "./src/page/member/RegistrationSuccessScreen";
+import MyPackagesScreen from "./src/page/member/MyPackagesScreen";
+import MyPackageDetailScreen from "./src/page/member/MyPackageDetailScreen";
 
 
 
@@ -296,27 +303,29 @@ const App = () => {
         <Stack.Screen name="AuthScreen" component={AuthScreen} />
         {/* cua member */}
         <Stack.Screen name="PhongTap" component={PhongTap} />
-        {/* <Stack.Screen name="headerPage" component={headerPage} />
-        <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="headerPage" component={headerPage} />
-        {/* <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+        <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="DietScreen" component={DietScreen} />
-       
         <Stack.Screen name="DietDetail" component={DietDetail} /> 
         <Stack.Screen name="ExercisePage" component={ExercisePage} />
         <Stack.Screen name="ReportPage" component={ReportPage} />
-        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} /> */}
-        {/* <Stack.Screen name="ResultPage" component={ResultPage}/> */}
-        {/* <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/> */}
+        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+        <Stack.Screen name="ResultPage" component={ResultPage}/>
+        <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/>
 
-
-
-         {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+        <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
         <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
         <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} /> 
         <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
-        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} /> */}
+        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
+        <Stack.Screen name="WorkoutSelectionScreen" component={WorkoutSelectionScreen} />
+        <Stack.Screen name="PTListScreen" component={PTListScreen} />
+        <Stack.Screen name="RegistrationReviewScreen" component={RegistrationReviewScreen} />
+        <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+        <Stack.Screen name="RegistrationSuccessScreen" component={RegistrationSuccessScreen} />
+        <Stack.Screen name="MyPackagesScreen" component={MyPackagesScreen} />
+        <Stack.Screen name="MyPackageDetailScreen" component={MyPackageDetailScreen} />
 
 
         {/* // gioi thieu */}

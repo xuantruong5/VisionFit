@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar, Modal, ScrollView, TextInput, DeviceEventEmitter, Alert, ActivityIndicator, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
@@ -6,6 +6,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-na
 import Svg, { Circle } from "react-native-svg";
 import Video from "react-native-video";
 import apiFitlife from "../../../../general/api";
+import { COLORS } from "../../../../general/theme";
 const ReportPage = ({ navigation, route }: any) => {
     // const [time, setTime] = useState(9);
     const [isRunning, setIsRunning] = useState(false);
@@ -82,7 +83,7 @@ const ReportPage = ({ navigation, route }: any) => {
     useEffect(() => {
         if (!isWorkoutRunning) return;
         const timer = setInterval(() => {
-            setWorkoutTime((prev) => prev + 1);
+            setWorkoutTime((prev: number) => prev + 1);
         }, 1000);
         return () => clearInterval(timer);
     }, [isWorkoutRunning]);
@@ -362,7 +363,7 @@ const ReportPage = ({ navigation, route }: any) => {
                             navigation.navigate("MemberTabs");
                         }
                     }} >
-                    <Ionicons name="chevron-back" size={wp("6%")} color="#61737B" />
+                    <Ionicons name="chevron-back" size={wp("6%")} color={COLORS.primary} />
                 </TouchableOpacity>
 
                 <Text style={styles.headerTitle}>
@@ -382,15 +383,14 @@ const ReportPage = ({ navigation, route }: any) => {
                     )}
                 </TouchableOpacity>
             </View>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
                 {/* ================= NOTICE ================= */}
                 <TouchableOpacity style={styles.noticeBox} activeOpacity={0.85} >
                     <View style={styles.noticeIcon}>
                         <Ionicons name="information-circle-outline" size={wp("5.5%")} color="#FFFFFF" />
                     </View>
                     <Text style={styles.noticeText}>
-                        Xem cách diễn vào nhật ký{"\n"}
-                        tập luyện
+                        Hướng dẫn ghi nhận hiệp tập & thời gian nghỉ
                     </Text>
                 </TouchableOpacity>
 

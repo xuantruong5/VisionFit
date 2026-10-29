@@ -6,9 +6,16 @@ import { Gesture, GestureDetector, } from "react-native-gesture-handler";
 import { PieChart } from "react-native-gifted-charts";
 
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
-const ResultPage = () => {
+import { COLORS } from "../../general/theme";
+
+const ResultPage = ({ navigation }: any) => {
     // phóng to mô hình người và xoay 
     const [showBodyModal, setShowBodyModal] = useState(false);
+    const currentDateStr = new Date().toLocaleDateString("vi-VN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    });
     const scale = useSharedValue(1);
     const rotation = useSharedValue(0);
     const pinch = Gesture.Pinch().onUpdate(e => { scale.value = Math.min(4, Math.max(0.5, scale.value * e.scale)); });
@@ -71,29 +78,26 @@ const ResultPage = () => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
                 {/* HEADER */}
                 <View style={styles.header}>
-                    <TouchableOpacity style={styles.circleButton}>
-                        <Ionicons name="close" size={34} color="#55738C" />
+                    <TouchableOpacity
+                        style={styles.circleButton}
+                        onPress={() => (navigation?.canGoBack() ? navigation.goBack() : navigation?.navigate("MemberTabs"))}
+                    >
+                        <Ionicons name="close" size={24} color={COLORS.primary} />
                     </TouchableOpacity>
                     {/* LOGO FITNESS ONLINE */}
                     <View style={styles.logoContainer}>
-                        {/* Sau này thay View này bằng Image logo */}
-                        {/* <Image
-                            source={require("../../assets/logo.png")}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        /> */}
                         <Text style={styles.logoText}>
                             VisionFit
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.circleButton}>
-                        <Ionicons name="share-outline" size={31} color="#55738C" />
+                    <TouchableOpacity style={styles.circleButton} onPress={() => {}}>
+                        <Ionicons name="share-outline" size={22} color={COLORS.primary} />
                     </TouchableOpacity>
                 </View>
                 {/* TITLE */}
                 <Text style={styles.title}>Kết quả tập luyện</Text>
                 <Text style={styles.date}>
-                    ngày 23 tháng 9, 2026, 15:08
+                    {currentDateStr}
                 </Text>
                 {/* WORKOUT SUMMARY */}
                 <View style={styles.summaryCard}>

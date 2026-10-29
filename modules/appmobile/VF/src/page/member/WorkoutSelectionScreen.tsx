@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppHeader from '../../components/AppHeader';
 
 const COLORS = {
     primary: '#0D7F8D', primaryDark: '#075865', background: '#F4FAFB',
@@ -244,15 +245,13 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
             <StatusBar barStyle="dark-content" />
 
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={23} color={COLORS.text} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Đăng ký gói tập</Text>
-                <View style={styles.headerRight}>
-                    <Ionicons name="fitness-outline" size={23} color={COLORS.primary} />
-                </View>
-            </View>
+            <AppHeader
+                title="Đăng ký gói tập"
+                onBack={() => navigation.goBack()}
+                rightComponent={
+                    <Ionicons name="fitness-outline" size={22} color={COLORS.primary} />
+                }
+            />
 
             {/* Progress */}
             <View style={styles.progressContainer}>

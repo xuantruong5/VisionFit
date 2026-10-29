@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppHeader from '../../components/AppHeader';
+import apiFitlife from '../../general/api';
 
 const COLORS = {
     primary: '#0D7F8D', dark: '#075865', background: '#F4FAFB',
@@ -152,19 +154,30 @@ const PTListScreen = ({ navigation, route }: any) => {
         restoreSelection();
     }, [route?.params?.selectedPackage]);
 
-    // Tải danh sách PT
-    // Frontend demo: sử dụng dữ liệu PT mẫu, không gọi API.
-    const loadTrainers = useCallback((refresh = false) => {
+    // Tải danh sách PT từ Backend API
+    const loadTrainers = useCallback(async (refresh = false) => {
         if (refresh) setRefreshing(true);
         else setLoading(true);
         setError(null);
 
-        setTrainers(MOCK_TRAINERS.filter(t =>
-            Number(t.tinh_trang) === 1 && Number(t.is_active) === 1 && Number(t.is_block) === 0
-        ));
-
-        setLoading(false);
-        setRefreshing(false);
+        try {
+            const res = await apiFitlife.get('/trainers');
+            if (res.data?.status && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+                setTrainers(res.data.data);
+            } else {
+                setTrainers(MOCK_TRAINERS.filter(t =>
+                    Number(t.tinh_trang) === 1 && Number(t.is_active) === 1 && Number(t.is_block) === 0
+                ));
+            }
+        } catch (e) {
+            console.log('Lỗi tải danh sách PT:', e);
+            setTrainers(MOCK_TRAINERS.filter(t =>
+                Number(t.tinh_trang) === 1 && Number(t.is_active) === 1 && Number(t.is_block) === 0
+            ));
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     }, []);
 
     useEffect(() => { loadTrainers(); }, [loadTrainers]);
@@ -324,15 +337,13 @@ const PTListScreen = ({ navigation, route }: any) => {
             <StatusBar barStyle="dark-content" />
 
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={23} color={COLORS.text} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Chọn huấn luyện viên</Text>
-                <View style={styles.headerIcon}>
-                    <Ionicons name="people-outline" size={23} color={COLORS.primary} />
-                </View>
-            </View>
+            <AppHeader
+                title="Chọn huấn luyện viên"
+                onBack={() => navigation.goBack()}
+                rightComponent={
+                    <Ionicons name="people-outline" size={22} color={COLORS.primary} />
+                }
+            />
 
             {/* Progress */}
             <View style={styles.progressContainer}>

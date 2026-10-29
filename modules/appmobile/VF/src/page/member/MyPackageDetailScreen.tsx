@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import AppHeader from '../../components/AppHeader';
 
 const C = {
   primary: '#0D7F8D',
@@ -38,17 +39,13 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity
-          style={s.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={23} color={C.text} />
-        </TouchableOpacity>
-
-        <Text style={s.headerTitle}>Chi tiết gói tập</Text>
-        <Ionicons name="document-text-outline" size={24} color={C.primary} />
-      </View>
+      <AppHeader
+        title="Chi tiết gói tập"
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <Ionicons name="document-text-outline" size={22} color={C.primary} />
+        }
+      />
 
       {!pkg ? (
         <View style={s.empty}>

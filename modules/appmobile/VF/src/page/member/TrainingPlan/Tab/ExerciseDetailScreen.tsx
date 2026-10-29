@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Switch, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -398,19 +398,20 @@ const styles = StyleSheet.create({
   tabItem: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    backgroundColor: '#EDF5F6',
   },
   tabItemActive: {
-    backgroundColor: '#264653',
+    backgroundColor: '#0D7F8D',
   },
   tabText: {
-    fontSize: 19,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#4B5563',
+    color: '#71949A',
   },
   tabTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
   content: {
     flex: 1,

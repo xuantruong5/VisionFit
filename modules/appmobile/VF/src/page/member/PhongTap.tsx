@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, Image, Modal, ScrollView, Alert,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppHeader from '../../components/AppHeader';
+import apiFitlife from '../../general/api';
 
 // Dữ liệu danh sách Thành phố
 const CITIES = [
@@ -370,9 +372,42 @@ const PhongTap = ({ navigation, route }: any) => {
         setSearchQuery('');
     };
 
+    // State lưu danh sách phòng tập (kết hợp Backend API + Mock)
+    const [gymList, setGymList] = useState<GymItem[]>(GYM_DATA);
+
+    useEffect(() => {
+        const fetchGyms = async () => {
+            try {
+                const res = await apiFitlife.get('/phong-gym');
+                if (res.data?.status && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+                    const beGyms: GymItem[] = res.data.data.map((g: any, index: number) => ({
+                        id: `gym-be-${g.id_phong_tap || index}`,
+                        name: g.ten_phong_tap || 'VisionFit Center',
+                        city: 'Đà Nẵng',
+                        district: g.dia_chi?.includes('Sơn Trà') ? 'Quận Sơn Trà' : (g.dia_chi?.includes('Cẩm Lệ') ? 'Quận Cẩm Lệ' : 'Quận Hải Châu'),
+                        address: g.dia_chi || 'Việt Nam',
+                        category: 'Phòng Gym cao cấp',
+                        rating: 5.0,
+                        reviewsCount: 320,
+                        openTime: '05:30 - 22:00',
+                        priceRange: 'Từ 450.000đ/tháng',
+                        distance: '1.2 km',
+                        image: g.anh_banner ? (g.anh_banner.startsWith('http') ? g.anh_banner : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop') : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop',
+                        features: ['Thiết bị chuyên nghiệp', 'Huấn luyện viên cá nhân', 'Locker & Tắm nóng lạnh', 'Wifi miễn phí'],
+                        phone: g.so_dien_thoai || '1900 6868',
+                    }));
+                    setGymList([...beGyms, ...GYM_DATA]);
+                }
+            } catch (e) {
+                console.log('Lỗi lấy phòng tập từ BE:', e);
+            }
+        };
+        fetchGyms();
+    }, []);
+
     // Lọc danh sách phòng tập theo 4 tiêu chí: Thành phố, Quận, Thể loại, Tên phòng tập
     const filteredGyms = useMemo(() => {
-        return GYM_DATA.filter((gym) => {
+        return gymList.filter((gym) => {
             // Lọc theo Thành phố
             if (gym.city !== selectedCity) {
                 return false;
@@ -511,16 +546,13 @@ const PhongTap = ({ navigation, route }: any) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-            {/* Header đồng bộ với BodyMetrics.tsx */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#0D7F8D" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Chọn Phòng Tập</Text>
-                <TouchableOpacity onPress={handleResetFilters} style={styles.resetButton}>
-                    <Ionicons name="refresh-outline" size={22} color="#0D7F8D" />
-                </TouchableOpacity>
-            </View>
+            {/* Header */}
+            <AppHeader
+                title="Chọn phòng tập"
+                onBack={() => navigation.goBack()}
+                rightIcon="refresh-outline"
+                onRightPress={handleResetFilters}
+            />
 
             {/* Nội dung chính */}
             <View style={styles.content}>

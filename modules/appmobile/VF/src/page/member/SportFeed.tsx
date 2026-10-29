@@ -2134,7 +2134,7 @@ const styles = StyleSheet.create({
     },
 
     feedContent: {
-        paddingBottom: 80,
+        paddingBottom: 110,
     },
 
     quickShare: {
@@ -2144,13 +2144,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 13,
         backgroundColor: '#FFFFFF',
         borderRadius: 18,
+        borderWidth: 1,
+        borderColor: '#E5F1F3',
         flexDirection: 'row',
         alignItems: 'center',
 
-        elevation: 1,
+        elevation: 2,
         shadowColor: '#000',
-        shadowOpacity: 0.03,
-        shadowRadius: 6,
+        shadowOpacity: 0.04,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 8,
     },
 
     myAvatar: {
@@ -2185,7 +2188,17 @@ const styles = StyleSheet.create({
 
     post: {
         backgroundColor: '#FFFFFF',
-        marginBottom: 8,
+        marginHorizontal: 12,
+        marginBottom: 14,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: '#E5F1F3',
+        overflow: 'hidden',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.04,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 8,
     },
 
     postHeader: {
