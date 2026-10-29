@@ -1,16 +1,18 @@
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator, } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useRoute } from '@react-navigation/native';
-import apiFitlife from '../../general/api';
 import LinearGradient from 'react-native-linear-gradient';
+import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
+import apiFitlife from '../../general/api';
+
 const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
-  const { goalId, goalName, gender, id_noi_tap, ten_noi_tap, } = route.params || {};
- 
+  const { goalId, goalName, gender, id_noi_tap, ten_noi_tap } = route.params || {};
+
   const [difficulties, setDifficulties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchDifficulties = async () => {
       try {
@@ -28,7 +30,6 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
         );
 
         const data = res.data?.data || [];
-
         setDifficulties(data);
       } catch (error: any) {
         console.log(
@@ -49,59 +50,80 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
     }
   }, [goalName, gender, id_noi_tap]);
 
+  const defaultBackgrounds = [
+    'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={27} color="#376D88" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cấp độ khó</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
+      <AppHeader
+        title="Cấp độ tập luyện"
+        onBack={() => navigation.goBack()}
+      />
+
+      {/* Thông tin chương trình và địa điểm đã chọn */}
       <View style={styles.goalSection}>
         <View style={styles.goalCard}>
           <View style={styles.goalIcon}>
-            <Ionicons name="flag-outline" size={22} color="#0D7F8D" />
+            <Ionicons name="barbell" size={20} color={COLORS.primary} />
           </View>
           <View style={styles.goalInfo}>
-            <Text style={styles.goalLabel}>Chương trình của bạn</Text>
-            <Text style={styles.goalName}>
+            <Text style={styles.goalLabel}>Chương trình đang chọn</Text>
+            <Text style={styles.goalName} numberOfLines={1}>
               {goalName || 'Chưa chọn chương trình'}
             </Text>
+            {ten_noi_tap && (
+              <View style={styles.locationChip}>
+                <Ionicons name="location-outline" size={12} color={COLORS.primary} />
+                <Text style={styles.locationChipText}>{ten_noi_tap}</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <Text style={styles.sectionTitle}>
+          Chọn cấp độ phù hợp với thể lực hiện tại:
+        </Text>
+
         {loading ? (
-          <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 40 }} />) : difficulties.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải cấp độ...</Text>
+          </View>
+        ) : difficulties.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="alert-circle-outline" size={44} color={COLORS.textMuted} />
             <Text style={styles.emptyText}>
               Không tìm thấy cấp độ cho chương trình này.
             </Text>
-          ) : (
+          </View>
+        ) : (
           difficulties.map((item, index) => {
+            const cardBgUri = item.hinh_anh || defaultBackgrounds[index % defaultBackgrounds.length];
+
             return (
-              <TouchableOpacity key={`${item.id_chuong_trinh}-${item.id_cap_do}`} style={styles.card} activeOpacity={0.88}
+              <TouchableOpacity
+                key={`${item.id_chuong_trinh}-${item.id_cap_do}`}
+                style={styles.card}
+                activeOpacity={0.88}
                 onPress={() =>
                   navigation.navigate('WorkoutProgramDetailScreen', {
                     ...route.params,
-
-                    // ID bản ghi chương trình thuộc cấp độ đã chọn
                     goalId: item.id_chuong_trinh,
-
-                    // Thông tin cấp độ
                     capDoId: item.id_cap_do,
                     capDoName: item.ten_cap_do,
-                    gender: gender, // 0 = Nam, 1 = Nữ
-
-                    // Thông tin chương trình
+                    gender: gender,
                     goalName: item.ten_chuong_trinh,
-
-                    // Nơi tập đã chọn
                     id_noi_tap,
                     ten_noi_tap,
-
-                    // Mô tả và thời lượng của cấp độ
                     mo_ta_chuong_trinh: item.mo_ta_chuong_trinh,
                     so_ngay: item.so_ngay,
                     so_buoi_moi_tuan: item.so_buoi_moi_tuan,
@@ -109,42 +131,44 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
                 }
               >
                 <ImageBackground
-                  source={item.hinh_anh ? { uri: item.hinh_anh } : undefined}
-                  style={styles.cardImage} imageStyle={styles.cardImageStyle}>
+                  source={{ uri: cardBgUri }}
+                  style={styles.cardImage}
+                  imageStyle={styles.cardImageStyle}
+                >
                   <LinearGradient
                     colors={[
-                      'rgba(0, 55, 75, 0.98)',
-                      'rgba(0, 75, 92, 0.90)',
-                      'rgba(0, 90, 105, 0.62)',
-                      'rgba(0, 100, 115, 0.28)',
-                      'rgba(0, 100, 115, 0)',
+                      'rgba(7, 88, 101, 0.95)',
+                      'rgba(13, 127, 141, 0.85)',
+                      'rgba(13, 127, 141, 0.35)',
                     ]}
-                    locations={[0, 0.25, 0.5, 0.75, 1]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
-                    style={styles.blueGradient}
+                    style={styles.gradientOverlay}
                   />
 
                   <View style={styles.cardContent}>
                     <View style={styles.starRow}>
-                      {[1, 2, 3, 4, 5].map(star => (
+                      {[1, 2, 3, 4, 5].map((star) => (
                         <Ionicons
                           key={star}
                           name={star <= item.so_sao ? 'star' : 'star-outline'}
-                          size={25}
-                          color="#08BAC2"
+                          size={18}
+                          color={COLORS.accentGold}
                           style={styles.star}
                         />
                       ))}
                     </View>
 
-                    <Text style={styles.cardTitle}>
-                      {item.ten_cap_do}
+                    <Text style={styles.cardTitle}>{item.ten_cap_do}</Text>
+
+                    <Text style={styles.description} numberOfLines={2}>
+                      {item.mo_ta_cap_do || 'Phù hợp với thể trạng và sức bền cấp độ này'}
                     </Text>
 
-                    <Text style={styles.description}>
-                      {item.mo_ta_cap_do}
-                    </Text>
+                    <View style={styles.detailLinkRow}>
+                      <Text style={styles.detailLinkText}>Xem chi tiết</Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.white} />
+                    </View>
                   </View>
                 </ImageBackground>
               </TouchableOpacity>
@@ -156,149 +180,161 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
   );
 };
 
+export default WorkoutDifficultyScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
-  },
-  header: {
-    height: 72,
-    // backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F0FAFB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: '#11343A',
-  },
-  headerPlaceholder: {
-    width: 44,
+    backgroundColor: COLORS.background,
   },
   goalSection: {
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
   goalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.cardBg,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D9EFF1',
-    shadowColor: '#8FAEB2',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: COLORS.borderLight,
+    ...SHADOWS.card,
   },
   goalIcon: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 12,
-    backgroundColor: '#E3F7F8',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 13,
+    marginRight: 12,
   },
   goalInfo: {
     flex: 1,
   },
   goalLabel: {
-    fontSize: 13,
-    color: '#71949A',
-    marginBottom: 3,
-    fontWeight: '500',
+    fontSize: 11,
+    color: COLORS.textMuted,
+    fontWeight: '600',
   },
   goalName: {
-    fontSize: 18,
-    color: '#11343A',
+    fontSize: 15,
     fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: 2,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryLight,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginTop: 6,
+    gap: 4,
+  },
+  locationChipText: {
+    fontSize: 11,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   scrollContent: {
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 110,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 14,
+  },
+  loadingContainer: {
+    paddingVertical: 50,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: COLORS.textMuted,
+    fontSize: 14,
+  },
+  emptyContainer: {
+    paddingVertical: 50,
+    alignItems: 'center',
+  },
+  emptyText: {
+    marginTop: 10,
+    color: COLORS.textMuted,
+    fontSize: 14,
   },
   card: {
     width: '100%',
-    height: 185,
-    marginBottom: 10,
+    height: 150,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#78959A',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 9,
-    elevation: 5,
-
+    marginBottom: 16,
+    backgroundColor: COLORS.white,
+    ...SHADOWS.card,
   },
   cardImage: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
   },
   cardImageStyle: {
     borderRadius: 20,
+    resizeMode: 'cover',
   },
-  blueGradient: {
+  gradientOverlay: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    width: '78%',
+    width: '85%',
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
   },
   cardContent: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingVertical: 14,
   },
   starRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 6,
   },
   star: {
-    marginRight: 3,
+    marginRight: 4,
   },
   cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 5,
-    textShadowColor: 'rgba(0,0,0,0.35)',
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowRadius: 3,
   },
   description: {
-    color: '#F1FAFB',
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.88)',
+    fontSize: 13,
+    lineHeight: 18,
+    maxWidth: '75%',
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#71949A',
-    fontSize: 15,
-    marginTop: 40,
+  detailLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 4,
+  },
+  detailLinkText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
-
-export default WorkoutDifficultyScreen;

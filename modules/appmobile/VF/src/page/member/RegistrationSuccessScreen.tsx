@@ -141,8 +141,15 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
                     style={s.homeButton}
                     onPress={() => navigation.navigate('MyPackages')}
                 >
-                    <Ionicons name="albums-outline" size={21} color={C.white} />
+                    <Ionicons name="albums-outline" size={20} color={C.white} />
                     <Text style={s.homeText}>Xem gói tập của tôi</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[s.homeButton, { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: C.primary, marginTop: 10 }]}
+                    onPress={() => navigation.navigate('MemberTabs')}
+                >
+                    <Text style={[s.homeText, { color: C.primary }]}>Về trang chủ</Text>
                 </TouchableOpacity>
             </View>
 

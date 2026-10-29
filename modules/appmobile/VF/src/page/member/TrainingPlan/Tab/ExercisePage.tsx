@@ -4,6 +4,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import apiFitlife from "../../../../general/api";
 import { useFocusEffect } from "@react-navigation/native";
+import AppHeader from "../../../../components/AppHeader";
+import { COLORS } from "../../../../general/theme";
 
 type Exercise = {
   id: number;
@@ -103,7 +105,7 @@ const ExercisePage = ({ navigation, route }: any) => {
             thu_tu: Number(item.thu_tu ?? 0),
             total_exercises: Number(res.data.total_exercises ?? 0),
           }))
-          .sort((a, b) => a.thu_tu - b.thu_tu);
+          .sort((a: any, b: any) => a.thu_tu - b.thu_tu);
         setExercises(danhSachBaiTap);
         console.log(
           "DANH SÁCH BÀI TẬP SAU KHI MAP:",
@@ -652,27 +654,28 @@ const ExercisePage = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      {/* ================= HEADER ================= */}
-
-      <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} style={styles.backButton} onPress={() => navigation?.goBack()} >
-          <Ionicons name="arrow-back" size={wp("5.5%")} color="#607D8B" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bài tập </Text>
-        <TouchableOpacity activeOpacity={0.7}
-          style={[styles.moreButton, hasStarted && { backgroundColor: "#EAF9FB" },]} onPress={handleSkip}
-          disabled={skipping || hasStarted}>
-          {skipping ? (
-            <ActivityIndicator size="small" color="#607D8B" />
-          ) : hasStarted ? (
-            <Text style={{ color: "#0D7F8D", fontWeight: "700" }}>
-              {formatTime(elapsedSeconds)}
-            </Text>
-          ) : (
-            <Text style={styles.skipText}>Bỏ qua</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <AppHeader
+        title="Bài tập hôm nay"
+        onBack={() => navigation?.goBack()}
+        rightComponent={
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.moreButton, hasStarted && { backgroundColor: COLORS.primaryLight }]}
+            onPress={handleSkip}
+            disabled={skipping || hasStarted}
+          >
+            {skipping ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : hasStarted ? (
+              <Text style={{ color: COLORS.primary, fontWeight: "700" }}>
+                {formatTime(elapsedSeconds)}
+              </Text>
+            ) : (
+              <Text style={styles.skipText}>Bỏ qua</Text>
+            )}
+          </TouchableOpacity>
+        }
+      />
 
       {/* ================= CONTENT ================= */}
 
@@ -859,7 +862,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#F6FAFB",
-    paddingTop: hp("7%"),
   },
   header: {
     height: hp("7%"),

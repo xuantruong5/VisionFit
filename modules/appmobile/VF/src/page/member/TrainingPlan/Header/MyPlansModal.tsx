@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, Modal, TouchableOpacity, ImageBackground, Alert, ScrollView, useWindowDimensions, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import apiFitlife from "../../../../general/api";
+import { COLORS } from "../../../../general/theme";
 
 const MyPlansModal = ({ visible, onClose, navigation }: any) => {
     const { width, height } = useWindowDimensions();
@@ -270,32 +271,34 @@ const styles = StyleSheet.create({
         paddingBottom: 120,
     },
     btnPrimary: {
-        height: 52,
-        backgroundColor: "#00BBC0",
-        borderRadius: 12,
+        height: 50,
+        backgroundColor: COLORS.primary,
+        borderRadius: 14,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 12,
+        marginBottom: 10,
     },
     btnPrimaryText: {
         color: "#FFFFFF",
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: "700",
+        letterSpacing: 0.5,
     },
     btnSecondary: {
-        height: 52,
-        backgroundColor: "#FFFFFF",
+        height: 50,
+        backgroundColor: COLORS.white,
         borderWidth: 1.5,
-        borderColor: "#355C7D",
-        borderRadius: 12,
+        borderColor: COLORS.primary,
+        borderRadius: 14,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 20,
     },
     btnSecondaryText: {
-        color: "#355C7D",
-        fontSize: 15,
+        color: COLORS.primary,
+        fontSize: 14,
         fontWeight: "700",
+        letterSpacing: 0.5,
     },
     cardRow: {
         flexDirection: "row",
