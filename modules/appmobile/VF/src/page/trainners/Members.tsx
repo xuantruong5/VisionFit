@@ -1,584 +1,439 @@
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS, SHADOWS } from '../../general/theme';
+
+// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
+const MEMBERS = [
+  { id: '1', name: 'Nguyễn Văn An', email: 'an.nguyen@email.com', goal: 'Giảm cân', sessions: 18, totalSessions: 24, status: 'Đang tập', next: 'Hôm nay, 09:00', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
+  { id: '2', name: 'Trần Minh Anh', email: 'minhanh@email.com', goal: 'Tăng cơ', sessions: 12, totalSessions: 20, status: 'Đang tập', next: 'Hôm nay, 14:30', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80' },
+  { id: '3', name: 'Lê Hoàng Nam', email: 'nam.le@email.com', goal: 'Duy trì', sessions: 8, totalSessions: 16, status: 'Tạm nghỉ', next: 'Chưa có lịch', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
+  { id: '4', name: 'Phạm Thu Hà', email: 'ha.pham@email.com', goal: 'Giảm cân', sessions: 21, totalSessions: 24, status: 'Đang tập', next: 'Thứ 2, 10:00', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80' },
+  { id: '5', name: 'Võ Minh Khang', email: 'khang.vo@email.com', goal: 'Tăng cơ', sessions: 6, totalSessions: 12, status: 'Tạm nghỉ', next: 'Chưa có lịch', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&auto=format&fit=crop&q=80' },
+];
+
+const FILTERS = ['Tất cả', 'Đang tập', 'Tạm nghỉ'];
+
+const HEADER_STATS = [
+  { value: '24', label: 'Tổng học viên' },
+  { value: '19', label: 'Đang tập' },
+  { value: '86%', label: 'Chuyên cần' },
+];
 
 const Members = ({ navigation }: any) => {
-  const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState("Tất cả");
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('Tất cả');
 
-  const members = [
-    {
-      id: "1",
-      name: "Nguyễn Văn An",
-      email: "an.nguyen@email.com",
-      goal: "Giảm cân",
-      sessions: 18,
-      totalSessions: 24,
-      status: "Đang tập",
-    },
-    {
-      id: "2",
-      name: "Trần Minh Anh",
-      email: "minhanh@email.com",
-      goal: "Tăng cơ",
-      sessions: 12,
-      totalSessions: 20,
-      status: "Đang tập",
-    },
-    {
-      id: "3",
-      name: "Lê Hoàng Nam",
-      email: "nam.le@email.com",
-      goal: "Duy trì",
-      sessions: 8,
-      totalSessions: 16,
-      status: "Tạm nghỉ",
-    },
-    {
-      id: "4",
-      name: "Phạm Thu Hà",
-      email: "ha.pham@email.com",
-      goal: "Giảm cân",
-      sessions: 21,
-      totalSessions: 24,
-      status: "Đang tập",
-    },
-    {
-      id: "5",
-      name: "Võ Minh Khang",
-      email: "khang.vo@email.com",
-      goal: "Tăng cơ",
-      sessions: 6,
-      totalSessions: 12,
-      status: "Tạm nghỉ",
-    },
-  ];
-
-  const filters = ["Tất cả", "Đang tập", "Tạm nghỉ"];
-
-  const filteredMembers = useMemo(() => {
-    return members.filter((member) => {
-      const matchSearch =
-        member.name
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        member.email
-          .toLowerCase()
-          .includes(search.toLowerCase());
-
-      const matchFilter =
-        activeFilter === "Tất cả" ||
-        member.status === activeFilter;
-
-      return matchSearch && matchFilter;
-    });
-  }, [search, activeFilter]);
+  const keyword = search.trim().toLowerCase();
+  const members = MEMBERS.filter(
+    (m) =>
+      (activeFilter === 'Tất cả' || m.status === activeFilter) &&
+      (m.name.toLowerCase().includes(keyword) || m.goal.toLowerCase().includes(keyword))
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>
-            Hội viên
-          </Text>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* 1. HEADER GRADIENT */}
+        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+          <View style={styles.circleLg} />
 
-          <Text style={styles.headerSubtitle}>
-            Quản lý và theo dõi hội viên
-          </Text>
-        </View>
+          <View style={styles.headerRow}>
+            <View style={styles.flex}>
+              <Text style={styles.headerSub}>Quản lý & theo dõi tiến độ</Text>
+              <Text style={styles.headerTitle}>Học viên của tôi</Text>
+            </View>
+            <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
+              <Ionicons name="person-add" size={19} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity style={styles.notification}>
-          <Text style={styles.notificationIcon}>🔔</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.statRow}>
+            {HEADER_STATS.map((item) => (
+              <View key={item.label} style={styles.statBox}>
+                <Text style={styles.statValue}>{item.value}</Text>
+                <Text style={styles.statLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-
-        {/* SEARCH */}
-        <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>⌕</Text>
-
+        {/* 2. TÌM KIẾM NỔI */}
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={19} color={COLORS.primary} />
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Tìm kiếm hội viên..."
-            placeholderTextColor="#9CA3AF"
+            placeholder="Tìm theo tên, mục tiêu..."
+            placeholderTextColor={COLORS.textLight}
             style={styles.searchInput}
           />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* FILTER */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterScroll}
-        >
-          {filters.map((filter) => {
-            const active = activeFilter === filter;
+        <View style={styles.body}>
+          {/* 3. BỘ LỌC */}
+          <View style={styles.chipRow}>
+            {FILTERS.map((filter) => {
+              const active = activeFilter === filter;
+              return (
+                <TouchableOpacity
+                  key={filter}
+                  activeOpacity={0.85}
+                  onPress={() => setActiveFilter(filter)}
+                  style={[styles.chip, active && styles.chipActive]}>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{filter}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
+          {/* 4. DANH SÁCH */}
+          {members.map((member) => {
+            const progress = Math.round((member.sessions / member.totalSessions) * 100);
+            const paused = member.status === 'Tạm nghỉ';
             return (
               <TouchableOpacity
-                key={filter}
-                onPress={() => setActiveFilter(filter)}
-                style={[
-                  styles.filterButton,
-                  active && styles.filterButtonActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    active && styles.filterTextActive,
-                  ]}
-                >
-                  {filter}
-                </Text>
+                key={member.id}
+                activeOpacity={0.85}
+                style={styles.memberCard}
+                onPress={() => navigation?.navigate('MemberDetail', { member })}>
+                <View style={styles.cardTop}>
+                  <View>
+                    <Image source={{ uri: member.avatar }} style={[styles.avatar, paused && styles.avatarPaused]} />
+                    <View style={[styles.statusDot, paused && { backgroundColor: COLORS.accentGold }]} />
+                  </View>
+                  <View style={styles.flex}>
+                    <Text style={styles.memberName}>{member.name}</Text>
+                    <View style={styles.tagRow}>
+                      <View style={styles.goalTag}>
+                        <Ionicons name="flag" size={11} color={COLORS.primary} />
+                        <Text style={styles.goalText}>{member.goal}</Text>
+                      </View>
+                      <Text style={[styles.statusText, paused && { color: COLORS.accentGold }]}>{member.status}</Text>
+                    </View>
+                  </View>
+                  <View style={[styles.percentBadge, paused && styles.percentBadgePaused]}>
+                    <Text style={[styles.percentText, paused && { color: COLORS.textMuted }]}>{progress}%</Text>
+                  </View>
+                </View>
+
+                <View style={styles.progressTrack}>
+                  <LinearGradient
+                    colors={paused ? [COLORS.textLight, COLORS.textLight] : ['#22B8C8', COLORS.primary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[styles.progressFill, { width: `${progress}%` }]}
+                  />
+                </View>
+
+                <View style={styles.cardBottom}>
+                  <View style={styles.metaRow}>
+                    <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
+                    <Text style={styles.metaText}>
+                      {member.sessions}/{member.totalSessions} buổi
+                    </Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <Ionicons name="time-outline" size={13} color={paused ? COLORS.textMuted : COLORS.primary} />
+                    <Text style={[styles.metaText, !paused && styles.metaTextActive]}>{member.next}</Text>
+                  </View>
+                </View>
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
 
-        {/* MEMBER COUNT */}
-        <View style={styles.countRow}>
-          <Text style={styles.countText}>
-            {filteredMembers.length} hội viên
-          </Text>
-
-          <TouchableOpacity>
-            <Text style={styles.sortText}>
-              Mới nhất ↓
-            </Text>
-          </TouchableOpacity>
+          {members.length === 0 && (
+            <View style={styles.emptyBox}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="search-outline" size={34} color={COLORS.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Không tìm thấy học viên</Text>
+              <Text style={styles.metaText}>Thử tìm với tên hoặc từ khoá khác</Text>
+            </View>
+          )}
         </View>
-
-        {/* MEMBER LIST */}
-        {filteredMembers.map((member) => {
-          const progress =
-            (member.sessions / member.totalSessions) * 100;
-
-          return (
-            <TouchableOpacity
-              key={member.id}
-              activeOpacity={0.8}
-              style={styles.memberCard}
-              onPress={() =>
-                navigation.navigate("MemberDetail", {
-                  member,
-                })
-              }
-            >
-
-              {/* TOP */}
-              <View style={styles.memberTop}>
-
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {member.name.charAt(0)}
-                  </Text>
-                </View>
-
-                <View style={styles.memberInfo}>
-                  <Text style={styles.memberName}>
-                    {member.name}
-                  </Text>
-
-                  <Text style={styles.memberEmail}>
-                    {member.email}
-                  </Text>
-                </View>
-
-                <Text style={styles.arrow}>
-                  ›
-                </Text>
-              </View>
-
-              {/* TAGS */}
-              <View style={styles.tagRow}>
-
-                <View style={styles.goalTag}>
-                  <Text style={styles.goalIcon}>
-                    🎯
-                  </Text>
-
-                  <Text style={styles.goalText}>
-                    {member.goal}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.statusTag,
-                    member.status === "Tạm nghỉ" &&
-                      styles.pauseTag,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.statusDot,
-                      member.status === "Tạm nghỉ" &&
-                        styles.pauseDot,
-                    ]}
-                  />
-
-                  <Text
-                    style={[
-                      styles.statusText,
-                      member.status === "Tạm nghỉ" &&
-                        styles.pauseText,
-                    ]}
-                  >
-                    {member.status}
-                  </Text>
-                </View>
-
-              </View>
-
-              {/* PROGRESS */}
-              <View style={styles.progressHeader}>
-
-                <Text style={styles.sessionText}>
-                  {member.sessions}/{member.totalSessions} buổi
-                </Text>
-
-                <Text style={styles.progressText}>
-                  {Math.round(progress)}%
-                </Text>
-
-              </View>
-
-              <View style={styles.progressBackground}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${progress}%`,
-                    },
-                  ]}
-                />
-              </View>
-
-            </TouchableOpacity>
-          );
-        })}
-
-        {/* EMPTY */}
-        {filteredMembers.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>
-              🔍
-            </Text>
-
-            <Text style={styles.emptyTitle}>
-              Không tìm thấy hội viên
-            </Text>
-
-            <Text style={styles.emptyText}>
-              Thử tìm kiếm với tên khác
-            </Text>
-          </View>
-        )}
-
       </ScrollView>
     </SafeAreaView>
   );
 };
 
+export default Members;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: COLORS.background,
+  },
+  scroll: {
+    backgroundColor: COLORS.background,
+  },
+  flex: {
+    flex: 1,
+  },
+  content: {
+    paddingBottom: 24,
+  },
+  body: {
+    paddingHorizontal: 16,
   },
 
+  // HEADER
   header: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 46,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: 'hidden',
   },
-
+  circleLg: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -80,
+    right: -60,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerSub: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+  },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#111827",
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginTop: 2,
   },
-
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    marginTop: 4,
-  },
-
-  notification: {
+  addBtn: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  notificationIcon: {
-    fontSize: 18,
-  },
-
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-
-  searchContainer: {
-    height: 50,
-    backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
   },
 
-  searchIcon: {
-    fontSize: 27,
-    color: "#6B7280",
-    marginRight: 8,
+  // TÌM KIẾM
+  searchBox: {
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
+    marginHorizontal: 16,
+    marginTop: -26,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
-
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: "#111827",
+    color: COLORS.textPrimary,
+    paddingVertical: 0,
   },
 
-  filterScroll: {
-    marginTop: 15,
-    marginBottom: 15,
+  // CHIPS
+  chipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 16,
+    marginBottom: 14,
   },
-
-  filterButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    marginRight: 8,
+  chip: {
+    paddingHorizontal: 16,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: COLORS.border,
   },
-
-  filterButtonActive: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
+  chipActive: {
+    backgroundColor: COLORS.textPrimary,
+    borderColor: COLORS.textPrimary,
   },
-
-  filterText: {
+  chipText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#6B7280",
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  chipTextActive: {
+    color: COLORS.white,
+    fontWeight: '700',
   },
 
-  filterTextActive: {
-    
-  },
-
-  countRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  countText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  sortText: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-
+  // THẺ HỌC VIÊN
   memberCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    padding: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#F0F0F0",
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
-
-  memberTop: {
-    flexDirection: "row",
-    alignItems: "center",
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-
   avatar: {
     width: 52,
     height: 52,
-    borderRadius: 26,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: 18,
   },
-
-  avatarText: {
-    
-    fontSize: 21,
-    fontWeight: "700",
+  avatarPaused: {
+    opacity: 0.6,
   },
-
-  memberInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  memberName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  memberEmail: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 4,
-  },
-
-  arrow: {
-    fontSize: 28,
-    color: "#9CA3AF",
-  },
-
-  tagRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 15,
-  },
-
-  goalTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginRight: 8,
-  },
-
-  goalIcon: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-
-  goalText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#374151",
-  },
-
-  statusTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ECFDF5",
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-
-  pauseTag: {
-    backgroundColor: "#FFF7ED",
-  },
-
   statusDot: {
-    width: 6,
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: COLORS.accentGreen,
+    borderWidth: 2.5,
+    borderColor: COLORS.white,
+  },
+  memberName: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 5,
+  },
+  goalTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  goalText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  statusText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: COLORS.accentGreen,
+  },
+  percentBadge: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  percentBadgePaused: {
+    borderColor: COLORS.border,
+  },
+  percentText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#10B981",
-    marginRight: 5,
+    backgroundColor: COLORS.borderLight,
+    marginTop: 14,
+    overflow: 'hidden',
   },
-
-  pauseDot: {
-    backgroundColor: "#F59E0B",
-  },
-
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#059669",
-  },
-
-  pauseText: {
-    color: "#D97706",
-  },
-
-  progressHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 15,
-    marginBottom: 7,
-  },
-
-  sessionText: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-
-  progressText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  progressBackground: {
-    height: 7,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-
   progressFill: {
-    height: 7,
-    backgroundColor: "#111827",
-    borderRadius: 10,
+    height: 6,
+    borderRadius: 3,
+  },
+  cardBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  metaTextActive: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
 
-  emptyContainer: {
-    alignItems: "center",
-    paddingVertical: 70,
+  // EMPTY
+  emptyBox: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 4,
   },
-
   emptyIcon: {
-    fontSize: 38,
-    marginBottom: 12,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  emptyText: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    marginTop: 6,
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
 });
-
-export default Members;

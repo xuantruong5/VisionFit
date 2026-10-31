@@ -4,7 +4,6 @@ import {
     Text,
     View,
     TouchableOpacity,
-    SafeAreaView,
     FlatList,
     TextInput,
     Image,
@@ -16,7 +15,10 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 import apiFitlife, { BASE_URL } from "../../general/api";
+import { COLORS, SHADOWS } from "../../general/theme";
 
 // Dữ liệu người dùng hiện tại (Hội viên VisionFit)
 const CURRENT_USER = {
@@ -205,24 +207,50 @@ const ChatList = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
             <StatusBar barStyle="dark-content" />
 
-
+            <View style={styles.body}>
+            {/* Header gradient */}
+            <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.header}
+            >
+                <View style={styles.circleLg} />
+                <View style={styles.circleSm} />
+                <View style={styles.headerRow}>
+                    <View style={styles.headerTextWrap}>
+                        <Text style={styles.headerSub}>Kết nối HLV & bạn tập</Text>
+                        <View style={styles.titleWrap}>
+                            <Text style={styles.headerTitle}>Đoạn chat</Text>
+                            {totalUnread > 0 && (
+                                <View style={styles.badgeUnreadTotal}>
+                                    <Text style={styles.badgeUnreadTotalText}>{totalUnread}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                    <View style={styles.headerIcon}>
+                        <Ionicons name="chatbubbles" size={20} color={COLORS.white} />
+                    </View>
+                </View>
+            </LinearGradient>
 
             {/* Thanh tìm kiếm */}
             <View style={styles.searchBox}>
-                <Ionicons name="search" size={18} color="#71949A" style={{ marginRight: 8 }} />
+                <Ionicons name="search" size={19} color={COLORS.primary} style={{ marginRight: 10 }} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Tìm kiếm HLV, bạn tập, tin nhắn..."
-                    placeholderTextColor="#71949A"
+                    placeholderTextColor={COLORS.textLight}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                 />
                 {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery("")}>
-                        <Ionicons name="close-circle" size={18} color="#71949A" />
+                        <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -230,7 +258,7 @@ const ChatList = ({ navigation }: any) => {
             {/* Danh sách chính */}
             {isLoading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <ActivityIndicator size="large" color="#0D7F8D" />
+                    <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -284,7 +312,7 @@ const ChatList = ({ navigation }: any) => {
                             )}
 
                             {/* Bộ lọc theo Tabs */}
-                            <View style={styles.filterTabs}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTabs}>
                                 <TouchableOpacity
                                     style={[styles.filterTabBtn, selectedFilter === "ALL" && styles.filterTabBtnActive]}
                                     onPress={() => setSelectedFilter("ALL")}
@@ -296,7 +324,7 @@ const ChatList = ({ navigation }: any) => {
                                     style={[styles.filterTabBtn, selectedFilter === "PT" && styles.filterTabBtnActive]}
                                     onPress={() => setSelectedFilter("PT")}
                                 >
-                                    <Ionicons name="fitness-outline" size={14} color={selectedFilter === "PT" ? "#FFFFFF" : "#0D7F8D"} style={{ marginRight: 4 }} />
+                                    <Ionicons name="fitness-outline" size={14} color={selectedFilter === "PT" ? "#FFFFFF" : COLORS.textSecondary} style={{ marginRight: 4 }} />
                                     <Text style={[styles.filterTabText, selectedFilter === "PT" && styles.filterTabTextActive]}>HLV / PT</Text>
                                 </TouchableOpacity>
 
@@ -304,7 +332,7 @@ const ChatList = ({ navigation }: any) => {
                                     style={[styles.filterTabBtn, selectedFilter === "GROUP" && styles.filterTabBtnActive]}
                                     onPress={() => setSelectedFilter("GROUP")}
                                 >
-                                    <Ionicons name="people-outline" size={14} color={selectedFilter === "GROUP" ? "#FFFFFF" : "#0D7F8D"} style={{ marginRight: 4 }} />
+                                    <Ionicons name="people-outline" size={14} color={selectedFilter === "GROUP" ? "#FFFFFF" : COLORS.textSecondary} style={{ marginRight: 4 }} />
                                     <Text style={[styles.filterTabText, selectedFilter === "GROUP" && styles.filterTabTextActive]}>Nhóm tập</Text>
                                 </TouchableOpacity>
 
@@ -319,7 +347,7 @@ const ChatList = ({ navigation }: any) => {
                                         </View>
                                     )}
                                 </TouchableOpacity>
-                            </View>
+                            </ScrollView>
                         </>
                     }
                     renderItem={({ item }) => {
@@ -407,17 +435,28 @@ const ChatList = ({ navigation }: any) => {
                 activeOpacity={0.85}
                 onPress={() => setShowNewChatModal(true)}
             >
-                <Ionicons name="chatbubble-ellipses" size={24} color="#FFFFFF" />
+                <LinearGradient
+                    colors={[COLORS.primary, COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.fabGradient}
+                >
+                    <Ionicons name="chatbubble-ellipses" size={24} color="#FFFFFF" />
+                </LinearGradient>
             </TouchableOpacity>
+            </View>
 
             {/* Modal: Tạo cuộc trò chuyện mới */}
             <Modal visible={showNewChatModal} animationType="slide" transparent={true} onRequestClose={() => setShowNewChatModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
+                        <View style={styles.dragHandle} />
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Đoạn chat mới</Text>
                             <TouchableOpacity onPress={() => setShowNewChatModal(false)}>
-                                <Ionicons name="close" size={24} color="#11343A" />
+                                <View style={styles.modalCloseBtn}>
+                                    <Ionicons name="close" size={20} color={COLORS.textPrimary} />
+                                </View>
                             </TouchableOpacity>
                         </View>
 
@@ -471,6 +510,7 @@ const ChatList = ({ navigation }: any) => {
             <Modal visible={!!selectedConv} animationType="fade" transparent={true} onRequestClose={() => setSelectedConv(null)}>
                 <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setSelectedConv(null)}>
                     <View style={styles.sheetCard}>
+                        <View style={styles.dragHandle} />
                         <Text style={styles.sheetTitle}>
                             {selectedConv?.loai === "NHOM" ? selectedConv?.ten_nhom : selectedConv?.doi_phuong?.ho_ten}
                         </Text>
@@ -491,7 +531,7 @@ const ChatList = ({ navigation }: any) => {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.sheetRow, { borderTopWidth: 1, borderTopColor: "#DFF6F8" }]}
+                            style={[styles.sheetRow, { borderTopWidth: 1, borderTopColor: COLORS.borderLight }]}
                             onPress={() => {
                                 Alert.alert("Xóa đoạn chat", "Bạn có chắc chắn muốn xóa cuộc trò chuyện này?", [
                                     { text: "Hủy", style: "cancel" },
@@ -506,8 +546,8 @@ const ChatList = ({ navigation }: any) => {
                                 ]);
                             }}
                         >
-                            <Ionicons name="trash-outline" size={22} color="#FA3E3E" />
-                            <Text style={[styles.sheetRowText, { color: "#FA3E3E" }]}>Xóa đoạn chat</Text>
+                            <Ionicons name="trash-outline" size={22} color={COLORS.accentRed} />
+                            <Text style={[styles.sheetRowText, { color: COLORS.accentRed }]}>Xóa đoạn chat</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -519,143 +559,137 @@ const ChatList = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#EAF9FB",
+        backgroundColor: COLORS.background,
+    },
+    body: {
+        flex: 1,
+        backgroundColor: COLORS.background,
     },
     header: {
+        paddingHorizontal: 20,
+        paddingTop: 14,
+        paddingBottom: 46,
+        borderRadius: 28,
+        marginHorizontal: 12,
+        marginTop: 6,
+        overflow: "hidden",
+    },
+    circleLg: {
+        position: "absolute",
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: "rgba(255,255,255,0.07)",
+        top: -80,
+        right: -60,
+    },
+    circleSm: {
+        position: "absolute",
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: "rgba(255,255,255,0.05)",
+        bottom: -50,
+        left: -30,
+    },
+    headerRow: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
     },
-    headerLeft: {
-        flexDirection: "row",
-        alignItems: "center",
+    headerTextWrap: {
+        flex: 1,
     },
-    avatarWrap: {
-        position: "relative",
-        marginRight: 12,
-    },
-    headerAvatar: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        borderWidth: 2,
-        borderColor: "#0D7F8D",
-    },
-    onlineBadge: {
-        position: "absolute",
-        bottom: 0,
-        right: 0,
-        width: 13,
-        height: 13,
-        borderRadius: 7,
-        backgroundColor: "#31A24C",
-        borderWidth: 2,
-        borderColor: "#FFFFFF",
+    headerSub: {
+        fontSize: 12.5,
+        fontWeight: "600",
+        color: "rgba(255,255,255,0.75)",
     },
     titleWrap: {
         flexDirection: "row",
         alignItems: "center",
+        marginTop: 2,
     },
     headerTitle: {
         fontSize: 24,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.white,
     },
     badgeUnreadTotal: {
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.accentOrange,
+        minWidth: 22,
+        height: 22,
         paddingHorizontal: 7,
-        paddingVertical: 2,
-        borderRadius: 12,
-        marginLeft: 8,
+        borderRadius: 11,
+        marginLeft: 10,
+        alignItems: "center",
+        justifyContent: "center",
     },
     badgeUnreadTotalText: {
-        color: "#FFFFFF",
+        color: COLORS.white,
         fontSize: 12,
-        fontWeight: "bold",
+        fontWeight: "800",
     },
-    headerRight: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    headerBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "#FFFFFF",
+    headerIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 14,
+        backgroundColor: "rgba(255,255,255,0.15)",
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        justifyContent: "center",
+        borderColor: "rgba(255,255,255,0.2)",
         alignItems: "center",
-        marginLeft: 8,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.7,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    headerBtnActive: {
-        backgroundColor: "#0D7F8D",
-        borderColor: "#0D7F8D",
+        justifyContent: "center",
     },
     searchBox: {
-        marginTop: 100,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         marginHorizontal: 16,
-        marginVertical: 8,
-        paddingHorizontal: 14,
-        paddingVertical: 9,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+        marginTop: -26,
+        marginBottom: 6,
+        paddingHorizontal: 16,
+        height: 52,
+        borderRadius: 18,
+        ...SHADOWS.card,
+        shadowOpacity: 0.12,
+        elevation: 6,
     },
     searchInput: {
         flex: 1,
         fontSize: 14,
-        color: "#11343A",
-        padding: 0,
+        color: COLORS.textPrimary,
+        paddingVertical: 0,
     },
     listContainer: {
-        paddingBottom: 80,
+        paddingBottom: 24,
     },
     storiesContainer: {
-        paddingVertical: 8,
+        paddingTop: 10,
+        paddingBottom: 4,
     },
     storiesScroll: {
         paddingHorizontal: 16,
     },
     storyCard: {
         alignItems: "center",
-        marginRight: 14,
+        marginRight: 12,
         width: 72,
     },
     noteBubble: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,
-        marginBottom: 4,
+        marginBottom: 5,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
+        borderColor: COLORS.border,
         maxWidth: 76,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 2,
+        ...SHADOWS.small,
     },
     noteBubbleText: {
         fontSize: 10,
-        color: "#075E68",
-        fontWeight: "bold",
+        color: COLORS.textSecondary,
+        fontWeight: "700",
         textAlign: "center",
     },
     storyAvatarWrap: {
@@ -663,13 +697,14 @@ const styles = StyleSheet.create({
         padding: 2,
         borderRadius: 30,
         borderWidth: 2,
+        backgroundColor: COLORS.white,
     },
     selfStoryRing: {
-        borderColor: "#9ED9DF",
+        borderColor: COLORS.borderFocus,
         borderStyle: "dashed",
     },
     onlineStoryRing: {
-        borderColor: "#0D7F8D",
+        borderColor: COLORS.primary,
     },
     storyAvatar: {
         width: 52,
@@ -680,118 +715,115 @@ const styles = StyleSheet.create({
         position: "absolute",
         bottom: 0,
         right: 0,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
         width: 18,
         height: 18,
         borderRadius: 9,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     onlineDotStory: {
         position: "absolute",
         bottom: 2,
         right: 2,
-        backgroundColor: "#31A24C",
+        backgroundColor: COLORS.accentGreen,
         width: 14,
         height: 14,
         borderRadius: 7,
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     storyNameText: {
         fontSize: 11,
-        color: "#11343A",
-        marginTop: 4,
-        fontWeight: "500",
+        color: COLORS.textPrimary,
+        marginTop: 5,
+        fontWeight: "600",
         textAlign: "center",
     },
     filterTabs: {
         flexDirection: "row",
         paddingHorizontal: 16,
-        marginVertical: 10,
+        paddingTop: 12,
+        paddingBottom: 14,
+        gap: 8,
     },
     filterTabBtn: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 20,
-        backgroundColor: "#FFFFFF",
+        paddingHorizontal: 16,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        marginRight: 8,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 2,
+        borderColor: COLORS.border,
     },
     filterTabBtnActive: {
-        backgroundColor: "#0D7F8D",
-        borderColor: "#0D7F8D",
+        backgroundColor: COLORS.textPrimary,
+        borderColor: COLORS.textPrimary,
     },
     filterTabText: {
         fontSize: 13,
         fontWeight: "600",
-        color: "#71949A",
+        color: COLORS.textSecondary,
     },
     filterTabTextActive: {
-        color: "#FFFFFF",
+        color: COLORS.white,
+        fontWeight: "700",
     },
     filterBadge: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 10,
-        paddingHorizontal: 6,
-        paddingVertical: 1,
+        backgroundColor: COLORS.primary,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        paddingHorizontal: 5,
         marginLeft: 6,
+        alignItems: "center",
+        justifyContent: "center",
     },
     filterBadgeText: {
-        color: "#0D7F8D",
+        color: COLORS.white,
         fontSize: 10,
-        fontWeight: "bold",
+        fontWeight: "800",
     },
     chatCard: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
         paddingVertical: 12,
         marginHorizontal: 16,
-        marginBottom: 8,
-        backgroundColor: "#FFFFFF",
-        borderRadius: 18,
+        marginBottom: 10,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
         borderWidth: 1,
-        borderColor: "transparent",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.8,
-        shadowRadius: 8,
-        elevation: 4,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     chatCardUnread: {
-        borderColor: "#9ED9DF",
-        backgroundColor: "#FFFFFF",
+        borderColor: COLORS.borderFocus,
+        backgroundColor: COLORS.white,
     },
     chatAvatarWrap: {
         position: "relative",
-        marginRight: 14,
+        marginRight: 12,
     },
     chatAvatar: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: COLORS.primaryLight,
     },
     chatOnlineDot: {
         position: "absolute",
-        bottom: 0,
-        right: 0,
-        width: 15,
-        height: 15,
-        borderRadius: 8,
-        backgroundColor: "#31A24C",
+        bottom: 1,
+        right: 1,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: COLORS.accentGreen,
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     chatGroupBadge: {
         position: "absolute",
@@ -800,11 +832,11 @@ const styles = StyleSheet.create({
         width: 18,
         height: 18,
         borderRadius: 9,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     chatInfo: {
         flex: 1,
@@ -818,34 +850,33 @@ const styles = StyleSheet.create({
     },
     chatName: {
         fontSize: 15,
-        fontWeight: "600",
-        color: "#11343A",
+        fontWeight: "700",
+        color: COLORS.textPrimary,
+        flexShrink: 1,
     },
     chatNameUnread: {
-        fontWeight: "bold",
-        color: "#075E68",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     ptBadge: {
-        backgroundColor: "#DFF6F8",
+        backgroundColor: COLORS.primaryLight,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 6,
         marginLeft: 6,
-        borderWidth: 0.5,
-        borderColor: "#9ED9DF",
     },
     ptBadgeText: {
         fontSize: 10,
-        fontWeight: "bold",
-        color: "#0D7F8D",
+        fontWeight: "800",
+        color: COLORS.primary,
     },
     chatTime: {
-        fontSize: 12,
-        color: "#71949A",
+        fontSize: 11.5,
+        color: COLORS.textMuted,
     },
     chatTimeUnread: {
-        color: "#0D7F8D",
-        fontWeight: "bold",
+        color: COLORS.primary,
+        fontWeight: "700",
     },
     chatInfoBottom: {
         flexDirection: "row",
@@ -855,128 +886,146 @@ const styles = StyleSheet.create({
     chatSnippet: {
         flex: 1,
         fontSize: 13,
-        color: "#71949A",
+        color: COLORS.textMuted,
         marginRight: 8,
     },
     chatSnippetUnread: {
-        color: "#11343A",
-        fontWeight: "bold",
+        color: COLORS.textPrimary,
+        fontWeight: "600",
     },
     chatStatusIcons: {
         flexDirection: "row",
         alignItems: "center",
     },
     unreadCounter: {
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
         minWidth: 20,
         height: 20,
         borderRadius: 10,
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 5,
+        paddingHorizontal: 6,
     },
     unreadCounterText: {
-        color: "#FFFFFF",
+        color: COLORS.white,
         fontSize: 11,
-        fontWeight: "bold",
+        fontWeight: "800",
     },
     emptyWrap: {
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 60,
+        paddingVertical: 50,
         paddingHorizontal: 32,
     },
     emptyIconCircle: {
-        width: 76,
-        height: 76,
-        borderRadius: 38,
-        backgroundColor: "#DFF6F8",
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: COLORS.primaryLight,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 16,
     },
     emptyTitle: {
         fontSize: 16,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
         marginBottom: 6,
     },
     emptyText: {
         fontSize: 13,
-        color: "#71949A",
+        color: COLORS.textMuted,
         textAlign: "center",
+        lineHeight: 19,
     },
     fabButton: {
         position: "absolute",
-        bottom: 24,
+        bottom: 20,
         right: 20,
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: "#0D7F8D",
+        ...SHADOWS.glow,
+    },
+    fabGradient: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.9,
-        shadowRadius: 10,
-        elevation: 5,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        backgroundColor: "rgba(17, 52, 58, 0.45)",
         justifyContent: "flex-end",
     },
     modalContent: {
-        backgroundColor: "#FFFFFF",
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 10,
         paddingBottom: 36,
         maxHeight: "80%",
+    },
+    dragHandle: {
+        alignSelf: "center",
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
+        marginBottom: 14,
     },
     modalHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: 12,
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+    },
+    modalCloseBtn: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: COLORS.background,
+        alignItems: "center",
+        justifyContent: "center",
     },
     modalGroupAction: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#DFF6F8",
+        padding: 12,
+        borderRadius: 16,
+        backgroundColor: COLORS.primarySoft,
         marginBottom: 12,
     },
     modalGroupIcon: {
         width: 44,
         height: 44,
-        borderRadius: 22,
-        backgroundColor: "#DFF6F8",
+        borderRadius: 14,
+        backgroundColor: COLORS.white,
         justifyContent: "center",
         alignItems: "center",
         marginRight: 14,
     },
     modalGroupTitle: {
         fontSize: 15,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "700",
+        color: COLORS.textPrimary,
     },
     modalGroupSub: {
         fontSize: 12,
-        color: "#71949A",
+        color: COLORS.textMuted,
+        marginTop: 2,
     },
     modalSectionTitle: {
         fontSize: 11,
-        fontWeight: "bold",
-        color: "#71949A",
+        fontWeight: "800",
+        color: COLORS.textMuted,
         letterSpacing: 0.8,
         marginVertical: 10,
     },
@@ -984,6 +1033,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
     },
     contactAvatarWrap: {
         position: "relative",
@@ -993,6 +1044,7 @@ const styles = StyleSheet.create({
         width: 46,
         height: 46,
         borderRadius: 23,
+        backgroundColor: COLORS.primaryLight,
     },
     contactOnlineDot: {
         position: "absolute",
@@ -1001,53 +1053,53 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: "#31A24C",
+        backgroundColor: COLORS.accentGreen,
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     contactName: {
         fontSize: 15,
-        fontWeight: "600",
-        color: "#11343A",
+        fontWeight: "700",
+        color: COLORS.textPrimary,
     },
     ptBadgeSmall: {
-        backgroundColor: "#DFF6F8",
+        backgroundColor: COLORS.primaryLight,
         paddingHorizontal: 6,
         paddingVertical: 1,
-        borderRadius: 4,
+        borderRadius: 5,
         marginLeft: 6,
     },
     ptBadgeSmallText: {
         fontSize: 9,
-        fontWeight: "bold",
-        color: "#0D7F8D",
+        fontWeight: "800",
+        color: COLORS.primary,
     },
     contactSub: {
         fontSize: 12,
-        color: "#71949A",
+        color: COLORS.textMuted,
         marginTop: 2,
     },
     sheetOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.4)",
+        backgroundColor: "rgba(17, 52, 58, 0.4)",
         justifyContent: "flex-end",
     },
     sheetCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingTop: 10,
         paddingBottom: 32,
     },
     sheetTitle: {
         fontSize: 16,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
         textAlign: "center",
         paddingBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#DFF6F8",
+        borderBottomColor: COLORS.borderLight,
         marginBottom: 8,
     },
     sheetRow: {
@@ -1057,8 +1109,8 @@ const styles = StyleSheet.create({
     },
     sheetRowText: {
         fontSize: 15,
-        fontWeight: "500",
-        color: "#11343A",
+        fontWeight: "600",
+        color: COLORS.textPrimary,
         marginLeft: 14,
     },
 });

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, ActivityIndicator, StatusBar } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, StatusBar } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -122,26 +122,30 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* TOP BANNER */}
         <View style={styles.bannerWrapper}>
-          <ImageBackground
-            source={{
-              uri:
-                program?.anh_dai_dien ||
-                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-            }}
-            style={styles.bannerContainer}
-            imageStyle={styles.bannerImage}
-          >
+          <View style={styles.bannerContainer}>
+            <Image
+              source={{
+                uri:
+                  program?.anh_dai_dien ||
+                  "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
+              }}
+              style={styles.bannerImage}
+              resizeMode="cover"
+            />
             <LinearGradient
-              colors={["rgba(7, 88, 101, 0.6)", "rgba(7, 88, 101, 0.95)"]}
+              colors={["rgba(13,127,141,0.55)", "rgba(7,88,101,0.95)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
               style={styles.bannerOverlay}
             >
+              <View style={styles.bannerCircle} />
               <View style={styles.bannerContent}>
                 <Text style={styles.bannerTitle}>
                   {program?.ten_chuong_trinh ?? "Chương trình tập"}
@@ -162,13 +166,16 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                   </View>
                 </View>
 
+                <View style={styles.bannerHighlightRow}>
+                <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.85)" />
                 <Text style={styles.bannerHighlightText}>
                   {program?.so_ngay ?? 0} ngày ({program?.so_buoi_moi_tuan ?? 0} buổi/tuần) • Đã xong:{" "}
                   {tongNgayDaHoanThanh}/{tongNgayTap} ngày
                 </Text>
+                </View>
               </View>
             </LinearGradient>
-          </ImageBackground>
+          </View>
         </View>
 
         {/* LIST HEADER */}
@@ -193,7 +200,9 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
             </View>
           ) : apiData.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="barbell-outline" size={44} color={COLORS.textMuted} />
+              <View style={styles.emptyIcon}>
+                <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
+              </View>
               <Text style={styles.emptyText}>Chưa có ngày tập luyện nào.</Text>
             </View>
           ) : (
@@ -252,12 +261,6 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                     </View>
                   </View>
 
-                  {/* Chevron Right */}
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={isUnlocked ? COLORS.primary : COLORS.border}
-                  />
                 </TouchableOpacity>
               );
             })
@@ -277,83 +280,105 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 110,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   bannerWrapper: {
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: "hidden",
-    marginBottom: 20,
+    backgroundColor: COLORS.primaryDark,
     ...SHADOWS.card,
+    shadowOpacity: 0.14,
+    elevation: 6,
   },
   bannerContainer: {
     width: "100%",
-    height: 160,
+    height: 172,
   },
   bannerImage: {
-    resizeMode: "cover",
+    ...StyleSheet.absoluteFill,
+    width: "100%",
+    height: "100%",
   },
   bannerOverlay: {
     flex: 1,
     padding: 18,
     justifyContent: "flex-end",
   },
+  bannerCircle: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -70,
+    right: -50,
+  },
   bannerContent: {},
   bannerTitle: {
     color: COLORS.white,
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 6,
+    fontSize: 21,
+    fontWeight: "800",
+    marginBottom: 10,
   },
   bannerInfoRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 6,
+    marginBottom: 10,
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
     gap: 4,
   },
   badgeText: {
     color: COLORS.white,
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 11.5,
+    fontWeight: "700",
+  },
+  bannerHighlightRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   bannerHighlightText: {
-    color: "rgba(255, 255, 255, 0.9)",
+    flex: 1,
+    color: "rgba(255,255,255,0.88)",
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   listHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginTop: 24,
     marginBottom: 12,
   },
   listHeaderTitle: {
     color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.cardBg,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: 17,
     gap: 4,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
   },
   sortButtonText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: COLORS.primary,
   },
   daysListContainer: {
@@ -366,52 +391,69 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: COLORS.textMuted,
-    fontSize: 14,
+    fontSize: 13,
   },
   emptyBox: {
-    paddingVertical: 40,
+    paddingVertical: 32,
     alignItems: "center",
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyText: {
-    marginTop: 10,
-    color: COLORS.textMuted,
-    fontSize: 14,
+    marginTop: 12,
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
   },
   dayCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   dayCardLocked: {
-    opacity: 0.65,
-    backgroundColor: COLORS.borderLight,
+    opacity: 0.6,
+    backgroundColor: COLORS.white,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   dayCardIconWrapper: {
-    width: 48,
+    width: 50,
     alignItems: "center",
     justifyContent: "center",
   },
   progressCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2.5,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
   },
   progressText: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 12,
+    fontWeight: "800",
   },
   lockCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: COLORS.borderLight,
     alignItems: "center",
     justifyContent: "center",
@@ -421,31 +463,46 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   dayLabelText: {
-    color: COLORS.textMuted,
-    fontSize: 11,
-    fontWeight: "600",
+    color: COLORS.primary,
+    fontSize: 11.5,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
   dayTypeText: {
     color: COLORS.textPrimary,
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 15.5,
+    fontWeight: "800",
     marginTop: 2,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 5,
   },
   sessionText: {
     fontSize: 12,
+    fontWeight: "600",
     color: COLORS.textSecondary,
   },
   dotSeparator: {
-    marginHorizontal: 5,
-    color: COLORS.textMuted,
+    marginHorizontal: 6,
+    color: COLORS.textLight,
   },
   dateText: {
     fontSize: 12,
     color: COLORS.textMuted,
+  },
+  chevronWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  chevronWrapLocked: {
+    backgroundColor: COLORS.borderLight,
   },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -67,9 +67,14 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
       {/* Thông tin chương trình và địa điểm đã chọn */}
       <View style={styles.goalSection}>
         <View style={styles.goalCard}>
-          <View style={styles.goalIcon}>
-            <Ionicons name="barbell" size={20} color={COLORS.primary} />
-          </View>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.goalIcon}
+          >
+            <Ionicons name="barbell" size={20} color={COLORS.white} />
+          </LinearGradient>
           <View style={styles.goalInfo}>
             <Text style={styles.goalLabel}>Chương trình đang chọn</Text>
             <Text style={styles.goalName} numberOfLines={1}>
@@ -100,7 +105,9 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
           </View>
         ) : difficulties.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="alert-circle-outline" size={44} color={COLORS.textMuted} />
+            <View style={styles.emptyIconTile}>
+              <Ionicons name="alert-circle-outline" size={30} color={COLORS.accentOrange} />
+            </View>
             <Text style={styles.emptyText}>
               Không tìm thấy cấp độ cho chương trình này.
             </Text>
@@ -130,11 +137,12 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
                   })
                 }
               >
-                <ImageBackground
-                  source={{ uri: cardBgUri }}
-                  style={styles.cardImage}
-                  imageStyle={styles.cardImageStyle}
-                >
+                <View style={styles.cardImage}>
+                  <Image
+                    source={{ uri: cardBgUri }}
+                    style={styles.cardImageStyle}
+                    resizeMode="cover"
+                  />
                   <LinearGradient
                     colors={[
                       'rgba(7, 88, 101, 0.95)',
@@ -167,10 +175,9 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
 
                     <View style={styles.detailLinkRow}>
                       <Text style={styles.detailLinkText}>Xem chi tiết</Text>
-                      <Ionicons name="chevron-forward" size={16} color={COLORS.white} />
                     </View>
                   </View>
-                </ImageBackground>
+                </View>
               </TouchableOpacity>
             );
           })
@@ -194,20 +201,18 @@ const styles = StyleSheet.create({
   },
   goalCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 20,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   goalIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.primarySoft,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -216,39 +221,42 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   goalLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textMuted,
     fontWeight: '600',
   },
   goalName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    marginTop: 2,
+    marginTop: 3,
   },
   locationChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 10,
     marginTop: 6,
     gap: 4,
   },
   locationChipText: {
     fontSize: 11,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 40,
+    paddingTop: 14,
+    paddingBottom: 24,
   },
   sectionTitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.textSecondary,
     marginBottom: 14,
   },
@@ -262,31 +270,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   emptyContainer: {
-    paddingVertical: 50,
+    paddingVertical: 36,
+    paddingHorizontal: 20,
     alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  emptyIconTile: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: '#FFF1EC',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
-    marginTop: 10,
-    color: COLORS.textMuted,
+    marginTop: 12,
+    color: COLORS.textSecondary,
     fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   card: {
     width: '100%',
-    height: 150,
-    borderRadius: 20,
-    overflow: 'hidden',
+    height: 160,
+    borderRadius: 26,
     marginBottom: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primaryDark,
     ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
   cardImage: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
+    borderRadius: 26,
+    overflow: 'hidden',
   },
   cardImageStyle: {
-    borderRadius: 20,
-    resizeMode: 'cover',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   gradientOverlay: {
     position: 'absolute',
@@ -313,8 +343,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: COLORS.white,
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 21,
+    fontWeight: '800',
     marginBottom: 4,
     textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
@@ -329,8 +359,15 @@ const styles = StyleSheet.create({
   detailLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     marginTop: 10,
     gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   detailLinkText: {
     color: COLORS.white,

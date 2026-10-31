@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { COLORS } from '../../../../general/theme';
 
 /**
  * Notebook Tab - Đã chuyển đổi sang Module Sổ Tay chính (src/page/member/SoTay)
@@ -18,7 +19,7 @@ const Notebook = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.background,
   },
 });
 

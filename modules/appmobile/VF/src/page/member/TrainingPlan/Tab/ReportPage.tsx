@@ -6,7 +6,9 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-na
 import Svg, { Circle } from "react-native-svg";
 import Video from "react-native-video";
 import apiFitlife from "../../../../general/api";
-import { COLORS } from "../../../../general/theme";
+import { COLORS, SHADOWS } from "../../../../general/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 const ReportPage = ({ navigation, route }: any) => {
     // const [time, setTime] = useState(9);
     const [isRunning, setIsRunning] = useState(false);
@@ -352,7 +354,7 @@ const ReportPage = ({ navigation, route }: any) => {
 
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
             <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton}
@@ -363,7 +365,7 @@ const ReportPage = ({ navigation, route }: any) => {
                             navigation.navigate("MemberTabs");
                         }
                     }} >
-                    <Ionicons name="chevron-back" size={wp("6%")} color={COLORS.primary} />
+                    <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
                 </TouchableOpacity>
 
                 <Text style={styles.headerTitle}>
@@ -373,9 +375,12 @@ const ReportPage = ({ navigation, route }: any) => {
                 <TouchableOpacity style={[styles.headerTimer, isWorkoutRunning && styles.headerTimerRunning,]}
                     activeOpacity={0.8} onPress={() => { if (!isWorkoutRunning) { handleWorkoutPause(); } }} >
                     {isWorkoutRunning ? (
+                        <View style={styles.timerRow}>
+                        <View style={styles.timerDot} />
                         <Text style={styles.headerTimerText}>
                             {formatTime(workoutTime)}
                         </Text>
+                        </View>
                     ) : (
                         <Text style={styles.headerTimerStartText}>
                             Bắt đầu
@@ -383,15 +388,16 @@ const ReportPage = ({ navigation, route }: any) => {
                     )}
                 </TouchableOpacity>
             </View>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* ================= NOTICE ================= */}
                 <TouchableOpacity style={styles.noticeBox} activeOpacity={0.85} >
                     <View style={styles.noticeIcon}>
-                        <Ionicons name="information-circle-outline" size={wp("5.5%")} color="#FFFFFF" />
+                        <Ionicons name="information-circle-outline" size={20} color={COLORS.accentBlue} />
                     </View>
                     <Text style={styles.noticeText}>
                         Hướng dẫn ghi nhận hiệp tập & thời gian nghỉ
                     </Text>
+                    <Ionicons name="chevron-forward" size={16} color={COLORS.accentBlue} />
                 </TouchableOpacity>
 
                 {/* ================= EXERCISE IMAGE ================= */}
@@ -404,13 +410,16 @@ const ReportPage = ({ navigation, route }: any) => {
                                 <Video source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" repeat paused={false} muted onError={() => console.log("Video hướng dẫn bị lỗi")} />
                             )
                         ) : (
-                            <Text>Video hướng dẫn bị lỗi</Text>
+                            <View style={styles.mediaFallback}>
+                                <Ionicons name="videocam-off-outline" size={34} color={COLORS.primary} />
+                                <Text style={styles.mediaFallbackText}>Video hướng dẫn bị lỗi</Text>
+                            </View>
                         )}
                     </View>
                     {/* RIGHT BUTTONS */}
                     <View style={styles.rightButtons}>
                         <TouchableOpacity style={styles.rightIconButton} onPress={handleReset} >
-                            <Ionicons name="refresh" size={wp("5%")} color="#1BC3C8" />
+                            <Ionicons name="refresh" size={19} color={COLORS.primary} />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.rightIconButton}
                             onPress={() => {
@@ -438,7 +447,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                 });
                             }}
                             activeOpacity={0.8}>
-                            <Ionicons name="information" size={wp("5%")} color="#1BC3C8" />
+                            <Ionicons name="information" size={20} color={COLORS.primary} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -450,16 +459,20 @@ const ReportPage = ({ navigation, route }: any) => {
 
                 {exercise?.muc_ta_toi_thieu &&
                     exercise.muc_ta_toi_thieu !== "0.00" && (
-                        <Text style={styles.exerciseTitle1}>
-                            <Text style={{ fontWeight: "bold" }}>
-                                Mức tạ khuyến nghị:
+                        <View style={styles.weightChip}>
+                            <Ionicons name="barbell-outline" size={14} color={COLORS.primary} />
+                            <Text style={styles.exerciseTitle1}>
+                                <Text style={styles.weightChipLabel}>
+                                    Mức tạ khuyến nghị:{" "}
+                                </Text>
+                                {exercise.muc_ta_toi_thieu}
                             </Text>
-                            {exercise.muc_ta_toi_thieu}
-                        </Text>
+                        </View>
                     )}
 
 
                 {/* ================= CONTROLS ================= */}
+                <View style={styles.controlCard}>
                 <View style={styles.controlContainer}>
                     {/* GIÂY YÊU CẦU HOẶC SỐ LẦN LẶP */}
                     <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
@@ -493,7 +506,9 @@ const ReportPage = ({ navigation, route }: any) => {
                     <View style={styles.controlItem}>
                         <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleWorkoutPause}>
 
-                            <Ionicons name={isWorkoutRunning ? "pause" : "play"} size={wp("6.5%")} color="#0EB9BD" />
+                            <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.startGradient}>
+                                <Ionicons name={isWorkoutRunning ? "pause" : "play"} size={28} color={COLORS.white} />
+                            </LinearGradient>
                         </TouchableOpacity>
 
                         <Text style={styles.controlLabel}>
@@ -515,7 +530,7 @@ const ReportPage = ({ navigation, route }: any) => {
                         <View style={styles.progressCircle}>
                             <Svg width={circleSize} height={circleSize} viewBox={`0 0 ${circleSize} ${circleSize}`} >
                                 {/* Vòng nền */}
-                                <Circle cx={circleSize / 2} cy={circleSize / 2} r={circleRadius} stroke="#FFE0E2" strokeWidth={3} fill="none" />
+                                <Circle cx={circleSize / 2} cy={circleSize / 2} r={circleRadius} stroke={COLORS.borderLight} strokeWidth={4} fill="none" />
 
                                 {/* Vòng tiến độ */}
                                 {progress > 0 && (
@@ -524,7 +539,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                         cy={circleSize / 2}
                                         r={circleRadius}
                                         stroke={progressColor}
-                                        strokeWidth={3}
+                                        strokeWidth={4}
                                         fill="none"
                                         strokeLinecap="round"
                                         strokeDasharray={`${circumference} ${circumference}`}
@@ -568,7 +583,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                     style={styles.secondInput}
                                     value={showWeight ? weightValue : ""}
                                     onChangeText={setWeightValue}
-                                    placeholderTextColor="#A4AFB1"
+                                    placeholderTextColor={COLORS.textLight}
                                     keyboardType="decimal-pad"
                                     selectTextOnFocus />
                                 {showWeight && (
@@ -582,7 +597,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                     style={styles.secondInput}
                                     value={showRep ? repValue : ""}
                                     onChangeText={setRepValue}
-                                    placeholderTextColor="#A4AFB1"
+                                    placeholderTextColor={COLORS.textLight}
                                     keyboardType="number-pad"
                                     selectTextOnFocus />
                                 {showRep && (
@@ -596,7 +611,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                 style={styles.secondInput}
                                 value={showSeconds ? secondsValue : ""}
                                 onChangeText={setSecondsValue}
-                                placeholderTextColor="#A4AFB1"
+                                placeholderTextColor={COLORS.textLight}
                                 keyboardType="number-pad"
                                 selectTextOnFocus />
                             {showSeconds && (
@@ -609,7 +624,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                 style={styles.secondInput}
                                 value={showMinutesInput ? minutesValue : ""}
                                 onChangeText={setMinutesValue}
-                                placeholderTextColor="#A4AFB1"
+                                placeholderTextColor={COLORS.textLight}
                                 keyboardType="number-pad"
                                 selectTextOnFocus />
                             {showMinutesInput && (
@@ -622,7 +637,7 @@ const ReportPage = ({ navigation, route }: any) => {
                                 style={styles.secondInput}
                                 value={showRep ? repValue : ""}
                                 onChangeText={setRepValue}
-                                placeholderTextColor="#A4AFB1"
+                                placeholderTextColor={COLORS.textLight}
                                 keyboardType="number-pad"
                                 selectTextOnFocus />
                             {showRep && (
@@ -631,12 +646,15 @@ const ReportPage = ({ navigation, route }: any) => {
                         </View>
                     ) : null}
                     <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} disabled={savingProgress} >
+                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.addGradient}>
                         {savingProgress ? (
                             <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <Ionicons name="add" size={wp("8%")} color="#FFFFFF" />
+                            <Ionicons name="add" size={28} color="#FFFFFF" />
                         )}
+                        </LinearGradient>
                     </TouchableOpacity>
+                </View>
                 </View>
 
                 {!showSetNote ? (
@@ -645,6 +663,7 @@ const ReportPage = ({ navigation, route }: any) => {
                         style={styles.addSetNoteButton}
                         onPress={() => setShowSetNote(true)}
                     >
+                        <Ionicons name="create-outline" size={16} color={COLORS.primary} />
                         <Text style={styles.addSetNoteText}>
                             Thêm ghi chú cho hiệp
                         </Text>
@@ -660,7 +679,7 @@ const ReportPage = ({ navigation, route }: any) => {
                             value={setNote}
                             onChangeText={setSetNote}
                             placeholder="Nhập nội dung bình luận"
-                            placeholderTextColor="#C8CDD1"
+                            placeholderTextColor={COLORS.textLight}
                             multiline
                             autoFocus
                         />
@@ -671,7 +690,12 @@ const ReportPage = ({ navigation, route }: any) => {
                 {/* LỊCH SỬ TẬP LUYỆN */}
                 <View style={styles.historyContainer}>
                     <View style={styles.historyHeader}>
-                        <Text style={styles.historyTitle}>Lịch sử</Text>
+                        <View style={styles.historyTitleRow}>
+                            <View style={styles.historyIcon}>
+                                <Ionicons name="time-outline" size={18} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.historyTitle}>Lịch sử</Text>
+                        </View>
 
                         <TouchableOpacity
                             style={styles.historyChartButton}
@@ -681,8 +705,8 @@ const ReportPage = ({ navigation, route }: any) => {
                             <Text style={styles.historyChartText}>Biểu đồ</Text>
                             <Ionicons
                                 name="chevron-forward"
-                                size={wp("4.5%")}
-                                color="#13BEC2"
+                                size={16}
+                                color={COLORS.primary}
                             />
                         </TouchableOpacity>
                     </View>
@@ -732,7 +756,7 @@ const ReportPage = ({ navigation, route }: any) => {
                 </View>
 
             </ScrollView>
-        </View>
+        </SafeAreaView>
 
     );
 
@@ -740,39 +764,116 @@ const ReportPage = ({ navigation, route }: any) => {
 
 
 const styles = StyleSheet.create({
+    scroll: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+    },
+    scrollContent: {
+        paddingBottom: 24,
+    },
+    timerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    timerDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: COLORS.accentGreen,
+    },
+    mediaFallback: {
+        alignItems: "center",
+        gap: 8,
+    },
+    mediaFallbackText: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: COLORS.textMuted,
+    },
+    weightChip: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 6,
+        marginHorizontal: 16,
+        marginTop: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 14,
+        backgroundColor: COLORS.primaryLight,
+    },
+    weightChipLabel: {
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+    },
+    controlCard: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        padding: 16,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
+    },
+    startGradient: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    addGradient: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    historyTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    historyIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: COLORS.surfaceTeal,
+        alignItems: "center",
+        justifyContent: "center",
+    },
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
-        paddingTop: hp("7%"),
+        backgroundColor: COLORS.white,
     },
 
     /* ================= HEADER ================= */
     header: {
-        height: hp("7%"),
+        height: 60,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: wp("3%"),
+        paddingHorizontal: 16,
+        backgroundColor: COLORS.white,
         borderBottomWidth: 1,
-        borderBottomColor: "#EEEEEE",
-
+        borderBottomColor: COLORS.borderLight,
     },
 
 
     backButton: {
         position: "absolute",
-        left: wp("3%"),
-        width: wp("10%"),
-        height: wp("10%"),
+        left: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: COLORS.primarySoft,
         justifyContent: "center",
         alignItems: "center",
     },
 
 
     headerTitle: {
-        fontSize: wp("3.7%"),
-        fontWeight: "600",
-        color: "#282F32",
+        fontSize: 17,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     // headerTimer: {
@@ -785,113 +886,126 @@ const styles = StyleSheet.create({
     // },
     headerTimer: {
         position: "absolute",
-        right: wp("4%"),
-        minWidth: wp("20%"),
-        height: hp("5%"),
-        paddingHorizontal: wp("4%"),
-        borderRadius: wp("7%"),
-        backgroundColor: "#FFFFFF",
+        right: 16,
+        minWidth: 76,
+        height: 36,
+        paddingHorizontal: 12,
+        borderRadius: 18,
+        backgroundColor: COLORS.primary,
         alignItems: "center",
         justifyContent: "center",
-
-        elevation: 2,
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
+        ...SHADOWS.glow,
     },
     headerTimerStartText: {
-        fontSize: wp("4%"),
-        fontWeight: "600",
-        color: "#607D8B",
+        fontSize: 13,
+        fontWeight: "800",
+        color: COLORS.white,
     },
     headerTimerRunning: {
-        backgroundColor: "#EAF9FB",
+        backgroundColor: COLORS.surfaceTeal,
+        borderWidth: 1,
+        borderColor: COLORS.borderFocus,
+        shadowOpacity: 0,
+        elevation: 0,
     },
     headerTimerText: {
-        fontSize: wp("3.8%"),
-        fontWeight: "700",
-        color: "#0D7F8D",
+        fontSize: 14,
+        fontWeight: "800",
+        color: COLORS.primary,
     },
     /* ================= NOTICE ================= */
     noticeBox: {
-        width: wp("94%"),
-        minHeight: hp("6%"),
-        alignSelf: "center",
+        marginHorizontal: 16,
+        minHeight: 50,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#4B9ADE",
-        borderRadius: wp("1.5%"),
-        marginTop: hp("1.5%"),
-        paddingHorizontal: wp("4%"),
-        paddingVertical: hp("1.2%"),
+        backgroundColor: "#EEF6FD",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: "#D3E7F8",
+        marginTop: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        gap: 10,
     },
     noticeIcon: {
-        marginRight: wp("4%"),
+        width: 34,
+        height: 34,
+        borderRadius: 11,
+        backgroundColor: COLORS.white,
+        alignItems: "center",
+        justifyContent: "center",
     },
     noticeText: {
-        color: "#FFFFFF",
-        fontSize: wp("3%"),
-        fontWeight: "500",
-        lineHeight: wp("4%"),
+        flex: 1,
+        color: "#1F5F96",
+        fontSize: 13,
+        fontWeight: "700",
+        lineHeight: 18,
     },
 
     /* ================= EXERCISE ================= */
     exerciseArea: {
-        width: wp("100%"),
-        height: hp("35%"),
+        marginHorizontal: 16,
+        marginTop: 16,
+        height: hp("33%"),
         position: "relative",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        overflow: "hidden",
+        ...SHADOWS.card,
     },
 
     exerciseImageArea: {
-        width: wp("100%"),
+        width: "100%",
         height: "100%",
         alignItems: "center",
         justifyContent: "center",
     },
 
     exerciseImage: {
-        width: wp("100%"),
+        width: "100%",
         height: "100%",
     },
 
     /* RIGHT ICONS */
     rightButtons: {
         position: "absolute",
-        right: wp("4%"),
-        top: hp("2.5%"),
+        right: 12,
+        top: 12,
         alignItems: "center",
+        gap: 8,
     },
 
     rightIconButton: {
-        width: wp("10%"),
-        height: wp("10%"),
-        borderWidth: 1.5,
-        borderColor: "#21C1C5",
-        borderRadius: wp("2%"),
+        width: 40,
+        height: 40,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 13,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: hp("1.2%"),
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "rgba(255,255,255,0.95)",
+        ...SHADOWS.small,
     },
 
     /* ================= TITLE ================= */
 
     exerciseTitle: {
-        color: "#32383A",
-        fontSize: wp("4%"),
-        fontWeight: "500",
-        paddingHorizontal: wp("4%"),
-        marginTop: hp("0.3%"),
+        color: COLORS.textPrimary,
+        fontSize: 20,
+        fontWeight: "800",
+        paddingHorizontal: 16,
+        marginTop: 18,
     },
     exerciseTitle1: {
-        color: "#32383A",
-        fontSize: wp("4%"),
-        paddingHorizontal: wp("4%"),
-        marginTop: hp("0.3%"),
+        color: COLORS.textPrimary,
+        fontSize: 13,
+        fontWeight: "800",
     },
 
 
@@ -902,13 +1016,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "flex-start",
         justifyContent: "space-around",
-        paddingHorizontal: wp("4%"),
-        marginTop: hp("2.5%"),
     },
 
 
     controlItem: {
-        width: wp("26%"),
+        width: "31%",
         alignItems: "center",
     },
 
@@ -917,24 +1029,21 @@ const styles = StyleSheet.create({
         width: wp("19%"),
         height: wp("19%"),
         borderRadius: wp("9.5%"),
-        borderWidth: 2.5,
-        borderColor: "#13BEC2",
+        borderWidth: 3,
+        borderColor: COLORS.primary,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.surfaceTeal,
     },
 
 
     startCircle: {
-        width: wp("22%"),
-        height: wp("22%"),
-        borderRadius: wp("11%"),
-        borderWidth: 2.5,
-        borderColor: "#14BCC0",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#FFFFFF",
-        marginTop: -wp("1.5%"),
+        width: 82,
+        height: 82,
+        borderRadius: 41,
+        overflow: "hidden",
+        marginTop: -5,
+        ...SHADOWS.glow,
     },
 
 
@@ -951,9 +1060,9 @@ const styles = StyleSheet.create({
 
 
     circleNumber: {
-        color: "#283235",
-        fontSize: wp("5%"),
-        fontWeight: "500",
+        color: COLORS.textPrimary,
+        fontSize: 18,
+        fontWeight: "800",
     },
 
     startText: {
@@ -965,37 +1074,38 @@ const styles = StyleSheet.create({
 
 
     controlLabel: {
-        fontSize: wp("2.5%"),
-        color: "#768184",
-        marginTop: hp("0.6%"),
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.textSecondary,
+        marginTop: 8,
     },
 
 
     controlSubLabel: {
-        fontSize: wp("2.3%"),
-        color: "#8A9396",
-        marginTop: hp("0.1%"),
-
+        fontSize: 11,
+        color: COLORS.textMuted,
+        marginTop: 1,
     },
     /* ================= SECOND ================= */
 
     secondArea: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: wp("3%"),
-        marginTop: hp("1.6%"),
+        marginTop: 16,
         width: "100%",
     },
 
     secondButton: {
         flex: 1,
-        height: hp("5.2%"),
-        backgroundColor: "#EDF7F9",
-        borderRadius: wp("1.5%"),
+        height: 48,
+        backgroundColor: COLORS.background,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        marginRight: wp("2%"),
+        marginRight: 10,
     },
 
     secondText: {
@@ -1004,13 +1114,12 @@ const styles = StyleSheet.create({
     },
 
     addButton: {
-        width: wp("12%"),
-        height: wp("12%"),
-        borderRadius: wp("2%"),
-        backgroundColor: "#20BEC2",
-        justifyContent: "center",
-        alignItems: "center",
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        overflow: "hidden",
         flexShrink: 0,
+        ...SHADOWS.glow,
     },
 
 
@@ -1219,21 +1328,23 @@ const styles = StyleSheet.create({
         minWidth: wp("10%"),
         maxWidth: wp("30%"),
         paddingVertical: 0,
-        paddingHorizontal: wp("1%"),
-        color: "#283235",
-        fontSize: wp("3.6%"),
+        paddingHorizontal: 4,
+        color: COLORS.textPrimary,
+        fontSize: 16,
+        fontWeight: "700",
         textAlign: "right",
     },
 
     secondUnit: {
-        color: "#A4AFB1",
-        fontSize: wp("4%"),
-        marginLeft: wp("1%"),
+        color: COLORS.textMuted,
+        fontSize: 14,
+        fontWeight: "600",
+        marginLeft: 4,
         marginRight: 0,
     },
     progressCircle: {
-        width: wp("20%"),
-        height: wp("20%"),
+        width: wp("19%"),
+        height: wp("19%"),
         position: "relative",
         alignItems: "center",
         justifyContent: "center",
@@ -1253,121 +1364,140 @@ const styles = StyleSheet.create({
     },
 
     addSetNoteButton: {
-        marginTop: hp("1.2%"),
-        paddingHorizontal: wp("3%"),
-
+        marginTop: 14,
+        marginHorizontal: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 6,
+        paddingHorizontal: 14,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.primaryLight,
     },
 
     addSetNoteText: {
-        fontSize: wp("3.8%"),
-        fontWeight: "600",
-        color: "#13BEC2",
+        fontSize: 13,
+        fontWeight: "700",
+        color: COLORS.primary,
     },
 
     setNoteContainer: {
-        marginTop: hp("1%"),
-        marginBottom: hp("2%"), // thêm dòng này
-        paddingHorizontal: wp("3%"),
+        marginTop: 14,
+        marginHorizontal: 16,
+        padding: 14,
+        backgroundColor: COLORS.white,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     setNoteLabel: {
-        fontSize: wp("3.8%"),
-        fontWeight: "400",
-        color: "#626B6F",
-        marginBottom: hp("0.2%"),
+        fontSize: 13,
+        fontWeight: "700",
+        color: COLORS.textSecondary,
+        marginBottom: 6,
     },
 
     setNoteInput: {
         width: "100%",
-        minHeight: hp("5%"),
-        paddingHorizontal: 0,
-        paddingVertical: hp("0.5%"),
-        paddingBottom: hp("5"),
-
-        fontSize: wp("3.8%"),
-        color: "#283235",
-
-        borderBottomWidth: 1,
-        borderBottomColor: "#DDE3E5",
+        minHeight: 80,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 14,
+        color: COLORS.textPrimary,
+        textAlignVertical: "top",
+        backgroundColor: COLORS.background,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.borderLight,
     },
 
     historyContainer: {
-        marginTop: hp("2.5%"),
-        marginHorizontal: wp("3%"),
-        marginBottom: hp("3%"),
+        marginTop: 24,
+        marginHorizontal: 16,
+        marginBottom: 16,
     },
 
     historyHeader: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: hp("1.5%"),
+        marginBottom: 12,
     },
 
     historyTitle: {
-        fontSize: wp("4%"),
-        fontWeight: "600",
-        color: "#607D9B",
+        fontSize: 17,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     historyChartButton: {
         flexDirection: "row",
         alignItems: "center",
-        gap: wp("1%"),
+        gap: 2,
+        paddingHorizontal: 12,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: COLORS.primaryLight,
     },
 
     historyChartText: {
-        fontSize: wp("3.8%"),
-        fontWeight: "600",
-        color: "#13BEC2",
+        fontSize: 12.5,
+        fontWeight: "700",
+        color: COLORS.primary,
     },
 
     historyDateGroup: {
         overflow: "hidden",
-        borderRadius: wp("4%"),
-        backgroundColor: "#FFFFFF",
-        marginBottom: hp("2%"),
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        marginBottom: 12,
     },
 
     historyDateTitle: {
-        backgroundColor: "#EDF4F7",
-        color: "#30383B",
-        fontSize: wp("3.8%"),
-        fontWeight: "600",
-        paddingHorizontal: wp("3%"),
-        paddingVertical: hp("1%"),
+        backgroundColor: COLORS.surfaceTeal,
+        color: COLORS.textPrimary,
+        fontSize: 13,
+        fontWeight: "800",
+        paddingHorizontal: 14,
+        paddingVertical: 10,
     },
 
     historyRow: {
-        minHeight: hp("4.8%"),
+        minHeight: 44,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: wp("3%"),
-        borderBottomWidth: 0.5,
-        borderBottomColor: "#E0E5E8",
+        paddingHorizontal: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
     },
 
     historyLeft: {
         flexDirection: "row",
         alignItems: "center",
-        gap: wp("3%"),
+        gap: 12,
     },
 
     historySet: {
-        fontSize: wp("3.5%"),
-        color: "#7893A8",
-        fontWeight: "500",
+        fontSize: 13,
+        color: COLORS.primary,
+        fontWeight: "800",
     },
 
     historyDuration: {
-        fontSize: wp("3.5%"),
-        color: "#70787D",
+        fontSize: 13.5,
+        color: COLORS.textSecondary,
     },
 
     historyTime: {
-        fontSize: wp("3.5%"),
-        color: "#626B70",
+        fontSize: 13,
+        fontWeight: "600",
+        color: COLORS.textMuted,
     },
 
 

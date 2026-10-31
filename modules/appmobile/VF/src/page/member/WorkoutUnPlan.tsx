@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, ImageBackground, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
@@ -85,13 +85,14 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
               onPress={() => handleSelectGoal(goal)}
               activeOpacity={0.88}
             >
-              <ImageBackground
-                source={{
-                  uri: goal.anh_dai_dien || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80',
-                }}
-                style={styles.goalImage}
-                imageStyle={styles.goalImageStyle}
-              >
+              <View style={styles.goalImage}>
+                <Image
+                  source={{
+                    uri: goal.anh_dai_dien || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80',
+                  }}
+                  style={styles.goalImageStyle}
+                  resizeMode="cover"
+                />
                 <ImageTextGradient />
 
                 <View style={styles.goalCardContent}>
@@ -103,25 +104,20 @@ const WorkoutUnPlan = ({ navigation, route }: any) => {
                     <View style={styles.goalMeta}>
                       {goal.noi_tap ? (
                         <View style={styles.badge}>
-                          <Ionicons name="location-outline" size={13} color={COLORS.white} />
                           <Text style={styles.badgeText}>{goal.noi_tap}</Text>
                         </View>
                       ) : null}
 
                       {goal.so_ngay ? (
                         <View style={styles.badge}>
-                          <Ionicons name="calendar-outline" size={13} color={COLORS.white} />
                           <Text style={styles.badgeText}>{goal.so_ngay} ngày</Text>
                         </View>
                       ) : null}
                     </View>
                   </View>
 
-                  <View style={styles.arrowCircle}>
-                    <Ionicons name="chevron-forward" size={20} color={COLORS.white} />
-                  </View>
                 </View>
-              </ImageBackground>
+              </View>
             </TouchableOpacity>
           ))
         )}
@@ -134,7 +130,7 @@ export default WorkoutUnPlan;
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 110,
+    paddingBottom: 24,
   },
   goalList: {
     marginBottom: 10,
@@ -150,14 +146,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   emptyContainer: {
-    paddingVertical: 50,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   emptyText: {
     marginTop: 12,
-    color: COLORS.textMuted,
+    color: COLORS.textSecondary,
     fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   reloadBtn: {
     marginTop: 14,
@@ -173,20 +177,27 @@ const styles = StyleSheet.create({
   },
   goalCard: {
     width: '100%',
-    height: 120,
+    height: 132,
     marginBottom: 14,
-    borderRadius: 18,
-    overflow: 'hidden',
-    backgroundColor: COLORS.white,
+    borderRadius: 26,
+    backgroundColor: COLORS.primaryDark,
     ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 5,
   },
   goalImage: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
+    borderRadius: 26,
+    overflow: 'hidden',
   },
   goalImageStyle: {
-    resizeMode: 'cover',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   goalCardContent: {
     flex: 1,
@@ -204,8 +215,9 @@ const styles = StyleSheet.create({
   goalTitle: {
     color: COLORS.white,
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
     lineHeight: 24,
+    letterSpacing: 0.2,
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
@@ -219,10 +231,12 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
     gap: 4,
   },
   badgeText: {
@@ -231,10 +245,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   arrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },

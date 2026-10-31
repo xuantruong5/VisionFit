@@ -6,17 +6,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
 
-const C = {
-    primary: '#0D7F8D',
-    dark: '#075865',
-    bg: '#F4FAFB',
-    white: '#FFFFFF',
-    text: '#16383E',
-    muted: '#78949A',
-    border: '#DFEAEC',
-    soft: '#E7F5F6',
-};
 
 const DRAFT_KEY = 'visionfit_registration_draft';
 
@@ -128,7 +119,9 @@ const PaymentScreen = ({ navigation, route }: any) => {
                 JSON.stringify({ ...draft, paymentMethod: method, status: 'draft' })
             );
 
-            navigation.replace('RegistrationSuccess', {
+            const routeNames = navigation.getState()?.routeNames || [];
+            const target = routeNames.includes('RegistrationSuccess') ? 'RegistrationSuccess' : routeNames.includes('RegistrationSuccessScreen') ? 'RegistrationSuccessScreen' : 'RegistrationSuccess';
+            navigation.replace(target, {
                 draft: registration,
             });
         } catch {
@@ -148,7 +141,9 @@ const PaymentScreen = ({ navigation, route }: any) => {
                 title="Thanh toán"
                 onBack={() => navigation.goBack()}
                 rightComponent={
-                    <Ionicons name="card-outline" size={22} color={C.primary} />
+                    <View style={s.headerIcon}>
+                        <Ionicons name="card-outline" size={20} color={COLORS.primary} />
+                    </View>
                 }
             />
 
@@ -165,14 +160,16 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
             {loading ? (
                 <View style={s.center}>
-                    <ActivityIndicator size="large" color={C.primary} />
+                    <ActivityIndicator size="large" color={COLORS.primary} />
                     <Text style={s.subtitle}>Đang tải thông tin...</Text>
                 </View>
             ) : !pkg ? (
                 <View style={s.center}>
-                    <Ionicons name="alert-circle-outline" size={45} color={C.muted} />
+                    <View style={s.emptyIcon}>
+                        <Ionicons name="alert-circle-outline" size={34} color={COLORS.accentOrange} />
+                    </View>
                     <Text style={s.emptyText}>Không tìm thấy thông tin đăng ký</Text>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={s.linkBtn}>
                         <Text style={s.linkText}>Quay lại xem đăng ký</Text>
                     </TouchableOpacity>
                 </View>
@@ -181,9 +178,10 @@ const PaymentScreen = ({ navigation, route }: any) => {
                     <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
                         {/* Banner */}
-                        <LinearGradient colors={['#087F8F', '#064E60']} style={s.hero}>
+                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+                            <View style={s.heroDecor} />
                             <View style={s.heroIcon}>
-                                <Ionicons name="wallet-outline" size={25} color={C.white} />
+                                <Ionicons name="wallet-outline" size={22} color={COLORS.white} />
                             </View>
                             <Text style={s.heroTitle}>Hoàn tất hành trình đăng ký</Text>
                             <Text style={s.heroDesc}>
@@ -193,7 +191,9 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                         {/* Trạng thái */}
                         <View style={s.statusBox}>
-                            <Ionicons name="time-outline" size={23} color={C.primary} />
+                            <View style={s.statusIcon}>
+                                <Ionicons name="time-outline" size={20} color={COLORS.accentGold} />
+                            </View>
                             <View style={s.flex}>
                                 <Text style={s.statusTitle}>Chưa thanh toán</Text>
                                 <Text style={s.subtitle}>Đơn đăng ký đang ở dạng bản nháp</Text>
@@ -209,13 +209,13 @@ const PaymentScreen = ({ navigation, route }: any) => {
                         <View style={s.card}>
                             <View style={s.packageRow}>
                                 <View style={s.packageIcon}>
-                                    <Ionicons name="barbell" size={24} color={C.primary} />
+                                    <Ionicons name="barbell" size={22} color={COLORS.primary} />
                                 </View>
                                 <View style={s.flex}>
                                     <Text style={s.packageName}>{pkg.ten_goi}</Text>
                                     <Text style={s.subtitle}>Gói tập VisionFit</Text>
                                 </View>
-                                <Ionicons name="checkmark-circle" size={23} color={C.primary} />
+                                <Ionicons name="checkmark-circle" size={23} color={COLORS.primary} />
                             </View>
 
                             <View style={s.divider} />
@@ -257,8 +257,8 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                     <View style={[s.methodIcon, selected && s.methodIconActive]}>
                                         <Ionicons
                                             name={item.icon}
-                                            size={24}
-                                            color={selected ? C.white : C.primary}
+                                            size={22}
+                                            color={selected ? COLORS.white : COLORS.primary}
                                         />
                                     </View>
 
@@ -267,11 +267,11 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                         <Text style={s.methodDesc}>{item.description}</Text>
                                     </View>
 
-                                    <Ionicons
-                                        name={selected ? 'radio-button-on' : 'radio-button-off'}
-                                        size={24}
-                                        color={selected ? C.primary : '#B8CED2'}
-                                    />
+                                    <View style={[s.checkCircle, selected && s.checkCircleActive]}>
+                                        {selected ? (
+                                            <Ionicons name="checkmark" size={15} color={COLORS.white} />
+                                        ) : null}
+                                    </View>
                                 </TouchableOpacity>
                             );
                         })}
@@ -294,9 +294,9 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                 </Text>
                             </View>
 
-                            <View style={s.divider} />
+                            <View style={s.dashedDivider} />
 
-                            <View style={s.rowBetween}>
+                            <View style={[s.rowBetween, s.totalBox]}>
                                 <Text style={s.totalLabel}>Tổng tạm tính</Text>
                                 <Text style={s.totalValue}>{money(total)}</Text>
                             </View>
@@ -310,7 +310,7 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                         {/* Lưu ý */}
                         <View style={s.notice}>
-                            <Ionicons name="information-circle-outline" size={21} color={C.primary} />
+                            <Ionicons name="information-circle" size={20} color={COLORS.primary} />
                             <Text style={s.noticeText}>
                                 Đây là giao diện thanh toán thử nghiệm. Chưa tích hợp ngân hàng, ví điện tử hoặc tạo giao dịch thực tế.
                             </Text>
@@ -327,24 +327,33 @@ const PaymentScreen = ({ navigation, route }: any) => {
                             </View>
 
                             <View style={s.safeRow}>
-                                <Ionicons name="shield-checkmark-outline" size={18} color={C.primary} />
+                                <Ionicons name="shield-checkmark" size={15} color={COLORS.accentGreen} />
                                 <Text style={s.safeText}>Chế độ Demo</Text>
                             </View>
                         </View>
 
                         <TouchableOpacity
-                            style={[s.confirmButton, saving && s.disabledButton]}
+                            style={[s.confirmWrap, saving && s.disabledButton]}
+                            activeOpacity={0.85}
                             onPress={handleConfirm}
                             disabled={saving}
                         >
-                            {saving ? (
-                                <ActivityIndicator color={C.white} />
-                            ) : (
-                                <>
-                                    <Text style={s.confirmText}>Lưu phương thức thanh toán</Text>
-                                    <Ionicons name="arrow-forward" size={21} color={C.white} />
-                                </>
-                            )}
+                            <LinearGradient
+                                colors={[COLORS.primary, COLORS.primaryDark]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={s.confirmButton}
+                            >
+                                {saving ? (
+                                    <ActivityIndicator color={COLORS.white} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="lock-closed" size={17} color={COLORS.white} />
+                                        <Text style={s.confirmText}>Lưu phương thức thanh toán</Text>
+                                        <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
+                                    </>
+                                )}
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
                 </>
@@ -356,34 +365,26 @@ const PaymentScreen = ({ navigation, route }: any) => {
 const s = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: C.bg,
+        backgroundColor: COLORS.background,
     },
     flex: {
         flex: 1,
     },
-    header: {
-        height: 62,
-        paddingHorizontal: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    backButton: {
-        width: 42,
-        height: 42,
-        borderRadius: 13,
-        backgroundColor: C.white,
+    headerIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: C.text,
-    },
     progress: {
-        paddingHorizontal: 22,
-        paddingVertical: 14,
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 14,
+        backgroundColor: COLORS.white,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
     },
     rowBetween: {
         flexDirection: 'row',
@@ -395,119 +396,162 @@ const s = StyleSheet.create({
         fontSize: 11,
         fontWeight: '800',
         letterSpacing: 1,
-        color: C.primary,
+        color: COLORS.primary,
     },
     progressTrack: {
-        height: 5,
-        borderRadius: 8,
-        backgroundColor: C.border,
-        marginTop: 12,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: COLORS.primaryLight,
+        marginTop: 10,
+        overflow: 'hidden',
     },
     progressFill: {
         width: '100%',
         height: '100%',
-        borderRadius: 8,
-        backgroundColor: C.primary,
+        borderRadius: 3,
+        backgroundColor: COLORS.primary,
     },
     subtitle: {
         fontSize: 12,
-        lineHeight: 19,
-        color: C.muted,
+        lineHeight: 17,
+        color: COLORS.textMuted,
     },
     content: {
-        paddingHorizontal: 18,
-        paddingTop: 8,
-        paddingBottom: 25,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 24,
     },
     center: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 13,
+        gap: 12,
         padding: 20,
+    },
+    emptyIcon: {
+        width: 68,
+        height: 68,
+        borderRadius: 22,
+        backgroundColor: '#FFF1EC',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     emptyText: {
         fontSize: 15,
-        color: C.text,
+        color: COLORS.textPrimary,
         fontWeight: '700',
         textAlign: 'center',
     },
+    linkBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
+    },
     linkText: {
         fontSize: 13,
-        color: C.primary,
+        color: COLORS.primary,
         fontWeight: '800',
     },
     hero: {
-        borderRadius: 23,
-        padding: 23,
-        marginBottom: 17,
+        borderRadius: 22,
+        padding: 20,
+        marginBottom: 16,
+        overflow: 'hidden',
+        ...SHADOWS.glow,
+    },
+    heroDecor: {
+        position: 'absolute',
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        top: -60,
+        right: -50,
     },
     heroIcon: {
-        width: 45,
-        height: 45,
+        width: 44,
+        height: 44,
         borderRadius: 13,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: 'rgba(255,255,255,0.16)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 14,
     },
     heroTitle: {
-        color: C.white,
-        fontSize: 24,
-        lineHeight: 31,
+        color: COLORS.white,
+        fontSize: 22,
+        lineHeight: 29,
         fontWeight: '900',
     },
     heroDesc: {
-        color: '#D2F0F2',
-        fontSize: 12,
-        lineHeight: 20,
-        marginTop: 10,
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 12.5,
+        lineHeight: 19,
+        marginTop: 8,
     },
     statusBox: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        gap: 12,
         padding: 14,
-        borderRadius: 16,
-        backgroundColor: C.soft,
-        marginBottom: 25,
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        marginBottom: 24,
+        ...SHADOWS.card,
+    },
+    statusIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#FFF7ED',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     statusTitle: {
-        color: C.text,
-        fontSize: 13,
+        color: COLORS.textPrimary,
+        fontSize: 14,
         fontWeight: '800',
-        marginBottom: 3,
+        marginBottom: 2,
     },
     statusBadge: {
-        backgroundColor: C.white,
-        borderRadius: 8,
-        padding: 7,
+        backgroundColor: '#FFF7ED',
+        borderWidth: 1,
+        borderColor: '#FDE6C4',
+        borderRadius: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 5,
     },
     statusBadgeText: {
-        color: C.primary,
-        fontSize: 9,
+        color: COLORS.accentGold,
+        fontSize: 9.5,
         fontWeight: '900',
+        letterSpacing: 0.5,
     },
     sectionTitle: {
         fontSize: 17,
         fontWeight: '800',
-        color: C.text,
-        marginBottom: 13,
-        marginTop: 6,
+        color: COLORS.textPrimary,
+        marginBottom: 12,
     },
     sectionDesc: {
         fontSize: 12,
-        color: C.muted,
-        marginTop: -7,
-        marginBottom: 15,
+        color: COLORS.textMuted,
+        marginTop: -8,
+        marginBottom: 12,
     },
     card: {
-        backgroundColor: C.white,
+        backgroundColor: COLORS.white,
         borderWidth: 1,
-        borderColor: C.border,
-        borderRadius: 19,
-        padding: 17,
+        borderColor: COLORS.border,
+        borderRadius: 20,
+        padding: 16,
         marginBottom: 24,
+        ...SHADOWS.card,
     },
     packageRow: {
         flexDirection: 'row',
@@ -515,148 +559,194 @@ const s = StyleSheet.create({
         gap: 12,
     },
     packageIcon: {
-        width: 46,
-        height: 46,
+        width: 44,
+        height: 44,
         borderRadius: 14,
-        backgroundColor: C.soft,
+        backgroundColor: COLORS.surfaceTeal,
         alignItems: 'center',
         justifyContent: 'center',
     },
     packageName: {
-        color: C.text,
+        color: COLORS.textPrimary,
         fontSize: 15,
         fontWeight: '800',
-        marginBottom: 5,
+        marginBottom: 2,
     },
     divider: {
         height: 1,
-        backgroundColor: C.border,
-        marginVertical: 17,
+        backgroundColor: COLORS.borderLight,
+        marginVertical: 14,
+    },
+    dashedDivider: {
+        borderTopWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: COLORS.border,
+        marginVertical: 14,
     },
     infoLabel: {
         flex: 1,
-        fontSize: 12,
-        color: C.muted,
+        fontSize: 13,
+        color: COLORS.textMuted,
     },
     infoValue: {
         flexShrink: 1,
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.text,
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.textPrimary,
         textAlign: 'right',
     },
     infoSpacing: {
-        height: 15,
+        height: 12,
     },
     methodCard: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: C.white,
+        backgroundColor: COLORS.white,
         borderWidth: 1.5,
-        borderColor: C.border,
-        borderRadius: 17,
+        borderColor: COLORS.border,
+        borderRadius: 18,
         padding: 14,
-        marginBottom: 12,
+        marginBottom: 10,
+        ...SHADOWS.small,
     },
     methodSelected: {
-        borderColor: C.primary,
-        backgroundColor: '#F0FAFA',
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.surfaceTeal,
+        ...SHADOWS.card,
     },
     methodIcon: {
-        width: 46,
-        height: 46,
-        borderRadius: 13,
-        backgroundColor: C.soft,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: COLORS.surfaceTeal,
         alignItems: 'center',
         justifyContent: 'center',
     },
     methodIconActive: {
-        backgroundColor: C.primary,
+        backgroundColor: COLORS.primary,
     },
     methodTitle: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: '800',
-        color: C.text,
-        marginBottom: 5,
+        color: COLORS.textPrimary,
+        marginBottom: 2,
     },
     methodDesc: {
-        fontSize: 11,
-        lineHeight: 17,
-        color: C.muted,
+        fontSize: 12,
+        lineHeight: 16,
+        color: COLORS.textMuted,
+    },
+    checkCircle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.white,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkCircleActive: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.primary,
+    },
+    totalBox: {
+        backgroundColor: COLORS.surfaceTeal,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
     },
     totalLabel: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '800',
-        color: C.text,
+        color: COLORS.textPrimary,
     },
     totalValue: {
-        fontSize: 23,
+        fontSize: 22,
         fontWeight: '900',
-        color: C.primary,
+        color: COLORS.primary,
     },
     warning: {
-        fontSize: 11,
+        fontSize: 12,
         lineHeight: 18,
         color: '#B47A30',
         marginTop: 12,
+        backgroundColor: '#FFF7ED',
+        borderRadius: 12,
+        padding: 10,
+        overflow: 'hidden',
     },
     notice: {
         flexDirection: 'row',
         gap: 10,
-        padding: 15,
-        borderRadius: 14,
-        backgroundColor: C.soft,
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
+        borderWidth: 1,
+        borderColor: COLORS.borderFocus,
     },
     noticeText: {
         flex: 1,
-        fontSize: 12,
-        lineHeight: 20,
-        color: C.primary,
+        fontSize: 12.5,
+        lineHeight: 19,
+        color: COLORS.primaryDark,
     },
     footer: {
-        backgroundColor: C.white,
-        paddingHorizontal: 19,
-        paddingVertical: 15,
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        paddingBottom: 14,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         borderTopWidth: 1,
-        borderTopColor: C.border,
+        borderTopColor: COLORS.borderLight,
+        ...SHADOWS.card,
+        shadowOffset: { width: 0, height: -4 },
+        elevation: 10,
     },
     footerLabel: {
         fontSize: 11,
         fontWeight: '700',
-        color: C.muted,
+        letterSpacing: 0.5,
+        color: COLORS.textMuted,
     },
     footerPrice: {
-        fontSize: 23,
+        fontSize: 22,
         fontWeight: '900',
-        color: C.primary,
-        marginTop: 5,
+        color: COLORS.primary,
+        marginTop: 2,
     },
     safeRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        backgroundColor: '#ECFDF5',
     },
     safeText: {
         fontSize: 11,
-        color: C.primary,
+        color: COLORS.accentGreen,
         fontWeight: '700',
     },
+    confirmWrap: {
+        marginTop: 12,
+    },
     confirmButton: {
-        height: 54,
-        backgroundColor: C.primary,
-        borderRadius: 15,
+        height: 52,
+        borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
-        marginTop: 15,
+        gap: 10,
     },
     disabledButton: {
         opacity: 0.6,
     },
     confirmText: {
-        color: C.white,
+        color: COLORS.white,
         fontSize: 15,
         fontWeight: '800',
     },

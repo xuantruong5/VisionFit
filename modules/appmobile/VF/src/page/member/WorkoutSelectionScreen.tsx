@@ -5,11 +5,12 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
+import { COLORS as THEME, SHADOWS } from '../../general/theme';
 
 const COLORS = {
-    primary: '#0D7F8D', primaryDark: '#075865', background: '#F4FAFB',
-    white: '#FFFFFF', text: '#11343A', muted: '#71949A',
-    border: '#E0ECEE', soft: '#E6F5F6', gold: '#E6A94A',
+    primary: THEME.primary, primaryDark: THEME.primaryDark, background: THEME.background,
+    white: THEME.white, text: THEME.textPrimary, muted: THEME.textMuted,
+    border: THEME.border, soft: THEME.surfaceTeal, gold: THEME.accentGold,
 };
 
 const STORAGE_KEY = 'visionfit_selected_package';
@@ -162,11 +163,9 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
         try {
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(selectedPackage));
 
-            if (navigation.getState()?.routeNames?.includes('PTList')) {
-                navigation.navigate('PTList', { selectedPackage, packageId: selectedPackage.id });
-            } else {
-                Alert.alert('Đã lưu lựa chọn', 'Gói tập đã được lưu. Trang lựa chọn PT sẽ được thêm ở bước tiếp theo.');
-            }
+            const routeNames = navigation.getState()?.routeNames || [];
+            const target = routeNames.includes('PTList') ? 'PTList' : routeNames.includes('PTListScreen') ? 'PTListScreen' : 'PTList';
+            navigation.navigate(target, { selectedPackage, packageId: selectedPackage.id });
         } catch {
             Alert.alert('Lỗi', 'Không thể lưu lựa chọn gói tập.');
         }
@@ -189,8 +188,8 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                 )}
 
                 <View style={styles.cardTop}>
-                    <View style={[styles.packageIcon, selected && { backgroundColor: COLORS.primary }]}>
-                        <Ionicons name={item.loai === 'pt' ? 'people' : 'barbell'} size={23}
+                    <View style={[styles.packageIcon, selected && styles.packageIconActive]}>
+                        <Ionicons name={item.loai === 'pt' ? 'people' : 'barbell'} size={22}
                             color={selected ? COLORS.white : COLORS.primary} />
                     </View>
 
@@ -199,8 +198,9 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                         <Text style={styles.packageName}>{item.ten_goi}</Text>
                     </View>
 
-                    <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={25}
-                        color={selected ? COLORS.primary : '#BDD0D3'} />
+                    <View style={[styles.checkBadge, selected && styles.checkBadgeActive]}>
+                        {selected && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
+                    </View>
                 </View>
 
                 <View style={styles.durationPill}>
@@ -232,6 +232,7 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
 
                     {selected && (
                         <View style={styles.chosenBadge}>
+                            <Ionicons name="checkmark-circle" size={14} color={COLORS.white} />
                             <Text style={styles.chosenText}>Đã chọn</Text>
                         </View>
                     )}
@@ -249,7 +250,9 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                 title="Đăng ký gói tập"
                 onBack={() => navigation.goBack()}
                 rightComponent={
-                    <Ionicons name="fitness-outline" size={22} color={COLORS.primary} />
+                    <View style={styles.headerIconTile}>
+                        <Ionicons name="fitness-outline" size={20} color={COLORS.primary} />
+                    </View>
                 }
             />
 
@@ -277,8 +280,10 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                 ListHeaderComponent={
                     <>
                         {/* Banner */}
-                        <LinearGradient colors={['#08788A', '#064C61']} start={{ x: 0, y: 0 }}
+                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }} style={styles.hero}>
+                            <View style={styles.heroCircleLg} />
+                            <View style={styles.heroCircleSm} />
 
                             <View style={styles.heroBadge}>
                                 <Ionicons name="flash-outline" color="#E8FDFF" size={13} />
@@ -330,7 +335,9 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                             </>
                         ) : (
                             <>
-                                <Ionicons name={error ? 'cloud-offline-outline' : 'albums-outline'} size={42} color={COLORS.muted} />
+                                <View style={styles.emptyIconTile}>
+                                    <Ionicons name={error ? 'cloud-offline-outline' : 'albums-outline'} size={30} color={COLORS.primary} />
+                                </View>
                                 <Text style={styles.emptyText}>{error || 'Không có gói tập phù hợp.'}</Text>
                                 {error && (
                                     <TouchableOpacity style={styles.retryButton} onPress={() => loadPackages()}>
@@ -358,9 +365,14 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                 )}
 
                 <TouchableOpacity disabled={!selectedPackage || loading} onPress={handleContinue}
-                    activeOpacity={0.85} style={[styles.continueButton, (!selectedPackage || loading) && styles.continueDisabled]}>
-                    <Text style={styles.continueText}>Tiếp tục chọn PT</Text>
-                    <Ionicons name="arrow-forward" size={21} color="#FFFFFF" />
+                    activeOpacity={0.85} style={[styles.continueWrap, (!selectedPackage || loading) && styles.continueWrapDisabled]}>
+                    <LinearGradient
+                        colors={(!selectedPackage || loading) ? ['#AFCBD0', '#AFCBD0'] : [COLORS.primary, COLORS.primaryDark]}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={styles.continueButton}>
+                        <Text style={styles.continueText}>Tiếp tục chọn PT</Text>
+                        <Ionicons name="arrow-forward" size={21} color="#FFFFFF" />
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
 
@@ -412,10 +424,13 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                                 </View>
                             </ScrollView>
 
-                            <TouchableOpacity style={styles.modalChooseButton}
+                            <TouchableOpacity style={styles.modalChooseWrap}
                                 onPress={async () => { await handleSelect(detail); setDetail(null); }}>
-                                <Text style={styles.modalChooseText}>Chọn gói tập này</Text>
-                                <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
+                                <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]}
+                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalChooseButton}>
+                                    <Text style={styles.modalChooseText}>Chọn gói tập này</Text>
+                                    <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
+                                </LinearGradient>
                             </TouchableOpacity>
                         </SafeAreaView>
                     )}
@@ -455,9 +470,18 @@ const styles = StyleSheet.create({
         width: 40,
         alignItems: 'center',
     },
+    headerIconTile: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: COLORS.soft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     progressContainer: {
-        paddingHorizontal: 23,
-        paddingVertical: 14,
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        paddingBottom: 6,
     },
     progressTop: {
         flexDirection: 'row',
@@ -476,9 +500,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     progressTrack: {
-        height: 5,
+        height: 6,
         borderRadius: 10,
-        backgroundColor: '#DEECEE',
+        backgroundColor: THEME.borderLight,
         overflow: 'hidden',
     },
     progressFill: {
@@ -488,24 +512,45 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     listContent: {
-        paddingHorizontal: 18,
-        paddingBottom: 25,
+        paddingHorizontal: 16,
+        paddingBottom: 30,
         flexGrow: 1,
     },
     hero: {
         borderRadius: 24,
-        padding: 23,
+        padding: 22,
         marginTop: 10,
-        marginBottom: 25,
+        marginBottom: 24,
         minHeight: 208,
         overflow: 'hidden',
+        ...SHADOWS.glow,
+    },
+    heroCircleLg: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        top: -70,
+        right: -50,
+    },
+    heroCircleSm: {
+        position: 'absolute',
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        bottom: -40,
+        left: -25,
     },
     heroBadge: {
         flexDirection: 'row',
         alignSelf: 'flex-start',
         alignItems: 'center',
         gap: 7,
-        backgroundColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.16)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 11,
         paddingVertical: 7,
         borderRadius: 20,
@@ -549,13 +594,13 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         color: COLORS.text,
-        fontSize: 20,
+        fontSize: 17,
         fontWeight: '800',
     },
     sectionSubtitle: {
         color: COLORS.muted,
         fontSize: 12,
-        marginTop: 6,
+        marginTop: 3,
     },
     countBadge: {
         paddingHorizontal: 11,
@@ -574,15 +619,17 @@ const styles = StyleSheet.create({
     },
     filterChip: {
         paddingHorizontal: 17,
-        paddingVertical: 11,
-        borderRadius: 15,
+        paddingVertical: 10,
+        borderRadius: 14,
         backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: COLORS.border,
+        ...SHADOWS.small,
     },
     filterChipActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
+        ...SHADOWS.glow,
     },
     filterText: {
         color: COLORS.muted,
@@ -593,22 +640,33 @@ const styles = StyleSheet.create({
         color: COLORS.white,
     },
     packageCard: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.5,
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
         borderColor: COLORS.border,
-        borderRadius: 22,
-        padding: 18,
-        marginBottom: 15,
-        overflow: 'hidden',
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 14,
+        ...SHADOWS.card,
     },
     selectedCard: {
         borderColor: COLORS.primary,
-        backgroundColor: '#FBFFFF',
-        elevation: 3,
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.09,
-        shadowOffset: { width: 0, height: 3 },
-        shadowRadius: 8,
+        backgroundColor: COLORS.soft,
+        ...SHADOWS.glow,
+        shadowOpacity: 0.16,
+    },
+    checkBadge: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        borderWidth: 2,
+        borderColor: THEME.textLight,
+        backgroundColor: COLORS.white,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkBadgeActive: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.primary,
     },
     popularRibbon: {
         flexDirection: 'row',
@@ -633,12 +691,15 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     packageIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 15,
+        width: 46,
+        height: 46,
+        borderRadius: 14,
         backgroundColor: COLORS.soft,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    packageIconActive: {
+        backgroundColor: COLORS.primary,
     },
     typeInfo: {
         flex: 1,
@@ -662,10 +723,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 6,
         alignSelf: 'flex-start',
-        backgroundColor: COLORS.soft,
-        borderRadius: 8,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 10,
         paddingHorizontal: 10,
-        paddingVertical: 7,
+        paddingVertical: 6,
     },
     durationText: {
         color: COLORS.primary,
@@ -702,8 +765,8 @@ const styles = StyleSheet.create({
     },
     benefitText: {
         flex: 1,
-        color: '#49636A',
-        fontSize: 12,
+        color: THEME.textSecondary,
+        fontSize: 12.5,
         lineHeight: 19,
     },
     cardBottom: {
@@ -716,7 +779,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 4,
+        paddingVertical: 7,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: THEME.primarySoft,
     },
     detailText: {
         color: COLORS.primary,
@@ -724,23 +790,32 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     chosenBadge: {
-        backgroundColor: COLORS.soft,
-        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: COLORS.primary,
+        borderRadius: 12,
         paddingVertical: 7,
         paddingHorizontal: 11,
     },
     chosenText: {
-        color: COLORS.primary,
+        color: COLORS.white,
         fontSize: 11,
         fontWeight: '800',
     },
     bottomBar: {
-        paddingHorizontal: 18,
-        paddingTop: 13,
-        paddingBottom: 12,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 14,
         backgroundColor: COLORS.white,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
+        ...SHADOWS.card,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        elevation: 12,
     },
     selectedSummary: {
         flexDirection: 'row',
@@ -771,22 +846,34 @@ const styles = StyleSheet.create({
         color: COLORS.muted,
         marginBottom: 13,
     },
+    continueWrap: {
+        borderRadius: 16,
+        ...SHADOWS.glow,
+    },
+    continueWrapDisabled: {
+        shadowOpacity: 0,
+        elevation: 0,
+    },
     continueButton: {
         height: 54,
         borderRadius: 16,
-        backgroundColor: COLORS.primary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
     },
-    continueDisabled: {
-        backgroundColor: '#AFCBD0',
-    },
     continueText: {
         color: '#FFFFFF',
         fontSize: 15,
         fontWeight: '800',
+    },
+    emptyIconTile: {
+        width: 60,
+        height: 60,
+        borderRadius: 18,
+        backgroundColor: COLORS.soft,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     emptyContainer: {
         paddingVertical: 55,
@@ -869,8 +956,10 @@ const styles = StyleSheet.create({
         marginBottom: 19,
     },
     modalPriceBox: {
-        backgroundColor: COLORS.background,
-        borderRadius: 16,
+        backgroundColor: COLORS.soft,
+        borderWidth: 1,
+        borderColor: THEME.borderFocus,
+        borderRadius: 18,
         padding: 17,
         marginBottom: 23,
     },
@@ -903,7 +992,7 @@ const styles = StyleSheet.create({
     },
     modalBenefitText: {
         flex: 1,
-        color: '#49636A',
+        color: THEME.textSecondary,
         fontSize: 13,
         lineHeight: 21,
     },
@@ -923,8 +1012,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
     },
+    modalChooseWrap: {
+        borderRadius: 16,
+        ...SHADOWS.glow,
+    },
     modalChooseButton: {
-        backgroundColor: COLORS.primary,
         height: 54,
         borderRadius: 16,
         flexDirection: 'row',

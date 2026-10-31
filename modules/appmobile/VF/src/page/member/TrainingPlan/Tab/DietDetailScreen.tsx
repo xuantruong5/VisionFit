@@ -50,6 +50,7 @@ const DietDetail = ({ navigation, route }: any) => {
       />
 
       <ScrollView
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -64,6 +65,10 @@ const DietDetail = ({ navigation, route }: any) => {
             style={styles.foodImage}
             resizeMode="cover"
           />
+          <View style={styles.kcalFloat}>
+            <Ionicons name="flame" size={14} color={COLORS.accentOrange} />
+            <Text style={styles.kcalFloatText}>{calories} Kcal</Text>
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -109,7 +114,9 @@ const DietDetail = ({ navigation, route }: any) => {
           {/* Nguyên liệu */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="restaurant-outline" size={18} color={COLORS.primary} />
+              <View style={[styles.sectionIcon, { backgroundColor: "#FFF1EC" }]}>
+                <Ionicons name="restaurant-outline" size={18} color={COLORS.accentOrange} />
+              </View>
               <Text style={styles.sectionTitle}>Nguyên liệu chính</Text>
             </View>
 
@@ -132,7 +139,10 @@ const DietDetail = ({ navigation, route }: any) => {
                       index === ingredients.length - 1 && styles.lastRow,
                     ]}
                   >
-                    <Text style={styles.ingredientName}>{name}</Text>
+                    <View style={styles.ingredientLeft}>
+                      <View style={styles.bulletDot} />
+                      <Text style={styles.ingredientName}>{name}</Text>
+                    </View>
                     {amount ? <Text style={styles.amountText}>{amount}</Text> : null}
                   </View>
                 );
@@ -146,7 +156,9 @@ const DietDetail = ({ navigation, route }: any) => {
           {spices.length > 0 && (
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
-                <Ionicons name="flask-outline" size={18} color={COLORS.primary} />
+                <View style={[styles.sectionIcon, { backgroundColor: "#F5F3FF" }]}>
+                  <Ionicons name="flask-outline" size={18} color={"#7C3AED"} />
+                </View>
                 <Text style={styles.sectionTitle}>Gia vị gợi ý</Text>
               </View>
               {spices.map((spice, idx) => (
@@ -154,7 +166,8 @@ const DietDetail = ({ navigation, route }: any) => {
                   key={idx}
                   style={[styles.ingredientRow, idx === spices.length - 1 && styles.lastRow]}
                 >
-                  <Text style={styles.ingredientName}>
+                  <View style={styles.bulletDot} />
+                  <Text style={[styles.ingredientName, styles.flex]}>
                     {typeof spice === "string" ? spice : spice.name ?? "Gia vị"}
                   </Text>
                 </View>
@@ -166,7 +179,9 @@ const DietDetail = ({ navigation, route }: any) => {
           {cookingSteps.length > 0 && (
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
-                <Ionicons name="flame-outline" size={18} color={COLORS.primary} />
+                <View style={[styles.sectionIcon, { backgroundColor: "#FFF7ED" }]}>
+                  <Ionicons name="flame-outline" size={18} color={COLORS.accentGold} />
+                </View>
                 <Text style={styles.sectionTitle}>Cách chế biến</Text>
               </View>
               {cookingSteps.map((step, idx) => (
@@ -190,58 +205,85 @@ export default DietDetail;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  scroll: {
+    flex: 1,
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingBottom: 110,
+    paddingBottom: 24,
+  },
+  flex: {
+    flex: 1,
   },
   imageContainer: {
-    width: "100%",
     height: 220,
-    backgroundColor: COLORS.borderLight,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: COLORS.primaryLight,
+    ...SHADOWS.card,
   },
   foodImage: {
     width: "100%",
     height: "100%",
+  },
+  kcalFloat: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  kcalFloatText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
   },
   content: {
     padding: 16,
   },
   foodName: {
     fontSize: 22,
-    fontWeight: "700",
+    fontWeight: "800",
     color: COLORS.textPrimary,
     lineHeight: 28,
   },
   timeRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     marginTop: 10,
     marginBottom: 16,
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: 16,
     gap: 5,
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: COLORS.primary,
   },
   nutritionCard: {
     flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 20,
+    padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     marginBottom: 16,
     ...SHADOWS.card,
   },
@@ -252,24 +294,26 @@ const styles = StyleSheet.create({
     borderRightColor: COLORS.borderLight,
   },
   nutritionValue: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
   },
   nutritionLabel: {
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 4,
+    textAlign: "center",
   },
   kcalItem: {
     flex: 1.2,
     alignItems: "center",
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 12,
-    paddingVertical: 6,
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 14,
+    paddingVertical: 10,
+    marginLeft: 8,
     justifyContent: "center",
   },
   kcalValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "800",
     color: COLORS.primary,
   },
@@ -280,46 +324,73 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     marginBottom: 16,
-    ...SHADOWS.small,
+    ...SHADOWS.card,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
-    paddingBottom: 8,
+    paddingBottom: 12,
+  },
+  sectionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
     color: COLORS.textPrimary,
   },
   ingredientRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 11,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
+    gap: 10,
+  },
+  ingredientLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  bulletDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
   },
   lastRow: {
     borderBottomWidth: 0,
   },
   ingredientName: {
+    flexShrink: 1,
     fontSize: 14,
     color: COLORS.textPrimary,
+    fontWeight: "500",
   },
   amountText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "700",
     color: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: "hidden",
   },
   emptyText: {
     fontSize: 13,
@@ -330,26 +401,27 @@ const styles = StyleSheet.create({
   stepRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginTop: 12,
     gap: 12,
   },
   stepNumberBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: COLORS.primarySoft,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   stepNumberText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontWeight: "800",
+    color: COLORS.white,
   },
   stepText: {
     flex: 1,
     fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 21,
+    paddingTop: 3,
   },
 });

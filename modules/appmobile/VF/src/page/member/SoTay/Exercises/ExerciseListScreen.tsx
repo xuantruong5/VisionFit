@@ -7,10 +7,12 @@ import {
   TextInput,
   ScrollView,
   Image,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ExerciseFilterModal from './ExerciseFilterModal';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface ExerciseListScreenProps {
   navigation: any;
@@ -342,33 +344,37 @@ const ExerciseListScreen: React.FC<ExerciseListScreenProps> = ({ navigation, rou
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerIconBtn}
+          activeOpacity={0.7}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>{categoryName}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{categoryName}</Text>
 
         <View style={styles.headerRightGroup}>
           <TouchableOpacity
-            style={styles.headerIconBtn}
+            style={[styles.headerIconBtn, isBookmarked && styles.headerIconBtnActive]}
+            activeOpacity={0.7}
             onPress={() => setIsBookmarked(!isBookmarked)}
           >
             <Ionicons
               name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={24}
-              color={isBookmarked ? '#0D7F8D' : '#374151'}
+              size={20}
+              color={isBookmarked ? COLORS.white : COLORS.primary}
             />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerIconBtn}
+            activeOpacity={0.7}
             onPress={() => setFilterModalVisible(true)}
           >
-            <Ionicons name="filter-outline" size={24} color="#374151" />
+            <Ionicons name="options-outline" size={20} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -376,17 +382,17 @@ const ExerciseListScreen: React.FC<ExerciseListScreenProps> = ({ navigation, rou
       {/* Thanh tìm kiếm */}
       <View style={styles.searchSection}>
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" style={styles.searchIcon} />
+          <Ionicons name="search" size={19} color={COLORS.primary} style={styles.searchIcon} />
           <TextInput
             placeholder="Tìm kiếm"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={setSearchText}
             style={styles.searchInput}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText('')}>
-              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -398,10 +404,16 @@ const ExerciseListScreen: React.FC<ExerciseListScreenProps> = ({ navigation, rou
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.listHeader}>
+          <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
+          <View style={styles.countPill}>
+            <Text style={styles.countText}>{exercises.length} bài</Text>
+          </View>
+        </View>
         {exercises.map((item) => (
           <TouchableOpacity
             key={item.id}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
             style={styles.exerciseRow}
             onPress={() =>
               navigation.navigate('ExerciseDetail', {
@@ -415,10 +427,16 @@ const ExerciseListScreen: React.FC<ExerciseListScreenProps> = ({ navigation, rou
               style={styles.exerciseThumb}
               resizeMode="cover"
             />
-            <Text style={styles.exerciseName} numberOfLines={2}>
-              {item.name}
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color="#00C4CC" />
+            <View style={styles.exerciseInfo}>
+              <Text style={styles.exerciseName} numberOfLines={2}>
+                {item.name}
+              </Text>
+              {item.englishName ? (
+                <Text style={styles.exerciseMeta} numberOfLines={1}>
+                  {item.englishName}
+                </Text>
+              ) : null}
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -440,25 +458,34 @@ export default ExerciseListScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.background,
   },
   header: {
-    height: 64,
-    backgroundColor: '#FFFFFF',
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
   },
   headerIconBtn: {
-    padding: 6,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
+  },
+  headerIconBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#11343A',
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
   },
   headerRightGroup: {
     flexDirection: 'row',
@@ -467,25 +494,27 @@ const styles = StyleSheet.create({
   },
   searchSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   searchBox: {
-    height: 46,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 23,
+    height: 50,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8F0F1',
+    borderColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
+    ...SHADOWS.card,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: '#111827',
+    fontSize: 14,
+    color: COLORS.textPrimary,
     paddingVertical: 0,
   },
   content: {
@@ -493,36 +522,89 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   scrollContainer: {
-    paddingTop: 4,
-    paddingBottom: 40,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  countPill: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    padding: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 12,
+    ...SHADOWS.card,
   },
   exerciseThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    marginRight: 14,
+    width: 76,
+    height: 76,
+    borderRadius: 14,
+    backgroundColor: COLORS.borderLight,
+    marginRight: 12,
+  },
+  exerciseInfo: {
+    flex: 1,
+    paddingRight: 8,
   },
   exerciseName: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    lineHeight: 22,
-    paddingRight: 8,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
+  exerciseMeta: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+  },
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  tagText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  chevronWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

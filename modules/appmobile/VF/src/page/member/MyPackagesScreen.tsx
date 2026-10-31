@@ -7,17 +7,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
 
-const C = {
-  primary: '#0D7F8D',
-  dark: '#075865',
-  bg: '#F4FAFB',
-  white: '#FFFFFF',
-  text: '#16383E',
-  muted: '#78949A',
-  border: '#DFEAEC',
-  soft: '#E7F5F6',
-};
 
 const STORAGE_KEY = 'visionfit_demo_registrations';
 
@@ -78,13 +69,15 @@ const MyPackagesScreen = ({ navigation }: any) => {
         title="Gói tập của tôi"
         onBack={() => navigation.goBack()}
         rightComponent={
-          <Ionicons name="barbell-outline" size={22} color={C.primary} />
+          <View style={s.headerIcon}>
+            <Ionicons name="barbell-outline" size={20} color={COLORS.primary} />
+          </View>
         }
       />
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={C.primary} />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={s.subText}>Đang tải gói tập...</Text>
         </View>
       ) : (
@@ -92,9 +85,10 @@ const MyPackagesScreen = ({ navigation }: any) => {
           <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
             {/* Banner */}
-            <LinearGradient colors={['#087F8F', '#064E60']} style={s.hero}>
+            <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+              <View style={s.heroDecor} />
               <View style={s.heroIcon}>
-                <Ionicons name="fitness-outline" size={24} color={C.white} />
+                <Ionicons name="fitness-outline" size={22} color={COLORS.white} />
               </View>
 
               <Text style={s.heroTitle}>Hành trình tập luyện của bạn</Text>
@@ -103,7 +97,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
               </Text>
 
               <View style={s.heroBadge}>
-                <Ionicons name="information-circle-outline" size={16} color="#D7F5F5" />
+                <Ionicons name="information-circle-outline" size={15} color={COLORS.white} />
                 <Text style={s.heroBadgeText}>Dữ liệu đăng ký Demo</Text>
               </View>
             </LinearGradient>
@@ -111,7 +105,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
             {/* Thống kê */}
             <View style={s.summaryCard}>
               <View style={s.summaryIcon}>
-                <Ionicons name="albums-outline" size={26} color={C.primary} />
+                <Ionicons name="albums" size={22} color="#8B5CF6" />
               </View>
 
               <View style={s.flex}>
@@ -119,7 +113,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
                 <Text style={s.summaryValue}>{registrations.length} gói tập</Text>
               </View>
 
-              <Ionicons name="checkmark-circle-outline" size={24} color={C.primary} />
+              <Ionicons name="checkmark-circle" size={24} color={COLORS.accentGreen} />
             </View>
 
             {/* Danh sách */}
@@ -137,7 +131,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
             {registrations.length === 0 ? (
               <View style={s.emptyBox}>
                 <View style={s.emptyIcon}>
-                  <Ionicons name="barbell-outline" size={37} color={C.primary} />
+                  <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
                 </View>
 
                 <Text style={s.emptyTitle}>Chưa có gói tập nào</Text>
@@ -167,7 +161,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
                       <Text style={s.registrationCode}>#{item.id}</Text>
 
                       <View style={s.pendingBadge}>
-                        <Ionicons name="time-outline" size={14} color={C.primary} />
+                        <Ionicons name="time-outline" size={13} color={COLORS.accentGold} />
                         <Text style={s.pendingText}>Chờ thanh toán</Text>
                       </View>
                     </View>
@@ -177,7 +171,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
                     {/* Gói tập */}
                     <View style={s.packageRow}>
                       <View style={s.packageIcon}>
-                        <Ionicons name="barbell" size={24} color={C.primary} />
+                        <Ionicons name="barbell" size={22} color={COLORS.primary} />
                       </View>
 
                       <View style={s.flex}>
@@ -216,7 +210,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
                       </View>
                     </View>
 
-                    <View style={s.divider} />
+                    <View style={s.dashedDivider} />
 
                     {/* Tổng tiền */}
                     <View style={s.priceRow}>
@@ -228,15 +222,13 @@ const MyPackagesScreen = ({ navigation }: any) => {
                       <TouchableOpacity
                         style={s.detailButton}
                         onPress={() => {
-                          if (navigation.getState()?.routeNames?.includes('MyPackageDetail')) {
-                            navigation.navigate('MyPackageDetail', { registration: item });
-                          } else {
-                            Alert.alert('Thông báo', 'Màn chi tiết gói tập sẽ được thêm ở bước tiếp theo.');
-                          }
+                          const routeNames = navigation.getState()?.routeNames || [];
+                          const target = routeNames.includes('MyPackageDetail') ? 'MyPackageDetail' : routeNames.includes('MyPackageDetailScreen') ? 'MyPackageDetailScreen' : 'MyPackageDetail';
+                          navigation.navigate(target, { registration: item });
                         }}
                       >
                         <Text style={s.detailText}>Xem chi tiết</Text>
-                        <Ionicons name="arrow-forward" size={17} color={C.primary} />
+                        <Ionicons name="arrow-forward" size={15} color={COLORS.white} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -246,7 +238,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
 
             {/* Lưu ý */}
             <View style={s.notice}>
-              <Ionicons name="information-circle-outline" size={21} color={C.primary} />
+              <Ionicons name="information-circle" size={20} color={COLORS.primary} />
               <Text style={s.noticeText}>
                 Danh sách này chỉ gồm các đăng ký mô phỏng lưu trên thiết bị. Các gói chưa được kích hoạt hoặc thanh toán thực tế.
               </Text>
@@ -256,11 +248,22 @@ const MyPackagesScreen = ({ navigation }: any) => {
           {/* Footer */}
           <View style={s.footer}>
             <TouchableOpacity
-              style={s.addButton}
-              onPress={() => navigation.navigate('WorkoutSelection')}
+              activeOpacity={0.85}
+              onPress={() => {
+                const routeNames = navigation.getState()?.routeNames || [];
+                const target = routeNames.includes('WorkoutSelection') ? 'WorkoutSelection' : routeNames.includes('WorkoutSelectionScreen') ? 'WorkoutSelectionScreen' : 'WorkoutSelection';
+                navigation.navigate(target);
+              }}
             >
-              <Ionicons name="add-circle-outline" size={22} color={C.white} />
-              <Text style={s.addText}>Đăng ký gói tập mới</Text>
+              <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={s.addButton}
+              >
+                <Ionicons name="add-circle-outline" size={21} color={COLORS.white} />
+                <Text style={s.addText}>Đăng ký gói tập mới</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </>
@@ -272,35 +275,23 @@ const MyPackagesScreen = ({ navigation }: any) => {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: COLORS.background,
   },
   flex: {
     flex: 1,
   },
-  header: {
-    height: 62,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 42,
-    height: 42,
-    backgroundColor: C.white,
-    borderRadius: 13,
+  headerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: C.text,
-  },
   content: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 25,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   center: {
     flex: 1,
@@ -310,136 +301,162 @@ const s = StyleSheet.create({
   },
   subText: {
     fontSize: 12,
-    lineHeight: 19,
-    color: C.muted,
+    lineHeight: 17,
+    color: COLORS.textMuted,
   },
   hero: {
-    borderRadius: 23,
-    padding: 23,
-    marginBottom: 19,
+    borderRadius: 22,
+    padding: 20,
+    paddingBottom: 46,
+    overflow: 'hidden',
+  },
+  heroDecor: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -60,
+    right: -50,
   },
   heroIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 17,
+    marginBottom: 14,
   },
   heroTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    color: C.white,
-    lineHeight: 31,
+    color: COLORS.white,
+    lineHeight: 29,
   },
   heroDesc: {
-    fontSize: 12,
-    lineHeight: 20,
-    color: '#D2F0F2',
-    marginTop: 10,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 8,
   },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginTop: 19,
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   heroBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#D7F5F5',
+    color: COLORS.white,
   },
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: C.white,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: COLORS.border,
     borderRadius: 18,
-    padding: 16,
-    marginBottom: 25,
+    padding: 14,
+    marginHorizontal: 12,
+    marginTop: -30,
+    marginBottom: 24,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
   summaryIcon: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 14,
-    backgroundColor: C.soft,
+    backgroundColor: '#F5F3FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   summaryLabel: {
     fontSize: 12,
-    color: C.muted,
-    marginBottom: 5,
+    color: COLORS.textMuted,
+    marginBottom: 2,
   },
   summaryValue: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '900',
-    color: C.text,
+    color: COLORS.textPrimary,
   },
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
     gap: 10,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 4,
+    color: COLORS.textPrimary,
+    marginBottom: 2,
   },
   countBadge: {
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: C.soft,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: COLORS.primaryLight,
   },
   countText: {
     fontSize: 11,
-    color: C.primary,
+    color: COLORS.primary,
     fontWeight: '800',
   },
   emptyBox: {
-    backgroundColor: C.white,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 19,
-    padding: 28,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+    borderRadius: 20,
+    padding: 26,
     alignItems: 'center',
-    marginBottom: 22,
+    marginBottom: 20,
   },
   emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: C.soft,
+    width: 76,
+    height: 76,
+    borderRadius: 24,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 17,
+    marginBottom: 14,
   },
   emptyTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 10,
+    color: COLORS.textPrimary,
+    marginBottom: 6,
   },
   emptyDesc: {
-    fontSize: 12,
-    lineHeight: 20,
-    color: C.muted,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: COLORS.textMuted,
     textAlign: 'center',
   },
   packageCard: {
-    backgroundColor: C.white,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 19,
-    padding: 17,
-    marginBottom: 17,
+    borderColor: COLORS.border,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
+    ...SHADOWS.card,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -449,28 +466,35 @@ const s = StyleSheet.create({
   },
   registrationCode: {
     flexShrink: 1,
-    fontSize: 11,
-    color: C.muted,
+    fontSize: 11.5,
+    color: COLORS.textMuted,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   pendingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 9,
-    backgroundColor: C.soft,
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: '#FFF7ED',
   },
   pendingText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: C.primary,
+    color: COLORS.accentGold,
   },
   divider: {
     height: 1,
-    backgroundColor: C.border,
-    marginVertical: 16,
+    backgroundColor: COLORS.borderLight,
+    marginVertical: 14,
+  },
+  dashedDivider: {
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: COLORS.border,
+    marginVertical: 14,
   },
   packageRow: {
     flexDirection: 'row',
@@ -478,25 +502,25 @@ const s = StyleSheet.create({
     gap: 12,
   },
   packageIcon: {
-    width: 49,
-    height: 49,
+    width: 44,
+    height: 44,
     borderRadius: 14,
-    backgroundColor: C.soft,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
   },
   packageName: {
     fontSize: 15,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 5,
+    color: COLORS.textPrimary,
+    marginBottom: 2,
   },
   details: {
-    backgroundColor: C.bg,
+    backgroundColor: COLORS.background,
     borderRadius: 14,
-    padding: 14,
-    marginTop: 17,
-    gap: 12,
+    padding: 12,
+    marginTop: 14,
+    gap: 10,
   },
   infoRow: {
     flexDirection: 'row',
@@ -506,14 +530,14 @@ const s = StyleSheet.create({
   },
   infoLabel: {
     flex: 1,
-    fontSize: 12,
-    color: C.muted,
+    fontSize: 12.5,
+    color: COLORS.textMuted,
   },
   infoValue: {
     flexShrink: 1,
-    fontSize: 12,
-    fontWeight: '800',
-    color: C.text,
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   priceRow: {
@@ -523,51 +547,64 @@ const s = StyleSheet.create({
     gap: 10,
   },
   priceLabel: {
-    fontSize: 10,
-    color: C.muted,
+    fontSize: 10.5,
+    color: COLORS.textMuted,
     fontWeight: '700',
-    marginBottom: 6,
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   priceValue: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: '900',
-    color: C.primary,
+    color: COLORS.primary,
   },
   detailButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    height: 38,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    ...SHADOWS.glow,
   },
   detailText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '800',
-    color: C.primary,
+    color: COLORS.white,
   },
   notice: {
     flexDirection: 'row',
     gap: 10,
-    backgroundColor: C.soft,
-    borderRadius: 14,
-    padding: 15,
-    marginTop: 8,
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 6,
   },
   noticeText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 20,
-    color: C.primary,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: COLORS.primaryDark,
   },
   footer: {
-    backgroundColor: C.white,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingHorizontal: 19,
-    paddingVertical: 15,
+    borderTopColor: COLORS.borderLight,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    ...SHADOWS.card,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   addButton: {
-    height: 54,
-    borderRadius: 15,
-    backgroundColor: C.primary,
+    height: 52,
+    borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -576,7 +613,7 @@ const s = StyleSheet.create({
   addText: {
     fontSize: 15,
     fontWeight: '800',
-    color: C.white,
+    color: COLORS.white,
   },
 });
 

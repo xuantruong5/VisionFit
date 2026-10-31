@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AppHeader from '../../components/AppHeader';
+import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu hồ sơ ban đầu (Frontend Mock Data)
@@ -158,19 +158,41 @@ const MemberProfile = ({ navigation }: any) => {
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle="dark-content" />
 
-            {/* HEADER ĐỒNG BỘ */}
-            <AppHeader
-                title="Hồ sơ hội viên"
-                showBack={navigation?.canGoBack?.()}
-                onBack={() => navigation?.goBack?.()}
-                rightIcon="qr-code-outline"
-                onRightPress={() => setShowCardModal(true)}
-            />
-
             <ScrollView
+                style={styles.scroll}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
+                {/* HEADER GRADIENT */}
+                <LinearGradient
+                    colors={[COLORS.primary, COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.header}
+                >
+                    <View style={styles.decorCircle} />
+                    <View style={styles.decorCircleSmall} />
+                    <View style={styles.headerRow}>
+                        {navigation?.getState?.()?.type === 'stack' && navigation?.canGoBack?.() ? (
+                            <TouchableOpacity
+                                style={styles.glassBtn}
+                                onPress={() => navigation?.goBack?.()}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="chevron-back" size={20} color={COLORS.white} />
+                            </TouchableOpacity>
+                        ) : null}
+                        <Text style={styles.headerTitle}>Hồ sơ hội viên</Text>
+                        <TouchableOpacity
+                            style={styles.glassBtn}
+                            onPress={() => setShowCardModal(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="qr-code-outline" size={19} color={COLORS.white} />
+                        </TouchableOpacity>
+                    </View>
+                </LinearGradient>
+
                 {/* 1. HERO PROFILE CARD */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatarContainer}>
@@ -180,16 +202,24 @@ const MemberProfile = ({ navigation }: any) => {
                             onPress={() => setShowAvatarPicker(true)}
                             activeOpacity={0.8}
                         >
-                            <Ionicons name="camera" size={16} color="#FFFFFF" />
+                            <Ionicons name="camera" size={14} color={COLORS.white} />
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.nameText}>{member.ho_ten}</Text>
-
-                    <View style={styles.badgeWrap}>
-                        <Ionicons name="sparkles" size={13} color="#0D7F8D" style={{ marginRight: 5 }} />
-                        <Text style={styles.badgeText}>{member.hang_thanh_vien}</Text>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.nameText}>{member.ho_ten}</Text>
+                        <Ionicons name="checkmark-circle" size={19} color={COLORS.accentBlue} />
                     </View>
+
+                    <LinearGradient
+                        colors={['#FFF7ED', '#FDEBD3']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.badgeWrap}
+                    >
+                        <Ionicons name="diamond" size={12} color={COLORS.accentGold} style={{ marginRight: 5 }} />
+                        <Text style={styles.badgeText}>{member.hang_thanh_vien}</Text>
+                    </LinearGradient>
 
                     <View style={styles.statusRow}>
                         <View style={styles.statusDot} />
@@ -200,15 +230,22 @@ const MemberProfile = ({ navigation }: any) => {
 
                     <View style={styles.profileActionRow}>
                         <TouchableOpacity
-                            style={styles.editProfileBtn}
+                            style={styles.editProfileBtnWrap}
                             onPress={() => {
                                 setEditForm({ ...member });
                                 setShowEditModal(true);
                             }}
-                            activeOpacity={0.8}
+                            activeOpacity={0.85}
                         >
-                            <Ionicons name="create-outline" size={16} color="#0D7F8D" style={{ marginRight: 6 }} />
-                            <Text style={styles.editProfileBtnText}>Chỉnh sửa hồ sơ</Text>
+                            <LinearGradient
+                                colors={[COLORS.primary, COLORS.primaryDark]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.editProfileBtn}
+                            >
+                                <Ionicons name="create-outline" size={17} color={COLORS.white} style={{ marginRight: 6 }} />
+                                <Text style={styles.editProfileBtnText}>Chỉnh sửa hồ sơ</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -216,7 +253,7 @@ const MemberProfile = ({ navigation }: any) => {
                             onPress={() => setShowCardModal(true)}
                             activeOpacity={0.8}
                         >
-                            <Ionicons name="card" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                            <Ionicons name="card" size={16} color={COLORS.accentGold} style={{ marginRight: 6 }} />
                             <Text style={styles.cardViewBtnText}>Thẻ VIP</Text>
                         </TouchableOpacity>
                     </View>
@@ -224,14 +261,16 @@ const MemberProfile = ({ navigation }: any) => {
 
                 {/* 2. HIỆU SUẤT TẬP LUYỆN */}
                 <View style={styles.sectionHeaderRow}>
-                    <Text style={styles.sectionHeading}>HIỆU SUẤT TẬP LUYỆN</Text>
-                    <Ionicons name="flame" size={18} color="#FA3E3E" />
+                    <Text style={styles.sectionHeading}>Hiệu suất tập luyện</Text>
+                    <View style={styles.sectionHeadingIcon}>
+                        <Ionicons name="flame" size={16} color={COLORS.accentOrange} />
+                    </View>
                 </View>
 
                 <View style={styles.statsCard}>
                     <View style={styles.statItem}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#EAF9FB' }]}>
-                            <Ionicons name="barbell-outline" size={20} color="#0D7F8D" />
+                        <View style={[styles.statIconCircle, { backgroundColor: COLORS.surfaceTeal }]}>
+                            <Ionicons name="barbell" size={18} color={COLORS.primary} />
                         </View>
                         <Text style={styles.statValue}>{member.thong_ke.so_buoi_tap}</Text>
                         <Text style={styles.statLabel}>Buổi tập</Text>
@@ -240,8 +279,8 @@ const MemberProfile = ({ navigation }: any) => {
                     <View style={styles.divider} />
 
                     <View style={styles.statItem}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#FFF4E5' }]}>
-                            <Ionicons name="time-outline" size={20} color="#FF9800" />
+                        <View style={[styles.statIconCircle, { backgroundColor: '#FFF7ED' }]}>
+                            <Ionicons name="time" size={18} color={COLORS.accentGold} />
                         </View>
                         <Text style={styles.statValue}>{member.thong_ke.tong_gio_tap}h</Text>
                         <Text style={styles.statLabel}>Giờ tập</Text>
@@ -250,8 +289,8 @@ const MemberProfile = ({ navigation }: any) => {
                     <View style={styles.divider} />
 
                     <View style={styles.statItem}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#F0FDF4' }]}>
-                            <Ionicons name="calendar-outline" size={20} color="#10B981" />
+                        <View style={[styles.statIconCircle, { backgroundColor: '#ECFDF5' }]}>
+                            <Ionicons name="calendar" size={18} color={COLORS.accentGreen} />
                         </View>
                         <Text style={styles.statValue}>{member.thong_ke.tuan_duy_tri}</Text>
                         <Text style={styles.statLabel}>Tuần liên tục</Text>
@@ -260,8 +299,8 @@ const MemberProfile = ({ navigation }: any) => {
                     <View style={styles.divider} />
 
                     <View style={styles.statItem}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                            <Ionicons name="flash-outline" size={20} color="#FA3E3E" />
+                        <View style={[styles.statIconCircle, { backgroundColor: '#FFF1EC' }]}>
+                            <Ionicons name="flash" size={18} color={COLORS.accentOrange} />
                         </View>
                         <Text style={styles.statValue}>{member.thong_ke.calo_tieu_thu.toLocaleString()}</Text>
                         <Text style={styles.statLabel}>Kcal đốt</Text>
@@ -276,14 +315,18 @@ const MemberProfile = ({ navigation }: any) => {
                         activeOpacity={0.8}
                     >
                         <View style={styles.accordionTitleRow}>
-                            <Ionicons name="person-outline" size={20} color="#0D7F8D" />
+                            <View style={[styles.accordionIcon, { backgroundColor: COLORS.surfaceTeal }]}>
+                                <Ionicons name="person" size={18} color={COLORS.primary} />
+                            </View>
                             <Text style={styles.accordionTitle}>Thông tin cá nhân & Thể trạng</Text>
                         </View>
-                        <Ionicons
-                            name={expandPersonal ? 'chevron-up' : 'chevron-down'}
-                            size={22}
-                            color="#0D7F8D"
-                        />
+                        <View style={styles.chevronWrap}>
+                            <Ionicons
+                                name={expandPersonal ? 'chevron-up' : 'chevron-down'}
+                                size={16}
+                                color={COLORS.primary}
+                            />
+                        </View>
                     </TouchableOpacity>
 
                     {expandPersonal && (
@@ -303,7 +346,7 @@ const MemberProfile = ({ navigation }: any) => {
                             />
                             <View style={[styles.profileItem, styles.itemBorder]}>
                                 <View style={styles.itemIconWrap}>
-                                    <Ionicons name="fitness-outline" size={20} color="#0D7F8D" />
+                                    <Ionicons name="fitness-outline" size={18} color={COLORS.primary} />
                                 </View>
                                 <View style={styles.itemContent}>
                                     <Text style={styles.itemTitle}>Chỉ số khối cơ thể (BMI)</Text>
@@ -335,21 +378,25 @@ const MemberProfile = ({ navigation }: any) => {
                         activeOpacity={0.8}
                     >
                         <View style={styles.accordionTitleRow}>
-                            <Ionicons name="card-outline" size={20} color="#0D7F8D" />
+                            <View style={[styles.accordionIcon, { backgroundColor: '#F5F3FF' }]}>
+                                <Ionicons name="card" size={18} color={'#8B5CF6'} />
+                            </View>
                             <Text style={styles.accordionTitle}>Gói tập & Quyền lợi hội viên</Text>
                         </View>
-                        <Ionicons
-                            name={expandMembership ? 'chevron-up' : 'chevron-down'}
-                            size={22}
-                            color="#0D7F8D"
-                        />
+                        <View style={styles.chevronWrap}>
+                            <Ionicons
+                                name={expandMembership ? 'chevron-up' : 'chevron-down'}
+                                size={16}
+                                color={COLORS.primary}
+                            />
+                        </View>
                     </TouchableOpacity>
 
                     {expandMembership && (
                         <View style={styles.accordionContentCard}>
                             <View style={[styles.profileItem, styles.itemBorder]}>
                                 <View style={styles.itemIconWrap}>
-                                    <Ionicons name="finger-print-outline" size={20} color="#0D7F8D" />
+                                    <Ionicons name="finger-print-outline" size={18} color={COLORS.primary} />
                                 </View>
                                 <View style={styles.itemContent}>
                                     <Text style={styles.itemTitle}>Mã thẻ hội viên</Text>
@@ -360,7 +407,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     onPress={handleCopyMemberCode}
                                     activeOpacity={0.7}
                                 >
-                                    <Ionicons name="copy-outline" size={16} color="#0D7F8D" />
+                                    <Ionicons name="copy-outline" size={14} color={COLORS.primary} />
                                     <Text style={styles.copyBtnText}>Sao chép</Text>
                                 </TouchableOpacity>
                             </View>
@@ -373,7 +420,7 @@ const MemberProfile = ({ navigation }: any) => {
                             />
                             <View style={[styles.profileItem, styles.itemBorder]}>
                                 <View style={styles.itemIconWrap}>
-                                    <Ionicons name="barbell-outline" size={20} color="#0D7F8D" />
+                                    <Ionicons name="barbell-outline" size={18} color={COLORS.primary} />
                                 </View>
                                 <View style={styles.itemContent}>
                                     <Text style={styles.itemTitle}>Huấn luyện viên phụ trách</Text>
@@ -390,7 +437,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     }}
                                     activeOpacity={0.7}
                                 >
-                                    <Ionicons name="chatbubble-ellipses-outline" size={16} color="#0D7F8D" />
+                                    <Ionicons name="chatbubble-ellipses-outline" size={14} color={COLORS.white} />
                                     <Text style={styles.chatCoachBtnText}>Nhắn tin</Text>
                                 </TouchableOpacity>
                             </View>
@@ -412,31 +459,35 @@ const MemberProfile = ({ navigation }: any) => {
                         activeOpacity={0.8}
                     >
                         <View style={styles.accordionTitleRow}>
-                            <Ionicons name="settings-outline" size={20} color="#0D7F8D" />
+                            <View style={[styles.accordionIcon, { backgroundColor: '#EAF3FC' }]}>
+                                <Ionicons name="settings" size={18} color={COLORS.accentBlue} />
+                            </View>
                             <Text style={styles.accordionTitle}>Cài đặt & Tiện ích ứng dụng</Text>
                         </View>
-                        <Ionicons
-                            name={expandSettings ? 'chevron-up' : 'chevron-down'}
-                            size={22}
-                            color="#0D7F8D"
-                        />
+                        <View style={styles.chevronWrap}>
+                            <Ionicons
+                                name={expandSettings ? 'chevron-up' : 'chevron-down'}
+                                size={16}
+                                color={COLORS.primary}
+                            />
+                        </View>
                     </TouchableOpacity>
 
                     {expandSettings && (
                         <View style={styles.accordionContentCard}>
                             {/* Switch: Nhận thông báo nhắc tập */}
                             <View style={[styles.settingSwitchItem, styles.itemBorder]}>
-                                <View style={styles.settingIconWrap}>
-                                    <Ionicons name="notifications-outline" size={20} color="#0D7F8D" />
+                                <View style={[styles.settingIconWrap, { backgroundColor: '#EAF3FC' }]}>
+                                    <Ionicons name="notifications-outline" size={19} color={COLORS.accentBlue} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.settingTitle}>Nhận thông báo lịch tập</Text>
                                     <Text style={styles.settingSubtitle}>Nhắc nhở trước giờ tập 30 phút</Text>
                                 </View>
                                 <Switch
-                                    trackColor={{ false: '#9ED9DF', true: '#0D7F8D' }}
+                                    trackColor={{ false: COLORS.border, true: COLORS.primary }}
                                     thumbColor={remindWorkout ? '#FFFFFF' : '#EAF9FB'}
-                                    ios_backgroundColor="#EAF9FB"
+                                    ios_backgroundColor={COLORS.border}
                                     onValueChange={() => setRemindWorkout(!remindWorkout)}
                                     value={remindWorkout}
                                 />
@@ -444,17 +495,17 @@ const MemberProfile = ({ navigation }: any) => {
 
                             {/* Switch: Đồng bộ thể chất Apple Health / Google Fit */}
                             <View style={[styles.settingSwitchItem, styles.itemBorder]}>
-                                <View style={styles.settingIconWrap}>
-                                    <Ionicons name="heart-circle-outline" size={20} color="#0D7F8D" />
+                                <View style={[styles.settingIconWrap, { backgroundColor: '#FFF1EC' }]}>
+                                    <Ionicons name="heart-circle-outline" size={19} color={COLORS.accentOrange} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.settingTitle}>Đồng bộ Apple Health / Google Fit</Text>
                                     <Text style={styles.settingSubtitle}>Tự động cập nhật calo & bước chân</Text>
                                 </View>
                                 <Switch
-                                    trackColor={{ false: '#9ED9DF', true: '#0D7F8D' }}
+                                    trackColor={{ false: COLORS.border, true: COLORS.primary }}
                                     thumbColor={syncHealthData ? '#FFFFFF' : '#EAF9FB'}
-                                    ios_backgroundColor="#EAF9FB"
+                                    ios_backgroundColor={COLORS.border}
                                     onValueChange={() => setSyncHealthData(!syncHealthData)}
                                     value={syncHealthData}
                                 />
@@ -462,17 +513,17 @@ const MemberProfile = ({ navigation }: any) => {
 
                             {/* Switch: Nhắc nhở uống nước */}
                             <View style={[styles.settingSwitchItem, styles.itemBorder]}>
-                                <View style={styles.settingIconWrap}>
-                                    <Ionicons name="water-outline" size={20} color="#0D7F8D" />
+                                <View style={[styles.settingIconWrap, { backgroundColor: COLORS.surfaceTeal }]}>
+                                    <Ionicons name="water-outline" size={19} color={COLORS.primary} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.settingTitle}>Nhắc nhở bổ sung nước</Text>
                                     <Text style={styles.settingSubtitle}>Thông báo mỗi 2 giờ một lần</Text>
                                 </View>
                                 <Switch
-                                    trackColor={{ false: '#9ED9DF', true: '#0D7F8D' }}
+                                    trackColor={{ false: COLORS.border, true: COLORS.primary }}
                                     thumbColor={drinkWaterAlert ? '#FFFFFF' : '#EAF9FB'}
-                                    ios_backgroundColor="#EAF9FB"
+                                    ios_backgroundColor={COLORS.border}
                                     onValueChange={() => setDrinkWaterAlert(!drinkWaterAlert)}
                                     value={drinkWaterAlert}
                                 />
@@ -487,6 +538,17 @@ const MemberProfile = ({ navigation }: any) => {
                                         navigation.navigate('WorkoutHistory');
                                     } else {
                                         Alert.alert('Lịch sử tập', 'Đang tải dữ liệu các buổi tập gần đây...');
+                                    }
+                                }}
+                            />
+
+                            {/* Điều hướng: Gói tập của tôi */}
+                            <SettingItem
+                                icon="barbell-outline"
+                                title="Gói tập của tôi & Đăng ký gói mới"
+                                onPress={() => {
+                                    if (navigation?.navigate) {
+                                        navigation.navigate('MyPackages');
                                     }
                                 }}
                             />
@@ -522,7 +584,7 @@ const MemberProfile = ({ navigation }: any) => {
                     onPress={handleLogout}
                     activeOpacity={0.8}
                 >
-                    <Ionicons name="log-out-outline" size={20} color="#FA3E3E" style={{ marginRight: 8 }} />
+                    <Ionicons name="log-out-outline" size={19} color={COLORS.accentRed} style={{ marginRight: 8 }} />
                     <Text style={styles.logoutText}>Đăng xuất tài khoản</Text>
                 </TouchableOpacity>
 
@@ -538,6 +600,7 @@ const MemberProfile = ({ navigation }: any) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
+                        <View style={styles.dragHandle} />
                         <View style={styles.modalHeader}>
                             <View>
                                 <Text style={styles.modalTitle}>Chỉnh sửa thông tin</Text>
@@ -547,7 +610,7 @@ const MemberProfile = ({ navigation }: any) => {
                                 style={styles.modalCloseBtn}
                                 onPress={() => setShowEditModal(false)}
                             >
-                                <Ionicons name="close" size={24} color="#11343A" />
+                                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -559,7 +622,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     value={editForm.ho_ten}
                                     onChangeText={(val) => setEditForm({ ...editForm, ho_ten: val })}
                                     placeholder="Nhập họ và tên..."
-                                    placeholderTextColor="#71949A"
+                                    placeholderTextColor={COLORS.textLight}
                                 />
                             </View>
 
@@ -571,7 +634,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     onChangeText={(val) => setEditForm({ ...editForm, so_dien_thoai: val })}
                                     placeholder="Nhập số điện thoại..."
                                     keyboardType="phone-pad"
-                                    placeholderTextColor="#71949A"
+                                    placeholderTextColor={COLORS.textLight}
                                 />
                             </View>
 
@@ -583,7 +646,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     onChangeText={(val) => setEditForm({ ...editForm, email: val })}
                                     placeholder="Email liên hệ..."
                                     keyboardType="email-address"
-                                    placeholderTextColor="#71949A"
+                                    placeholderTextColor={COLORS.textLight}
                                 />
                             </View>
 
@@ -596,7 +659,7 @@ const MemberProfile = ({ navigation }: any) => {
                                         onChangeText={(val) => setEditForm({ ...editForm, chieu_cao_cm: val })}
                                         keyboardType="numeric"
                                         placeholder="175"
-                                        placeholderTextColor="#71949A"
+                                        placeholderTextColor={COLORS.textLight}
                                     />
                                 </View>
 
@@ -608,7 +671,7 @@ const MemberProfile = ({ navigation }: any) => {
                                         onChangeText={(val) => setEditForm({ ...editForm, can_nang_kg: val })}
                                         keyboardType="numeric"
                                         placeholder="68"
-                                        placeholderTextColor="#71949A"
+                                        placeholderTextColor={COLORS.textLight}
                                     />
                                 </View>
                             </View>
@@ -621,7 +684,7 @@ const MemberProfile = ({ navigation }: any) => {
                                         value={editForm.ngay_sinh}
                                         onChangeText={(val) => setEditForm({ ...editForm, ngay_sinh: val })}
                                         placeholder="DD/MM/YYYY"
-                                        placeholderTextColor="#71949A"
+                                        placeholderTextColor={COLORS.textLight}
                                     />
                                 </View>
 
@@ -632,7 +695,7 @@ const MemberProfile = ({ navigation }: any) => {
                                         value={editForm.gioi_tinh}
                                         onChangeText={(val) => setEditForm({ ...editForm, gioi_tinh: val })}
                                         placeholder="Nam / Nữ"
-                                        placeholderTextColor="#71949A"
+                                        placeholderTextColor={COLORS.textLight}
                                     />
                                 </View>
                             </View>
@@ -644,7 +707,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     value={editForm.muc_tieu_hien_tai}
                                     onChangeText={(val) => setEditForm({ ...editForm, muc_tieu_hien_tai: val })}
                                     placeholder="Tăng cơ, giảm mỡ, siết cơ..."
-                                    placeholderTextColor="#71949A"
+                                    placeholderTextColor={COLORS.textLight}
                                 />
                             </View>
 
@@ -655,7 +718,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     value={editForm.cap_do_hien_tai}
                                     onChangeText={(val) => setEditForm({ ...editForm, cap_do_hien_tai: val })}
                                     placeholder="Mới bắt đầu / Trung cấp / Nâng cao"
-                                    placeholderTextColor="#71949A"
+                                    placeholderTextColor={COLORS.textLight}
                                 />
                             </View>
 
@@ -669,11 +732,19 @@ const MemberProfile = ({ navigation }: any) => {
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                    style={styles.saveBtn}
+                                    style={styles.saveBtnWrap}
                                     onPress={handleSaveProfile}
-                                    activeOpacity={0.8}
+                                    activeOpacity={0.85}
                                 >
-                                    <Text style={styles.saveBtnText}>Lưu thay đổi</Text>
+                                    <LinearGradient
+                                        colors={[COLORS.primary, COLORS.primaryDark]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.saveBtn}
+                                    >
+                                        <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.white} />
+                                        <Text style={styles.saveBtnText}>Lưu thay đổi</Text>
+                                    </LinearGradient>
                                 </TouchableOpacity>
                             </View>
                         </ScrollView>
@@ -691,38 +762,50 @@ const MemberProfile = ({ navigation }: any) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.vipCardContainer}>
                         {/* Thẻ thành viên thiết kế sang trọng */}
-                        <View style={styles.vipCardBadgeTop}>
-                            <View>
-                                <Text style={styles.vipCardBrand}>VISIONFIT GYM & FITNESS</Text>
-                                <Text style={styles.vipCardTier}>{member.hang_thanh_vien.toUpperCase()}</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.vipCardCloseBtn}
-                                onPress={() => setShowCardModal(false)}
-                            >
-                                <Ionicons name="close" size={22} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.vipCardBadgeBottom}>
-                            <Text style={styles.vipCardNumber}>{member.ma_thanh_vien}</Text>
-
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
-                                <View>
-                                    <Text style={styles.vipCardSub}>HỘI VIÊN</Text>
-                                    <Text style={styles.vipCardValue}>{member.ho_ten}</Text>
+                        <LinearGradient
+                            colors={[COLORS.primary, COLORS.primaryDark, '#04363E']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.vipCard}
+                        >
+                            <View style={styles.vipCardDecor} />
+                            <View style={styles.vipCardBadgeTop}>
+                                <View style={styles.flex}>
+                                    <Text style={styles.vipCardBrand}>VISIONFIT GYM & FITNESS</Text>
+                                    <Text style={styles.vipCardTier}>{member.hang_thanh_vien.toUpperCase()}</Text>
                                 </View>
-                                <View>
-                                    <Text style={styles.vipCardSub}>HẠN SỬ DỤNG</Text>
-                                    <Text style={styles.vipCardValue}>{member.ngay_het_han}</Text>
+                                <TouchableOpacity
+                                    style={styles.vipCardCloseBtn}
+                                    onPress={() => setShowCardModal(false)}
+                                >
+                                    <Ionicons name="close" size={20} color={COLORS.white} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.vipChip}>
+                                <Ionicons name="hardware-chip-outline" size={22} color="#7A5A1E" />
+                            </View>
+
+                            <View style={styles.vipCardBadgeBottom}>
+                                <Text style={styles.vipCardNumber}>{member.ma_thanh_vien}</Text>
+
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
+                                    <View>
+                                        <Text style={styles.vipCardSub}>HỘI VIÊN</Text>
+                                        <Text style={styles.vipCardValue}>{member.ho_ten}</Text>
+                                    </View>
+                                    <View>
+                                        <Text style={styles.vipCardSub}>HẠN SỬ DỤNG</Text>
+                                        <Text style={styles.vipCardValue}>{member.ngay_het_han}</Text>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
+                        </LinearGradient>
 
                         {/* QR Code Check-in */}
                         <View style={styles.qrCodeWrap}>
                             <View style={styles.qrBox}>
-                                <Ionicons name="qr-code" size={140} color="#11343A" />
+                                <Ionicons name="qr-code" size={140} color={COLORS.textPrimary} />
                             </View>
                             <Text style={styles.qrCodeNote}>
                                 Đưa mã này trước máy quét tại cổng để check-in
@@ -736,7 +819,7 @@ const MemberProfile = ({ navigation }: any) => {
                                 onPress={handleCopyMemberCode}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="copy-outline" size={16} color="#0D7F8D" style={{ marginRight: 6 }} />
+                                <Ionicons name="copy-outline" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
                                 <Text style={styles.copyQrBtnText}>Sao chép mã thẻ hội viên</Text>
                             </TouchableOpacity>
                         </View>
@@ -753,10 +836,11 @@ const MemberProfile = ({ navigation }: any) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.avatarPickerContainer}>
+                        <View style={styles.dragHandle} />
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Chọn ảnh đại diện</Text>
-                            <TouchableOpacity onPress={() => setShowAvatarPicker(false)}>
-                                <Ionicons name="close" size={24} color="#11343A" />
+                            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowAvatarPicker(false)}>
+                                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -778,7 +862,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     <Image source={{ uri: url }} style={styles.avatarOptionImg} />
                                     {member.anh_dai_dien === url && (
                                         <View style={styles.avatarCheckBadge}>
-                                            <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                                            <Ionicons name="checkmark" size={13} color={COLORS.white} />
                                         </View>
                                     )}
                                 </TouchableOpacity>
@@ -793,7 +877,7 @@ const MemberProfile = ({ navigation }: any) => {
                             }}
                             activeOpacity={0.8}
                         >
-                            <Ionicons name="images-outline" size={18} color="#0D7F8D" style={{ marginRight: 8 }} />
+                            <Ionicons name="images-outline" size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
                             <Text style={styles.customUploadBtnText}>Tải ảnh từ điện thoại</Text>
                         </TouchableOpacity>
                     </View>
@@ -808,7 +892,7 @@ const ProfileItem = ({ icon, title, value, last = false }: any) => {
     return (
         <View style={[styles.profileItem, !last && styles.itemBorder]}>
             <View style={styles.itemIconWrap}>
-                <Ionicons name={icon} size={20} color="#0D7F8D" />
+                <Ionicons name={icon} size={18} color={COLORS.primary} />
             </View>
 
             <View style={styles.itemContent}>
@@ -828,11 +912,11 @@ const SettingItem = ({ icon, title, onPress, last = false }: any) => {
             activeOpacity={0.7}
         >
             <View style={styles.settingIconWrap}>
-                <Ionicons name={icon} size={20} color="#0D7F8D" />
+                <Ionicons name={icon} size={19} color={COLORS.primary} />
             </View>
 
-            <Text style={styles.settingTitle}>{title}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#71949A" />
+            <Text style={[styles.settingTitle, styles.flex]}>{title}</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
         </TouchableOpacity>
     );
 };
@@ -840,166 +924,215 @@ const SettingItem = ({ icon, title, onPress, last = false }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F4FAFB',
+        backgroundColor: COLORS.background,
+    },
+
+    scroll: {
+        backgroundColor: COLORS.background,
     },
 
     scrollContent: {
-        paddingBottom: 110,
+        paddingBottom: 24,
     },
 
-    // HEADER THIẾT KẾ ĐỒNG BỘ VỚI WORKOUTPLANSCREEN
+    flex: {
+        flex: 1,
+    },
+
+    // HEADER GRADIENT
     header: {
-        height: 72,
-        backgroundColor: '#FFFFFF',
+        height: 190,
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        borderRadius: 28,
+        marginHorizontal: 12,
+        marginTop: 6,
+        overflow: 'hidden',
+    },
+
+    decorCircle: {
+        position: 'absolute',
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        top: -80,
+        right: -50,
+    },
+
+    decorCircleSmall: {
+        position: 'absolute',
+        width: 130,
+        height: 130,
+        borderRadius: 65,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        bottom: -50,
+        left: -30,
+    },
+
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 18,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E8F0F1',
+        gap: 10,
     },
 
     headerTitle: {
-        fontSize: 21,
-        fontWeight: '700',
-        color: '#11343A',
+        flex: 1,
+        fontSize: 20,
+        fontWeight: '800',
+        color: COLORS.white,
     },
 
-    headerButton: {
-        width: 44,
-        height: 44,
+    glassBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: 'rgba(255,255,255,0.16)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     // PROFILE HERO CARD
     profileCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         alignItems: 'center',
-        paddingVertical: 24,
-        paddingHorizontal: 20,
+        paddingTop: 56,
+        paddingBottom: 16,
+        paddingHorizontal: 16,
         marginHorizontal: 16,
-        marginTop: 14,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: '#B9E5E9',
-        elevation: 2,
-        shadowColor: '#78959A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        marginTop: -80,
+        borderRadius: 24,
+        ...SHADOWS.card,
+        shadowOpacity: 0.12,
+        elevation: 6,
     },
 
     avatarContainer: {
-        position: 'relative',
-        marginBottom: 12,
+        position: 'absolute',
+        top: -48,
     },
 
     avatarImage: {
         width: 96,
         height: 96,
         borderRadius: 48,
-        borderWidth: 3,
-        borderColor: '#0D7F8D',
+        borderWidth: 4,
+        borderColor: COLORS.white,
     },
 
     cameraBadge: {
         position: 'absolute',
-        right: 0,
-        bottom: 0,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#0D7F8D',
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
+        right: 2,
+        bottom: 2,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: COLORS.primary,
+        borderWidth: 2.5,
+        borderColor: COLORS.white,
         justifyContent: 'center',
         alignItems: 'center',
     },
 
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+
     nameText: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#11343A',
+        fontSize: 21,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     badgeWrap: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EAF9FB',
         borderWidth: 1,
-        borderColor: '#9ED9DF',
+        borderColor: '#FBD9A5',
         paddingHorizontal: 12,
-        paddingVertical: 4,
+        paddingVertical: 5,
         borderRadius: 12,
-        marginTop: 6,
+        marginTop: 8,
     },
 
     badgeText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#0D7F8D',
+        fontWeight: '700',
+        color: '#B47A30',
     },
 
     statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+        backgroundColor: '#ECFDF5',
     },
 
     statusDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#10B981',
+        backgroundColor: COLORS.accentGreen,
         marginRight: 6,
     },
 
     statusText: {
-        fontSize: 13,
-        fontWeight: '600',
+        fontSize: 12.5,
+        fontWeight: '700',
         color: '#059669',
     },
 
     profileActionRow: {
         flexDirection: 'row',
         gap: 10,
-        marginTop: 18,
-        width: '100%',
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
+        alignSelf: 'stretch',
+    },
+
+    editProfileBtnWrap: {
+        flex: 1,
     },
 
     editProfileBtn: {
-        flex: 1,
-        height: 42,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#0D7F8D',
-        backgroundColor: '#EAF9FB',
+        height: 46,
+        borderRadius: 14,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
     },
 
     editProfileBtnText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#0D7F8D',
+        fontSize: 14,
+        fontWeight: '700',
+        color: COLORS.white,
     },
 
     cardViewBtn: {
-        height: 42,
-        paddingHorizontal: 18,
-        borderRadius: 12,
-        backgroundColor: '#0D7F8D',
+        height: 46,
+        paddingHorizontal: 16,
+        borderRadius: 14,
+        backgroundColor: '#FFF7ED',
+        borderWidth: 1,
+        borderColor: '#FBD9A5',
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
     },
 
     cardViewBtnText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#B47A30',
     },
 
     // STATS PERFORMANCE
@@ -1007,32 +1140,36 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: 20,
-        marginBottom: 10,
-        paddingHorizontal: 20,
+        marginTop: 24,
+        marginBottom: 12,
+        paddingHorizontal: 16,
     },
 
     sectionHeading: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#71949A',
-        letterSpacing: 0.6,
+        fontSize: 17,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+    },
+
+    sectionHeadingIcon: {
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        backgroundColor: '#FFF1EC',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     statsCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         marginHorizontal: 16,
-        borderRadius: 18,
+        borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#B9E5E9',
-        paddingVertical: 18,
+        borderColor: COLORS.border,
+        paddingVertical: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#78959A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        ...SHADOWS.card,
         marginBottom: 8,
     },
 
@@ -1042,33 +1179,33 @@ const styles = StyleSheet.create({
     },
 
     statIconCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 6,
     },
 
     statValue: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#11343A',
+        fontSize: 16,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     statLabel: {
         fontSize: 11,
-        color: '#71949A',
-        marginTop: 2,
+        color: COLORS.textMuted,
+        marginTop: 1,
     },
 
     divider: {
         width: 1,
-        height: 36,
-        backgroundColor: '#E8F0F1',
+        height: 40,
+        backgroundColor: COLORS.borderLight,
     },
 
-    // COLLAPSIBLE ACCORDION CONTAINER - STYLE CHUẨN NHƯ WORKOUTPLANSCREEN
+    // COLLAPSIBLE ACCORDION
     collapsibleWrapper: {
         marginHorizontal: 16,
         marginTop: 14,
@@ -1078,47 +1215,58 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 18,
-        height: 60,
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 14,
+        height: 64,
         borderRadius: 18,
         borderWidth: 1,
-        borderColor: '#B9E5E9',
-        elevation: 2,
-        shadowColor: '#78959A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     accordionTitleRow: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
     },
 
+    accordionIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
     accordionTitle: {
-        color: '#11343A',
+        flexShrink: 1,
+        color: COLORS.textPrimary,
         fontSize: 15,
-        fontWeight: '700',
+        fontWeight: '800',
+    },
+
+    chevronWrap: {
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        backgroundColor: COLORS.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     accordionContentCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#B9E5E9',
-        paddingHorizontal: 16,
+        borderColor: COLORS.border,
+        paddingHorizontal: 14,
         marginTop: 8,
-        elevation: 2,
-        shadowColor: '#78959A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        ...SHADOWS.card,
     },
 
     profileItem: {
-        minHeight: 62,
+        minHeight: 64,
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 10,
@@ -1126,17 +1274,17 @@ const styles = StyleSheet.create({
 
     itemBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: '#F0F7F8',
+        borderBottomColor: COLORS.borderLight,
     },
 
     itemIconWrap: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        backgroundColor: '#EAF9FB',
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: COLORS.surfaceTeal,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 14,
+        marginRight: 12,
     },
 
     itemContent: {
@@ -1145,13 +1293,13 @@ const styles = StyleSheet.create({
 
     itemTitle: {
         fontSize: 12,
-        color: '#71949A',
+        color: COLORS.textMuted,
     },
 
     itemValue: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#11343A',
+        fontWeight: '700',
+        color: COLORS.textPrimary,
         marginTop: 2,
     },
 
@@ -1171,57 +1319,54 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: '#EAF9FB',
-        borderWidth: 1,
-        borderColor: '#B9E5E9',
+        backgroundColor: COLORS.primarySoft,
         paddingHorizontal: 10,
-        paddingVertical: 6,
+        height: 32,
         borderRadius: 10,
     },
 
     copyBtnText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#0D7F8D',
+        fontWeight: '700',
+        color: COLORS.primary,
     },
 
     chatCoachBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: '#EAF9FB',
-        borderWidth: 1,
-        borderColor: '#0D7F8D',
+        backgroundColor: COLORS.primary,
         paddingHorizontal: 10,
-        paddingVertical: 6,
+        height: 32,
         borderRadius: 10,
     },
 
     chatCoachBtnText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#0D7F8D',
+        fontWeight: '700',
+        color: COLORS.white,
     },
 
     // SETTINGS ITEM
     settingItem: {
-        height: 58,
+        minHeight: 60,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 8,
     },
 
     settingSwitchItem: {
-        minHeight: 62,
+        minHeight: 64,
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 10,
     },
 
     settingIconWrap: {
-        width: 36,
-        height: 36,
-        borderRadius: 11,
-        backgroundColor: '#EAF9FB',
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: COLORS.surfaceTeal,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -1229,24 +1374,23 @@ const styles = StyleSheet.create({
 
     settingTitle: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#11343A',
+        fontWeight: '700',
+        color: COLORS.textPrimary,
     },
 
     settingSubtitle: {
-        fontSize: 11,
-        color: '#71949A',
+        fontSize: 12,
+        color: COLORS.textMuted,
         marginTop: 2,
     },
 
     // LOGOUT BUTTON
     logoutButton: {
         marginHorizontal: 16,
-        marginTop: 15,
-        marginBottom: 40,
+        marginTop: 24,
         height: 50,
         borderRadius: 14,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FEF2F2',
         borderWidth: 1,
         borderColor: '#FECACA',
         flexDirection: 'row',
@@ -1257,30 +1401,39 @@ const styles = StyleSheet.create({
     logoutText: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#FA3E3E',
+        color: COLORS.accentRed,
     },
 
     versionText: {
         textAlign: 'center',
         fontSize: 12,
-        color: '#71949A',
+        color: COLORS.textLight,
         marginTop: 14,
     },
 
     // MODAL STYLES
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backgroundColor: 'rgba(4,28,35,0.55)',
         justifyContent: 'flex-end',
     },
 
+    dragHandle: {
+        width: 42,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
+        alignSelf: 'center',
+        marginBottom: 14,
+    },
+
     modalContainer: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 36,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 30,
         maxHeight: '88%',
     },
 
@@ -1289,26 +1442,30 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 16,
-        paddingBottom: 12,
+        paddingBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: '#E8F0F1',
+        borderBottomColor: COLORS.borderLight,
     },
 
     modalTitle: {
         fontSize: 18,
-        fontWeight: '700',
-        color: '#11343A',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     modalSubtitle: {
         fontSize: 12,
-        color: '#71949A',
+        color: COLORS.textMuted,
         marginTop: 2,
     },
 
     modalCloseBtn: {
         width: 36,
         height: 36,
+        borderRadius: 12,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1319,151 +1476,191 @@ const styles = StyleSheet.create({
 
     inputLabel: {
         fontSize: 13,
-        fontWeight: '600',
-        color: '#11343A',
+        fontWeight: '700',
+        color: COLORS.textSecondary,
         marginBottom: 6,
     },
 
     textInput: {
-        height: 48,
-        backgroundColor: '#F4FAFB',
+        height: 50,
+        backgroundColor: COLORS.background,
         borderWidth: 1,
-        borderColor: '#B9E5E9',
-        borderRadius: 12,
+        borderColor: COLORS.border,
+        borderRadius: 14,
         paddingHorizontal: 14,
         fontSize: 14,
-        color: '#11343A',
+        color: COLORS.textPrimary,
     },
 
     modalActionRow: {
         flexDirection: 'row',
         gap: 12,
-        marginTop: 18,
+        marginTop: 16,
         paddingBottom: 10,
     },
 
     cancelBtn: {
         flex: 1,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: '#F3F4F6',
+        height: 50,
+        borderRadius: 14,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         justifyContent: 'center',
         alignItems: 'center',
     },
 
     cancelBtnText: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#4B5563',
+        fontWeight: '700',
+        color: COLORS.textSecondary,
+    },
+
+    saveBtnWrap: {
+        flex: 1.4,
     },
 
     saveBtn: {
-        flex: 1,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: '#0D7F8D',
+        height: 50,
+        borderRadius: 14,
+        flexDirection: 'row',
+        gap: 6,
         justifyContent: 'center',
         alignItems: 'center',
     },
 
     saveBtnText: {
         fontSize: 14,
-        fontWeight: '700',
-        color: '#FFFFFF',
+        fontWeight: '800',
+        color: COLORS.white,
     },
 
     // VIP CARD MODAL
     vipCardContainer: {
-        margin: 20,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 22,
-        padding: 20,
+        margin: 16,
+        marginBottom: 40,
+        backgroundColor: COLORS.white,
+        borderRadius: 24,
+        padding: 16,
         alignItems: 'center',
-        marginBottom: 50,
+    },
+
+    vipCard: {
+        width: '100%',
+        borderRadius: 20,
+        overflow: 'hidden',
+        ...SHADOWS.glow,
+    },
+
+    vipCardDecor: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        top: -80,
+        right: -60,
     },
 
     vipCardBadgeTop: {
         width: '100%',
-        backgroundColor: '#0D7F8D',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
         padding: 16,
+        paddingBottom: 6,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
     },
 
     vipCardCloseBtn: {
-        padding: 4,
+        width: 34,
+        height: 34,
+        borderRadius: 11,
+        backgroundColor: 'rgba(255,255,255,0.16)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    vipChip: {
+        width: 44,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: COLORS.accentGold,
+        marginLeft: 16,
+        marginTop: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     vipCardBrand: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '800',
-        color: '#FFFFFF',
+        color: COLORS.white,
         letterSpacing: 1,
     },
 
     vipCardTier: {
         fontSize: 11,
-        fontWeight: '600',
-        color: '#B9E5E9',
-        marginTop: 2,
+        fontWeight: '700',
+        color: '#FBD9A5',
+        marginTop: 3,
+        letterSpacing: 0.5,
     },
 
     vipCardBadgeBottom: {
         width: '100%',
-        backgroundColor: '#075E68',
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
         padding: 16,
+        paddingTop: 12,
     },
 
     vipCardNumber: {
-        fontSize: 18,
+        fontSize: 19,
         fontWeight: '800',
-        color: '#FFFFFF',
-        letterSpacing: 2,
+        color: COLORS.white,
+        letterSpacing: 3,
     },
 
     vipCardSub: {
         fontSize: 10,
-        color: '#B9E5E9',
-        fontWeight: '600',
+        color: 'rgba(255,255,255,0.7)',
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
 
     vipCardValue: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: COLORS.white,
         marginTop: 2,
     },
 
     qrCodeWrap: {
-        marginTop: 20,
+        marginTop: 18,
         alignItems: 'center',
         width: '100%',
     },
 
     qrBox: {
         padding: 12,
-        backgroundColor: '#F4FAFB',
-        borderRadius: 16,
+        backgroundColor: COLORS.white,
+        borderRadius: 18,
         borderWidth: 1,
-        borderColor: '#B9E5E9',
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     qrCodeNote: {
         fontSize: 13,
-        fontWeight: '600',
-        color: '#11343A',
+        fontWeight: '700',
+        color: COLORS.textPrimary,
         marginTop: 12,
         textAlign: 'center',
     },
 
     qrBranchNote: {
-        fontSize: 11,
-        color: '#71949A',
+        fontSize: 12,
+        color: COLORS.textMuted,
         marginTop: 4,
         textAlign: 'center',
     },
@@ -1471,34 +1668,33 @@ const styles = StyleSheet.create({
     copyQrBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EAF9FB',
-        borderWidth: 1,
-        borderColor: '#0D7F8D',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 12,
+        justifyContent: 'center',
+        alignSelf: 'stretch',
+        backgroundColor: COLORS.primarySoft,
+        height: 48,
+        borderRadius: 14,
         marginTop: 16,
     },
 
     copyQrBtnText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#0D7F8D',
+        fontSize: 14,
+        fontWeight: '700',
+        color: COLORS.primary,
     },
 
     // AVATAR PICKER MODAL
     avatarPickerContainer: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 36,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 30,
     },
 
     avatarPickerSub: {
         fontSize: 13,
-        color: '#71949A',
+        color: COLORS.textMuted,
         marginBottom: 16,
     },
 
@@ -1512,14 +1708,14 @@ const styles = StyleSheet.create({
 
     avatarOption: {
         position: 'relative',
-        borderRadius: 36,
+        borderRadius: 38,
         padding: 3,
-        borderWidth: 2,
+        borderWidth: 2.5,
         borderColor: 'transparent',
     },
 
     avatarOptionSelected: {
-        borderColor: '#0D7F8D',
+        borderColor: COLORS.primary,
     },
 
     avatarOptionImg: {
@@ -1530,12 +1726,14 @@ const styles = StyleSheet.create({
 
     avatarCheckBadge: {
         position: 'absolute',
-        right: 2,
-        bottom: 2,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#0D7F8D',
+        right: 0,
+        bottom: 0,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: COLORS.primary,
+        borderWidth: 2,
+        borderColor: COLORS.white,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1544,17 +1742,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 48,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#0D7F8D',
-        backgroundColor: '#EAF9FB',
+        height: 50,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        borderColor: COLORS.borderFocus,
+        backgroundColor: COLORS.surfaceTeal,
     },
 
     customUploadBtnText: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#0D7F8D',
+        fontWeight: '700',
+        color: COLORS.primary,
     },
 });
 

@@ -1,704 +1,425 @@
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS, SHADOWS } from '../../general/theme';
 
-const Schedule = ({ navigation }: any) => {
-  const [selectedDate, setSelectedDate] = useState(7);
+// Dữ liệu mẫu (Frontend Mock Data) - tuần 26/10 → 01/11/2026
+const TODAY = 31;
+const WEEK = [
+  { day: 'T2', date: 26 },
+  { day: 'T3', date: 27 },
+  { day: 'T4', date: 28 },
+  { day: 'T5', date: 29 },
+  { day: 'T6', date: 30 },
+  { day: 'T7', date: 31 },
+  { day: 'CN', date: 1 },
+];
 
-  const weekDays = [
-    { day: "T2", date: 31, month: "prev" },
-    { day: "T3", date: 1, month: "current" },
-    { day: "T4", date: 2, month: "current" },
-    { day: "T5", date: 3, month: "current" },
-    { day: "T6", date: 4, month: "current" },
-    { day: "T7", date: 5, month: "current" },
-    { day: "CN", date: 6, month: "current" },
+const SCHEDULES = [
+  { id: '1', date: 31, time: '09:00', end: '10:00', member: 'Nguyễn Văn An', type: 'Tập thể lực & Tăng cơ', place: 'Phòng Gym A', status: 'done', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
+  { id: '2', date: 31, time: '14:30', end: '15:15', member: 'Trần Minh Anh', type: 'Cardio & Giảm mỡ', place: 'Khu Cardio', status: 'next', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80' },
+  { id: '3', date: 31, time: '18:00', end: '19:00', member: 'Lê Hoàng Nam', type: 'Full Body Kháng lực', place: 'Phòng Gym B', status: 'upcoming', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
+  { id: '4', date: 28, time: '10:00', end: '11:00', member: 'Phạm Thu Hà', type: 'Giảm cân chuyên sâu', place: 'Phòng Gym A', status: 'done', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80' },
+  { id: '5', date: 29, time: '07:30', end: '08:20', member: 'Võ Minh Khang', type: 'Upper Body', place: 'Phòng Gym B', status: 'done', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&auto=format&fit=crop&q=80' },
+  { id: '6', date: 1, time: '08:00', end: '09:00', member: 'Nguyễn Văn An', type: 'Leg Day', place: 'Phòng Gym A', status: 'upcoming', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
+];
 
-    { day: "T2", date: 7, month: "current" },
-    { day: "T3", date: 8, month: "current" },
-    { day: "T4", date: 9, month: "current" },
-    { day: "T5", date: 10, month: "current" },
-    { day: "T6", date: 11, month: "current" },
-    { day: "T7", date: 12, month: "current" },
-    { day: "CN", date: 13, month: "current" },
+const STATUS = {
+  done: { label: 'Hoàn thành', color: COLORS.accentGreen, bg: '#ECFDF5' },
+  next: { label: 'Sắp diễn ra', color: COLORS.accentOrange, bg: '#FFF1EC' },
+  upcoming: { label: 'Đã lên lịch', color: COLORS.accentBlue, bg: '#EAF3FC' },
+};
 
-    { day: "T2", date: 14, month: "current" },
-    { day: "T3", date: 15, month: "current" },
-    { day: "T4", date: 16, month: "current" },
-    { day: "T5", date: 17, month: "current" },
-    { day: "T6", date: 18, month: "current" },
-    { day: "T7", date: 19, month: "current" },
-    { day: "CN", date: 20, month: "current" },
-
-    { day: "T2", date: 21, month: "current" },
-    { day: "T3", date: 22, month: "current" },
-    { day: "T4", date: 23, month: "current" },
-    { day: "T5", date: 24, month: "current" },
-    { day: "T6", date: 25, month: "current" },
-    { day: "T7", date: 26, month: "current" },
-    { day: "CN", date: 27, month: "current" },
-
-    { day: "T2", date: 28, month: "current" },
-    { day: "T3", date: 29, month: "current" },
-    { day: "T4", date: 30, month: "current" },
-    { day: "T5", date: 1, month: "next" },
-    { day: "T6", date: 2, month: "next" },
-    { day: "T7", date: 3, month: "next" },
-    { day: "CN", date: 4, month: "next" },
-  ];
-
-  const schedules = [
-    {
-      id: "1",
-      date: 7,
-      time: "09:00",
-      member: "Nguyễn Văn An",
-      type: "Strength Training",
-      duration: "60 phút",
-      status: "Sắp tới",
-    },
-    {
-      id: "2",
-      date: 7,
-      time: "14:30",
-      member: "Trần Minh Anh",
-      type: "Cardio",
-      duration: "45 phút",
-      status: "Hoàn thành",
-    },
-    {
-      id: "3",
-      date: 7,
-      time: "18:00",
-      member: "Lê Hoàng Nam",
-      type: "Full Body",
-      duration: "60 phút",
-      status: "Sắp tới",
-    },
-    {
-      id: "4",
-      date: 8,
-      time: "10:00",
-      member: "Phạm Thu Hà",
-      type: "Weight Loss",
-      duration: "60 phút",
-      status: "Sắp tới",
-    },
-  ];
-
-  const todaySchedules = useMemo(() => {
-    return schedules.filter(
-      (schedule) => schedule.date === selectedDate
-    );
-  }, [selectedDate]);
+const Schedule = () => {
+  const [selectedDate, setSelectedDate] = useState(TODAY);
+  const daySchedules = SCHEDULES.filter((item) => item.date === selectedDate);
+  const doneCount = daySchedules.filter((item) => item.status === 'done').length;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>
-            Lịch tập
-          </Text>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* 1. HEADER GRADIENT + CHỌN NGÀY */}
+        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+          <View style={styles.circleLg} />
 
-          <Text style={styles.headerSubtitle}>
-            Quản lý lịch tập của bạn
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.addHeaderButton}
-          onPress={() =>
-            navigation.navigate("CreateSchedule")
-          }
-        >
-          <Text style={styles.addHeaderText}>
-            +
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-
-        {/* MONTH HEADER */}
-        <View style={styles.monthHeader}>
-          <TouchableOpacity style={styles.monthArrow}>
-            <Text style={styles.arrowText}>
-              ‹
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.monthTitle}>
-            THÁNG 9, 2026
-          </Text>
-
-          <TouchableOpacity style={styles.monthArrow}>
-            <Text style={styles.arrowText}>
-              ›
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* CALENDAR */}
-        <View style={styles.calendarCard}>
-
-          <View style={styles.weekHeader}>
-            {weekDays.slice(0, 7).map((item) => (
-              <View
-                key={item.day}
-                style={styles.weekDay}
-              >
-                <Text
-                  style={[
-                    styles.weekDayText,
-                    item.day === "CN" &&
-                      styles.sundayText,
-                  ]}
-                >
-                  {item.day}
-                </Text>
-              </View>
-            ))}
+          <View style={styles.headerRow}>
+            <View style={styles.flex}>
+              <Text style={styles.headerSub}>Lịch huấn luyện</Text>
+              <Text style={styles.headerTitle}>Tháng 10, 2026</Text>
+            </View>
+            <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
+              <Ionicons name="calendar-outline" size={20} color={COLORS.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.glassBtn, styles.addBtn]} activeOpacity={0.8}>
+              <Ionicons name="add" size={24} color={COLORS.primary} />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.calendarGrid}>
-            {weekDays.map((item, index) => {
-              const selected =
-                item.date === selectedDate &&
-                item.month === "current";
-
-              const hasSchedule =
-                schedules.some(
-                  (schedule) =>
-                    schedule.date === item.date &&
-                    item.month === "current"
-                );
-
+          <View style={styles.weekRow}>
+            {WEEK.map((item) => {
+              const selected = item.date === selectedDate;
+              const hasSchedule = SCHEDULES.some((s) => s.date === item.date);
               return (
                 <TouchableOpacity
-                  key={`${item.date}-${index}`}
-                  style={styles.dateCell}
-                  disabled={item.month !== "current"}
-                  onPress={() =>
-                    setSelectedDate(item.date)
-                  }
-                >
-                  <View
-                    style={[
-                      styles.dateCircle,
-                      selected &&
-                        styles.selectedDate,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dateText,
-                        item.month !== "current" &&
-                          styles.otherMonthText,
-                        selected &&
-                          styles.selectedDateText,
-                      ]}
-                    >
-                      {item.date}
-                    </Text>
-                  </View>
-
-                  {hasSchedule && (
-                    <View
-                      style={[
-                        styles.eventDot,
-                        selected &&
-                          styles.selectedEventDot,
-                      ]}
-                    />
-                  )}
+                  key={item.date}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedDate(item.date)}
+                  style={[styles.dayPill, selected && styles.dayPillActive]}>
+                  <Text style={[styles.dayLabel, selected && styles.dayLabelActive]}>{item.day}</Text>
+                  <Text style={[styles.dayDate, selected && styles.dayDateActive]}>{item.date}</Text>
+                  <View style={[styles.dayDot, hasSchedule && styles.dayDotOn, selected && hasSchedule && styles.dayDotActive]} />
                 </TouchableOpacity>
               );
             })}
           </View>
+        </LinearGradient>
 
-        </View>
-
-        {/* SELECTED DATE */}
-        <View style={styles.todayHeader}>
-          <View>
-            <Text style={styles.todayLabel}>
-              {selectedDate === 7
-                ? "HÔM NAY"
-                : "LỊCH TẬP"}
-            </Text>
-
-            <Text style={styles.dateTitle}>
-              {selectedDate} THÁNG 9
-            </Text>
+        {/* 2. TÓM TẮT NGÀY */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryIcon}>
+            <Ionicons name="barbell" size={20} color={COLORS.primary} />
           </View>
-
-          <View style={styles.sessionCount}>
-            <Text style={styles.sessionCountText}>
-              {todaySchedules.length} buổi
+          <View style={styles.flex}>
+            <Text style={styles.summaryTitle}>
+              {selectedDate === TODAY ? 'Hôm nay' : `Ngày ${selectedDate}`} • {daySchedules.length} ca dạy
+            </Text>
+            <Text style={styles.subText}>
+              {doneCount} hoàn thành • {daySchedules.length - doneCount} sắp tới
             </Text>
           </View>
         </View>
 
-        {/* SCHEDULE LIST */}
-        {todaySchedules.map((schedule) => (
-          <TouchableOpacity
-            key={schedule.id}
-            style={styles.scheduleCard}
-            activeOpacity={0.8}
-          >
-
-            {/* TIME */}
-            <View style={styles.timeContainer}>
-              <Text style={styles.timeText}>
-                {schedule.time}
-              </Text>
-
-              <View style={styles.timeLine} />
-            </View>
-
-            {/* INFO */}
-            <View style={styles.scheduleInfo}>
-
-              <View style={styles.scheduleTop}>
-                <Text style={styles.memberName}>
-                  {schedule.member}
-                </Text>
+        {/* 3. DANH SÁCH CA DẠY */}
+        <View style={styles.body}>
+          {daySchedules.map((item) => {
+            const status = STATUS[item.status as keyof typeof STATUS];
+            return (
+              <View key={item.id} style={styles.itemRow}>
+                <View style={styles.timeCol}>
+                  <Text style={[styles.timeText, item.status === 'next' && { color: COLORS.primary }]}>{item.time}</Text>
+                  <Text style={styles.endText}>{item.end}</Text>
+                </View>
 
                 <View
                   style={[
-                    styles.statusBadge,
-                    schedule.status === "Hoàn thành" &&
-                      styles.completedBadge,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.statusDot,
-                      schedule.status === "Hoàn thành" &&
-                        styles.completedDot,
-                    ]}
-                  />
-
-                  <Text
-                    style={[
-                      styles.statusText,
-                      schedule.status === "Hoàn thành" &&
-                        styles.completedText,
-                    ]}
-                  >
-                    {schedule.status}
-                  </Text>
+                    styles.scheduleCard,
+                    item.status === 'next' && styles.scheduleCardActive,
+                    item.status === 'done' && styles.scheduleCardDone,
+                  ]}>
+                  <View style={[styles.accentBar, { backgroundColor: status.color }]} />
+                  <View style={styles.cardTop}>
+                    <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                    <View style={styles.flex}>
+                      <Text style={styles.memberName}>{item.member}</Text>
+                      <Text style={styles.subText}>{item.type}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.cardBottom}>
+                    <View style={styles.metaRow}>
+                      <Ionicons name="location-outline" size={13} color={COLORS.textMuted} />
+                      <Text style={styles.metaText}>{item.place}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                      <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
+            );
+          })}
 
-              <Text style={styles.trainingType}>
-                {schedule.type}
-              </Text>
-
-              <View style={styles.durationRow}>
-                <Text style={styles.durationIcon}>
-                  ◷
-                </Text>
-
-                <Text style={styles.durationText}>
-                  {schedule.duration}
-                </Text>
+          {daySchedules.length === 0 && (
+            <View style={styles.emptyBox}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="cafe-outline" size={34} color={COLORS.primary} />
               </View>
-
+              <Text style={styles.emptyTitle}>Ngày nghỉ ngơi</Text>
+              <Text style={styles.subText}>Chưa có buổi tập nào được lên lịch.</Text>
+              <TouchableOpacity style={styles.emptyBtn} activeOpacity={0.85}>
+                <Ionicons name="add" size={18} color={COLORS.white} />
+                <Text style={styles.emptyBtnText}>Thêm ca dạy</Text>
+              </TouchableOpacity>
             </View>
-
-            <Text style={styles.cardArrow}>
-              ›
-            </Text>
-
-          </TouchableOpacity>
-        ))}
-
-        {/* EMPTY STATE */}
-        {todaySchedules.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>
-              📅
-            </Text>
-
-            <Text style={styles.emptyTitle}>
-              Không có lịch tập
-            </Text>
-
-            <Text style={styles.emptyText}>
-              Ngày này chưa có buổi tập nào.
-            </Text>
-          </View>
-        )}
-
-        {/* CREATE BUTTON */}
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() =>
-            navigation.navigate("CreateSchedule")
-          }
-        >
-          <Text style={styles.createButtonText}>
-            + Tạo lịch tập
-          </Text>
-        </TouchableOpacity>
-
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
+export default Schedule;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: COLORS.background,
   },
-
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+  scroll: {
+    backgroundColor: COLORS.background,
   },
-
-  headerTitle: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#111827",
+  flex: {
+    flex: 1,
   },
-
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    marginTop: 4,
-  },
-
-  addHeaderButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  addHeaderText: {
-    
-    fontSize: 26,
-    lineHeight: 27,
-    fontWeight: "400",
-  },
-
   content: {
-    padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
-
-  monthHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
+  body: {
+    paddingHorizontal: 16,
+    marginTop: 18,
   },
-
-  monthArrow: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  arrowText: {
-    fontSize: 27,
-    color: "#374151",
-    lineHeight: 28,
-  },
-
-  monthTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#111827",
-  },
-
-  calendarCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    padding: 14,
-    marginBottom: 22,
-  },
-
-  weekHeader: {
-    flexDirection: "row",
-    marginBottom: 7,
-  },
-
-  weekDay: {
-    width: "14.285%",
-    alignItems: "center",
-  },
-
-  weekDayText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#9CA3AF",
-  },
-
-  sundayText: {
-    color: "#EF4444",
-  },
-
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-
-  dateCell: {
-    width: "14.285%",
-    height: 49,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  dateCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  selectedDate: {
-    backgroundColor: "#111827",
-  },
-
-  dateText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-  },
-
-  selectedDateText: {
-    
-  },
-
-  otherMonthText: {
-    color: "#D1D5DB",
-  },
-
-  eventDot: {
-    position: "absolute",
-    bottom: 1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#111827",
-  },
-
-  selectedEventDot: {
-    backgroundColor: "#FFFFFF",
-  },
-
-  todayHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  todayLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#9CA3AF",
-    letterSpacing: 0.5,
-  },
-
-  dateTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
+  subText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
     marginTop: 3,
   },
 
-  sessionCount: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+  // HEADER
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 50,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: 'hidden',
   },
-
-  sessionCountText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
+  circleLg: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -80,
+    right: -60,
   },
-
-  scheduleCard: {
-    backgroundColor: "#FFFFFF",
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerSub: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginTop: 2,
+  },
+  glassBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBtn: {
+    backgroundColor: COLORS.white,
+  },
+  weekRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  dayPill: {
+    width: 44,
+    paddingVertical: 10,
     borderRadius: 16,
-    padding: 15,
-    marginBottom: 11,
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-
-  timeContainer: {
-    width: 57,
-    alignItems: "center",
-    alignSelf: "stretch",
-    justifyContent: "flex-start",
+  dayPillActive: {
+    backgroundColor: COLORS.white,
+    ...SHADOWS.card,
   },
-
-  timeText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#111827",
+  dayLabel: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
   },
-
-  timeLine: {
-    width: 1,
-    flex: 1,
-    backgroundColor: "#E5E7EB",
-    marginTop: 9,
+  dayLabelActive: {
+    color: COLORS.textMuted,
   },
-
-  scheduleInfo: {
-    flex: 1,
-    marginLeft: 8,
+  dayDate: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginTop: 4,
   },
-
-  scheduleTop: {
-    flexDirection: "row",
-    alignItems: "center",
+  dayDateActive: {
+    color: COLORS.primary,
   },
-
-  memberName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    paddingHorizontal: 7,
-    paddingVertical: 5,
-    borderRadius: 7,
-  },
-
-  completedBadge: {
-    backgroundColor: "#ECFDF5",
-  },
-
-  statusDot: {
+  dayDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#F59E0B",
-    marginRight: 4,
-  },
-
-  completedDot: {
-    backgroundColor: "#10B981",
-  },
-
-  statusText: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#D97706",
-  },
-
-  completedText: {
-    color: "#059669",
-  },
-
-  trainingType: {
-    fontSize: 13,
-    color: "#4B5563",
-    marginTop: 6,
-  },
-
-  durationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 7,
-  },
-
-  durationIcon: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    marginRight: 5,
-  },
-
-  durationText: {
-    fontSize: 11,
-    color: "#9CA3AF",
-  },
-
-  cardArrow: {
-    fontSize: 25,
-    color: "#D1D5DB",
-    marginLeft: 8,
-  },
-
-  emptyState: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    alignItems: "center",
-    paddingVertical: 40,
-    marginBottom: 15,
-  },
-
-  emptyIcon: {
-    fontSize: 35,
-    marginBottom: 10,
-  },
-
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  emptyText: {
-    fontSize: 12,
-    color: "#9CA3AF",
     marginTop: 5,
+    backgroundColor: COLORS.transparent,
+  },
+  dayDotOn: {
+    backgroundColor: '#9EE7E5',
+  },
+  dayDotActive: {
+    backgroundColor: COLORS.accentOrange,
   },
 
-  createButton: {
-    height: 52,
+  // TÓM TẮT
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: -30,
+    borderRadius: 18,
+    padding: 14,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
+  },
+  summaryIcon: {
+    width: 42,
+    height: 42,
     borderRadius: 14,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 5,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
   },
 
-  createButtonText: {
-    
+  // CA DẠY
+  itemRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  timeCol: {
+    width: 52,
+    paddingTop: 14,
+  },
+  timeText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  endText: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  scheduleCard: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 14,
+    paddingLeft: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    ...SHADOWS.card,
+  },
+  scheduleCardActive: {
+    borderColor: COLORS.borderFocus,
+    borderWidth: 1.5,
+  },
+  scheduleCardDone: {
+    opacity: 0.75,
+  },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+  },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+  },
+  memberName: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  cardBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  statusBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // EMPTY
+  emptyBox: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  emptyIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 18,
+    height: 42,
+    borderRadius: 14,
+    marginTop: 16,
+    ...SHADOWS.glow,
+  },
+  emptyBtnText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: COLORS.white,
   },
 });
-
-export default Schedule;

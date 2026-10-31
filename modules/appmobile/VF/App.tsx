@@ -20,6 +20,7 @@ import Schedule from "./src/page/trainners/Schedule";
 import SessionHistory from "./src/page/trainners/SessionHistory";
 import SessionReview from "./src/page/trainners/SessionReview";
 import Members from "./src/page/trainners/Members";
+import TrainerFeed from "./src/page/trainners/TrainerFeed";
 import SportFeed from "./src/page/member/SportFeed";
 import headerPage from "./src/page/member/TrainingPlan/Header/page";
 import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
@@ -79,7 +80,7 @@ const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="ExercisePage" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="WorkoutPlanScreen" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
       <MemberWorkoutStack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
@@ -137,11 +138,11 @@ function MainTabs() {
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let name_icon = "";
-          // if (route.name === "Home") name_icon = focused ? "home" : "home-outline";
-          // else if (route.name === "Login") name_icon = focused ? "heart-sharp" : "heart-outline";
-          // else if (route.name === "ScanQR") name_icon = focused ? "scan-circle" : "scan";
-          // else if (route.name === "ChatBot") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
-          // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "people-outline";
+          if (route.name === "Home") name_icon = focused ? "home" : "home-outline";
+          else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
+          else if (route.name === "Schedule") name_icon = focused ? "calendar" : "calendar-outline";
+          else if (route.name === "Members") name_icon = focused ? "people" : "people-outline";
+          else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
           return (
             <AnimatIcon
               name_icon={name_icon}
@@ -155,18 +156,35 @@ function MainTabs() {
         tabBarInactiveTintColor: "#71949A",
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: "bold"
-        }
+          fontWeight: "bold",
+          marginBottom: 5,
+        },
+        tabBarStyle: {
+          marginHorizontal: 13,
+          marginBottom: 25,
+          height: 70,
+          borderRadius: 40,
+          backgroundColor: "#FFFFFF",
+          borderTopWidth: 0,
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          paddingTop: 5,
+          paddingBottom: 5,
+        },
       })}
     >
-      <Tab.Screen name="Home" component={Homepage} />
-      {/* <Tab.Screen name="login" component={StoreScheduleMember} /> */}
-      {/* <Tab.Screen name="ScanQR" component={ScanQR} />
-      <Tab.Screen name="ChatBot" component={ChatBot} /> */}
-      {/* <Tab.Screen name="Profile" component={Profile} /> */}
-
+      <Tab.Screen name="Home" component={Homepage} options={{ tabBarLabel: "Trang chủ" }} />
+      <Tab.Screen name="Feed" component={TrainerFeed} options={{ tabBarLabel: "Bảng tin" }} />
+      <Tab.Screen name="Schedule" component={Schedule} options={{ tabBarLabel: "Lịch dạy" }} />
+      <Tab.Screen name="Members" component={Members} options={{ tabBarLabel: "Học viên" }} />
+      <Tab.Screen name="Profile" component={Profile} options={{ tabBarLabel: "Hồ sơ" }} />
     </Tab.Navigator>
-
   );
 }
 
@@ -229,20 +247,13 @@ function MemberTabs() {
         marginBottom: 5,
       },
       tabBarStyle: {
-        position: "absolute",
-        // Cách trái + phải
         marginHorizontal: 13,
-        // Cách đáy
-        bottom: 25,
+        marginBottom: 25,
         height: 70,
-        // Bo tròn
         borderRadius: 40,
-        backgroundColor: "rgba(255,255,255,0.80)",
-        // Xóa đường viền mặc định
+        backgroundColor: "#FFFFFF",
         borderTopWidth: 0,
-        // Shadow Android
         elevation: 8,
-        // Shadow iOS
         shadowColor: "#000",
         shadowOffset: {
           width: 0,
@@ -291,13 +302,13 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="AiConsultationScreen"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
         <Stack.Screen name="Onloading" component={Onloading}/>
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="MemberTabs" component={MemberTabs} />
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
+        <Stack.Screen name="MemberTabs" component={MemberTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="AuthScreen" component={AuthScreen} />
@@ -320,12 +331,19 @@ const App = () => {
         <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
         <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
         <Stack.Screen name="WorkoutSelectionScreen" component={WorkoutSelectionScreen} />
+        <Stack.Screen name="WorkoutSelection" component={WorkoutSelectionScreen} />
         <Stack.Screen name="PTListScreen" component={PTListScreen} />
+        <Stack.Screen name="PTList" component={PTListScreen} />
         <Stack.Screen name="RegistrationReviewScreen" component={RegistrationReviewScreen} />
+        <Stack.Screen name="RegistrationReview" component={RegistrationReviewScreen} />
         <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+        <Stack.Screen name="Payment" component={PaymentScreen} />
         <Stack.Screen name="RegistrationSuccessScreen" component={RegistrationSuccessScreen} />
+        <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccessScreen} />
         <Stack.Screen name="MyPackagesScreen" component={MyPackagesScreen} />
+        <Stack.Screen name="MyPackages" component={MyPackagesScreen} />
         <Stack.Screen name="MyPackageDetailScreen" component={MyPackageDetailScreen} />
+        <Stack.Screen name="MyPackageDetail" component={MyPackageDetailScreen} />
 
 
         {/* // gioi thieu */}
@@ -339,6 +357,7 @@ const App = () => {
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
         <Stack.Screen name="Dashboard" component={Dashboard} />
+        <Stack.Screen name="TrainerFeed" component={TrainerFeed} />
         <Stack.Screen name="Income" component={Income} />
         <Stack.Screen name="MemberDetail" component={MemberDetail} />
         <Stack.Screen name="Members" component={Members} />

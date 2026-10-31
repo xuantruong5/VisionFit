@@ -19,7 +19,9 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { launchImageLibrary } from "react-native-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 import apiFitlife, { BASE_URL } from "../../general/api";
+import { COLORS, SHADOWS } from "../../general/theme";
 
 const EMOJI_LIST = ["❤️", "👍", "🔥", "😂", "😮", "😢"];
 
@@ -236,12 +238,19 @@ const ChatRoom = ({ navigation, route }: any) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <StatusBar barStyle="dark-content" {...({ backgroundColor: "#EAF9FB", translucent: false } as any)} />
+            <StatusBar barStyle="dark-content" />
 
             {/* Header phòng chat */}
-            <View style={styles.header}>
+            <View style={styles.headerWrap}>
+            <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.header}
+            >
+                <View style={styles.headerCircle} />
                 <TouchableOpacity style={styles.headerBackBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="chevron-back" size={26} color="#075E68" />
+                    <Ionicons name="chevron-back" size={22} color={COLORS.white} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.headerUserInfo} activeOpacity={0.7} onPress={() => setShowInfoModal(true)}>
@@ -268,21 +277,22 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerActionBtn} onPress={() => Alert.alert("Cuộc gọi thoại", `Đang gọi thoại tới ${displayName}...`)}>
-                        <Ionicons name="call" size={20} color="#0D7F8D" />
+                        <Ionicons name="call" size={17} color={COLORS.white} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.headerActionBtn} onPress={() => Alert.alert("Cuộc gọi Video", `Đang kết nối video call với ${displayName}...`)}>
-                        <Ionicons name="videocam" size={21} color="#0D7F8D" />
+                        <Ionicons name="videocam" size={18} color={COLORS.white} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.headerActionBtn} onPress={() => setShowInfoModal(true)}>
-                        <Ionicons name="information-circle" size={22} color="#0D7F8D" />
+                        <Ionicons name="information-circle" size={20} color={COLORS.white} />
                     </TouchableOpacity>
                 </View>
+            </LinearGradient>
             </View>
 
             {/* Khung tin nhắn */}
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+            <KeyboardAvoidingView style={styles.chatBody} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 {isMessagesLoading ? (
                     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <ActivityIndicator size="large" color="#0D7F8D" />
@@ -298,7 +308,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                         ListEmptyComponent={
                             <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>
                                 <Ionicons name="chatbubbles-outline" size={48} color="#71949A" style={{ marginBottom: 12 }} />
-                                <Text style={{ fontSize: 16, fontWeight: "600", color: "#193B40" }}>Chưa có tin nhắn nào</Text>
+                                <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.textPrimary }}>Chưa có tin nhắn nào</Text>
                                 <Text style={{ fontSize: 13, color: "#71949A", marginTop: 4 }}>Hãy gửi lời chào để bắt đầu cuộc trò chuyện!</Text>
                             </View>
                         }
@@ -373,7 +383,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                                                     <Text style={styles.workoutDetailText}>{item.workout.gio_tap}</Text>
                                                                 </View>
                                                                 <View style={styles.workoutDetailRow}>
-                                                                    <Ionicons name="flame-outline" size={14} color="#FA3E3E" />
+                                                                    <Ionicons name="flame-outline" size={14} color={COLORS.accentRed} />
                                                                     <Text style={styles.workoutDetailText}>Mục tiêu: {item.workout.calo_muc_tieu} kcal</Text>
                                                                 </View>
                                                             </View>
@@ -547,7 +557,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                 multiline
                             />
                             <TouchableOpacity style={styles.emojiBtn} onPress={() => setInputText((prev) => prev + " 😊")}>
-                                <Ionicons name="happy-outline" size={22} color="#075E68" />
+                                <Ionicons name="happy-outline" size={22} color={COLORS.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -558,7 +568,14 @@ const ChatRoom = ({ navigation, route }: any) => {
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity style={styles.sendBtn} onPress={() => handleSend(inputText)} activeOpacity={0.8}>
-                                <Ionicons name="send" size={18} color="#FFFFFF" />
+                                <LinearGradient
+                                    colors={[COLORS.primary, COLORS.primaryDark]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.sendBtnGradient}
+                                >
+                                    <Ionicons name="send" size={17} color="#FFFFFF" />
+                                </LinearGradient>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -604,11 +621,11 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                             {selectedMsgForReaction?.id_nguoi_gui === currentUser.id_nguoi_dung && selectedMsgForReaction?.trang_thai !== "DA_THU_HOI" && (
                                 <TouchableOpacity
-                                    style={[styles.msgActionRow, { borderTopWidth: 1, borderTopColor: "#DFF6F8" }]}
+                                    style={[styles.msgActionRow, { borderTopWidth: 1, borderTopColor: COLORS.borderLight }]}
                                     onPress={() => selectedMsgForReaction && handleRecall(selectedMsgForReaction.id_tin_nhan)}
                                 >
-                                    <Ionicons name="arrow-undo" size={20} color="#FA3E3E" />
-                                    <Text style={[styles.msgActionText, { color: "#FA3E3E" }]}>Thu hồi tin nhắn</Text>
+                                    <Ionicons name="arrow-undo" size={20} color={COLORS.accentRed} />
+                                    <Text style={[styles.msgActionText, { color: COLORS.accentRed }]}>Thu hồi tin nhắn</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -620,6 +637,7 @@ const ChatRoom = ({ navigation, route }: any) => {
             <Modal visible={showInfoModal} animationType="slide" transparent={true} onRequestClose={() => setShowInfoModal(false)}>
                 <View style={styles.infoModalOverlay}>
                     <View style={styles.infoModalContent}>
+                        <View style={styles.dragHandle} />
                         <View style={styles.infoModalHeader}>
                             <TouchableOpacity onPress={() => setShowInfoModal(false)}>
                                 <Ionicons name="close" size={26} color="#11343A" />
@@ -692,8 +710,8 @@ const ChatRoom = ({ navigation, route }: any) => {
                                     <Ionicons name="chevron-forward" size={18} color="#71949A" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="warning-outline" size={20} color="#FA3E3E" />
-                                    <Text style={[styles.infoRowText, { color: "#FA3E3E" }]}>Báo cáo sự cố / PT</Text>
+                                    <Ionicons name="warning-outline" size={20} color={COLORS.accentRed} />
+                                    <Text style={[styles.infoRowText, { color: COLORS.accentRed }]}>Báo cáo sự cố / PT</Text>
                                     <Ionicons name="chevron-forward" size={18} color="#71949A" />
                                 </TouchableOpacity>
                             </View>
@@ -718,25 +736,41 @@ const ChatRoom = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#EAF9FB",
+        backgroundColor: COLORS.background,
+    },
+    headerWrap: {
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 12,
-        paddingVertical: 10,
-        backgroundColor: "#FFFFFF",
-        borderBottomWidth: 1,
-        borderBottomColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+        paddingTop: 8,
+        paddingBottom: 16,
+        borderRadius: 28,
+        marginHorizontal: 12,
+        marginTop: 6,
+        overflow: "hidden",
+    },
+    headerCircle: {
+        position: "absolute",
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: "rgba(255,255,255,0.07)",
+        top: -90,
+        right: -40,
     },
     headerBackBtn: {
-        padding: 6,
-        marginRight: 4,
+        width: 38,
+        height: 38,
+        borderRadius: 13,
+        backgroundColor: "rgba(255,255,255,0.15)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 10,
     },
     headerUserInfo: {
         flex: 1,
@@ -748,9 +782,12 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     headerAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.6)",
+        backgroundColor: COLORS.primaryLight,
     },
     headerOnlineDot: {
         position: "absolute",
@@ -759,42 +796,52 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: "#31A24C",
+        backgroundColor: COLORS.accentGreen,
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     headerName: {
-        fontSize: 15,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontSize: 16,
+        fontWeight: "800",
+        color: COLORS.white,
     },
     headerStatus: {
-        fontSize: 11,
-        color: "#71949A",
+        fontSize: 11.5,
+        color: "rgba(255,255,255,0.8)",
     },
     headerPtTag: {
-        backgroundColor: "#DFF6F8",
-        paddingHorizontal: 5,
+        backgroundColor: "rgba(255,255,255,0.2)",
+        paddingHorizontal: 6,
         paddingVertical: 1,
-        borderRadius: 4,
+        borderRadius: 5,
         marginLeft: 6,
     },
     headerPtTagText: {
         fontSize: 9,
-        fontWeight: "bold",
-        color: "#0D7F8D",
+        fontWeight: "800",
+        color: COLORS.white,
     },
     headerActions: {
         flexDirection: "row",
         alignItems: "center",
     },
     headerActionBtn: {
-        padding: 7,
-        marginLeft: 4,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: "rgba(255,255,255,0.15)",
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: 6,
+    },
+    chatBody: {
+        flex: 1,
+        backgroundColor: COLORS.background,
     },
     messagesList: {
         paddingHorizontal: 14,
-        paddingVertical: 16,
+        paddingTop: 18,
+        paddingBottom: 16,
     },
     msgRow: {
         flexDirection: "row",
@@ -808,34 +855,31 @@ const styles = StyleSheet.create({
         justifyContent: "flex-start",
     },
     msgAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         marginRight: 8,
-        marginBottom: 16,
+        marginBottom: 18,
+        backgroundColor: COLORS.primaryLight,
     },
     msgBubbleWrap: {
         maxWidth: "76%",
     },
     bubble: {
-        borderRadius: 20,
+        borderRadius: 18,
         paddingHorizontal: 14,
         paddingVertical: 10,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 2,
+        ...SHADOWS.small,
     },
     bubbleSender: {
-        backgroundColor: "#0D7F8D",
-        borderBottomRightRadius: 4,
+        backgroundColor: COLORS.primary,
+        borderBottomRightRadius: 6,
     },
     bubbleReceiver: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        borderBottomLeftRadius: 4,
+        borderColor: COLORS.border,
+        borderBottomLeftRadius: 6,
     },
     bubbleText: {
         fontSize: 14.5,
@@ -845,18 +889,18 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
     },
     bubbleTextReceiver: {
-        color: "#11343A",
+        color: COLORS.textPrimary,
     },
     bubbleRecalled: {
-        backgroundColor: "#F0F4F6",
-        borderColor: "#CFD8DC",
+        backgroundColor: COLORS.borderLight,
+        borderColor: COLORS.border,
         borderStyle: "dashed",
         borderWidth: 1,
     },
     recalledText: {
         fontSize: 13,
         fontStyle: "italic",
-        color: "#71949A",
+        color: COLORS.textMuted,
     },
     bubbleImage: {
         width: 220,
@@ -865,40 +909,36 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     workoutCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 16,
         padding: 12,
         marginBottom: 6,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+        borderColor: COLORS.border,
     },
     workoutIconWrap: {
         width: 34,
         height: 34,
-        borderRadius: 17,
-        backgroundColor: "#0D7F8D",
+        borderRadius: 11,
+        backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "center",
     },
     workoutTag: {
         fontSize: 10,
-        fontWeight: "bold",
-        color: "#0D7F8D",
+        fontWeight: "800",
+        color: COLORS.primary,
+        letterSpacing: 0.4,
     },
     workoutTitle: {
         fontSize: 13,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "700",
+        color: COLORS.textPrimary,
         marginTop: 2,
     },
     workoutDivider: {
         height: 1,
-        backgroundColor: "#DFF6F8",
+        backgroundColor: COLORS.borderLight,
         marginVertical: 10,
     },
     workoutDetailRow: {
@@ -908,20 +948,20 @@ const styles = StyleSheet.create({
     },
     workoutDetailText: {
         fontSize: 12,
-        color: "#11343A",
+        color: COLORS.textSecondary,
         marginLeft: 6,
         fontWeight: "500",
     },
     confirmBtn: {
-        backgroundColor: "#0D7F8D",
-        paddingVertical: 8,
-        borderRadius: 10,
+        backgroundColor: COLORS.primary,
+        paddingVertical: 9,
+        borderRadius: 12,
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
     },
     confirmedBtn: {
-        backgroundColor: "#2E7D32",
+        backgroundColor: COLORS.accentGreen,
     },
     confirmBtnText: {
         color: "#FFFFFF",
@@ -931,19 +971,15 @@ const styles = StyleSheet.create({
     reactionBadge: {
         position: "absolute",
         bottom: -10,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 12,
         paddingHorizontal: 6,
         paddingVertical: 2,
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 2,
+        borderColor: COLORS.border,
+        ...SHADOWS.small,
     },
     timeRow: {
         flexDirection: "row",
@@ -952,8 +988,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     timeText: {
-        fontSize: 11,
-        color: "#71949A",
+        fontSize: 10.5,
+        color: COLORS.textLight,
     },
     typingBubble: {
         flexDirection: "row",
@@ -967,7 +1003,7 @@ const styles = StyleSheet.create({
         width: 7,
         height: 7,
         borderRadius: 4,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
     },
     replyBox: {
         flexDirection: "row",
@@ -984,31 +1020,37 @@ const styles = StyleSheet.create({
     },
     replyLine: {
         width: 3,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
         borderRadius: 2,
         marginRight: 6,
     },
     replyAuthor: {
         fontSize: 11,
-        fontWeight: "bold",
-        color: "#075E68",
+        fontWeight: "700",
+        color: COLORS.primaryDark,
     },
     replyText: {
         fontSize: 12,
-        color: "#11343A",
+        color: COLORS.textSecondary,
     },
     toolbar: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderTopWidth: 1,
-        borderTopColor: "#9ED9DF",
+        borderTopColor: COLORS.border,
         paddingHorizontal: 10,
-        paddingTop: 8,
+        paddingTop: 10,
         paddingBottom: Platform.OS === "ios" ? 24 : 10,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
+        ...SHADOWS.card,
+        shadowOffset: { width: 0, height: -3 },
     },
     replyBanner: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#DFF6F8",
+        backgroundColor: COLORS.primarySoft,
+        borderLeftWidth: 3,
+        borderLeftColor: COLORS.primary,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 12,
@@ -1016,11 +1058,11 @@ const styles = StyleSheet.create({
     },
     replyBannerTitle: {
         fontSize: 12,
-        color: "#075E68",
+        color: COLORS.primaryDark,
     },
     replyBannerText: {
         fontSize: 12,
-        color: "#11343A",
+        color: COLORS.textSecondary,
         marginTop: 2,
     },
     attachMenu: {
@@ -1028,24 +1070,24 @@ const styles = StyleSheet.create({
         justifyContent: "space-around",
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: "#DFF6F8",
+        borderBottomColor: COLORS.borderLight,
         marginBottom: 8,
     },
     attachItem: {
         alignItems: "center",
     },
     attachIconWrap: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 48,
+        height: 48,
+        borderRadius: 16,
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: 4,
+        marginBottom: 6,
     },
     attachLabel: {
         fontSize: 11,
         fontWeight: "600",
-        color: "#11343A",
+        color: COLORS.textSecondary,
     },
     toolbarInputRow: {
         flexDirection: "row",
@@ -1059,18 +1101,19 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#EAF9FB",
+        backgroundColor: COLORS.background,
         borderRadius: 22,
         paddingHorizontal: 14,
-        paddingVertical: Platform.OS === "ios" ? 8 : 4,
+        paddingVertical: Platform.OS === "ios" ? 9 : 4,
+        minHeight: 42,
         marginHorizontal: 6,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
+        borderColor: COLORS.border,
     },
     input: {
         flex: 1,
         fontSize: 14.5,
-        color: "#11343A",
+        color: COLORS.textPrimary,
         maxHeight: 100,
         padding: 0,
     },
@@ -1083,22 +1126,30 @@ const styles = StyleSheet.create({
         marginLeft: 2,
     },
     sendBtn: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: "#0D7F8D",
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        marginLeft: 2,
+        ...SHADOWS.glow,
+    },
+    sendBtnGradient: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         justifyContent: "center",
         alignItems: "center",
-        marginLeft: 4,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+    },
+    dragHandle: {
+        alignSelf: "center",
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
+        marginBottom: 12,
     },
     reactionOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        backgroundColor: "rgba(17, 52, 58, 0.45)",
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 24,
@@ -1109,32 +1160,26 @@ const styles = StyleSheet.create({
     },
     emojiBar: {
         flexDirection: "row",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 30,
         paddingHorizontal: 14,
         paddingVertical: 8,
         marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.9,
-        shadowRadius: 10,
-        elevation: 5,
+        ...SHADOWS.card,
+        shadowOpacity: 0.15,
+        elevation: 6,
     },
     emojiItem: {
         paddingHorizontal: 8,
     },
     msgActionMenu: {
         width: "100%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 20,
         paddingVertical: 8,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.9,
-        shadowRadius: 10,
-        elevation: 5,
+        ...SHADOWS.card,
+        shadowOpacity: 0.15,
+        elevation: 6,
     },
     msgActionRow: {
         flexDirection: "row",
@@ -1144,21 +1189,21 @@ const styles = StyleSheet.create({
     },
     msgActionText: {
         fontSize: 15,
-        fontWeight: "500",
-        color: "#11343A",
+        fontWeight: "600",
+        color: COLORS.textPrimary,
         marginLeft: 14,
     },
     infoModalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        backgroundColor: "rgba(17, 52, 58, 0.45)",
         justifyContent: "flex-end",
     },
     infoModalContent: {
-        backgroundColor: "#FFFFFF",
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingTop: 10,
         paddingBottom: 36,
         maxHeight: "85%",
     },
@@ -1170,29 +1215,30 @@ const styles = StyleSheet.create({
     },
     infoModalTitle: {
         fontSize: 17,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     infoProfile: {
         alignItems: "center",
         marginVertical: 12,
     },
     infoAvatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 84,
+        height: 84,
+        borderRadius: 42,
         borderWidth: 3,
-        borderColor: "#0D7F8D",
+        borderColor: COLORS.primary,
         marginBottom: 10,
+        backgroundColor: COLORS.primaryLight,
     },
     infoName: {
         fontSize: 19,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     infoSub: {
         fontSize: 13,
-        color: "#71949A",
+        color: COLORS.textMuted,
         marginTop: 4,
         textAlign: "center",
     },
@@ -1208,8 +1254,8 @@ const styles = StyleSheet.create({
     quickActionCircle: {
         width: 48,
         height: 48,
-        borderRadius: 24,
-        backgroundColor: "#DFF6F8",
+        borderRadius: 16,
+        backgroundColor: COLORS.primaryLight,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 6,
@@ -1217,7 +1263,7 @@ const styles = StyleSheet.create({
     quickActionText: {
         fontSize: 11,
         fontWeight: "600",
-        color: "#11343A",
+        color: COLORS.textSecondary,
         textAlign: "center",
     },
     infoSection: {
@@ -1225,8 +1271,8 @@ const styles = StyleSheet.create({
     },
     infoSectionTitle: {
         fontSize: 11,
-        fontWeight: "bold",
-        color: "#71949A",
+        fontWeight: "800",
+        color: COLORS.textMuted,
         letterSpacing: 0.8,
         marginBottom: 8,
     },
@@ -1235,13 +1281,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 13,
         borderBottomWidth: 1,
-        borderBottomColor: "#DFF6F8",
+        borderBottomColor: COLORS.borderLight,
     },
     infoRowText: {
         flex: 1,
         fontSize: 14.5,
         fontWeight: "500",
-        color: "#11343A",
+        color: COLORS.textPrimary,
         marginLeft: 12,
     },
     fullImageOverlay: {

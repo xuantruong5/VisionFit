@@ -116,7 +116,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/all-list-programs', [DangKyChuongTrinhController::class, 'getAllListPrograms']);
     Route::get('/list-programs', [DangKyChuongTrinhController::class, 'getListPrograms']);
     Route::get('/list-program-exercises', [DangKyChuongTrinhController::class, 'getListProgramExercises']);
-    Route::get('//list-program-exercises/{id}', [DangKyChuongTrinhController::class, 'getExercises']);
+    Route::get('/list-program-exercises/{id}', [DangKyChuongTrinhController::class, 'getExercises']);
     Route::get('/list-meal-plans', [DangKyChuongTrinhController::class,'getListMealPlans']);
     Route::delete('/delete-program/{id}', [DangKyChuongTrinhController::class, 'destroy']);
     Route::post('/activate-program/{id}',[DangKyChuongTrinhController::class, 'activateProgram']);

@@ -9,6 +9,8 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS } from '../../../../general/theme';
 
 interface ExerciseFilterModalProps {
   visible: boolean;
@@ -83,13 +85,21 @@ const ExerciseFilterModal: React.FC<ExerciseFilterModalProps> = ({
             <View style={styles.modalContent}>
               {/* Thanh kéo trên cùng */}
               <View style={styles.dragHandle} />
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>Bộ lọc bài tập</Text>
+                <TouchableOpacity style={styles.closeBtn} activeOpacity={0.7} onPress={onClose}>
+                  <Ionicons name="close" size={18} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
 
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollBody}
               >
                 {/* 1. Nơi tập luyện */}
-                <Text style={styles.sectionTitle}>Nơi tập luyện</Text>
+                <View style={styles.sectionRow}>
+                  <Text style={styles.sectionTitle}>Nơi tập luyện</Text>
+                </View>
                 <View style={styles.tagWrap}>
                   {LOCATIONS.map((loc) => {
                     const isSelected = selectedLocations.includes(loc);
@@ -115,7 +125,9 @@ const ExerciseFilterModal: React.FC<ExerciseFilterModalProps> = ({
                 </View>
 
                 {/* 2. Cơ bắp hoạt động */}
-                <Text style={styles.sectionTitle}>Cơ bắp hoạt động</Text>
+                <View style={styles.sectionRow}>
+                  <Text style={styles.sectionTitle}>Cơ bắp hoạt động</Text>
+                </View>
                 <View style={styles.tagWrap}>
                   {MUSCLES.map((muscle) => {
                     const isSelected = selectedMuscles.includes(muscle);
@@ -141,7 +153,9 @@ const ExerciseFilterModal: React.FC<ExerciseFilterModalProps> = ({
                 </View>
 
                 {/* 3. Thiết bị sử dụng */}
-                <Text style={styles.sectionTitle}>Thiết bị sử dụng</Text>
+                <View style={styles.sectionRow}>
+                  <Text style={styles.sectionTitle}>Thiết bị sử dụng</Text>
+                </View>
                 <View style={styles.tagWrap}>
                   {EQUIPMENTS.map((eq) => {
                     const isSelected = selectedEquipments.includes(eq);
@@ -182,7 +196,15 @@ const ExerciseFilterModal: React.FC<ExerciseFilterModalProps> = ({
                   style={styles.btnApply}
                   onPress={handleApply}
                 >
-                  <Text style={styles.btnApplyText}>HOÀN TẤT</Text>
+                  <LinearGradient
+                    colors={[COLORS.primary, COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.btnApplyGradient}
+                  >
+                    <Ionicons name="checkmark-circle" size={18} color={COLORS.white} />
+                    <Text style={styles.btnApplyText}>HOÀN TẤT</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
@@ -198,35 +220,87 @@ export default ExerciseFilterModal;
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(7, 30, 36, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '85%',
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 24,
   },
   dragHandle: {
-    width: 48,
+    width: 44,
     height: 5,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: COLORS.border,
     borderRadius: 3,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  sheetIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: COLORS.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollBody: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#264653',
-    marginTop: 14,
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 18,
     marginBottom: 12,
+  },
+  sectionIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tintTeal: {
+    backgroundColor: COLORS.surfaceTeal,
+  },
+  tintGreen: {
+    backgroundColor: '#ECFDF5',
+  },
+  tintAmber: {
+    backgroundColor: '#FFF7ED',
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
   },
   tagWrap: {
     flexDirection: 'row',
@@ -235,38 +309,42 @@ const styles = StyleSheet.create({
   },
   tag: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 4,
+    height: 36,
+    justifyContent: 'center',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
   },
   locTag: {
-    backgroundColor: '#E6F4F8',
+    backgroundColor: COLORS.white,
   },
   locTagText: {
-    color: '#2E7D9B',
+    color: COLORS.textSecondary,
   },
   muscleTag: {
-    backgroundColor: '#E8F7EE',
+    backgroundColor: COLORS.white,
   },
   muscleTagText: {
-    color: '#2E7D5B',
+    color: COLORS.textSecondary,
   },
   equipTag: {
-    backgroundColor: '#FEF3E7',
+    backgroundColor: COLORS.white,
   },
   equipTagText: {
-    color: '#B46C20',
+    color: COLORS.textSecondary,
   },
   tagSelected: {
-    backgroundColor: '#0D7F8D',
+    backgroundColor: COLORS.textPrimary,
+    borderColor: COLORS.textPrimary,
   },
   tagText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   tagTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: COLORS.white,
+    fontWeight: '700',
   },
   footerActions: {
     flexDirection: 'row',
@@ -274,35 +352,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: COLORS.borderLight,
     gap: 12,
   },
   btnReset: {
     flex: 1,
-    height: 48,
-    borderRadius: 10,
+    height: 50,
+    borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#0D7F8D',
+    borderColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
   btnResetText: {
-    color: '#0D7F8D',
+    color: COLORS.textSecondary,
     fontSize: 15,
     fontWeight: '700',
   },
   btnApply: {
     flex: 1.5,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: '#00A896',
+    height: 50,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  btnApplyGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
   btnApplyText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

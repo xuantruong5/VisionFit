@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, ActivityIndicator } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import apiFitlife from "../../../../general/api";
@@ -99,16 +100,23 @@ const DashboardScreen = () => {
 
         {/* Card chương trình hiện tại */}
         <View style={styles.programCard}>
-          <ImageBackground
-            source={{
-              uri:
-                program?.anh_dai_dien ||
-                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-            }}
-            style={styles.programImage}
-            imageStyle={styles.programImageStyle}
-          >
-            <View style={styles.overlay} />
+          <View style={styles.programImage}>
+            <Image
+              source={{
+                uri:
+                  program?.anh_dai_dien ||
+                  "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
+              }}
+              style={styles.programImageStyle}
+              resizeMode="cover"
+            />
+            <LinearGradient
+              colors={["rgba(13,127,141,0.55)", "rgba(7,88,101,0.92)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.overlay}
+            />
+            <View style={styles.circleDeco} />
             <View style={styles.programContent}>
               <View style={styles.badgeRow}>
                 <View style={styles.programBadge}>
@@ -142,7 +150,7 @@ const DashboardScreen = () => {
                 </View>
               </View>
             </View>
-          </ImageBackground>
+          </View>
         </View>
 
         {/* Huấn luyện tiếp theo */}
@@ -179,17 +187,14 @@ const DashboardScreen = () => {
                     </Text>
                   </View>
 
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={isLocked ? COLORS.border : COLORS.primary}
-                  />
                 </View>
               );
             })
           ) : (
             <View style={styles.emptyWorkoutBox}>
-              <Ionicons name="calendar-clear-outline" size={32} color={COLORS.textMuted} />
+              <View style={styles.emptyIcon}>
+                <Ionicons name="calendar-clear-outline" size={32} color={COLORS.primary} />
+              </View>
               <Text style={styles.emptyWorkoutText}>Chưa có lịch buổi tập tiếp theo.</Text>
             </View>
           )}
@@ -256,25 +261,25 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 110,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   noticeCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     marginBottom: 16,
-    ...SHADOWS.small,
+    ...SHADOWS.card,
   },
   noticeIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: COLORS.primarySoft,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -283,24 +288,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   noticeTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 14.5,
+    fontWeight: "800",
     color: COLORS.textPrimary,
   },
   noticeSub: {
     fontSize: 12,
     color: COLORS.textMuted,
-    marginTop: 2,
-    lineHeight: 16,
+    marginTop: 3,
+    lineHeight: 17,
   },
   programCard: {
     width: "100%",
-    height: 180,
-    borderRadius: 20,
+    height: 196,
+    borderRadius: 22,
     overflow: "hidden",
-    marginBottom: 20,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.primaryDark,
     ...SHADOWS.card,
+    shadowOpacity: 0.14,
+    elevation: 6,
   },
   programImage: {
     width: "100%",
@@ -308,12 +314,21 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   programImageStyle: {
-    borderRadius: 20,
-    resizeMode: "cover",
+    ...StyleSheet.absoluteFill,
+    width: "100%",
+    height: "100%",
   },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(7, 88, 101, 0.75)",
+  },
+  circleDeco: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -70,
+    right: -50,
   },
   programContent: {
     padding: 18,
@@ -321,91 +336,94 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   programBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
     gap: 4,
   },
   programBadgeText: {
     color: COLORS.white,
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 11.5,
+    fontWeight: "700",
   },
   programTitle: {
     color: COLORS.white,
-    fontSize: 20,
-    fontWeight: "700",
-    lineHeight: 26,
-    marginBottom: 12,
+    fontSize: 21,
+    fontWeight: "800",
+    lineHeight: 27,
+    marginBottom: 14,
   },
   progressSection: {},
   progressLabelRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6,
+    marginBottom: 7,
   },
   progressText: {
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "rgba(255,255,255,0.85)",
     fontSize: 12,
     fontWeight: "600",
   },
   progressPercent: {
     color: COLORS.white,
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "800",
   },
   progressBarTrack: {
-    height: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 3,
+    height: 7,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    borderRadius: 4,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: COLORS.accentGreen,
-    borderRadius: 3,
+    backgroundColor: "#5EEAD4",
+    borderRadius: 4,
   },
   sectionHeaderRow: {
+    marginTop: 24,
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
     color: COLORS.textPrimary,
   },
   workoutList: {
     gap: 10,
-    marginBottom: 20,
   },
   workoutCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   workoutCardLocked: {
     backgroundColor: COLORS.cardBg,
-    opacity: 0.7,
+    opacity: 0.65,
   },
   statusCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   statusCircleActive: {
     backgroundColor: COLORS.primary,
+    ...SHADOWS.glow,
   },
   statusCircleLocked: {
     backgroundColor: COLORS.borderLight,
@@ -415,38 +433,59 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   workoutDay: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textMuted,
     fontWeight: "600",
   },
   workoutTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
     color: COLORS.textPrimary,
     marginTop: 2,
   },
+  chevronWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chevronWrapLocked: {
+    backgroundColor: COLORS.borderLight,
+  },
   emptyWorkoutBox: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 24,
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyWorkoutText: {
-    marginTop: 6,
-    fontSize: 13,
-    color: COLORS.textMuted,
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
   },
   calendarSection: {
-    marginTop: 4,
+    marginTop: 24,
   },
   calendarTitleRow: {
     marginBottom: 12,
   },
   calendarTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
     color: COLORS.textPrimary,
   },
   calendarWrapper: {
@@ -454,25 +493,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 10,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
+    overflow: "hidden",
     ...SHADOWS.card,
   },
   selectedDateCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   selectedDateIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: COLORS.primarySoft,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -481,20 +521,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectedDateLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textMuted,
   },
   selectedDateValue: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
     color: COLORS.textPrimary,
-    marginTop: 1,
+    marginTop: 2,
   },
   statusBadge: {
     backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   statusBadgeText: {
     fontSize: 12,

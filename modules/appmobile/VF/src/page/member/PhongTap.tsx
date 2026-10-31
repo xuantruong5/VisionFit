@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, Image, Modal, ScrollView, Alert,} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, Image, Modal, ScrollView, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppHeader from '../../components/AppHeader';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS, SHADOWS } from '../../general/theme';
 import apiFitlife from '../../general/api';
 
 // Dữ liệu danh sách Thành phố
@@ -484,14 +486,14 @@ const PhongTap = ({ navigation, route }: any) => {
 
                     {/* Badge khoảng cách */}
                     <View style={styles.distanceBadge}>
-                        <Ionicons name="navigate-outline" size={12} color="#FFFFFF" />
+                        <Ionicons name="navigate-outline" size={12} color={COLORS.white} />
                         <Text style={styles.distanceBadgeText}>{item.distance}</Text>
                     </View>
 
                     {/* Checkmark khi đã chọn */}
                     {isSelected && (
                         <View style={styles.selectedCheckmark}>
-                            <Ionicons name="checkmark-circle" size={28} color="#0D7F8D" />
+                            <Ionicons name="checkmark" size={18} color={COLORS.white} />
                         </View>
                     )}
                 </View>
@@ -501,26 +503,26 @@ const PhongTap = ({ navigation, route }: any) => {
                     <View style={styles.nameRow}>
                         <Text style={styles.gymName} numberOfLines={1}>{item.name}</Text>
                         <View style={styles.ratingBadge}>
-                            <Ionicons name="star" size={14} color="#F59E0B" />
+                            <Ionicons name="star" size={13} color="#F59E0B" />
                             <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
                         </View>
                     </View>
 
                     {/* Địa chỉ */}
                     <View style={styles.locationRow}>
-                        <Ionicons name="location-sharp" size={14} color="#0D7F8D" style={{ marginTop: 2 }} />
+                        <Ionicons name="location-sharp" size={14} color={COLORS.primary} style={styles.locationIcon} />
                         <Text style={styles.gymAddress} numberOfLines={2}>{item.address}</Text>
                     </View>
 
                     {/* Giờ mở cửa & Khoảng giá */}
                     <View style={styles.metaRow}>
                         <View style={styles.metaItem}>
-                            <Ionicons name="time-outline" size={13} color="#71949A" />
+                            <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
                             <Text style={styles.metaText}>{item.openTime}</Text>
                         </View>
                         <View style={styles.metaItem}>
-                            <Ionicons name="pricetag-outline" size={13} color="#0D7F8D" />
-                            <Text style={[styles.metaText, { color: '#0D7F8D', fontWeight: '600' }]}>{item.priceRange}</Text>
+                            <Ionicons name="pricetag-outline" size={13} color={COLORS.primary} />
+                            <Text style={[styles.metaText, styles.metaTextPrice]}>{item.priceRange}</Text>
                         </View>
                     </View>
 
@@ -546,6 +548,7 @@ const PhongTap = ({ navigation, route }: any) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <StatusBar barStyle="dark-content" />
             {/* Header */}
             <AppHeader
                 title="Chọn phòng tập"
@@ -562,17 +565,17 @@ const PhongTap = ({ navigation, route }: any) => {
 
                 {/* Thanh tìm kiếm theo Tên phòng tập */}
                 <View style={styles.searchBar}>
-                    <Ionicons name="search-outline" size={20} color="#71949A" style={styles.searchIcon} />
+                    <Ionicons name="search-outline" size={20} color={COLORS.textMuted} style={styles.searchIcon} />
                     <TextInput
                         style={styles.searchInput}
                         placeholder="Nhập tên phòng tập (VD: Diamond, Vincom...)"
-                        placeholderTextColor="#8FAAB0"
+                        placeholderTextColor={COLORS.textLight}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchButton}>
-                            <Ionicons name="close-circle" size={18} color="#8FAAB0" />
+                            <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -582,13 +585,13 @@ const PhongTap = ({ navigation, route }: any) => {
                     {/* Chọn Thành phố */}
                     <TouchableOpacity style={styles.filterCard} onPress={() => setCityModalVisible(true)} activeOpacity={0.8} >
                         <View style={styles.filterCardIconWrapper}>
-                            <Ionicons name="business" size={18} color="#0D7F8D" />
+                            <Ionicons name="business" size={18} color={COLORS.primary} />
                         </View>
                         <View style={styles.filterCardContent}>
                             <Text style={styles.filterLabel}>Thành phố</Text>
                             <Text style={styles.filterValue} numberOfLines={1}>{selectedCity}</Text>
                         </View>
-                        <Ionicons name="chevron-down" size={16} color="#71949A" />
+                        <Ionicons name="chevron-down" size={16} color={COLORS.textMuted} />
                     </TouchableOpacity>
 
                     {/* Chọn Quận / Huyện */}
@@ -597,14 +600,14 @@ const PhongTap = ({ navigation, route }: any) => {
                         onPress={() => setDistrictModalVisible(true)}
                         activeOpacity={0.8}
                     >
-                        <View style={styles.filterCardIconWrapper}>
-                            <Ionicons name="map" size={18} color="#0D7F8D" />
+                        <View style={[styles.filterCardIconWrapper, styles.filterCardIconOrange]}>
+                            <Ionicons name="map" size={18} color={COLORS.accentOrange} />
                         </View>
                         <View style={styles.filterCardContent}>
                             <Text style={styles.filterLabel}>Quận / Huyện</Text>
                             <Text style={styles.filterValue} numberOfLines={1}>{selectedDistrict}</Text>
                         </View>
-                        <Ionicons name="chevron-down" size={16} color="#71949A" />
+                        <Ionicons name="chevron-down" size={16} color={COLORS.textMuted} />
                     </TouchableOpacity>
                 </View>
 
@@ -627,8 +630,8 @@ const PhongTap = ({ navigation, route }: any) => {
                                     <Ionicons
                                         name={cat.icon as any}
                                         size={15}
-                                        color={isCatSelected ? '#FFFFFF' : '#0D7F8D'}
-                                        style={{ marginRight: 6 }}
+                                        color={isCatSelected ? COLORS.white : COLORS.primary}
+                                        style={styles.categoryChipIcon}
                                     />
                                     <Text style={[styles.categoryChipText, isCatSelected && styles.categoryChipTextActive]}>
                                         {cat.name}
@@ -646,7 +649,7 @@ const PhongTap = ({ navigation, route }: any) => {
                     </Text>
                     {selectedGym && (
                         <Text style={styles.selectedCountText}>
-                            Đã chọn: <Text style={{ fontWeight: 'bold', color: '#0D7F8D' }}>{selectedGym.name.slice(0, 15)}...</Text>
+                            Đã chọn: <Text style={styles.selectedNameHighlight}>{selectedGym.name.slice(0, 15)}...</Text>
                         </Text>
                     )}
                 </View>
@@ -660,7 +663,9 @@ const PhongTap = ({ navigation, route }: any) => {
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="barbell-outline" size={54} color="#B9E5E9" />
+                            <View style={styles.emptyIconTile}>
+                                <Ionicons name="barbell-outline" size={32} color={COLORS.primary} />
+                            </View>
                             <Text style={styles.emptyTitle}>Không tìm thấy phòng tập</Text>
                             <Text style={styles.emptySubtitle}>
                                 Không có phòng tập nào khớp với tiêu chí tìm kiếm hiện tại. Vui lòng thử chọn lại thành phố, quận hoặc từ khoá khác.
@@ -675,13 +680,21 @@ const PhongTap = ({ navigation, route }: any) => {
                 {/* Nút Tiếp Tục ở đáy (phong cách BodyMetrics.tsx) */}
                 <View style={styles.bottomBar}>
                     <TouchableOpacity
-                        style={[styles.continueButton, !selectedGym && styles.continueButtonDisabled]}
+                        style={[styles.continueButtonWrap, !selectedGym && styles.continueButtonDisabled]}
                         onPress={handleContinue}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.continueButtonText}>
-                            {selectedGym ? 'TIẾP TỤC VỚI PHÒNG ĐÃ CHỌN' : 'VUI LÒNG CHỌN PHÒNG TẬP'}
-                        </Text>
+                        <LinearGradient
+                            colors={selectedGym ? [COLORS.primary, COLORS.primaryDark] : ['#AFC4C8', '#AFC4C8']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.continueButton}
+                        >
+                            <Text style={styles.continueButtonText}>
+                                {selectedGym ? 'TIẾP TỤC VỚI PHÒNG ĐÃ CHỌN' : 'VUI LÒNG CHỌN PHÒNG TẬP'}
+                            </Text>
+                            {selectedGym && <Ionicons name="arrow-forward" size={19} color={COLORS.white} />}
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -699,10 +712,11 @@ const PhongTap = ({ navigation, route }: any) => {
                     onPress={() => setCityModalVisible(false)}
                 >
                     <View style={styles.modalContent}>
+                        <View style={styles.modalHandle} />
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Chọn Thành Phố</Text>
                             <TouchableOpacity onPress={() => setCityModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#11343A" />
+                                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
                             </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.modalList}>
@@ -717,7 +731,7 @@ const PhongTap = ({ navigation, route }: any) => {
                                         <Text style={[styles.modalItemText, isCurrent && styles.modalItemTextActive]}>
                                             {city}
                                         </Text>
-                                        {isCurrent && <Ionicons name="checkmark-circle" size={20} color="#0D7F8D" />}
+                                        {isCurrent && <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -739,10 +753,11 @@ const PhongTap = ({ navigation, route }: any) => {
                     onPress={() => setDistrictModalVisible(false)}
                 >
                     <View style={styles.modalContent}>
+                        <View style={styles.modalHandle} />
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Chọn Quận / Huyện ({selectedCity})</Text>
                             <TouchableOpacity onPress={() => setDistrictModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#11343A" />
+                                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
                             </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.modalList}>
@@ -757,7 +772,7 @@ const PhongTap = ({ navigation, route }: any) => {
                                         <Text style={[styles.modalItemText, isCurrent && styles.modalItemTextActive]}>
                                             {district}
                                         </Text>
-                                        {isCurrent && <Ionicons name="checkmark-circle" size={20} color="#0D7F8D" />}
+                                        {isCurrent && <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -772,7 +787,7 @@ const PhongTap = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#EAF9FB', // Đồng bộ màu nền với BodyMetrics.tsx
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: 'row',
@@ -788,19 +803,19 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 19,
         fontWeight: 'bold',
-        color: '#075E68',
+        color: COLORS.primaryDark,
     },
     resetButton: {
         padding: 6,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 18,
-        paddingTop: 5,
+        paddingHorizontal: 16,
+        paddingTop: 14,
     },
     subtitle: {
         fontSize: 13,
-        color: '#71949A',
+        color: COLORS.textMuted,
         marginBottom: 12,
         lineHeight: 18,
     },
@@ -809,18 +824,14 @@ const styles = StyleSheet.create({
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        height: 46,
+        backgroundColor: COLORS.white,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        height: 48,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#9ED9DF',
-        elevation: 2,
-        shadowColor: '#D9D7FF',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     searchIcon: {
         marginRight: 8,
@@ -828,7 +839,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 14,
-        color: '#11343A',
+        color: COLORS.textPrimary,
         paddingVertical: 0,
     },
     clearSearchButton: {
@@ -846,46 +857,46 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        paddingVertical: 9,
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
+        paddingVertical: 10,
         paddingHorizontal: 10,
         borderWidth: 1,
-        borderColor: '#9ED9DF',
-        elevation: 2,
-        shadowColor: '#D9D7FF',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     filterCardIconWrapper: {
-        width: 30,
-        height: 30,
-        borderRadius: 8,
-        backgroundColor: 'rgba(13, 127, 141, 0.1)',
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: COLORS.surfaceTeal,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 8,
+    },
+    filterCardIconOrange: {
+        backgroundColor: '#FFF1EC',
     },
     filterCardContent: {
         flex: 1,
     },
     filterLabel: {
         fontSize: 10,
-        color: '#71949A',
+        color: COLORS.textMuted,
         textTransform: 'uppercase',
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: 0.4,
     },
     filterValue: {
         fontSize: 13,
-        fontWeight: '700',
-        color: '#11343A',
-        marginTop: 1,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+        marginTop: 2,
     },
 
     // Thể loại cuộn ngang
     categorySection: {
-        marginBottom: 10,
+        marginBottom: 12,
     },
     categoryScrollList: {
         paddingVertical: 2,
@@ -894,24 +905,27 @@ const styles = StyleSheet.create({
     categoryChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        paddingVertical: 7,
+        backgroundColor: COLORS.white,
+        borderRadius: 14,
+        paddingVertical: 8,
         paddingHorizontal: 14,
         borderWidth: 1,
-        borderColor: '#9ED9DF',
+        borderColor: COLORS.border,
     },
     categoryChipActive: {
-        backgroundColor: '#0D7F8D',
-        borderColor: '#0D7F8D',
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    categoryChipIcon: {
+        marginRight: 6,
     },
     categoryChipText: {
         fontSize: 12,
-        color: '#0D7F8D',
-        fontWeight: '600',
+        color: COLORS.textSecondary,
+        fontWeight: '700',
     },
     categoryChipTextActive: {
-        color: '#FFFFFF',
+        color: COLORS.white,
     },
 
     // Thống kê kết quả
@@ -924,42 +938,42 @@ const styles = StyleSheet.create({
     },
     resultCountText: {
         fontSize: 12,
-        color: '#71949A',
+        color: COLORS.textMuted,
     },
     resultCountHighlight: {
-        fontWeight: 'bold',
-        color: '#075E68',
+        fontWeight: '800',
+        color: COLORS.primary,
     },
     selectedCountText: {
         fontSize: 12,
-        color: '#71949A',
+        color: COLORS.textMuted,
+    },
+    selectedNameHighlight: {
+        fontWeight: '800',
+        color: COLORS.primary,
     },
 
     // Danh sách thẻ phòng tập
     listContent: {
-        paddingBottom: 90,
+        paddingBottom: 100,
     },
     gymCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 14,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
         marginBottom: 14,
         borderWidth: 1.5,
-        borderColor: '#9ED9DF',
+        borderColor: COLORS.border,
         overflow: 'hidden',
-        elevation: 3,
-        shadowColor: '#D9D7FF',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
+        ...SHADOWS.card,
     },
     gymCardSelected: {
-        borderColor: '#0D7F8D',
-        borderWidth: 2.2,
-        backgroundColor: '#F3FDFF',
+        borderColor: COLORS.primary,
+        borderWidth: 2,
+        backgroundColor: COLORS.surfaceTeal,
     },
     imageContainer: {
         width: '100%',
-        height: 145,
+        height: 150,
         position: 'relative',
     },
     gymImage: {
@@ -968,47 +982,52 @@ const styles = StyleSheet.create({
     },
     categoryBadge: {
         position: 'absolute',
-        top: 10,
-        left: 10,
-        backgroundColor: 'rgba(7, 94, 104, 0.85)',
-        paddingVertical: 4,
-        paddingHorizontal: 9,
-        borderRadius: 8,
+        top: 12,
+        left: 12,
+        backgroundColor: 'rgba(7, 88, 101, 0.88)',
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 10,
     },
     categoryBadgeText: {
         fontSize: 11,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
+        fontWeight: '800',
+        color: COLORS.white,
     },
     distanceBadge: {
         position: 'absolute',
-        bottom: 10,
-        right: 10,
+        bottom: 12,
+        right: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
-        paddingVertical: 3,
-        paddingHorizontal: 8,
-        borderRadius: 8,
+        backgroundColor: 'rgba(17, 52, 58, 0.72)',
+        paddingVertical: 4,
+        paddingHorizontal: 9,
+        borderRadius: 10,
         gap: 4,
     },
     distanceBadgeText: {
         fontSize: 11,
-        color: '#FFFFFF',
-        fontWeight: '600',
+        color: COLORS.white,
+        fontWeight: '700',
     },
     selectedCheckmark: {
         position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 2,
+        top: 12,
+        right: 12,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: COLORS.primary,
+        borderWidth: 2,
+        borderColor: COLORS.white,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // Chi tiết phòng tập
     gymInfo: {
-        padding: 13,
+        padding: 14,
     },
     nameRow: {
         flexDirection: 'row',
@@ -1019,43 +1038,46 @@ const styles = StyleSheet.create({
     gymName: {
         flex: 1,
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#11343A',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
         marginRight: 8,
     },
     ratingBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FEF3C7',
+        backgroundColor: '#FFF7ED',
         paddingVertical: 3,
-        paddingHorizontal: 7,
-        borderRadius: 6,
+        paddingHorizontal: 8,
+        borderRadius: 8,
         gap: 3,
     },
     ratingText: {
         fontSize: 12,
-        fontWeight: 'bold',
+        fontWeight: '800',
         color: '#B45309',
     },
     locationRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 8,
+        marginBottom: 10,
+    },
+    locationIcon: {
+        marginTop: 2,
     },
     gymAddress: {
         flex: 1,
         fontSize: 12,
-        color: '#55757C',
+        color: COLORS.textSecondary,
         marginLeft: 5,
-        lineHeight: 16,
+        lineHeight: 17,
     },
     metaRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 9,
-        paddingTop: 4,
+        marginBottom: 10,
+        paddingTop: 10,
         borderTopWidth: 1,
-        borderTopColor: '#F0F7F8',
+        borderTopColor: COLORS.borderLight,
     },
     metaItem: {
         flexDirection: 'row',
@@ -1064,162 +1086,191 @@ const styles = StyleSheet.create({
     },
     metaText: {
         fontSize: 12,
-        color: '#55757C',
+        color: COLORS.textSecondary,
+    },
+    metaTextPrice: {
+        color: COLORS.primary,
+        fontWeight: '700',
     },
     featuresRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 5,
-        marginBottom: 10,
+        gap: 6,
+        marginBottom: 12,
     },
     featureChip: {
-        backgroundColor: '#EAF9FB',
-        borderRadius: 6,
-        paddingVertical: 3,
-        paddingHorizontal: 8,
+        backgroundColor: COLORS.surfaceTeal,
+        borderRadius: 8,
+        paddingVertical: 4,
+        paddingHorizontal: 9,
         borderWidth: 1,
-        borderColor: '#C6EEF2',
+        borderColor: COLORS.border,
     },
     featureText: {
         fontSize: 10.5,
-        color: '#075E68',
-        fontWeight: '500',
+        color: COLORS.primaryDark,
+        fontWeight: '600',
     },
     selectButton: {
-        backgroundColor: '#F0FAFB',
+        backgroundColor: COLORS.primarySoft,
         borderWidth: 1,
-        borderColor: '#0D7F8D',
-        borderRadius: 8,
-        paddingVertical: 10,
+        borderColor: COLORS.borderFocus,
+        borderRadius: 12,
+        height: 42,
         alignItems: 'center',
         justifyContent: 'center',
     },
     selectButtonActive: {
-        backgroundColor: '#0D7F8D',
-        borderColor: '#0D7F8D',
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
     },
     selectButtonText: {
         fontSize: 13,
-        fontWeight: 'bold',
-        color: '#0D7F8D',
+        fontWeight: '800',
+        color: COLORS.primary,
+        letterSpacing: 0.3,
     },
     selectButtonTextActive: {
-        color: '#FFFFFF',
+        color: COLORS.white,
     },
 
     // Empty state
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 50,
+        paddingVertical: 32,
         paddingHorizontal: 20,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
+    },
+    emptyIconTile: {
+        width: 64,
+        height: 64,
+        borderRadius: 20,
+        backgroundColor: COLORS.surfaceTeal,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     emptyTitle: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#11343A',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
         marginTop: 12,
         marginBottom: 6,
     },
     emptySubtitle: {
         fontSize: 12.5,
-        color: '#71949A',
+        color: COLORS.textMuted,
         textAlign: 'center',
         lineHeight: 18,
         marginBottom: 16,
     },
     emptyResetBtn: {
-        backgroundColor: '#0D7F8D',
-        paddingVertical: 9,
+        backgroundColor: COLORS.primary,
+        paddingVertical: 10,
         paddingHorizontal: 18,
-        borderRadius: 8,
+        borderRadius: 12,
     },
     emptyResetBtnText: {
-        color: '#FFFFFF',
+        color: COLORS.white,
         fontSize: 13,
-        fontWeight: 'bold',
+        fontWeight: '800',
     },
 
-    // Thanh hành động đáy
+    // Thanh hành động đáy (nổi phía trên bottom tab bar)
     bottomBar: {
         position: 'absolute',
-        bottom: 0,
-        left: 18,
-        right: 18,
+        bottom: 16,
+        left: 16,
+        right: 16,
         backgroundColor: 'transparent',
     },
+    continueButtonWrap: {
+        borderRadius: 16,
+        marginBottom: 10,
+        ...SHADOWS.glow,
+    },
     continueButton: {
-        backgroundColor: '#0D7F8D',
-        height: 52,
-        borderRadius: 10,
+        height: 54,
+        borderRadius: 16,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 15,
-        elevation: 4,
-        shadowColor: '#0D7F8D',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.35,
-        shadowRadius: 5,
+        gap: 8,
     },
     continueButtonDisabled: {
-        backgroundColor: '#8FAAB0',
         elevation: 0,
         shadowOpacity: 0,
     },
     continueButtonText: {
         fontSize: 15,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
+        fontWeight: '800',
+        color: COLORS.white,
         letterSpacing: 0.5,
     },
 
     // Modal styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backgroundColor: 'rgba(5, 31, 38, 0.55)',
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 26,
+        borderTopRightRadius: 26,
         maxHeight: '65%',
         paddingBottom: 25,
+    },
+    modalHandle: {
+        width: 44,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
+        alignSelf: 'center',
+        marginTop: 10,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 18,
+        paddingHorizontal: 18,
+        paddingTop: 12,
+        paddingBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: '#EAF4F6',
+        borderBottomColor: COLORS.borderLight,
     },
     modalTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#11343A',
+        fontSize: 17,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
     modalList: {
-        paddingHorizontal: 18,
+        paddingHorizontal: 12,
+        paddingTop: 6,
     },
     modalItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F7F8',
+        paddingHorizontal: 12,
+        borderRadius: 14,
+        marginBottom: 2,
     },
     modalItemActive: {
-        backgroundColor: '#F3FDFF',
+        backgroundColor: COLORS.surfaceTeal,
     },
     modalItemText: {
         fontSize: 14,
-        color: '#333333',
+        color: COLORS.textSecondary,
     },
     modalItemTextActive: {
-        color: '#0D7F8D',
-        fontWeight: 'bold',
+        color: COLORS.primary,
+        fontWeight: '800',
     },
 });
 

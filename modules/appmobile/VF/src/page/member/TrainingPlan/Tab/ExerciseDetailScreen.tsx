@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Switch, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface ExerciseDetailScreenProps {
   navigation: any;
@@ -23,11 +24,12 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
   };
   const currentExercise = {
     ...exercise,
-    name: exercise?.ten_bai_tap,
-    description: exercise?.mo_ta,
-    video: exercise?.video_huong_dan,
-    instructions: exercise?.huong_dan,
-    warnings: exercise?.canh_bao,
+    name: exercise?.ten_bai_tap || exercise?.name || '',
+    description: exercise?.mo_ta || exercise?.description || '',
+    video_huong_dan: exercise?.video_huong_dan || exercise?.video || exercise?.image || '',
+    video_sai: exercise?.video_sai || '',
+    instructions: exercise?.huong_dan || exercise?.instructions || '',
+    warnings: exercise?.canh_bao || exercise?.warnings || '',
   };
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -35,27 +37,27 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
       <View style={styles.header}>
         <View style={styles.headerLeftGroup}>
           <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconBtn} onPress={toggleFontSize}>
-            <Ionicons name="text-outline" size={22} color="#4B5563" />
+            <Ionicons name="text-outline" size={20} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.headerTitle}>Thông Tin Chi Tiết</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Thông Tin Chi Tiết</Text>
 
         <View style={styles.headerRightGroup}>
           <TouchableOpacity style={styles.headerIconBtn} onPress={() => setIsBookmarked(!isBookmarked)}>
-            <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={24} color={isBookmarked ? '#0D7F8D' : '#374151'}/>
+            <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={20} color={COLORS.primary}/>
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconBtn}>
-            <Ionicons name="play-outline" size={24} color="#0D7F8D" />
+            <Ionicons name="play-outline" size={20} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Sub-Tabs: Thông tin, Cơ bắp, Lịch sử, Tiến độ */}
-      <View style={styles.tabBar}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBarScroll} contentContainerStyle={styles.tabBar}>
         <TouchableOpacity style={[styles.tabItem, activeTab === 'info' && styles.tabItemActive]} onPress={() => setActiveTab('info')} >
           <Text style={[styles.tabText, activeTab === 'info' && styles.tabTextActive]}>
             Thông tin
@@ -78,7 +80,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             Tiến độ
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
       {/* Nội dung theo Tab */}
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -113,7 +115,10 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                 <Image source={{ uri: videoMode === 'correct' ? currentExercise.video_huong_dan : currentExercise.video_sai, }}
                   style={styles.exerciseHeroImage} resizeMode="contain" onError={() => console.log('Video hướng dẫn bị lỗi')} />
               ) : (
-                <Text>Video hướng dẫn bị lỗi</Text>
+                <View style={styles.mediaFallback}>
+                  <Ionicons name="videocam-off-outline" size={34} color={COLORS.primary} />
+                  <Text style={styles.mediaFallbackText}>Video hướng dẫn bị lỗi</Text>
+                </View>
               )}
 
               <View style={[ styles.videoBadge, videoMode === 'correct' ? styles.videoBadgeCorrect : styles.videoBadgeWrong,]} >
@@ -160,7 +165,9 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             {currentExercise.warnings ? (
               <>
                 <View style={styles.warningTitleRow}>
-                  <Ionicons name="warning" size={24} color="#F4778A" />
+                  <View style={styles.warningIcon}>
+                    <Ionicons name="warning" size={18} color="#E11D48" />
+                  </View>
                   <Text style={styles.warningTitle}>CẢNH BÁO!</Text>
                 </View>
 
@@ -278,7 +285,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
         {activeTab === 'history' && (
           <View style={styles.emptyStateBox}>
             <View style={styles.emptyIconCircle}>
-              <Ionicons name="calendar-outline" size={64} color="#9ED9DF" />
+              <Ionicons name="calendar-outline" size={34} color={COLORS.primary} />
             </View>
             <Text style={styles.emptyTitle}>Lịch sử hiện đang trống</Text>
             <Text style={styles.emptySubtitle}>
@@ -313,13 +320,13 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
 
             {/* Empty chart display */}
             <View style={styles.chartEmptyBox}>
-              <Ionicons name="ban-outline" size={60} color="#CBD5E1" />
+              <Ionicons name="bar-chart-outline" size={40} color={COLORS.textLight} />
               <Text style={styles.chartEmptyText}>Không có dữ liệu</Text>
             </View>
 
             {/* Ghi chú */}
             <View style={styles.infoNoteRow}>
-              <Ionicons name="information-circle-outline" size={20} color="#0D7F8D" />
+              <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
               <Text style={styles.infoNoteText}>
                 Các giá trị trong biểu đồ thể hiện mức tạ nặng nhất nâng được ở mỗi bài tập trong buổi tập
               </Text>
@@ -328,7 +335,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             {/* Tùy chọn cài đặt */}
             <View style={styles.settingRow}>
               <Text style={styles.settingLabel}>Hiển thị trên Trang tổng quan</Text>
-              <Switch value={showOnDashboard} onValueChange={setShowOnDashboard} trackColor={{ false: '#E2E8F0', true: '#0D7F8D' }} thumbColor="#FFFFFF"/>
+              <Switch value={showOnDashboard} onValueChange={setShowOnDashboard} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor="#FFFFFF"/>
             </View>
 
             <View style={styles.settingRow}>
@@ -337,11 +344,11 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                   Hiển thị tất cả dữ liệu từ tất cả các chương trình tập luyện
                 </Text>
               </View>
-              <Switch value={showAllPrograms} onValueChange={setShowAllPrograms} trackColor={{ false: '#E2E8F0', true: '#00A896' }} thumbColor="#FFFFFF"/>
+              <Switch value={showAllPrograms} onValueChange={setShowAllPrograms} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor="#FFFFFF"/>
             </View>
 
             <View style={styles.infoNoteRow}>
-              <Ionicons name="information-circle-outline" size={18} color="#9CA3AF" />
+              <Ionicons name="information-circle-outline" size={18} color={COLORS.textMuted} />
               <Text style={styles.subNoteText}>
                 Widget này hiển thị dữ liệu từ tất cả các chương trình đào tạo của bạn
               </Text>
@@ -356,19 +363,40 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
 export default ExerciseDetailScreen;
 
 const styles = StyleSheet.create({
+  tabBarScroll: {
+    flexGrow: 0,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  mediaFallback: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  mediaFallbackText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+  warningIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#FFF1F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
-    // backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.white,
   },
   header: {
-    height: 64,
-    // backgroundColor: '#FFFFFF',
+    height: 60,
+    backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
   },
   headerLeftGroup: {
     flexDirection: 'row',
@@ -381,33 +409,45 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIconBtn: {
-    padding: 6,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#11343A',
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginHorizontal: 6,
   },
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     gap: 8,
   },
   tabItem: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: '#EDF5F6',
+    paddingHorizontal: 16,
+    height: 36,
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   tabItemActive: {
-    backgroundColor: '#0D7F8D',
+    backgroundColor: COLORS.textPrimary,
+    borderColor: COLORS.textPrimary,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#71949A',
+    color: COLORS.textSecondary,
   },
   tabTextActive: {
     color: '#FFFFFF',
@@ -416,20 +456,24 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
+    backgroundColor: COLORS.background,
   },
   scrollContainer: {
-    paddingTop: 12,
-    paddingBottom: 170,
+    paddingTop: 16,
+    paddingBottom: 110,
   },
   imageBox: {
     width: '100%',
-    height: 300,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
+    height: 280,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
     overflow: 'hidden',
+    ...SHADOWS.card,
   },
   exerciseHeroImage: {
     width: '100%',
@@ -437,22 +481,22 @@ const styles = StyleSheet.create({
   },
   exerciseNameText: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 10,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
   },
   bodyDescription: {
     fontSize: 14,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     lineHeight: 22,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   sectionHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     marginBottom: 12,
-    marginTop: 8,
+    marginTop: 24,
   },
   guideStep: {
     flexDirection: 'row',
@@ -474,10 +518,11 @@ const styles = StyleSheet.create({
   muscleIllustrationBox: {
     width: '100%',
     height: 260,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 20,
+    backgroundColor: COLORS.primaryLight,
     overflow: 'hidden',
     marginBottom: 14,
+    ...SHADOWS.card,
   },
   bodyAnatomyImage: {
     width: '100%',
@@ -486,10 +531,12 @@ const styles = StyleSheet.create({
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 10,
-    marginBottom: 16,
+    paddingVertical: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 8,
   },
   legendItem: {
     flexDirection: 'row',
@@ -503,11 +550,16 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
+    color: COLORS.textMuted,
+    fontWeight: '600',
   },
   muscleBarItem: {
-    marginBottom: 14,
+    marginBottom: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
   },
   muscleBarHeader: {
     flexDirection: 'row',
@@ -516,17 +568,17 @@ const styles = StyleSheet.create({
   },
   muscleBarName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   muscleBarPercent: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#0D7F8D',
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: COLORS.borderLight,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -537,75 +589,85 @@ const styles = StyleSheet.create({
   emptyStateBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: 40,
     paddingHorizontal: 20,
+    marginTop: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   emptyIconCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: '#EBF8FA',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceTeal,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: 12.5,
+    color: COLORS.textMuted,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
   },
   timeFilterPill: {
     flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 3,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 4,
     marginBottom: 16,
   },
   pillBtn: {
     flex: 1,
-    paddingVertical: 8,
+    height: 36,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 9,
+    borderRadius: 14,
   },
   pillBtnActive: {
-    backgroundColor: '#264653',
+    backgroundColor: COLORS.textPrimary,
   },
   pillBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#475569',
+    color: COLORS.textSecondary,
   },
   pillBtnTextActive: {
     color: '#FFFFFF',
   },
   profileText: {
-    fontSize: 14,
-    color: '#475569',
-    marginBottom: 20,
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginBottom: 12,
   },
   chartEmptyBox: {
-    height: 160,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    height: 170,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
     borderStyle: 'dashed',
   },
   chartEmptyText: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     marginTop: 8,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   infoNoteRow: {
     flexDirection: 'row',
@@ -617,27 +679,32 @@ const styles = StyleSheet.create({
   infoNoteText: {
     flex: 1,
     fontSize: 13,
-    color: '#475569',
-    lineHeight: 18,
+    color: COLORS.textSecondary,
+    lineHeight: 19,
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E293B',
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   subNoteText: {
     flex: 1,
     fontSize: 12,
-    color: '#64748B',
-    lineHeight: 16,
+    color: COLORS.textMuted,
+    lineHeight: 17,
   },
   videoModeToggleRow: {
     flexDirection: 'row',
@@ -649,39 +716,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    minHeight: 40,
+    paddingVertical: 8,
     paddingHorizontal: 8,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     gap: 6,
   },
   videoModeToggleBtnCorrect: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
+    backgroundColor: COLORS.accentGreen,
+    borderColor: COLORS.accentGreen,
   },
   videoModeToggleBtnWrong: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
+    backgroundColor: COLORS.accentRed,
+    borderColor: COLORS.accentRed,
   },
   videoModeToggleText: {
+    flexShrink: 1,
     fontSize: 12,
     fontWeight: '700',
-    color: '#475569',
+    color: COLORS.textSecondary,
   },
   videoModeToggleTextActive: {
     color: '#FFFFFF',
   },
   videoBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 12,
+    right: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 12,
   },
   videoBadgeCorrect: {
@@ -714,33 +783,36 @@ const styles = StyleSheet.create({
   instructionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F6FC',
-    borderRadius: 14,
-    paddingVertical: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    marginBottom: 12,
+    marginBottom: 10,
+    ...SHADOWS.card,
   },
 
   instructionNumber: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
 
   instructionNumberText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#64839D',
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.primary,
   },
 
   instructionText: {
     flex: 1,
-    color: '#333333',
-    lineHeight: 24,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
   },
 
   // Tiêu đề cảnh báo
@@ -748,51 +820,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 24,
+    marginBottom: 12,
   },
 
   warningTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#F4778A',
+    fontWeight: '800',
+    color: '#E11D48',
   },
 
   // Khung cảnh báo màu trắng
   warningCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingVertical: 18,
+    backgroundColor: '#FFF5F6',
+    borderRadius: 18,
+    paddingTop: 16,
+    paddingBottom: 4,
     paddingHorizontal: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#EEEEEE',
-    elevation: 3,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
+    borderColor: '#FBD5DB',
   },
 
   warningItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 14,
+    marginBottom: 12,
   },
 
   warningDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#F4778A',
-    marginTop: 7,
-    marginRight: 14,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F43F5E',
+    marginTop: 8,
+    marginRight: 12,
   },
 
   warningItemText: {
     flex: 1,
-    color: '#555B65',
-    lineHeight: 23,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
   },
 
   // Thẻ thiết bị và nơi tập
@@ -806,25 +874,26 @@ const styles = StyleSheet.create({
 
   exerciseTag: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
+    height: 36,
+    justifyContent: 'center',
+    borderRadius: 18,
   },
 
   equipmentTag: {
-    backgroundColor: '#FFF1DF',
+    backgroundColor: '#FFF7ED',
   },
 
   gymTag: {
-    backgroundColor: '#E5F1FC',
+    backgroundColor: COLORS.surfaceTeal,
   },
 
   homeTag: {
-    backgroundColor: '#E7F6E5',
+    backgroundColor: '#ECFDF5',
   },
 
   exerciseTagText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#536D83',
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
   },
 });

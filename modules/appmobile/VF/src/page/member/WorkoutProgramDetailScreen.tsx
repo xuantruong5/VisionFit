@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../general/api';
 import ImageTextGradient from '../../components/ImageTextGradient';
+import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
 
@@ -90,15 +91,16 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
           >
             {/* Hero Image */}
             <View style={styles.heroContainer}>
-              <ImageBackground
-                source={{
-                  uri:
-                    program?.anh_dai_dien ||
-                    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1400',
-                }}
-                style={styles.heroImage}
-                imageStyle={styles.heroImageStyle}
-              >
+              <View style={styles.heroImage}>
+                <Image
+                  source={{
+                    uri:
+                      program?.anh_dai_dien ||
+                      'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1400',
+                  }}
+                  style={styles.heroImageStyle}
+                  resizeMode="cover"
+                />
                 <ImageTextGradient />
                 <View style={styles.heroContent}>
                   <View style={styles.heroBadge}>
@@ -114,25 +116,31 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
                     {program?.so_ngay || 30} ngày tập luyện • {program?.so_buoi_moi_tuan || 4} buổi/tuần
                   </Text>
                 </View>
-              </ImageBackground>
+              </View>
             </View>
 
             {/* Thông số tổng quan */}
             <View style={styles.statCardsRow}>
               <View style={styles.statCard}>
-                <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+                <View style={[styles.statIconTile, styles.statIconTeal]}>
+                  <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+                </View>
                 <Text style={styles.statNumber}>{program?.so_ngay || 0}</Text>
                 <Text style={styles.statLabel}>Tổng ngày tập</Text>
               </View>
 
               <View style={styles.statCard}>
-                <Ionicons name="repeat-outline" size={20} color={COLORS.primary} />
+                <View style={[styles.statIconTile, styles.statIconGreen]}>
+                  <Ionicons name="repeat-outline" size={18} color={COLORS.accentGreen} />
+                </View>
                 <Text style={styles.statNumber}>{program?.so_buoi_moi_tuan || 0}</Text>
                 <Text style={styles.statLabel}>Buổi mỗi tuần</Text>
               </View>
 
               <View style={styles.statCard}>
-                <Ionicons name="speedometer-outline" size={20} color={COLORS.primary} />
+                <View style={[styles.statIconTile, styles.statIconOrange]}>
+                  <Ionicons name="speedometer-outline" size={18} color={COLORS.accentOrange} />
+                </View>
                 <Text style={styles.statNumber} numberOfLines={1}>{capDoName || 'Chuẩn'}</Text>
                 <Text style={styles.statLabel}>Cấp độ khó</Text>
               </View>
@@ -177,7 +185,9 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
             {/* Quyền lợi */}
             <View style={styles.benefitCard}>
               <View style={styles.benefitHeader}>
-                <Ionicons name="shield-checkmark" size={20} color={COLORS.accentGreen} />
+                <View style={styles.benefitIconTile}>
+                  <Ionicons name="shield-checkmark" size={18} color={COLORS.accentGreen} />
+                </View>
                 <Text style={styles.benefitTitle}>Cam kết lộ trình</Text>
               </View>
               <Text style={styles.benefitText}>
@@ -191,19 +201,26 @@ const WorkoutProgramDetailScreen = ({ navigation, route }: any) => {
           {/* Bottom Fixed Action Bar */}
           <View style={styles.bottomBar}>
             <TouchableOpacity
-              style={[styles.addButton, registering && { opacity: 0.7 }]}
+              style={[styles.addButtonWrap, registering && { opacity: 0.7 }]}
               onPress={handleRegisterProgram}
               disabled={registering}
               activeOpacity={0.88}
             >
-              {registering ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <Ionicons name="add-circle" size={22} color={COLORS.white} />
-              )}
-              <Text style={styles.addButtonText}>
-                {registering ? 'ĐANG ĐĂNG KÝ...' : 'THÊM VÀO KẾ HOẠCH'}
-              </Text>
+              <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addButton}
+              >
+                {registering ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <Ionicons name="add-circle" size={22} color={COLORS.white} />
+                )}
+                <Text style={styles.addButtonText}>
+                  {registering ? 'ĐANG ĐĂNG KÝ...' : 'THÊM VÀO KẾ HOẠCH'}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -234,26 +251,32 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 110,
+    paddingTop: 16,
+    paddingBottom: 200,
   },
   heroContainer: {
     width: '100%',
-    height: 190,
-    borderRadius: 20,
-    overflow: 'hidden',
+    height: 210,
+    borderRadius: 22,
     marginBottom: 16,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.primaryDark,
     ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
   heroImage: {
     width: '100%',
     height: '100%',
     justifyContent: 'flex-end',
+    borderRadius: 22,
+    overflow: 'hidden',
   },
   heroImageStyle: {
-    borderRadius: 20,
-    resizeMode: 'cover',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   heroContent: {
     padding: 18,
@@ -261,7 +284,9 @@ const styles = StyleSheet.create({
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -276,9 +301,9 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: COLORS.white,
-    fontSize: 22,
-    fontWeight: '700',
-    lineHeight: 28,
+    fontSize: 23,
+    fontWeight: '800',
+    lineHeight: 29,
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
@@ -296,19 +321,35 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
+    borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     ...SHADOWS.card,
+  },
+  statIconTile: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statIconTeal: {
+    backgroundColor: COLORS.surfaceTeal,
+  },
+  statIconGreen: {
+    backgroundColor: '#ECFDF5',
+  },
+  statIconOrange: {
+    backgroundColor: '#FFF1EC',
   },
   statNumber: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    marginTop: 6,
+    marginTop: 8,
     textAlign: 'center',
   },
   statLabel: {
@@ -319,16 +360,16 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
     marginBottom: 16,
     ...SHADOWS.card,
   },
   cardHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginBottom: 12,
   },
@@ -341,10 +382,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   criteriaIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: COLORS.primarySoft,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -364,55 +405,59 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   benefitCard: {
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: 16,
+    backgroundColor: '#F0FDF7',
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: '#CDEFE0',
   },
   benefitHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 10,
+  },
+  benefitIconTile: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   benefitTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: COLORS.textPrimary,
   },
   benefitText: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
+  // Thanh hành động nổi phía trên bottom tab bar (bottom 25 + height 70)
   bottomBar: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    bottom: 16,
+    left: 16,
+    right: 16,
+  },
+  addButtonWrap: {
+    borderRadius: 16,
     ...SHADOWS.glow,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primary,
-    height: 52,
+    height: 54,
     borderRadius: 16,
     gap: 8,
-    ...SHADOWS.glow,
   },
   addButtonText: {
     color: COLORS.white,
     fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
 });

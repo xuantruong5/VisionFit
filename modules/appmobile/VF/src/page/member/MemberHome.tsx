@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AppHeader from '../../components/AppHeader';
+import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 const MemberHome = ({ navigation }: any) => {
@@ -64,19 +64,39 @@ const MemberHome = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
-      <AppHeader
-        title="VisionFit Member"
-        showBack={navigation?.canGoBack?.()}
-        onBack={() => navigation.goBack()}
-        badgeText="VIP"
-      />
 
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Welcome Hero Banner */}
-        <View style={styles.heroBanner}>
+        {/* Welcome Hero Header */}
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.decorCircle} />
+          <View style={styles.decorCircleSmall} />
+
+          <View style={styles.headerRow}>
+            {navigation?.canGoBack?.() ? (
+              <TouchableOpacity
+                style={styles.glassBtn}
+                onPress={() => navigation.goBack()}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={20} color={COLORS.white} />
+              </TouchableOpacity>
+            ) : null}
+            <Text style={styles.headerTitle}>VisionFit Member</Text>
+            <View style={styles.vipBadge}>
+              <Ionicons name="diamond" size={12} color={COLORS.accentGold} />
+              <Text style={styles.vipText}>VIP</Text>
+            </View>
+          </View>
+
           <View style={styles.heroTextCol}>
             <Text style={styles.heroGreeting}>Chào mừng trở lại! 👋</Text>
             <Text style={styles.heroTitle}>Sẵn sàng cho buổi tập hôm nay?</Text>
@@ -84,28 +104,34 @@ const MemberHome = ({ navigation }: any) => {
               Kỷ luật là cầu nối giữa mục tiêu và thành tựu thể chất.
             </Text>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Quick Hub Navigation Cards */}
-        <Text style={styles.sectionTitle}>Khám phá dịch vụ</Text>
-        <View style={styles.grid}>
-          {quickActions.map((action) => (
-            <TouchableOpacity
-              key={action.id}
-              style={styles.card}
-              onPress={action.onPress}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: action.bg }]}>
-                <Ionicons name={action.icon} size={24} color={action.color} />
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.cardTitle}>{action.title}</Text>
-                <Text style={styles.cardDesc}>{action.desc}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-          ))}
+        <View style={styles.body}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Khám phá dịch vụ</Text>
+            <View style={styles.sectionCount}>
+              <Text style={styles.sectionCountText}>{quickActions.length}</Text>
+            </View>
+          </View>
+          <View style={styles.grid}>
+            {quickActions.map((action) => (
+              <TouchableOpacity
+                key={action.id}
+                style={styles.card}
+                onPress={action.onPress}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: action.bg }]}>
+                  <Ionicons name={action.icon} size={22} color={action.color} />
+                </View>
+                <View style={styles.cardTextCol}>
+                  <Text style={styles.cardTitle}>{action.title}</Text>
+                  <Text style={styles.cardDesc}>{action.desc}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -117,17 +143,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  scroll: {
+    backgroundColor: COLORS.background,
+  },
   scrollContent: {
+    paddingBottom: 24,
+  },
+  header: {
     paddingHorizontal: 16,
     paddingTop: 14,
-    paddingBottom: 110,
+    paddingBottom: 30,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: 'hidden',
   },
-  heroBanner: {
-    backgroundColor: COLORS.primaryDark,
-    borderRadius: 20,
-    padding: 22,
-    marginBottom: 24,
-    ...SHADOWS.card,
+  decorCircle: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -70,
+    right: -60,
+  },
+  decorCircleSmall: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    bottom: -40,
+    left: -30,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 22,
+  },
+  glassBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  vipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  vipText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.white,
+    letterSpacing: 0.5,
   },
   heroTextCol: {
     gap: 6,
@@ -139,31 +225,53 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   heroTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
+    color: COLORS.white,
+    fontSize: 22,
     fontWeight: '800',
-    lineHeight: 28,
+    lineHeight: 30,
   },
   heroSubtitle: {
-    color: '#CBD5E1',
+    color: 'rgba(255,255,255,0.78)',
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
     marginTop: 2,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textDark,
+  body: {
+    paddingHorizontal: 16,
+    paddingTop: 22,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 12,
-    marginLeft: 4,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  sectionCount: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   grid: {
     gap: 12,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -171,12 +279,12 @@ const styles = StyleSheet.create({
     ...SHADOWS.card,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   cardTextCol: {
     flex: 1,
@@ -184,13 +292,22 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textDark,
+    color: COLORS.textPrimary,
     marginBottom: 3,
   },
   cardDesc: {
     fontSize: 12,
     color: COLORS.textMuted,
     lineHeight: 16,
+  },
+  chevronWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
 });
 
