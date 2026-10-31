@@ -351,6 +351,7 @@ const App = () => {
        <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1}/>
        <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2}/>
        <Stack.Screen name="OnboardingScreen3" component={OnboardingScreen3}/>
+       
 
 
 
