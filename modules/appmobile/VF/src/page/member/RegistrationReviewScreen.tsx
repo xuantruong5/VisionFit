@@ -7,12 +7,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
 
-const C = {
-  primary: '#0D7F8D', dark: '#075865', bg: '#F4FAFB',
-  white: '#FFFFFF', text: '#16383E', muted: '#78949A',
-  border: '#DFEAEC', soft: '#E7F5F6',
-};
 
 const PACKAGE_KEY = 'visionfit_selected_package';
 const TRAINER_KEY = 'visionfit_selected_pt';
@@ -85,9 +81,8 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 
   const goTo = (screen: string) => {
     const names = navigation.getState()?.routeNames || [];
-    if (names.includes(screen)) navigation.navigate(screen, screen === 'PTList' ? { selectedPackage: pkg } : undefined);
-    else if (navigation.canGoBack()) navigation.goBack();
-    else Alert.alert('Thông báo', `Chưa khai báo màn hình ${screen}.`);
+    const target = names.includes(screen) ? screen : names.includes(`${screen}Screen`) ? `${screen}Screen` : screen;
+    navigation.navigate(target, screen === 'PTList' ? { selectedPackage: pkg } : undefined);
   };
 
   const handleContinue = async () => {
@@ -107,11 +102,9 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 
       await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 
-      if (navigation.getState()?.routeNames?.includes('Payment')) {
-        navigation.navigate('Payment', { draft });
-      } else {
-        Alert.alert('Đã lưu bản nháp', 'Thông tin đã được lưu. Trang thanh toán sẽ được tạo ở bước tiếp theo.');
-      }
+      const routeNames = navigation.getState()?.routeNames || [];
+      const target = routeNames.includes('Payment') ? 'Payment' : routeNames.includes('PaymentScreen') ? 'PaymentScreen' : 'Payment';
+      navigation.navigate(target, { draft });
     } catch {
       Alert.alert('Lỗi', 'Không thể lưu thông tin đăng ký.');
     } finally {
@@ -128,7 +121,9 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
         title="Xem lại đăng ký"
         onBack={() => navigation.goBack()}
         rightComponent={
-          <Ionicons name="reader-outline" size={22} color={C.primary} />
+          <View style={s.headerIcon}>
+            <Ionicons name="reader-outline" size={20} color={COLORS.primary} />
+          </View>
         }
       />
 
@@ -142,22 +137,25 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={C.primary} />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={s.subText}>Đang tải thông tin...</Text>
         </View>
       ) : (
         <>
           <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-            <LinearGradient colors={['#087F8F', '#064E60']} style={s.hero}>
+            <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+              <View style={s.heroDecor} />
               <View style={s.heroIcon}>
-                <Ionicons name="document-text-outline" size={23} color="#FFFFFF" />
+                <Ionicons name="document-text-outline" size={22} color={COLORS.white} />
               </View>
               <Text style={s.heroTitle}>Kiểm tra lại{'\n'}thông tin đăng ký</Text>
               <Text style={s.heroDesc}>Hãy đảm bảo mọi lựa chọn đều chính xác trước khi thanh toán.</Text>
             </LinearGradient>
 
             <View style={s.statusBox}>
-              <Ionicons name="time-outline" size={21} color={C.primary} />
+              <View style={s.statusIcon}>
+                <Ionicons name="time-outline" size={20} color={COLORS.accentGold} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.statusTitle}>Bản đăng ký tạm</Text>
                 <Text style={s.subText}>Chưa tạo đơn hàng và chưa thanh toán</Text>
@@ -168,22 +166,22 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             <Text style={s.sectionTitle}>Thông tin hội viên</Text>
             <View style={s.card}>
               <View style={s.personRow}>
-                <View style={s.iconBox}><Ionicons name="person-outline" size={23} color={C.primary} /></View>
+                <View style={s.iconBox}><Ionicons name="person-outline" size={23} color={COLORS.primary} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.personName}>{route?.params?.member?.ho_ten || 'Hội viên VisionFit'}</Text>
                   <Text style={s.subText}>{route?.params?.member?.email || 'Tài khoản đăng nhập'}</Text>
                 </View>
-                <Ionicons name="shield-checkmark-outline" size={22} color={C.primary} />
+                <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.primary} />
               </View>
               <View style={s.divider} />
               <InfoRow label="Mã đăng ký" value="Chưa được cấp" />
-              <InfoRow label="Trạng thái" value="Chưa tạo đăng ký" color={C.primary} />
+              <InfoRow label="Trạng thái" value="Chưa tạo đăng ký" color={COLORS.primary} />
             </View>
 
             <View style={s.sectionHeader}>
               <Text style={s.sectionTitle}>Gói tập đã chọn</Text>
               <TouchableOpacity onPress={() => goTo('WorkoutSelection')} style={s.editButton}>
-                <Ionicons name="create-outline" size={16} color={C.primary} />
+                <Ionicons name="create-outline" size={16} color={COLORS.primary} />
                 <Text style={s.editText}>Thay đổi</Text>
               </TouchableOpacity>
             </View>
@@ -192,17 +190,17 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
               {pkg ? (
                 <>
                   <View style={s.personRow}>
-                    <View style={s.iconBox}><Ionicons name="barbell" size={24} color={C.primary} /></View>
+                    <View style={s.iconBox}><Ionicons name="barbell" size={24} color={COLORS.primary} /></View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.packageName}>{pkg.ten_goi}</Text>
                       <Text style={s.subText}>Gói tập VisionFit</Text>
                     </View>
-                    <Ionicons name="checkmark-circle" size={24} color={C.primary} />
+                    <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
                   </View>
                   <View style={s.divider} />
                   <InfoRow label="Thời hạn" value={`${pkg.thoi_han} ngày`} />
                   <InfoRow label="Số buổi PT trong gói" value={`${pkg.so_buoi_pt || 0} buổi`} />
-                  <InfoRow label="Giá gói tập" value={money(price)} color={C.primary} />
+                  <InfoRow label="Giá gói tập" value={money(price)} color={COLORS.primary} />
                 </>
               ) : (
                 <Text style={s.warning}>Bạn chưa chọn gói tập. Hãy quay lại bước 1.</Text>
@@ -212,7 +210,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             <View style={s.sectionHeader}>
               <Text style={s.sectionTitle}>Huấn luyện viên (PT)</Text>
               <TouchableOpacity onPress={() => goTo('PTList')} style={s.editButton}>
-                <Ionicons name="create-outline" size={16} color={C.primary} />
+                <Ionicons name="create-outline" size={16} color={COLORS.primary} />
                 <Text style={s.editText}>Thay đổi</Text>
               </TouchableOpacity>
             </View>
@@ -221,22 +219,24 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
               {pt ? (
                 <>
                   <View style={s.personRow}>
-                    <View style={s.ptAvatar}><Ionicons name="person" size={27} color={C.primary} /></View>
+                    <View style={s.ptAvatar}><Ionicons name="person" size={27} color={COLORS.primary} /></View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.personName}>{pt.ho_ten}</Text>
                       <Text style={s.subText}>{pt.chuc_danh || 'Personal Trainer'}</Text>
                     </View>
-                    <Ionicons name="checkmark-circle" size={23} color={C.primary} />
+                    <Ionicons name="checkmark-circle" size={23} color={COLORS.primary} />
                   </View>
                   <View style={s.divider} />
                   <InfoRow label="Kinh nghiệm" value={`${pt.so_nam_kinh_nghiem || '—'} năm`} />
-                  <InfoRow label="Lựa chọn" value="Đã chọn PT" color={C.primary} />
+                  <InfoRow label="Lựa chọn" value="Đã chọn PT" color={COLORS.primary} />
                 </>
               ) : (
                 <View style={s.emptyPT}>
-                  <Ionicons name="people-outline" size={32} color={C.muted} />
+                  <View style={s.emptyIcon}>
+                    <Ionicons name="people-outline" size={28} color={COLORS.primary} />
+                  </View>
                   <Text style={s.subText}>{requiresPT ? 'Gói tập này yêu cầu chọn PT' : 'Bạn chưa chọn huấn luyện viên'}</Text>
-                  <TouchableOpacity onPress={() => goTo('PTList')}>
+                  <TouchableOpacity onPress={() => goTo('PTList')} style={s.emptyBtn}>
                     <Text style={s.editText}>Chọn huấn luyện viên →</Text>
                   </TouchableOpacity>
                 </View>
@@ -247,8 +247,8 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             <View style={s.card}>
               <InfoRow label="Chi phí gói tập" value={money(price)} />
               <InfoRow label="Chi phí PT" value={optionalPT ? 'Chưa xác định' : requiresPT ? 'Theo quyền lợi gói' : '0đ'} />
-              <View style={s.divider} />
-              <View style={s.between}>
+              <View style={s.dashedDivider} />
+              <View style={[s.between, s.totalBox]}>
                 <Text style={s.totalLabel}>Tổng tạm tính</Text>
                 <Text style={s.totalPrice}>{money(price)}</Text>
               </View>
@@ -257,7 +257,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             </View>
 
             <View style={s.notice}>
-              <Ionicons name="information-circle-outline" size={20} color={C.primary} />
+              <Ionicons name="information-circle" size={20} color={COLORS.primary} />
               <Text style={s.noticeText}>Bạn có thể quay lại thay đổi gói tập hoặc PT. Bản nháp hiện chưa được gửi lên máy chủ.</Text>
             </View>
           </ScrollView>
@@ -269,18 +269,25 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
                 <Text style={s.footerPrice}>{money(price)}</Text>
               </View>
               <View style={s.secureBadge}>
-                <Ionicons name="lock-closed-outline" size={15} color={C.primary} />
+                <Ionicons name="lock-closed-outline" size={15} color={COLORS.primary} />
                 <Text style={s.secureText}>Bước tiếp theo</Text>
               </View>
             </View>
 
-            <TouchableOpacity style={[s.button, !canContinue && s.disabled]} disabled={!canContinue} onPress={handleContinue}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : (
-                <>
-                  <Text style={s.buttonText}>Tiếp tục thanh toán</Text>
-                  <Ionicons name="arrow-forward" size={21} color="#FFFFFF" />
-                </>
-              )}
+            <TouchableOpacity style={s.buttonWrap} activeOpacity={0.85} disabled={!canContinue} onPress={handleContinue}>
+              <LinearGradient
+                colors={canContinue ? [COLORS.primary, COLORS.primaryDark] : ['#AECBD0', '#AECBD0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={s.button}
+              >
+                {saving ? <ActivityIndicator color={COLORS.white} /> : (
+                  <>
+                    <Text style={s.buttonText}>Tiếp tục thanh toán</Text>
+                    <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </>
@@ -292,31 +299,23 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: COLORS.background,
   },
-  header: {
-    height: 62,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
+  headerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  back: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: C.white,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: C.text,
   },
   progress: {
-    paddingHorizontal: 22,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
   },
   between: {
     flexDirection: 'row',
@@ -326,24 +325,25 @@ const s = StyleSheet.create({
   step: {
     fontSize: 11,
     fontWeight: '800',
-    color: C.primary,
+    color: COLORS.primary,
     letterSpacing: 1,
   },
   track: {
-    height: 5,
-    borderRadius: 8,
-    backgroundColor: '#DCEBED',
-    marginTop: 12,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.primaryLight,
+    marginTop: 10,
+    overflow: 'hidden',
   },
   fill: {
     width: '75%',
     height: '100%',
-    backgroundColor: C.primary,
-    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 3,
   },
   content: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   center: {
@@ -353,91 +353,123 @@ const s = StyleSheet.create({
     gap: 12,
   },
   subText: {
-    color: C.muted,
+    color: COLORS.textMuted,
     fontSize: 12,
-    lineHeight: 19,
+    lineHeight: 17,
   },
   hero: {
-    borderRadius: 23,
-    padding: 23,
-    marginBottom: 17,
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 16,
+    overflow: 'hidden',
+    ...SHADOWS.glow,
+  },
+  heroDecor: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -60,
+    right: -50,
   },
   heroIcon: {
     width: 44,
     height: 44,
     borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   heroTitle: {
-    fontSize: 25,
-    lineHeight: 32,
+    fontSize: 23,
+    lineHeight: 30,
     fontWeight: '900',
-    color: C.white,
+    color: COLORS.white,
   },
   heroDesc: {
-    color: '#D2F0F2',
-    fontSize: 12,
-    lineHeight: 20,
-    marginTop: 10,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12.5,
+    lineHeight: 19,
+    marginTop: 8,
   },
   statusBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     padding: 14,
-    backgroundColor: C.soft,
-    borderRadius: 16,
-    marginBottom: 25,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 18,
+    marginBottom: 24,
+    ...SHADOWS.card,
+  },
+  statusIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusTitle: {
-    color: C.text,
-    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontSize: 14,
     fontWeight: '800',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   statusBadge: {
-    backgroundColor: C.white,
-    borderRadius: 8,
-    padding: 7,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FDE6C4',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   statusBadgeText: {
-    color: C.primary,
-    fontSize: 9,
+    color: COLORS.accentGold,
+    fontSize: 9.5,
     fontWeight: '900',
+    letterSpacing: 0.5,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 13,
+    color: COLORS.textPrimary,
+    marginBottom: 12,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: COLORS.primarySoft,
   },
   editText: {
-    color: C.primary,
+    color: COLORS.primary,
     fontSize: 12,
     fontWeight: '800',
   },
   card: {
-    backgroundColor: C.white,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 19,
-    padding: 17,
+    borderColor: COLORS.border,
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 24,
+    ...SHADOWS.card,
   },
   personRow: {
     flexDirection: 'row',
@@ -445,137 +477,180 @@ const s = StyleSheet.create({
     gap: 12,
   },
   iconBox: {
-    width: 46,
-    height: 46,
-    backgroundColor: C.soft,
+    width: 44,
+    height: 44,
+    backgroundColor: COLORS.surfaceTeal,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   personName: {
-    color: C.text,
+    color: COLORS.textPrimary,
     fontSize: 15,
     fontWeight: '800',
-    marginBottom: 5,
+    marginBottom: 2,
   },
   packageName: {
-    color: C.text,
+    color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: '900',
-    marginBottom: 5,
+    marginBottom: 2,
   },
   ptAvatar: {
-    width: 51,
-    height: 51,
-    backgroundColor: C.soft,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: COLORS.borderFocus,
     alignItems: 'center',
     justifyContent: 'center',
   },
   divider: {
     height: 1,
-    backgroundColor: C.border,
-    marginVertical: 17,
+    backgroundColor: COLORS.borderLight,
+    marginVertical: 14,
+  },
+  dashedDivider: {
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: COLORS.border,
+    marginTop: 2,
+    marginBottom: 14,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   infoLabel: {
-    color: C.muted,
-    fontSize: 12,
+    color: COLORS.textMuted,
+    fontSize: 13,
     flex: 1,
   },
   infoValue: {
-    color: C.text,
-    fontSize: 12,
-    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
     textAlign: 'right',
     flexShrink: 1,
   },
   emptyPT: {
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 15,
+    gap: 10,
+    paddingVertical: 12,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
+  },
+  totalBox: {
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   totalLabel: {
-    color: C.text,
-    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontSize: 14,
     fontWeight: '800',
   },
   totalPrice: {
-    color: C.primary,
-    fontSize: 24,
+    color: COLORS.primary,
+    fontSize: 22,
     fontWeight: '900',
   },
   priceNote: {
-    color: C.muted,
-    fontSize: 11,
-    lineHeight: 18,
-    marginTop: 13,
+    color: COLORS.textMuted,
+    fontSize: 11.5,
+    lineHeight: 17,
+    marginTop: 10,
   },
   warning: {
     color: '#B47A30',
     fontSize: 12,
-    lineHeight: 19,
+    lineHeight: 18,
     marginTop: 10,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    padding: 10,
+    overflow: 'hidden',
   },
   notice: {
     flexDirection: 'row',
     gap: 10,
-    padding: 15,
-    backgroundColor: C.soft,
-    borderRadius: 14,
+    padding: 14,
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
+    borderRadius: 16,
   },
   noticeText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 20,
-    color: C.primary,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: COLORS.primaryDark,
   },
   footer: {
-    backgroundColor: C.white,
-    paddingHorizontal: 19,
-    paddingVertical: 15,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: C.border,
+    borderTopColor: COLORS.borderLight,
+    ...SHADOWS.card,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   footerPrice: {
     fontSize: 22,
-    color: C.primary,
+    color: COLORS.primary,
     fontWeight: '900',
-    marginTop: 5,
+    marginTop: 2,
   },
   secureBadge: {
     flexDirection: 'row',
     gap: 5,
     alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: COLORS.surfaceTeal,
   },
   secureText: {
     fontSize: 11,
-    color: C.primary,
+    color: COLORS.primary,
     fontWeight: '700',
   },
+  buttonWrap: {
+    marginTop: 12,
+  },
   button: {
-    height: 54,
-    backgroundColor: C.primary,
-    borderRadius: 15,
+    height: 52,
+    borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 15,
-  },
-  disabled: {
-    backgroundColor: '#AECBD0',
+    gap: 10,
   },
   buttonText: {
     fontSize: 15,
     fontWeight: '800',
-    color: C.white,
+    color: COLORS.white,
   },
 });
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ImageTextGradient from '../../components/ImageTextGradient';
+import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
 import apiFitlife from '../../general/api';
@@ -89,9 +90,14 @@ const WorkoutLocationScreen = ({ navigation, route }: any) => {
         {/* Banner thông tin chương trình đã chọn */}
         {goalName && (
           <View style={styles.selectedGoalBanner}>
-            <View style={styles.goalIconContainer}>
-              <Ionicons name="barbell" size={20} color={COLORS.primary} />
-            </View>
+            <LinearGradient
+              colors={[COLORS.primary, COLORS.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.goalIconContainer}
+            >
+              <Ionicons name="barbell" size={20} color={COLORS.white} />
+            </LinearGradient>
             <View style={styles.goalTextContainer}>
               <Text style={styles.goalLabel}>Chương trình đã chọn</Text>
               <Text style={styles.goalTitle} numberOfLines={1}>
@@ -113,7 +119,9 @@ const WorkoutLocationScreen = ({ navigation, route }: any) => {
             </View>
           ) : noiTapList.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="location-outline" size={44} color={COLORS.textMuted} />
+              <View style={styles.emptyIconTile}>
+                <Ionicons name="location-outline" size={30} color={COLORS.primary} />
+              </View>
               <Text style={styles.emptyText}>Chưa có nơi tập nào phù hợp.</Text>
             </View>
           ) : (
@@ -124,11 +132,12 @@ const WorkoutLocationScreen = ({ navigation, route }: any) => {
                 activeOpacity={0.88}
                 onPress={() => handleSelectLocation(noiTap)}
               >
-                <ImageBackground
-                  source={{ uri: getLocationImage(noiTap.ten_noi_tap) }}
-                  style={styles.cardImage}
-                  imageStyle={styles.cardImageStyle}
-                >
+                <View style={styles.cardImage}>
+                  <Image
+                    source={{ uri: getLocationImage(noiTap.ten_noi_tap) }}
+                    style={styles.cardImageStyle}
+                    resizeMode="cover"
+                  />
                   <ImageTextGradient />
 
                   <View style={styles.overlay}>
@@ -139,9 +148,6 @@ const WorkoutLocationScreen = ({ navigation, route }: any) => {
                           size={22}
                           color={COLORS.white}
                         />
-                      </View>
-                      <View style={styles.arrowCircle}>
-                        <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
                       </View>
                     </View>
 
@@ -154,7 +160,7 @@ const WorkoutLocationScreen = ({ navigation, route }: any) => {
                       </Text>
                     ) : null}
                   </View>
-                </ImageBackground>
+                </View>
               </TouchableOpacity>
             ))
           )}
@@ -173,26 +179,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 40,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   selectedGoalBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.cardBg,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 16,
+    borderColor: COLORS.border,
+    marginBottom: 18,
     ...SHADOWS.card,
   },
   goalIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.primarySoft,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -206,15 +210,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   goalTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    marginTop: 2,
+    marginTop: 3,
   },
   sectionSubtitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.textSecondary,
-    marginBottom: 16,
+    marginBottom: 14,
     lineHeight: 20,
   },
   content: {
@@ -230,35 +235,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   emptyContainer: {
-    paddingVertical: 50,
+    paddingVertical: 36,
     alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  emptyIconTile: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
-    marginTop: 10,
-    color: COLORS.textMuted,
+    marginTop: 12,
+    color: COLORS.textSecondary,
     fontSize: 14,
+    fontWeight: '700',
   },
   cardContainer: {
     width: '100%',
-    height: 160,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: COLORS.white,
+    height: 172,
+    borderRadius: 26,
+    backgroundColor: COLORS.primaryDark,
     ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
   cardImage: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
+    borderRadius: 26,
+    overflow: 'hidden',
   },
   cardImageStyle: {
-    borderRadius: 20,
-    resizeMode: 'cover',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   overlay: {
     flex: 1,
     justifyContent: 'space-between',
-    padding: 20,
+    padding: 18,
   },
   locationHeaderRow: {
     flexDirection: 'row',
@@ -266,32 +291,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   arrowCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardText: {
     color: COLORS.white,
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.2,
     textShadowColor: 'rgba(0, 0, 0, 0.35)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
   cardDesc: {
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.88)',
     fontSize: 13,
     marginTop: 4,
+    lineHeight: 18,
   },
 });

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Switch } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Switch, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WorkoutPlan from './WorkoutPlan';
 import WorkoutUnPlan from './WorkoutUnPlan';
-import AppHeader from '../../components/AppHeader';
+import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 const WorkoutPlanScreen = ({ navigation, route }: any) => {
@@ -13,10 +13,25 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppHeader
-        title="Kế hoạch tập luyện"
-        showBack={false}
-        rightComponent={
+      <StatusBar barStyle="dark-content" />
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.circleLg} />
+        <View style={styles.circleSm} />
+        <View style={styles.headerRow}>
+          {navigation.canGoBack() && (
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.headerEyebrow}>VISIONFIT</Text>
+            <Text style={styles.headerTitle}>Kế hoạch tập luyện</Text>
+          </View>
           <TouchableOpacity
             style={styles.aiHeaderBtn}
             onPress={() => navigation.navigate('AiConsultationScreen')}
@@ -25,8 +40,8 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
             <Ionicons name="sparkles" size={15} color={COLORS.white} />
             <Text style={styles.aiHeaderBtnText}>AI</Text>
           </TouchableOpacity>
-        }
-      />
+        </View>
+      </LinearGradient>
 
       <View style={styles.content}>
         {/* Toggle chế độ mục tiêu */}
@@ -89,25 +104,82 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  header: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 52,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  circleLg: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -70,
+    right: -50,
+  },
+  circleSm: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    bottom: -40,
+    left: -25,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  headerTextWrap: {
+    flex: 1,
+  },
+  headerEyebrow: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#9EE7E5',
+    letterSpacing: 1,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginTop: 4,
+  },
   aiHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    ...SHADOWS.small,
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   aiHeaderBtnText: {
     color: COLORS.white,
-    fontWeight: '700',
-    fontSize: 12,
-    marginLeft: 5,
+    fontWeight: '800',
+    fontSize: 13,
+    marginLeft: 6,
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 14,
+    backgroundColor: COLORS.background,
   },
   goalModeHeader: {
     flexDirection: 'row',
@@ -115,12 +187,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: COLORS.cardBg,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 18,
+    paddingVertical: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: COLORS.border,
+    marginTop: -32,
     marginBottom: 16,
     ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
   goalModeTitleRow: {
     flexDirection: 'row',
@@ -128,10 +203,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   goalModeIconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: COLORS.primarySoft,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -139,12 +214,12 @@ const styles = StyleSheet.create({
   goalModeTitle: {
     color: COLORS.textPrimary,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   goalModeSubtitle: {
     color: COLORS.textMuted,
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 3,
   },
   controlsRow: {
     flexDirection: 'row',
@@ -152,10 +227,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   expandButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: COLORS.primarySoft,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
   },

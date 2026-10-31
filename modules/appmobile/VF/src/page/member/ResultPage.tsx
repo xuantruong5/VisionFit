@@ -1,12 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, Modal, } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Gesture, GestureDetector, } from "react-native-gesture-handler";
 import { PieChart } from "react-native-gifted-charts";
 
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
-import { COLORS } from "../../general/theme";
+import { COLORS, SHADOWS } from "../../general/theme";
 
 const ResultPage = ({ navigation }: any) => {
     // phóng to mô hình người và xoay 
@@ -74,34 +76,51 @@ const ResultPage = ({ navigation }: any) => {
     ];
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            <StatusBar barStyle="dark-content" />
+            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
                 {/* HEADER */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        style={styles.circleButton}
-                        onPress={() => (navigation?.canGoBack() ? navigation.goBack() : navigation?.navigate("MemberTabs"))}
-                    >
-                        <Ionicons name="close" size={24} color={COLORS.primary} />
-                    </TouchableOpacity>
-                    {/* LOGO FITNESS ONLINE */}
-                    <View style={styles.logoContainer}>
-                        <Text style={styles.logoText}>
-                            VisionFit
+                <LinearGradient
+                    colors={[COLORS.primary, COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.heroHeader}
+                >
+                    <View style={styles.heroCircleLg} />
+                    <View style={styles.heroCircleSm} />
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.circleButton}
+                            onPress={() => (navigation?.canGoBack() ? navigation.goBack() : navigation?.navigate("MemberTabs"))}
+                        >
+                            <Ionicons name="close" size={22} color={COLORS.white} />
+                        </TouchableOpacity>
+                        {/* LOGO FITNESS ONLINE */}
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logoText}>
+                                VisionFit
+                            </Text>
+                        </View>
+                        <TouchableOpacity style={styles.circleButton} onPress={() => {}}>
+                            <Ionicons name="share-outline" size={20} color={COLORS.white} />
+                        </TouchableOpacity>
+                    </View>
+                    {/* TITLE */}
+                    <Text style={styles.title}>Kết quả tập luyện</Text>
+                    <View style={styles.datePill}>
+                        <Ionicons name="calendar-outline" size={13} color={COLORS.white} />
+                        <Text style={styles.date}>
+                            {currentDateStr}
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.circleButton} onPress={() => {}}>
-                        <Ionicons name="share-outline" size={22} color={COLORS.primary} />
-                    </TouchableOpacity>
-                </View>
-                {/* TITLE */}
-                <Text style={styles.title}>Kết quả tập luyện</Text>
-                <Text style={styles.date}>
-                    {currentDateStr}
-                </Text>
+                </LinearGradient>
+                <View style={styles.body}>
                 {/* WORKOUT SUMMARY */}
                 <View style={styles.summaryCard}>
-                    <View>
+                    <View style={styles.summaryIconTile}>
+                        <Ionicons name="trophy" size={22} color={COLORS.accentOrange} />
+                    </View>
+                    <View style={styles.summaryTextWrap}>
                         <Text style={styles.smallText}>
                             1 ngày tập luyện
                         </Text>
@@ -117,15 +136,21 @@ const ResultPage = ({ navigation }: any) => {
                     </View>
                 </View>
                 {/* QUOTE */}
-                <Text style={styles.quote}>
-                    Khổng Tử đã nói rằng ngọc không giũa không
-                    sáng, con người trải qua thất bại mới thành
-                    công.
-                </Text>
+                <View style={styles.quoteCard}>
+                    <Ionicons name="chatbox-ellipses-outline" size={20} color={COLORS.primary} style={styles.quoteIcon} />
+                    <Text style={styles.quote}>
+                        Khổng Tử đã nói rằng ngọc không giũa không
+                        sáng, con người trải qua thất bại mới thành
+                        công.
+                    </Text>
+                </View>
 
                 {/* DURATION + REST */}
                 <View style={styles.row}>
                     <View style={styles.infoCard}>
+                        <View style={[styles.infoIconTile, styles.tileTeal]}>
+                            <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+                        </View>
                         <Text style={styles.infoValue}>
                             2:05
                         </Text>
@@ -134,6 +159,9 @@ const ResultPage = ({ navigation }: any) => {
                         </Text>
                     </View>
                     <View style={styles.infoCard}>
+                        <View style={[styles.infoIconTile, styles.tileViolet]}>
+                            <Ionicons name="pause-circle-outline" size={20} color="#7C3AED" />
+                        </View>
                         <Text style={styles.infoValue}>
                             0:00
                         </Text>
@@ -147,7 +175,9 @@ const ResultPage = ({ navigation }: any) => {
                 <View style={styles.statisticsCard}>
                     {/* CALORIES */}
                     <View style={styles.statItem}>
-                        <Ionicons name="flame-outline" size={26} color="#F7D9B2" />
+                        <View style={[styles.statIconTile, styles.tileOrange]}>
+                            <Ionicons name="flame-outline" size={22} color={COLORS.accentOrange} />
+                        </View>
                         <Text style={styles.questionMark}>?</Text>
                         <Text style={styles.statLabel}>
                             Calo
@@ -155,9 +185,11 @@ const ResultPage = ({ navigation }: any) => {
                     </View>
                     {/* STEPS */}
                     <View style={styles.statItem}>
-                        <Ionicons name="footsteps-outline" size={26} color="#DCE3E8" />
+                        <View style={[styles.statIconTile, styles.tileTeal]}>
+                            <Ionicons name="footsteps-outline" size={22} color={COLORS.primary} />
+                        </View>
                         <View style={styles.lockCircle}>
-                            <Ionicons name="lock-closed-outline" size={29} color="#FF6969" />
+                            <Ionicons name="lock-closed-outline" size={20} color={COLORS.accentRed} />
                         </View>
                         <Text style={styles.statLabel}>
                             Bước
@@ -166,7 +198,9 @@ const ResultPage = ({ navigation }: any) => {
 
                     {/* HEART RATE */}
                     <View style={styles.statItem}>
-                        <Ionicons name="heart-outline" size={27} color="#F6D8E1" />
+                        <View style={[styles.statIconTile, styles.tileRose]}>
+                            <Ionicons name="heart-outline" size={22} color="#E11D48" />
+                        </View>
                         <Text style={styles.questionMark}>?</Text>
                         <Text style={styles.statLabel}>
                             Nhịp tim
@@ -291,11 +325,11 @@ const ResultPage = ({ navigation }: any) => {
                             <Image source={require("../../assets/muscleBody/body.jpg")} style={styles.bodyImage} resizeMode="contain" />
                             {/* KHÓA */}
                             <View style={styles.bodyLock}>
-                                <Ionicons name="lock-closed-outline" size={35} color="#FF535C" />
+                                <Ionicons name="lock-closed-outline" size={30} color={COLORS.accentRed} />
                             </View>
                             {/* NÚT PHÓNG TO */}
                             <TouchableOpacity style={styles.expandButton} onPress={() => setShowBodyModal(true)}>
-                                <Ionicons name="scan-outline" size={34} color="#3DB8BA" />
+                                <Ionicons name="scan-outline" size={26} color={COLORS.primary} />
                             </TouchableOpacity>
                         </View>
                         {/* LABEL BÊN PHẢI */}
@@ -394,7 +428,7 @@ const ResultPage = ({ navigation }: any) => {
                                 donut
                                 radius={wp("32%")}
                                 innerRadius={wp("20%")}
-                                innerCircleColor="#FFFFFF"
+                                innerCircleColor={COLORS.white}
                                 showText={false}
                                 showValuesAsLabels={false}
                                 focusOnPress={false}
@@ -481,15 +515,24 @@ const ResultPage = ({ navigation }: any) => {
                     <View style={styles.actionSection}>
 
                         {/* CHIA SẺ BÁO CÁO */}
-                        <TouchableOpacity style={styles.shareReportButton} activeOpacity={0.8} onPress={() => {console.log("Chia sẻ báo cáo"); }} >
-                            <Text style={styles.shareReportText}>
-                                CHIA SẺ BÁO CÁO
-                            </Text>
+                        <TouchableOpacity style={styles.shareReportWrap} activeOpacity={0.8} onPress={() => {console.log("Chia sẻ báo cáo"); }} >
+                            <LinearGradient
+                                colors={[COLORS.primary, COLORS.primaryDark]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.shareReportButton}
+                            >
+                                <Ionicons name="share-social-outline" size={20} color={COLORS.white} />
+                                <Text style={styles.shareReportText}>
+                                    CHIA SẺ BÁO CÁO
+                                </Text>
+                            </LinearGradient>
                         </TouchableOpacity>
 
 
                         {/* XÓA KẾT QUẢ */}
                         <TouchableOpacity style={styles.deleteResultButton} activeOpacity={0.8} onPress={() => {console.log("Xóa kết quả tập luyện"); }} >
+                            <Ionicons name="trash-outline" size={18} color={COLORS.accentRed} />
                             <Text style={styles.deleteResultText}>
                                 Xóa kết quả tập luyện
                             </Text>
@@ -497,12 +540,13 @@ const ResultPage = ({ navigation }: any) => {
 
                     </View>
                 </View>
+                </View>
             </ScrollView>
             <Modal visible={showBodyModal} animationType="fade" onRequestClose={() => setShowBodyModal(false)} >
                 <View style={styles.modalContainer}>
                     {/* NÚT ĐÓNG */}
                     <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowBodyModal(false)} >
-                        <Ionicons name="close" size={32} color="#FFFFFF" />
+                        <Ionicons name="close" size={26} color={COLORS.white} />
                     </TouchableOpacity>
 
                     {/* TIÊU ĐỀ */}
@@ -523,7 +567,7 @@ const ResultPage = ({ navigation }: any) => {
 
                     {/* RESET */}
                     <TouchableOpacity style={styles.resetButton} onPress={() => { scale.value = 1; rotation.value = 0; }} >
-                        <Ionicons name="refresh-outline" size={22} color="#3DB8BA" />
+                        <Ionicons name="refresh-outline" size={20} color={COLORS.primary} />
                         <Text style={styles.resetText}>
                             Đặt lại
                         </Text>
@@ -537,32 +581,59 @@ const ResultPage = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
-
+        backgroundColor: COLORS.background,
+    },
+    scroll: {
+        backgroundColor: COLORS.background,
     },
     scrollContent: {
-        paddingHorizontal: wp("3.5%"),
-        paddingBottom: hp("3%"),
+        paddingBottom: 24,
+    },
+    body: {
+        paddingHorizontal: 16,
     },
     // HEADER
+    heroHeader: {
+        paddingHorizontal: 18,
+        paddingTop: 14,
+        paddingBottom: 58,
+        borderRadius: 28,
+        marginHorizontal: 12,
+        marginTop: 6,
+        overflow: "hidden",
+    },
+    heroCircleLg: {
+        position: "absolute",
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: "rgba(255,255,255,0.07)",
+        top: -70,
+        right: -60,
+    },
+    heroCircleSm: {
+        position: "absolute",
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: "rgba(255,255,255,0.06)",
+        bottom: -40,
+        left: -30,
+    },
     header: {
-        height: hp("12%"),
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginTop: hp("3%"),
     },
     circleButton: {
-        width: wp("11%"),
-        height: wp("11%"),
-        borderRadius: wp("7%"),
-        backgroundColor: "#FFFFFF",
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: "rgba(255,255,255,0.16)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
     },
     logoContainer: {
         alignItems: "center",
@@ -573,119 +644,183 @@ const styles = StyleSheet.create({
         height: hp("5%"),
     },
     logoText: {
-        fontSize: wp("3.4%"),
-        fontWeight: "700",
-        color: "#333333",
-        marginTop: -hp("0.5%"),
+        fontSize: 12,
+        fontWeight: "800",
+        color: "#9EE7E5",
+        letterSpacing: 1.5,
+        textTransform: "uppercase",
     },
     // TITLE
     title: {
-        fontSize: wp("6%"),
+        fontSize: 24,
         fontWeight: "800",
-        color: "#171717",
+        color: COLORS.white,
         textAlign: "center",
-        marginTop: hp("1%"),
+        marginTop: 18,
+    },
+    datePill: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "center",
+        gap: 6,
+        marginTop: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 14,
+        backgroundColor: "rgba(255,255,255,0.16)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
     },
     date: {
-        fontSize: wp("4%"),
-        color: "#6686A1",
-        textAlign: "center",
-        marginTop: hp("0.5%"),
+        fontSize: 12.5,
+        color: COLORS.white,
+        fontWeight: "600",
     },
     // SUMMARY
     summaryCard: {
-        marginTop: hp("4%"),
-        minHeight: hp("12%"),
-        borderRadius: 10,
-        backgroundColor: "#FFFFFF",
-        paddingHorizontal: wp("4%"),
-        paddingVertical: hp("2%"),
+        marginTop: -34,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 16,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        ...SHADOWS.card,
+        shadowOpacity: 0.12,
+        elevation: 6,
+    },
+    summaryIconTile: {
+        width: 46,
+        height: 46,
+        borderRadius: 14,
+        backgroundColor: "#FFF1EC",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    summaryTextWrap: {
+        flex: 1,
     },
     smallText: {
-        fontSize: wp("3.8%"),
-        color: "#6686A1",
+        fontSize: 12,
+        color: COLORS.textMuted,
+        fontWeight: "600",
     },
 
     workoutName: {
-        fontSize: wp("4.8%"),
-        fontWeight: "700",
-        color: "#171717",
-        marginTop: hp("1%"),
+        fontSize: 18,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginTop: 3,
+        textTransform: "capitalize",
     },
     progressCircle: {
-        width: wp("18%"),
-        height: wp("18%"),
-        borderRadius: wp("9%"),
-        borderWidth: 4,
-        borderColor: "#FFD5C5",
-        borderTopColor: "#FF633E",
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        borderWidth: 5,
+        borderColor: "#FFE1D6",
+        borderTopColor: COLORS.accentOrange,
         justifyContent: "center",
         alignItems: "center",
     },
     progressText: {
-        fontSize: wp("4.5%"),
-        color: "#FF633E",
-        fontWeight: "600",
+        fontSize: 16,
+        color: COLORS.accentOrange,
+        fontWeight: "800",
     },
     // QUOTE
+    quoteCard: {
+        flexDirection: "row",
+        marginTop: 16,
+        padding: 14,
+        borderRadius: 18,
+        backgroundColor: COLORS.surfaceTeal,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
+    },
+    quoteIcon: {
+        marginRight: 10,
+        marginTop: 2,
+    },
     quote: {
-        fontSize: wp("4.5%"),
-        color: "#606060",
-        lineHeight: hp("3.3%"),
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("2%"),
+        flex: 1,
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        lineHeight: 21,
+        fontStyle: "italic",
     },
     // ROW
     row: {
         flexDirection: "row",
         justifyContent: "space-between",
-        gap: wp("3%"),
-        marginTop: hp("4%"),
+        gap: 12,
+        marginTop: 16,
     },
     infoCard: {
         flex: 1,
-        height: hp("12%"),
-        borderRadius: 10,
-        backgroundColor: "#FFFFFF",
+        paddingVertical: 16,
+        paddingHorizontal: 10,
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        ...SHADOWS.card,
+    },
+    infoIconTile: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 8,
+    },
+    tileTeal: {
+        backgroundColor: COLORS.surfaceTeal,
+    },
+    tileViolet: {
+        backgroundColor: "#F5F3FF",
+    },
+    tileOrange: {
+        backgroundColor: "#FFF1EC",
+    },
+    tileRose: {
+        backgroundColor: "#FFF1F2",
     },
     infoValue: {
-        fontSize: wp("6%"),
-        fontWeight: "500",
-        color: "#171717",
+        fontSize: 22,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     infoLabel: {
-        fontSize: wp("3.8%"),
-        color: "#707070",
-        marginTop: hp("1%"),
+        fontSize: 12,
+        color: COLORS.textMuted,
+        marginTop: 4,
         textAlign: "center",
     },
     // STATISTICS
     statisticsCard: {
-        marginTop: hp("4%"),
-        height: hp("16%"),
-        borderRadius: 10,
-        backgroundColor: "#FFFFFF",
+        marginTop: 16,
+        paddingVertical: 18,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         flexDirection: "row",
         justifyContent: "space-around",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        ...SHADOWS.card,
+    },
+    statIconTile: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
     },
     statItem: {
         flex: 1,
@@ -693,95 +828,107 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     questionMark: {
-        fontSize: wp("5%"),
-        color: "#D5D5D5",
-        marginTop: hp("1%"),
+        fontSize: 18,
+        fontWeight: "800",
+        color: COLORS.textLight,
+        marginTop: 8,
     },
     statLabel: {
-        fontSize: wp("3.8%"),
-        color: "#D5D5D5",
-        marginTop: hp("1%"),
+        fontSize: 12,
+        color: COLORS.textMuted,
+        fontWeight: "600",
+        marginTop: 4,
     },
     lockCircle: {
-        marginTop: hp("1%"),
+        marginTop: 8,
+        height: 24,
         alignItems: "center",
         justifyContent: "center",
     },
     // MỤC TIÊU
     goalSection: {
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("2%"),
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     goalTitle: {
-        fontSize: wp("4.8%"),
-        fontWeight: "500",
-        color: "#6686A1",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginBottom: 14,
     },
     goalItem: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: hp("2.8%"),
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
     },
     goalCircle: {
-        width: wp("18%"),
-        height: wp("18%"),
-        borderRadius: wp("9%"),
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         borderWidth: 4,
         justifyContent: "center",
         alignItems: "center",
     },
     redCircle: {
-        borderColor: "#FFB4B4",
+        borderColor: "#FECACA",
+        backgroundColor: "#FEF2F2",
     },
     greenCircle: {
-        borderColor: "#40BEB2",
+        borderColor: COLORS.accentGreen,
+        backgroundColor: "#ECFDF5",
     },
     orangeCircle: {
-        borderColor: "#FFD28A",
+        borderColor: "#FCD34D",
+        backgroundColor: "#FFF7ED",
     },
     redText: {
-        color: "#FF4D4D",
-        fontSize: wp("4.5%"),
-        fontWeight: "600",
+        color: COLORS.accentRed,
+        fontSize: 14,
+        fontWeight: "800",
     },
     greenText: {
-        color: "#35B5AA",
-        fontSize: wp("4.5%"),
-        fontWeight: "600",
+        color: COLORS.accentGreen,
+        fontSize: 14,
+        fontWeight: "800",
     },
     orangeText: {
-        color: "#F6B34E",
-        fontSize: wp("4.5%"),
-        fontWeight: "600",
+        color: COLORS.accentGold,
+        fontSize: 14,
+        fontWeight: "800",
     },
     goalContent: {
-        marginLeft: wp("4%"),
+        marginLeft: 14,
         flex: 1,
     },
     goalName: {
-        fontSize: wp("4.5%"),
-        fontWeight: "700",
-        color: "#222222",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     goalDescription: {
-        fontSize: wp("4.2%"),
-        color: "#6686A1",
-        marginTop: hp("0.5%"),
+        fontSize: 12.5,
+        color: COLORS.textMuted,
+        marginTop: 3,
     },
     // ===============================
     // TẬP LUYỆN CÁC NHÓM CƠ
     // ===============================
 
     muscleSection: {
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("1%"),
+        marginTop: 22,
     },
     muscleTitle: {
-        fontSize: wp("5%"),
-        color: "#526F87",
-        fontWeight: "500",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        color: COLORS.textPrimary,
+        fontWeight: "800",
+        marginBottom: 14,
     },
     bodyContainer: {
         height: hp("70%"),
@@ -830,7 +977,9 @@ const styles = StyleSheet.create({
         zIndex: 4,
     },
     muscleLabel: {
-        backgroundColor: "#EDF1F5",
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         borderRadius: 14,
         paddingHorizontal: wp("3%"),
         paddingVertical: hp("1.2%"),
@@ -839,7 +988,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     muscleLabelSmall: {
-        backgroundColor: "#EDF1F5",
+        backgroundColor: COLORS.surfaceTeal,
         borderRadius: 12,
         paddingHorizontal: wp("2.5%"),
         paddingVertical: hp("0.8%"),
@@ -850,7 +999,7 @@ const styles = StyleSheet.create({
 
     muscleLabelText: {
         fontSize: wp("3.1%"),
-        color: "#202020",
+        color: COLORS.textSecondary,
         lineHeight: hp("2.1%"),
     },
     expandButton: {
@@ -864,10 +1013,11 @@ const styles = StyleSheet.create({
         ],
         width: wp("13%"),
         height: wp("13%"),
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: "#83D6D5",
-        backgroundColor: "#F2FFFF",
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: COLORS.borderFocus,
+        backgroundColor: COLORS.white,
+        ...SHADOWS.card,
         alignItems: "center",
         justifyContent: "center",
         zIndex: 10,
@@ -877,35 +1027,39 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: wp("2%"),
+        padding: 14,
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     switchTitle: {
-        fontSize: wp("5%"),
-        color: "#222222",
-        fontWeight: "500",
+        fontSize: 15,
+        color: COLORS.textPrimary,
+        fontWeight: "700",
     },
     switch: {
-        width: wp("17%"),
-        height: wp("8%"),
-        borderRadius: wp("5%"),
-        backgroundColor: "#32B8BA",
+        width: 52,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "flex-end",
         paddingHorizontal: wp("1%"),
     },
     switchCircle: {
-        width: wp("6%"),
-        height: wp("6%"),
-        borderRadius: wp("3%"),
-        backgroundColor: "#FFFFFF",
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: COLORS.white,
     },
     legend: {
-        marginTop: hp("3%"),
+        marginTop: 14,
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
-        paddingHorizontal: wp("2%"),
-        paddingBottom: hp("4%"),
+        paddingHorizontal: 4,
     },
     legendItem: {
         flexDirection: "row",
@@ -914,14 +1068,15 @@ const styles = StyleSheet.create({
         marginBottom: hp("2%"),
     },
     legendDot: {
-        width: wp("7%"),
-        height: wp("7%"),
-        borderRadius: wp("3.5%"),
-        marginRight: wp("2%"),
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        marginRight: 8,
     },
     legendText: {
-        fontSize: wp("3.5%"),
-        color: "#333333",
+        fontSize: 13,
+        color: COLORS.textSecondary,
+        fontWeight: "600",
     },
     color1: {
         backgroundColor: "#F8C28B",
@@ -937,7 +1092,7 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         flex: 1,
-        backgroundColor: "#111111",
+        backgroundColor: "#071F24",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -945,10 +1100,12 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: hp("6%"),
         right: wp("5%"),
-        width: wp("12%"),
-        height: wp("12%"),
-        borderRadius: wp("6%"),
-        backgroundColor: "#333333",
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: "rgba(255,255,255,0.16)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
         justifyContent: "center",
         alignItems: "center",
         zIndex: 10,
@@ -956,9 +1113,9 @@ const styles = StyleSheet.create({
     modalTitle: {
         position: "absolute",
         top: hp("7%"),
-        color: "#FFFFFF",
-        fontSize: wp("5%"),
-        fontWeight: "700",
+        color: COLORS.white,
+        fontSize: 18,
+        fontWeight: "800",
     },
     fullImageContainer: {
         width: "100%",
@@ -977,29 +1134,34 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: wp("5%"),
         paddingVertical: hp("1.5%"),
-        borderRadius: 25,
-        backgroundColor: "#F2FFFF",
+        borderRadius: 16,
+        backgroundColor: COLORS.white,
     },
     resetText: {
-        marginLeft: wp("2%"),
-        color: "#3DB8BA",
-        fontSize: wp("4%"),
-        fontWeight: "600",
+        marginLeft: 8,
+        color: COLORS.primary,
+        fontSize: 15,
+        fontWeight: "800",
     },
     // ===============================
     // PHÂN BỔ TẢI TRỌNG CƠ
     // ===============================
 
     distributionSection: {
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("2%"),
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     distributionTitle: {
-        fontSize: wp("5%"),
-        color: "#526F87",
-        fontWeight: "500",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        color: COLORS.textPrimary,
+        fontWeight: "800",
+        marginBottom: 8,
     },
 
     distributionChart: {
@@ -1015,20 +1177,21 @@ const styles = StyleSheet.create({
 
     chartCenterValue: {
         fontSize: wp("7%"),
-        fontWeight: "500",
-        color: "#333333",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     distributionList: {
-        marginTop: hp("1%"),
-        paddingHorizontal: wp("2%"),
+        marginTop: 8,
     },
 
     distributionItem: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: hp("1.8%"),
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
     },
 
     distributionName: {
@@ -1037,73 +1200,83 @@ const styles = StyleSheet.create({
     },
 
     distributionDot: {
-        width: wp("5%"),
-        height: wp("5%"),
-        borderRadius: wp("2.5%"),
-        marginRight: wp("3%"),
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        marginRight: 10,
     },
 
     distributionLabel: {
-        fontSize: wp("4%"),
-        color: "#333333",
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        fontWeight: "600",
     },
 
     distributionValue: {
-        fontSize: wp("4%"),
-        fontWeight: "600",
-        color: "#333333",
+        fontSize: 14,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     // ===============================
     // BÀI TẬP
     // ===============================
 
     exerciseSection: {
-        marginTop: hp("3%"),
-        backgroundColor: "#FFFFFF",
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     exerciseTitle: {
-        fontSize: wp("5%"),
-        fontWeight: "500",
-        color: "#6686A1",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginBottom: 10,
     },
 
     exerciseItem: {
         flexDirection: "row",
         alignItems: "center",
-        minHeight: hp("13%"),
-        marginBottom: hp("1%"),
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
     },
 
     exerciseImageContainer: {
-        width: wp("20%"),
-        height: hp("11%"),
+        width: 76,
+        height: 76,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
+        overflow: "hidden",
         alignItems: "center",
         justifyContent: "center",
     },
 
     exerciseImage: {
-        width: wp("19%"),
-        height: hp("10%"),
+        width: 72,
+        height: 72,
     },
 
     exerciseInfo: {
         flex: 1,
-        marginLeft: wp("3%"),
+        marginLeft: 14,
         justifyContent: "center",
     },
 
     exerciseName: {
-        fontSize: wp("4.3%"),
-        fontWeight: "500",
-        color: "#222222",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     exerciseValue: {
-        fontSize: wp("3.8%"),
-        color: "#6686A1",
-        marginTop: hp("0.7%"),
+        fontSize: 13,
+        color: COLORS.textMuted,
+        marginTop: 4,
     },
 
     // ===============================
@@ -1111,42 +1284,47 @@ const styles = StyleSheet.create({
     // ===============================
 
     actionSection: {
-        marginTop: hp("1%"),
-        paddingBottom: hp("3%"),
+        marginTop: 20,
+    },
+
+    shareReportWrap: {
+        borderRadius: 16,
+        marginBottom: 12,
+        ...SHADOWS.glow,
     },
 
     shareReportButton: {
-        height: hp("8%"),
-        borderRadius: 12,
-        backgroundColor: "#16B7BA",
+        height: 54,
+        borderRadius: 16,
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: hp("2.5%"),
+        gap: 8,
     },
 
     shareReportText: {
-        fontSize: wp("4.8%"),
-        fontWeight: "500",
-        color: "#FFFFFF",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.white,
+        letterSpacing: 0.5,
     },
 
     deleteResultButton: {
-        height: hp("8%"),
-        borderRadius: 12,
-        backgroundColor: "#FFFFFF",
+        height: 52,
+        borderRadius: 16,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: "#FECACA",
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        gap: 8,
     },
 
     deleteResultText: {
-        fontSize: wp("4.8%"),
-        fontWeight: "700",
-        color: "#16B7BA",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.accentRed,
     },
 });
 

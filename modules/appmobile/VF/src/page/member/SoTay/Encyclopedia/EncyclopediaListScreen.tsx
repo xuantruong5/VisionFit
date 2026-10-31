@@ -6,14 +6,14 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  ImageBackground,
+  Image,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../../../general/api';
-
-import ImageTextGradient from '../../../../components/ImageTextGradient';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface EncyclopediaListScreenProps {
   navigation: any;
@@ -293,34 +293,38 @@ const EncyclopediaListScreen: React.FC<EncyclopediaListScreenProps> = ({ navigat
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerIconBtn}
+          activeOpacity={0.7}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Bách khoa toàn thư</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Bách khoa toàn thư
+        </Text>
 
-        <View style={{ width: 36 }} />
+        <View style={styles.headerPlaceholder} />
       </View>
 
       {/* Thanh tìm kiếm */}
       <View style={styles.searchSection}>
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" style={styles.searchIcon} />
+          <Ionicons name="search" size={19} color={COLORS.primary} style={styles.searchIcon} />
           <TextInput
             placeholder="Tìm kiếm"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={handleSearch}
             style={styles.searchInput}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')}>
-              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -329,7 +333,9 @@ const EncyclopediaListScreen: React.FC<EncyclopediaListScreenProps> = ({ navigat
       {/* Danh sách các bài viết */}
       {loading && articles.length === 0 ? (
         <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#0D7F8D" />
+          <View style={styles.loadingIcon}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -349,17 +355,20 @@ const EncyclopediaListScreen: React.FC<EncyclopediaListScreenProps> = ({ navigat
                 })
               }
             >
-              <ImageBackground
-                source={{ uri: item.anh_bia }}
-                style={styles.articleCardImage}
-                imageStyle={styles.cardImageRadius}
-                resizeMode="cover"
-              >
-                <ImageTextGradient />
-                <View style={styles.cardContent}>
-                  <Text style={styles.articleCardTitle}>{item.tieu_de}</Text>
-                </View>
-              </ImageBackground>
+              <View style={styles.articleCardImageWrap}>
+                <Image source={{ uri: item.anh_bia }} style={styles.articleCardImage} resizeMode="cover" />
+              </View>
+              <View style={styles.cardContent}>
+                {item.chu_de ? (
+                  <View style={styles.topicPill}>
+                    <Text style={styles.topicText} numberOfLines={1}>{item.chu_de}</Text>
+                  </View>
+                ) : null}
+                <Text style={styles.articleCardTitle} numberOfLines={2}>{item.tieu_de}</Text>
+                {item.tom_tat ? (
+                  <Text style={styles.articleSummary} numberOfLines={2}>{item.tom_tat}</Text>
+                ) : null}
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -373,98 +382,133 @@ export default EncyclopediaListScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.background,
   },
   header: {
-    height: 64,
-    backgroundColor: '#FFFFFF',
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
   },
   headerIconBtn: {
-    padding: 6,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#11343A',
+    flex: 1,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  headerPlaceholder: {
+    width: 40,
   },
   searchSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   searchBox: {
-    height: 46,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 23,
+    height: 50,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8F0F1',
+    borderColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
+    ...SHADOWS.card,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: '#111827',
+    fontSize: 14,
+    color: COLORS.textPrimary,
     paddingVertical: 0,
   },
   loadingBox: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 70,
+  },
+  loadingIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
   },
   scrollContainer: {
-    paddingTop: 4,
-    paddingBottom: 40,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
   articleCard: {
-    width: '100%',
-    aspectRatio: 2.6,
-    marginBottom: 14,
+    flexDirection: 'row',
+    padding: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 12,
+    ...SHADOWS.card,
+  },
+  articleCardImageWrap: {
+    width: 92,
+    height: 92,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
+    backgroundColor: COLORS.borderLight,
+    marginRight: 12,
   },
   articleCardImage: {
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
-  },
-  cardImageRadius: {
-    borderRadius: 14,
-    resizeMode: 'cover',
   },
   cardContent: {
+    flex: 1,
     justifyContent: 'center',
-    paddingLeft: 22,
-    paddingRight: 18,
-    height: '100%',
+  },
+  topicPill: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 5,
+  },
+  topicText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#047857',
   },
   articleCardTitle: {
-    color: '#FFFFFF',
-    fontSize: 17,
+    color: COLORS.textPrimary,
+    fontSize: 14.5,
     fontWeight: '700',
-    lineHeight: 24,
-    maxWidth: '85%',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 6,
+    lineHeight: 20,
+  },
+  articleSummary: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 17,
+    marginTop: 3,
   },
 });

@@ -8,10 +8,12 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../../../general/api';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface NutritionProductListScreenProps {
   navigation: any;
@@ -224,34 +226,38 @@ const NutritionProductListScreen: React.FC<NutritionProductListScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerIconBtn}
+          activeOpacity={0.7}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>{categoryName}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {categoryName}
+        </Text>
 
-        <View style={{ width: 36 }} />
+        <View style={styles.headerPlaceholder} />
       </View>
 
       {/* Thanh tìm kiếm */}
       <View style={styles.searchSection}>
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" style={styles.searchIcon} />
+          <Ionicons name="search" size={19} color={COLORS.primary} style={styles.searchIcon} />
           <TextInput
             placeholder="Tìm kiếm"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={handleSearch}
             style={styles.searchInput}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')}>
-              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -259,8 +265,10 @@ const NutritionProductListScreen: React.FC<NutritionProductListScreenProps> = ({
 
       {/* Danh sách các sản phẩm */}
       {loading && products.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#0D7F8D" />
+        <View style={styles.loadingBox}>
+          <View style={styles.loadingIcon}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -271,7 +279,7 @@ const NutritionProductListScreen: React.FC<NutritionProductListScreenProps> = ({
           {products.map((item) => (
             <TouchableOpacity
               key={item.id}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
               style={styles.productRow}
               onPress={() =>
                 navigation.navigate('NutritionDetail', {
@@ -282,13 +290,21 @@ const NutritionProductListScreen: React.FC<NutritionProductListScreenProps> = ({
                 })
               }
             >
-              <Image
-                source={getImageSource(item)}
-                style={styles.productThumb}
-                resizeMode="contain"
-              />
-              <Text style={styles.productName}>{item.name || item.ten_san_pham}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#00C4CC" />
+              <View style={styles.thumbTile}>
+                <Image
+                  source={getImageSource(item)}
+                  style={styles.productThumb}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={2}>{item.name || item.ten_san_pham}</Text>
+                {item.description ? (
+                  <Text style={styles.productDesc} numberOfLines={2}>
+                    {item.description}
+                  </Text>
+                ) : null}
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -302,80 +318,150 @@ export default NutritionProductListScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.background,
   },
   header: {
-    height: 64,
-    backgroundColor: '#FFFFFF',
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
   },
   headerIconBtn: {
-    padding: 6,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#11343A',
+    flex: 1,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  headerPlaceholder: {
+    width: 40,
   },
   searchSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   searchBox: {
-    height: 46,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 23,
+    height: 50,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8F0F1',
+    borderColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
+    ...SHADOWS.card,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: '#111827',
+    fontSize: 14,
+    color: COLORS.textPrimary,
     paddingVertical: 0,
+  },
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 70,
+  },
+  loadingIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
   },
   scrollContainer: {
-    paddingTop: 4,
-    paddingBottom: 40,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
   productRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    padding: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 12,
+    ...SHADOWS.card,
+  },
+  thumbTile: {
+    width: 76,
+    height: 76,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
   },
   productThumb: {
-    width: 52,
-    height: 52,
-    marginRight: 16,
+    width: '100%',
+    height: '100%',
+  },
+  productInfo: {
+    flex: 1,
+    paddingRight: 8,
   },
   productName: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
+  productDesc: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+  },
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: '100%',
+    backgroundColor: '#F5F3FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  tagText: {
+    flexShrink: 1,
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#7C3AED',
+  },
+  chevronWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

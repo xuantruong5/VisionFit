@@ -9,6 +9,7 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -16,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
 
 import AppHeader from '../../components/AppHeader';
+import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 // Định nghĩa các tùy chọn
@@ -214,6 +216,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
       {/* HEADER */}
       <AppHeader
         title="Hồ Sơ & Yêu Cầu AI"
@@ -225,21 +228,30 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
         showsVerticalScrollIndicator={false}
       >
         {/* BANNER GIỚI THIỆU */}
-        <View style={styles.aiBanner}>
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.aiBanner}
+        >
+          <View style={styles.bannerCircleLg} />
+          <View style={styles.bannerCircleSm} />
           <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+            <Ionicons name="sparkles" size={16} color={COLORS.white} />
             <Text style={styles.aiBadgeText}>VisionFit AI Advisor</Text>
           </View>
           <Text style={styles.aiBannerTitle}>Thiết lập hồ sơ thể lực & dinh dưỡng</Text>
           <Text style={styles.aiBannerSubtitle}>
             Tất cả thông tin cơ thể, mục tiêu và thói quen ăn uống được gom tại đây để AI tính toán TDEE và đề xuất lộ trình tối ưu nhất.
           </Text>
-        </View>
+        </LinearGradient>
 
         {/* PHẦN 1: THÔNG TIN CƠ THỂ (GỘP GIỚI TÍNH + TUỔI + CHIỀU CAO + CÂN NẶNG) */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name="person-circle-outline" size={20} color="#0D7F8D" />
+            <View style={[styles.sectionIconTile, styles.iconTileTeal]}>
+              <Ionicons name="person-circle-outline" size={20} color={COLORS.primary} />
+            </View>
             <Text style={styles.sectionTitle}>1. Thông tin cơ thể & Sinh hoạt</Text>
           </View>
 
@@ -253,7 +265,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
               <Ionicons
                 name="male"
                 size={18}
-                color={gender === 'male' ? '#FFFFFF' : '#0D7F8D'}
+                color={gender === 'male' ? COLORS.white : COLORS.primary}
               />
               <Text style={[styles.genderText, gender === 'male' && styles.genderTextActive]}>
                 Nam
@@ -267,7 +279,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
               <Ionicons
                 name="female"
                 size={18}
-                color={gender === 'female' ? '#FFFFFF' : '#0D7F8D'}
+                color={gender === 'female' ? COLORS.white : COLORS.primary}
               />
               <Text style={[styles.genderText, gender === 'female' && styles.genderTextActive]}>
                 Nữ
@@ -283,7 +295,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                 style={styles.metricInput}
                 keyboardType="numeric"
                 placeholder="-- (năm)"
-                placeholderTextColor="#A5C4C8"
+                placeholderTextColor={COLORS.textLight}
                 value={age}
                 onChangeText={setAge}
                 maxLength={3}
@@ -295,7 +307,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                 style={styles.metricInput}
                 keyboardType="numeric"
                 placeholder="-- (cm)"
-                placeholderTextColor="#A5C4C8"
+                placeholderTextColor={COLORS.textLight}
                 value={height}
                 onChangeText={setHeight}
                 maxLength={3}
@@ -307,7 +319,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                 style={styles.metricInput}
                 keyboardType="numeric"
                 placeholder="-- (kg)"
-                placeholderTextColor="#A5C4C8"
+                placeholderTextColor={COLORS.textLight}
                 value={weight}
                 onChangeText={setWeight}
                 maxLength={3}
@@ -329,7 +341,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
               <Ionicons
                 name={activityLevel === act.id ? 'radio-button-on' : 'radio-button-off'}
                 size={18}
-                color={activityLevel === act.id ? '#0D7F8D' : '#8FA4A7'}
+                color={activityLevel === act.id ? COLORS.primary : COLORS.textLight}
               />
               <View style={{ marginLeft: 10, flex: 1 }}>
                 <Text style={[styles.optionTitle, activityLevel === act.id && styles.optionTitleActive]}>
@@ -344,7 +356,9 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
         {/* PHẦN 2: MỤC TIÊU & ĐỊA ĐIỂM */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name="flag-outline" size={20} color="#0D7F8D" />
+            <View style={[styles.sectionIconTile, styles.iconTileOrange]}>
+              <Ionicons name="flag-outline" size={20} color={COLORS.accentOrange} />
+            </View>
             <Text style={styles.sectionTitle}>2. Mục tiêu & Địa điểm tập</Text>
           </View>
 
@@ -359,7 +373,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                 <Ionicons
                   name={g.icon as any}
                   size={24}
-                  color={goal === g.id ? '#0D7F8D' : '#71949A'}
+                  color={goal === g.id ? COLORS.primary : COLORS.textMuted}
                 />
                 <Text style={[styles.gridCardText, goal === g.id && styles.gridCardTextActive]}>
                   {g.title}
@@ -378,13 +392,13 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
               <Ionicons
                 name={loc.icon as any}
                 size={20}
-                color={location === loc.id ? '#0D7F8D' : '#8FA4A7'}
+                color={location === loc.id ? COLORS.primary : COLORS.textLight}
               />
               <Text style={[styles.optionTitle, { marginLeft: 10, flex: 1 }, location === loc.id && styles.optionTitleActive]}>
                 {loc.title}
               </Text>
               {location === loc.id && (
-                <Ionicons name="checkmark-circle" size={20} color="#0D7F8D" />
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
               )}
             </TouchableOpacity>
           ))}
@@ -393,7 +407,9 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
         {/* PHẦN 3: SỞ THÍCH ĂN UỐNG & DỊ ỨNG */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name="restaurant-outline" size={20} color="#0D7F8D" />
+            <View style={[styles.sectionIconTile, styles.iconTileGreen]}>
+              <Ionicons name="restaurant-outline" size={20} color={COLORS.accentGreen} />
+            </View>
             <Text style={styles.sectionTitle}>3. Chế độ dinh dưỡng & Dị ứng</Text>
           </View>
 
@@ -423,7 +439,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                   <Ionicons
                     name={selected ? 'close-circle' : 'add-outline'}
                     size={15}
-                    color={selected ? '#E63946' : '#557A80'}
+                    color={selected ? COLORS.accentRed : COLORS.textMuted}
                     style={{ marginRight: 4 }}
                   />
                   <Text style={[styles.tagText, selected && styles.tagTextDanger]}>{al}</Text>
@@ -436,7 +452,9 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
         {/* PHẦN 4: NGÂN SÁCH & YÊU CẦU ĐẶC BIỆT */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name="cash-outline" size={20} color="#0D7F8D" />
+            <View style={[styles.sectionIconTile, styles.iconTileGold]}>
+              <Ionicons name="cash-outline" size={20} color={COLORS.accentGold} />
+            </View>
             <Text style={styles.sectionTitle}>4. Ngân sách & Ghi chú tự do</Text>
           </View>
 
@@ -450,7 +468,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
               <Ionicons
                 name={budget === bg.id ? 'radio-button-on' : 'radio-button-off'}
                 size={18}
-                color={budget === bg.id ? '#0D7F8D' : '#8FA4A7'}
+                color={budget === bg.id ? COLORS.primary : COLORS.textLight}
               />
               <View style={{ marginLeft: 10, flex: 1 }}>
                 <Text style={[styles.optionTitle, budget === bg.id && styles.optionTitleActive]}>
@@ -467,7 +485,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           <TextInput
             style={styles.notesInput}
             placeholder="Ví dụ: Tôi bị đau khớp gối nhẹ, không ăn được sữa bò, thời gian tập chỉ rảnh buổi tối sau 8h..."
-            placeholderTextColor="#9EB3B6"
+            placeholderTextColor={COLORS.textLight}
             multiline
             numberOfLines={4}
             value={specialNotes}
@@ -477,12 +495,19 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
 
         {/* NÚT SUBMIT / TIẾP TỤC */}
         <TouchableOpacity
-          style={styles.submitBtn}
+          style={styles.submitBtnWrap}
           activeOpacity={0.88}
           onPress={handleStartAnalysis}
         >
-          <Ionicons name="sparkles" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-          <Text style={styles.submitBtnText}>Gửi cho AI Phân Tích & Đề Xuất</Text>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.submitBtn}
+          >
+            <Ionicons name="sparkles" size={20} color={COLORS.white} style={styles.submitIcon} />
+            <Text style={styles.submitBtnText}>Gửi cho AI Phân Tích & Đề Xuất</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
 
@@ -492,7 +517,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           <View style={styles.modalContent}>
             {isAnalyzing ? (
               <View style={styles.modalLoadingBox}>
-                <ActivityIndicator size="large" color="#0D7F8D" />
+                <ActivityIndicator size="large" color={COLORS.primary} />
                 <Text style={styles.modalLoadingTitle}>VisionFit AI Đang Phân Tích...</Text>
                 <Text style={styles.modalLoadingSub}>
                   Đang tính toán BMR, TDEE, phân bổ lượng Macro và lọc các bài tập phù hợp với thể trạng của bạn...
@@ -501,9 +526,14 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
             ) : (
               <View>
                 <View style={styles.modalHeader}>
-                  <View style={styles.successIconBox}>
-                    <Ionicons name="checkmark-done" size={26} color="#0D7F8D" />
-                  </View>
+                  <LinearGradient
+                    colors={[COLORS.primary, COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.successIconBox}
+                  >
+                    <Ionicons name="checkmark-done" size={26} color={COLORS.white} />
+                  </LinearGradient>
                   <Text style={styles.modalTitle}>Kết Quả AI Đề Xuất Sơ Bộ</Text>
                 </View>
 
@@ -515,7 +545,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                   </View>
                   <View style={styles.calcRow}>
                     <Text style={styles.calcLabel}>Calo mục tiêu đề xuất:</Text>
-                    <Text style={[styles.calcValue, { color: '#0D7F8D', fontWeight: 'bold' }]}>
+                    <Text style={[styles.calcValue, { color: COLORS.primary, fontWeight: 'bold' }]}>
                       {analysisResult?.targetKcal} kcal/ngày
                     </Text>
                   </View>
@@ -558,7 +588,7 @@ export default AiConsultationScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F9FA',
+    backgroundColor: COLORS.background,
   },
   header: {
     height: 56,
@@ -566,9 +596,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2EEF0',
+    borderBottomColor: COLORS.borderLight,
   },
   backBtn: {
     width: 40,
@@ -579,72 +609,115 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#0F3035',
+    color: COLORS.textPrimary,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
+    paddingBottom: 24,
   },
   aiBanner: {
-    backgroundColor: '#0D7F8D',
-    borderRadius: 16,
-    padding: 18,
+    borderRadius: 22,
+    padding: 20,
     marginBottom: 16,
-    elevation: 3,
+    overflow: 'hidden',
+    ...SHADOWS.glow,
+  },
+  bannerCircleLg: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -60,
+    right: -50,
+  },
+  bannerCircleSm: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    bottom: -40,
+    left: -20,
   },
   aiBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 13,
+    marginBottom: 12,
   },
   aiBadgeText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     marginLeft: 6,
+    letterSpacing: 0.3,
   },
   aiBannerTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '800',
+    color: COLORS.white,
     marginBottom: 6,
+    lineHeight: 25,
   },
   aiBannerSubtitle: {
     fontSize: 13,
-    color: '#D8F3F7',
-    lineHeight: 18,
+    color: 'rgba(255,255,255,0.82)',
+    lineHeight: 19,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E3EFF0',
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F6F7',
-    paddingBottom: 10,
+    borderBottomColor: COLORS.borderLight,
+    paddingBottom: 12,
+  },
+  sectionIconTile: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconTileTeal: {
+    backgroundColor: COLORS.surfaceTeal,
+  },
+  iconTileOrange: {
+    backgroundColor: '#FFF1EC',
+  },
+  iconTileGreen: {
+    backgroundColor: '#ECFDF5',
+  },
+  iconTileGold: {
+    backgroundColor: '#FFF7ED',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0D7F8D',
-    marginLeft: 8,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginLeft: 12,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#344E52',
+    fontWeight: '700',
+    color: COLORS.textSecondary,
     marginBottom: 8,
   },
   genderRow: {
@@ -654,27 +727,28 @@ const styles = StyleSheet.create({
   },
   genderBtn: {
     flex: 1,
-    height: 42,
-    borderRadius: 10,
+    height: 46,
+    borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#C6E3E6',
+    borderColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FAFDFD',
+    backgroundColor: COLORS.background,
   },
   genderBtnActive: {
-    backgroundColor: '#0D7F8D',
-    borderColor: '#0D7F8D',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    ...SHADOWS.glow,
   },
   genderText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#0D7F8D',
+    fontWeight: '700',
+    color: COLORS.primary,
     marginLeft: 6,
   },
   genderTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
   metricsRow: {
     flexDirection: 'row',
@@ -682,48 +756,50 @@ const styles = StyleSheet.create({
   },
   metricInputBox: {
     flex: 1,
-    backgroundColor: '#F5FAFA',
-    borderRadius: 10,
-    padding: 8,
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
     borderWidth: 1,
-    borderColor: '#D8EBEC',
+    borderColor: COLORS.border,
   },
   metricLabel: {
     fontSize: 11,
-    color: '#65868B',
+    fontWeight: '600',
+    color: COLORS.textMuted,
     marginBottom: 2,
   },
   metricInput: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#0F3035',
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     paddingVertical: 2,
   },
   selectOptionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E0EDED',
-    backgroundColor: '#FFFFFF',
+    padding: 13,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
     marginBottom: 8,
   },
   selectOptionActive: {
-    borderColor: '#0D7F8D',
-    backgroundColor: '#F0F9FA',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surfaceTeal,
   },
   optionTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#2A464A',
+    fontWeight: '700',
+    color: COLORS.textSecondary,
   },
   optionTitleActive: {
-    color: '#0D7F8D',
+    color: COLORS.primary,
   },
   optionDesc: {
     fontSize: 12,
-    color: '#71949A',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   gridContainer: {
@@ -733,27 +809,28 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     width: '48%',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E0EDED',
-    backgroundColor: '#FAFDFD',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
     alignItems: 'center',
   },
   gridCardActive: {
-    borderColor: '#0D7F8D',
-    backgroundColor: '#EBF7F9',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surfaceTeal,
   },
   gridCardText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4B6B70',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 6,
   },
   gridCardTextActive: {
-    color: '#0D7F8D',
-    fontWeight: '700',
+    color: COLORS.primary,
+    fontWeight: '800',
   },
   tagWrap: {
     flexDirection: 'row',
@@ -761,76 +838,77 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagItem: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#D0E5E7',
-    backgroundColor: '#FAFDFD',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
   },
   tagItemActive: {
-    borderColor: '#0D7F8D',
-    backgroundColor: '#E7F6F8',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surfaceTeal,
   },
   tagItemDanger: {
     borderColor: '#F8B4B9',
-    backgroundColor: '#FDECEE',
+    backgroundColor: '#FEF2F2',
   },
   tagText: {
     fontSize: 13,
-    color: '#416368',
+    color: COLORS.textSecondary,
   },
   tagTextActive: {
-    color: '#0D7F8D',
-    fontWeight: '600',
+    color: COLORS.primary,
+    fontWeight: '700',
   },
   tagTextDanger: {
-    color: '#E63946',
-    fontWeight: '600',
+    color: COLORS.accentRed,
+    fontWeight: '700',
   },
   notesInput: {
-    backgroundColor: '#F5FAFA',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#D8EBEC',
-    borderRadius: 10,
+    borderColor: COLORS.border,
+    borderRadius: 14,
     padding: 12,
     fontSize: 13,
-    color: '#13353A',
+    color: COLORS.textPrimary,
     textAlignVertical: 'top',
-    minHeight: 85,
+    minHeight: 90,
+  },
+  submitBtnWrap: {
+    borderRadius: 16,
+    marginTop: 4,
+    ...SHADOWS.glow,
   },
   submitBtn: {
-    backgroundColor: '#0D7F8D',
-    borderRadius: 12,
-    height: 52,
+    borderRadius: 16,
+    height: 54,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
-    elevation: 4,
-    shadowColor: '#0D7F8D',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
+  },
+  submitIcon: {
+    marginRight: 8,
   },
   submitBtnText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 20, 25, 0.65)',
+    backgroundColor: 'rgba(5, 31, 38, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
     padding: 22,
     elevation: 10,
   },
@@ -840,13 +918,13 @@ const styles = StyleSheet.create({
   },
   modalLoadingTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0D7F8D',
+    fontWeight: '800',
+    color: COLORS.primary,
     marginTop: 14,
   },
   modalLoadingSub: {
     fontSize: 12,
-    color: '#65868B',
+    color: COLORS.textMuted,
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 18,
@@ -856,25 +934,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   successIconBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#E7F6F8',
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   modalTitle: {
     fontSize: 17,
-    fontWeight: 'bold',
-    color: '#0F3035',
+    fontWeight: '800',
+    color: COLORS.textPrimary,
   },
   calcBox: {
-    backgroundColor: '#F4FAFA',
-    borderRadius: 12,
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#DCEEEE',
+    borderColor: COLORS.border,
     marginBottom: 14,
   },
   calcRow: {
@@ -884,12 +961,12 @@ const styles = StyleSheet.create({
   },
   calcLabel: {
     fontSize: 13,
-    color: '#4B6B70',
+    color: COLORS.textSecondary,
   },
   calcValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#13353A',
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   macroSplitRow: {
     flexDirection: 'row',
@@ -897,7 +974,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#E2EFF0',
+    borderTopColor: COLORS.border,
   },
   macroBadge: {
     alignItems: 'center',
@@ -905,36 +982,36 @@ const styles = StyleSheet.create({
   },
   macroBadgeTitle: {
     fontSize: 11,
-    color: '#6C8C91',
+    color: COLORS.textMuted,
   },
   macroBadgeVal: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0D7F8D',
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.primary,
     marginTop: 2,
   },
   resultSuggestionTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#28464A',
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   resultSuggestionText: {
     fontSize: 13,
-    color: '#496B70',
+    color: COLORS.textSecondary,
     lineHeight: 19,
     marginBottom: 18,
   },
   closeModalBtn: {
-    backgroundColor: '#0D7F8D',
-    borderRadius: 10,
-    height: 44,
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeModalBtnText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: COLORS.white,
+    fontWeight: '800',
     fontSize: 14,
   },
 });

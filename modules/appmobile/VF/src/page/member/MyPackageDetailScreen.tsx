@@ -5,17 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
 
-const C = {
-  primary: '#0D7F8D',
-  dark: '#075865',
-  bg: '#F4FAFB',
-  white: '#FFFFFF',
-  text: '#16383E',
-  muted: '#78949A',
-  border: '#DFEAEC',
-  soft: '#E7F5F6',
-};
 
 const MyPackageDetailScreen = ({ navigation, route }: any) => {
   const registration = route?.params?.registration;
@@ -43,17 +34,28 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
         title="Chi tiết gói tập"
         onBack={() => navigation.goBack()}
         rightComponent={
-          <Ionicons name="document-text-outline" size={22} color={C.primary} />
+          <View style={s.headerIcon}>
+            <Ionicons name="document-text-outline" size={20} color={COLORS.primary} />
+          </View>
         }
       />
 
       {!pkg ? (
         <View style={s.empty}>
-          <Ionicons name="alert-circle-outline" size={45} color={C.muted} />
+          <View style={s.emptyIcon}>
+            <Ionicons name="alert-circle-outline" size={34} color={COLORS.accentOrange} />
+          </View>
           <Text style={s.emptyTitle}>Không tìm thấy gói tập</Text>
           <Text style={s.subText}>Vui lòng quay lại danh sách gói tập.</Text>
 
-          <TouchableOpacity onPress={() => navigation.navigate('MyPackages')}>
+          <TouchableOpacity
+            onPress={() => {
+              const routeNames = navigation.getState()?.routeNames || [];
+              const target = routeNames.includes('MyPackages') ? 'MyPackages' : routeNames.includes('MyPackagesScreen') ? 'MyPackagesScreen' : 'MyPackages';
+              navigation.navigate(target);
+            }}
+            style={s.linkBtn}
+          >
             <Text style={s.linkText}>Xem gói tập của tôi</Text>
           </TouchableOpacity>
         </View>
@@ -62,9 +64,11 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
           <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
             {/* Banner */}
-            <LinearGradient colors={['#087F8F', '#064E60']} style={s.hero}>
+            <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+              <View style={s.heroDecor} />
+              <View style={s.heroDecorSmall} />
               <View style={s.heroIcon}>
-                <Ionicons name="barbell-outline" size={26} color={C.white} />
+                <Ionicons name="barbell-outline" size={22} color={COLORS.white} />
               </View>
 
               <Text style={s.heroLabel}>VISIONFIT MEMBERSHIP</Text>
@@ -74,7 +78,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
               </Text>
 
               <View style={s.heroBottom}>
-                <Ionicons name="time-outline" size={17} color="#D7F5F5" />
+                <Ionicons name="time-outline" size={15} color={COLORS.white} />
                 <Text style={s.heroBottomText}>Thời hạn {pkg.thoi_han} ngày</Text>
               </View>
             </LinearGradient>
@@ -82,7 +86,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
             {/* Trạng thái */}
             <View style={s.statusBox}>
               <View style={s.statusIcon}>
-                <Ionicons name="time-outline" size={24} color={C.primary} />
+                <Ionicons name="time-outline" size={20} color={COLORS.accentGold} />
               </View>
 
               <View style={s.flex}>
@@ -98,7 +102,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
             {/* Thông tin gói */}
             <Text style={s.sectionTitle}>Thông tin gói tập</Text>
 
-            <View style={s.card}>
+            <View style={[s.card, s.cardList]}>
               <View style={s.infoRow}>
                 <Text style={s.infoLabel}>Tên gói</Text>
                 <Text style={s.infoValue}>{pkg.ten_goi}</Text>
@@ -132,11 +136,13 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
             {/* Quyền lợi */}
             <Text style={s.sectionTitle}>Quyền lợi gói tập</Text>
 
-            <View style={s.card}>
+            <View style={[s.card, benefits.length > 0 && s.cardList]}>
               {benefits.length > 0 ? (
                 benefits.map((benefit, index) => (
                   <View key={index} style={s.benefitRow}>
-                    <Ionicons name="checkmark-circle" size={20} color={C.primary} />
+                    <View style={s.benefitIcon}>
+                      <Ionicons name="checkmark" size={13} color={COLORS.white} />
+                    </View>
                     <Text style={s.benefitText}>{benefit}</Text>
                   </View>
                 ))
@@ -152,7 +158,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
               {pt ? (
                 <View style={s.trainerRow}>
                   <View style={s.trainerAvatar}>
-                    <Ionicons name="person-outline" size={28} color={C.primary} />
+                    <Ionicons name="person" size={24} color={COLORS.primary} />
                   </View>
 
                   <View style={s.flex}>
@@ -162,11 +168,13 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
                     </Text>
                   </View>
 
-                  <Ionicons name="checkmark-circle" size={23} color={C.primary} />
+                  <Ionicons name="checkmark-circle" size={23} color={COLORS.primary} />
                 </View>
               ) : (
                 <View style={s.noTrainer}>
-                  <Ionicons name="people-outline" size={28} color={C.muted} />
+                  <View style={s.noTrainerIcon}>
+                    <Ionicons name="people-outline" size={24} color={COLORS.textMuted} />
+                  </View>
                   <Text style={s.subText}>Không có huấn luyện viên được chọn</Text>
                 </View>
               )}
@@ -175,7 +183,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
             {/* Thông tin đăng ký */}
             <Text style={s.sectionTitle}>Thông tin đăng ký</Text>
 
-            <View style={s.card}>
+            <View style={[s.card, s.cardList]}>
               <View style={s.infoRow}>
                 <Text style={s.infoLabel}>Mã đăng ký Demo</Text>
                 <Text style={s.infoValue}>{registration.id || '—'}</Text>
@@ -197,14 +205,16 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
 
               <View style={s.infoRow}>
                 <Text style={s.infoLabel}>Trạng thái</Text>
-                <Text style={s.pendingText}>Chờ thanh toán</Text>
+                <View style={s.pendingBadge}>
+                  <Text style={s.pendingText}>Chờ thanh toán</Text>
+                </View>
               </View>
             </View>
 
             {/* Thanh toán */}
             <Text style={s.sectionTitle}>Chi tiết chi phí</Text>
 
-            <View style={s.card}>
+            <View style={[s.card, s.cardList]}>
               <View style={s.infoRow}>
                 <Text style={s.infoLabel}>Giá gói tập</Text>
                 <Text style={s.infoValue}>
@@ -219,7 +229,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
                 </Text>
               </View>
 
-              <View style={s.divider} />
+              <View style={s.dashedDivider} />
 
               <View style={s.totalRow}>
                 <Text style={s.totalLabel}>Tổng tạm tính</Text>
@@ -237,7 +247,7 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
 
             {/* Thông báo */}
             <View style={s.notice}>
-              <Ionicons name="information-circle-outline" size={22} color={C.primary} />
+              <Ionicons name="information-circle" size={20} color={COLORS.primary} />
               <Text style={s.noticeText}>
                 Đây là thông tin đăng ký mô phỏng được lưu trên thiết bị.
                 Gói tập chưa được kích hoạt và chưa phát sinh thanh toán thực tế.
@@ -248,11 +258,22 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
           {/* Footer */}
           <View style={s.footer}>
             <TouchableOpacity
-              style={s.backListButton}
-              onPress={() => navigation.navigate('MyPackages')}
+              activeOpacity={0.85}
+              onPress={() => {
+                const routeNames = navigation.getState()?.routeNames || [];
+                const target = routeNames.includes('MyPackages') ? 'MyPackages' : routeNames.includes('MyPackagesScreen') ? 'MyPackagesScreen' : 'MyPackages';
+                navigation.navigate(target);
+              }}
             >
-              <Ionicons name="albums-outline" size={21} color={C.white} />
-              <Text style={s.backListText}>Quay lại gói tập của tôi</Text>
+              <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={s.backListButton}
+              >
+                <Ionicons name="albums-outline" size={20} color={COLORS.white} />
+                <Text style={s.backListText}>Quay lại gói tập của tôi</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </>
@@ -264,180 +285,232 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: COLORS.background,
   },
   flex: {
     flex: 1,
   },
-  header: {
-    height: 62,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: C.white,
+  headerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: C.text,
-  },
   content: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 25,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 14,
+    gap: 10,
     padding: 20,
+  },
+  emptyIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: '#FFF1EC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   emptyTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: C.text,
+    color: COLORS.textPrimary,
+  },
+  linkBtn: {
+    marginTop: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
   },
   linkText: {
     fontSize: 13,
     fontWeight: '800',
-    color: C.primary,
+    color: COLORS.primary,
   },
   subText: {
     fontSize: 12,
-    lineHeight: 19,
-    color: C.muted,
+    lineHeight: 17,
+    color: COLORS.textMuted,
   },
   hero: {
-    borderRadius: 23,
-    padding: 23,
-    marginBottom: 17,
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 16,
+    overflow: 'hidden',
+    ...SHADOWS.glow,
+  },
+  heroDecor: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -70,
+    right: -50,
+  },
+  heroDecorSmall: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    bottom: -40,
+    left: -20,
   },
   heroIcon: {
-    width: 47,
-    height: 47,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   heroLabel: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 1.3,
-    color: '#D4F9FA',
-    marginBottom: 8,
+    color: 'rgba(255,255,255,0.75)',
+    marginBottom: 6,
   },
   heroTitle: {
-    fontSize: 25,
-    lineHeight: 32,
+    fontSize: 23,
+    lineHeight: 30,
     fontWeight: '900',
-    color: C.white,
+    color: COLORS.white,
   },
   heroDesc: {
-    fontSize: 12,
-    lineHeight: 20,
-    color: '#D2F0F2',
-    marginTop: 10,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 6,
   },
   heroBottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginTop: 20,
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   heroBottomText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#D7F5F5',
+    color: COLORS.white,
   },
   statusBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     padding: 14,
-    backgroundColor: C.soft,
-    borderRadius: 16,
-    marginBottom: 25,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 18,
+    marginBottom: 24,
+    ...SHADOWS.card,
   },
   statusIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 13,
-    backgroundColor: C.white,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
   },
   statusTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 4,
+    color: COLORS.textPrimary,
+    marginBottom: 2,
   },
   statusBadge: {
-    backgroundColor: C.white,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 9,
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
   statusBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
-    color: C.primary,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    color: COLORS.primary,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 13,
+    color: COLORS.textPrimary,
+    marginBottom: 12,
   },
   card: {
-    backgroundColor: C.white,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 19,
-    padding: 17,
+    borderColor: COLORS.border,
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 24,
+    ...SHADOWS.card,
+  },
+  cardList: {
+    paddingBottom: 4,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   infoLabel: {
     flex: 1,
-    fontSize: 12,
-    color: C.muted,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   infoValue: {
     flexShrink: 1,
-    fontSize: 12,
-    fontWeight: '800',
-    color: C.text,
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 12,
+  },
+  benefitIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.accentGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
   },
   benefitText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 20,
-    color: C.text,
+    color: COLORS.textSecondary,
   },
   trainerRow: {
     flexDirection: 'row',
@@ -445,87 +518,126 @@ const s = StyleSheet.create({
     gap: 12,
   },
   trainerAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: C.soft,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 2,
+    borderColor: COLORS.borderFocus,
     justifyContent: 'center',
     alignItems: 'center',
   },
   trainerName: {
     fontSize: 15,
     fontWeight: '800',
-    color: C.text,
-    marginBottom: 5,
+    color: COLORS.textPrimary,
+    marginBottom: 2,
   },
   noTrainer: {
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
+    gap: 8,
+    paddingVertical: 8,
+  },
+  noTrainerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: '#FFF7ED',
   },
   pendingText: {
     fontSize: 12,
     fontWeight: '800',
-    color: C.primary,
+    color: COLORS.accentGold,
   },
   divider: {
     height: 1,
-    backgroundColor: C.border,
-    marginVertical: 17,
+    backgroundColor: COLORS.borderLight,
+    marginVertical: 14,
+  },
+  dashedDivider: {
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: COLORS.border,
+    marginTop: 2,
+    marginBottom: 14,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
   },
   totalLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
-    color: C.text,
+    color: COLORS.textPrimary,
   },
   totalValue: {
-    fontSize: 23,
+    fontSize: 22,
     fontWeight: '900',
-    color: C.primary,
+    color: COLORS.primary,
   },
   priceNote: {
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 18,
     color: '#B47A30',
-    marginTop: 13,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    padding: 10,
+    overflow: 'hidden',
+    marginBottom: 12,
   },
   notice: {
     flexDirection: 'row',
     gap: 10,
-    padding: 15,
-    borderRadius: 14,
-    backgroundColor: C.soft,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
   },
   noticeText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 20,
-    color: C.primary,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: COLORS.primaryDark,
   },
   footer: {
-    backgroundColor: C.white,
-    paddingHorizontal: 19,
-    paddingVertical: 15,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: C.border,
+    borderTopColor: COLORS.borderLight,
+    ...SHADOWS.card,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   backListButton: {
-    height: 54,
-    borderRadius: 15,
-    backgroundColor: C.primary,
+    height: 52,
+    borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
   },
   backListText: {
-    color: C.white,
+    color: COLORS.white,
     fontSize: 15,
     fontWeight: '800',
   },

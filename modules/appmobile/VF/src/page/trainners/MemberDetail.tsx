@@ -1,683 +1,549 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-} from "react-native";
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS, SHADOWS } from '../../general/theme';
+
+// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
+const DEFAULT_MEMBER = {
+  name: 'Nguyễn Văn An',
+  email: 'an.nguyen@email.com',
+  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+  status: 'Đang tập',
+  age: 25,
+  height: 172,
+  weight: 68,
+  bmi: 23.0,
+  goal: 'Giảm cân',
+  startWeight: 74,
+  targetWeight: 62,
+  sessions: 18,
+  totalSessions: 24,
+  calories: '8,450',
+  trainingTime: '14h 30m',
+  package: 'Gói PT 24 buổi',
+  expiry: '15/12/2026',
+};
+
+const RECENT_SESSIONS = [
+  { date: '30', month: 'Th10', title: 'Strength Training', duration: '60 phút', calories: '520 kcal' },
+  { date: '28', month: 'Th10', title: 'Cardio HIIT', duration: '45 phút', calories: '410 kcal' },
+  { date: '26', month: 'Th10', title: 'Full Body', duration: '60 phút', calories: '580 kcal' },
+];
 
 const MemberDetail = ({ navigation, route }: any) => {
-  const member = route?.params?.member || {
-    name: "Nguyễn Văn An",
-    email: "an.nguyen@email.com",
-    age: 25,
-    height: 172,
-    weight: 68,
-    bmi: 23.0,
-    goal: "Giảm cân",
-    targetWeight: 62,
-    sessions: 18,
-    totalSessions: 24,
-    calories: "8,450",
-    trainingTime: "14h 30m",
-  };
+  const member = { ...DEFAULT_MEMBER, ...route?.params?.member };
+  const progress = Math.round((member.sessions / member.totalSessions) * 100);
+  const paused = member.status === 'Tạm nghỉ';
 
-  const sessionHistory = [
-    {
-      date: "05/09",
-      title: "Strength Training",
-      duration: "60 phút",
-      status: "Hoàn thành",
-    },
-    {
-      date: "03/09",
-      title: "Cardio",
-      duration: "45 phút",
-      status: "Hoàn thành",
-    },
-    {
-      date: "01/09",
-      title: "Full Body",
-      duration: "60 phút",
-      status: "Hoàn thành",
-    },
-    {
-      date: "29/08",
-      title: "Upper Body",
-      duration: "50 phút",
-      status: "Hoàn thành",
-    },
+  const bodyStats = [
+    { icon: 'calendar-outline', value: member.age, unit: 'tuổi' },
+    { icon: 'resize-outline', value: member.height, unit: 'cm' },
+    { icon: 'speedometer-outline', value: member.weight, unit: 'kg' },
+    { icon: 'pulse-outline', value: member.bmi, unit: 'BMI' },
   ];
 
-  const progress =
-    (member.sessions / member.totalSessions) * 100;
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
 
-        <Text style={styles.headerTitle}>Chi tiết hội viên</Text>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* 1. HEADER GRADIENT */}
+        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+          <View style={styles.circleLg} />
 
-        <TouchableOpacity style={styles.moreButton}>
-          <Text style={styles.moreText}>⋮</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* PROFILE */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {member.name.charAt(0)}
-            </Text>
+          <View style={styles.navRow}>
+            <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7} onPress={() => navigation?.goBack?.()}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
+            <Text style={styles.navTitle}>Chi tiết học viên</Text>
+            <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.white} />
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.memberName}>{member.name}</Text>
-
-          <Text style={styles.memberEmail}>
-            {member.email}
-          </Text>
-
-          <View style={styles.statusBadge}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>
-              Đang tập luyện
-            </Text>
-          </View>
-        </View>
-
-        {/* BASIC INFORMATION */}
-        <Text style={styles.sectionTitle}>
-          THÔNG TIN CƠ BẢN
-        </Text>
-
-        <View style={styles.grid}>
-          <InfoCard
-            value={member.age}
-            label="Tuổi"
-          />
-
-          <InfoCard
-            value={`${member.height} cm`}
-            label="Chiều cao"
-          />
-
-          <InfoCard
-            value={`${member.weight} kg`}
-            label="Cân nặng"
-          />
-
-          <InfoCard
-            value={member.bmi}
-            label="BMI"
-          />
-        </View>
-
-        {/* TRAINING PROGRESS */}
-        <Text style={styles.sectionTitle}>
-          TIẾN ĐỘ TẬP LUYỆN
-        </Text>
-
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardLabel}>
-              Buổi tập
-            </Text>
-
-            <Text style={styles.progressValue}>
-              {member.sessions} / {member.totalSessions}
-            </Text>
-          </View>
-
-          <View style={styles.progressBackground}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${progress}%` },
-              ]}
-            />
-          </View>
-
-          <Text style={styles.progressPercent}>
-            {Math.round(progress)}% hoàn thành
-          </Text>
-
-          <View style={styles.statRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statIcon}>🔥</Text>
-
-              <View>
-                <Text style={styles.statValue}>
-                  {member.calories}
-                </Text>
-                <Text style={styles.statLabel}>
-                  Calories
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={styles.statIcon}>⏱</Text>
-
-              <View>
-                <Text style={styles.statValue}>
-                  {member.trainingTime}
-                </Text>
-                <Text style={styles.statLabel}>
-                  Thời gian
-                </Text>
+          <View style={styles.profileRow}>
+            <Image source={{ uri: member.avatar }} style={styles.avatar} />
+            <View style={styles.flex}>
+              <Text style={styles.name}>{member.name}</Text>
+              <Text style={styles.email}>{member.email}</Text>
+              <View style={styles.badgeRow}>
+                <View style={styles.glassBadge}>
+                  <View style={[styles.statusDot, paused && { backgroundColor: COLORS.accentGold }]} />
+                  <Text style={styles.glassBadgeText}>{member.status}</Text>
+                </View>
+                <View style={styles.glassBadge}>
+                  <Ionicons name="card-outline" size={12} color={COLORS.white} />
+                  <Text style={styles.glassBadgeText}>{member.package}</Text>
+                </View>
               </View>
             </View>
           </View>
+        </LinearGradient>
+
+        {/* 2. CHỈ SỐ CƠ THỂ NỔI */}
+        <View style={styles.statsCard}>
+          {bodyStats.map((item, index) => (
+            <React.Fragment key={item.unit}>
+              {index > 0 && <View style={styles.divider} />}
+              <View style={styles.statItem}>
+                <Ionicons name={item.icon} size={16} color={COLORS.primary} />
+                <Text style={styles.statValue}>{item.value}</Text>
+                <Text style={styles.statLabel}>{item.unit}</Text>
+              </View>
+            </React.Fragment>
+          ))}
         </View>
 
-        {/* GOAL */}
-        <Text style={styles.sectionTitle}>
-          MỤC TIÊU
-        </Text>
-
-        <View style={styles.goalCard}>
-          <View style={styles.goalIcon}>
-            <Text>🎯</Text>
+        <View style={styles.body}>
+          {/* 3. HÀNH ĐỘNG */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.outlineBtn}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('ChatRoom', { name: member.name })}>
+              <Ionicons name="chatbubble-ellipses-outline" size={17} color={COLORS.primary} />
+              <Text style={styles.outlineBtnText}>Nhắn tin</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.flex} activeOpacity={0.85} onPress={() => navigation?.navigate('Schedule')}>
+              <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.solidBtn}>
+                <Ionicons name="calendar" size={17} color={COLORS.white} />
+                <Text style={styles.solidBtnText}>Đặt lịch tập</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.goalContent}>
-            <Text style={styles.goalTitle}>
-              {member.goal}
-            </Text>
+          {/* 4. TIẾN ĐỘ GÓI TẬP */}
+          <Text style={styles.sectionTitle}>Tiến độ gói tập</Text>
+          <View style={styles.card}>
+            <View style={styles.progressHead}>
+              <View style={styles.ring}>
+                <Text style={styles.ringValue}>{progress}%</Text>
+              </View>
+              <View style={styles.flex}>
+                <Text style={styles.cardTitle}>
+                  {member.sessions}/{member.totalSessions} buổi đã tập
+                </Text>
+                <Text style={styles.subText}>Còn {member.totalSessions - member.sessions} buổi • Hết hạn {member.expiry}</Text>
+                <View style={styles.progressTrack}>
+                  <LinearGradient
+                    colors={['#22B8C8', COLORS.primary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[styles.progressFill, { width: `${progress}%` }]}
+                  />
+                </View>
+              </View>
+            </View>
 
-            <Text style={styles.goalDescription}>
-              Mục tiêu cân nặng
-            </Text>
+            <View style={styles.miniRow}>
+              <View style={[styles.miniBox, { backgroundColor: '#FFF1EC' }]}>
+                <Ionicons name="flame" size={18} color={COLORS.accentOrange} />
+                <Text style={styles.miniValue}>{member.calories}</Text>
+                <Text style={styles.subText}>kcal tiêu hao</Text>
+              </View>
+              <View style={[styles.miniBox, { backgroundColor: COLORS.surfaceTeal }]}>
+                <Ionicons name="time" size={18} color={COLORS.primary} />
+                <Text style={styles.miniValue}>{member.trainingTime}</Text>
+                <Text style={styles.subText}>thời gian tập</Text>
+              </View>
+            </View>
+          </View>
 
+          {/* 5. MỤC TIÊU */}
+          <Text style={styles.sectionTitle}>Mục tiêu: {member.goal}</Text>
+          <View style={styles.card}>
             <View style={styles.weightRow}>
-              <Text style={styles.currentWeight}>
-                {member.weight} kg
-              </Text>
-
-              <Text style={styles.arrow}>→</Text>
-
-              <Text style={styles.targetWeight}>
-                {member.targetWeight} kg
+              <View style={styles.weightItem}>
+                <Text style={styles.subText}>Bắt đầu</Text>
+                <Text style={styles.weightValue}>{member.startWeight}kg</Text>
+              </View>
+              <Ionicons name="arrow-forward" size={16} color={COLORS.textLight} />
+              <View style={styles.weightItem}>
+                <Text style={styles.subText}>Hiện tại</Text>
+                <Text style={[styles.weightValue, { color: COLORS.primary }]}>{member.weight}kg</Text>
+              </View>
+              <Ionicons name="arrow-forward" size={16} color={COLORS.textLight} />
+              <View style={styles.weightItem}>
+                <Text style={styles.subText}>Mục tiêu</Text>
+                <Text style={[styles.weightValue, { color: COLORS.accentGreen }]}>{member.targetWeight}kg</Text>
+              </View>
+            </View>
+            <View style={styles.goalNote}>
+              <Ionicons name="trending-down" size={16} color={COLORS.accentGreen} />
+              <Text style={styles.goalNoteText}>
+                Đã giảm {member.startWeight - member.weight}kg, còn {member.weight - member.targetWeight}kg nữa là đạt mục tiêu!
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* SESSION HISTORY */}
-        <View style={styles.historyHeader}>
-          <Text style={styles.sectionTitle}>
-            LỊCH SỬ BUỔI TẬP
-          </Text>
-
-          <TouchableOpacity>
-            <Text style={styles.viewAll}>
-              Xem tất cả
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.historyCard}>
-          {sessionHistory.map((session, index) => (
-            <View
-              key={index}
-              style={[
-                styles.sessionItem,
-                index === sessionHistory.length - 1 &&
-                  styles.lastSession,
-              ]}
-            >
+          {/* 6. BUỔI TẬP GẦN ĐÂY */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionTitle}>Buổi tập gần đây</Text>
+            <TouchableOpacity onPress={() => navigation?.navigate('SessionHistory')}>
+              <Text style={styles.seeAll}>Xem tất cả</Text>
+            </TouchableOpacity>
+          </View>
+          {RECENT_SESSIONS.map((item) => (
+            <View key={item.date} style={styles.sessionCard}>
               <View style={styles.dateBox}>
-                <Text style={styles.dateText}>
-                  {session.date}
+                <Text style={styles.dateText}>{item.date}</Text>
+                <Text style={styles.monthText}>{item.month}</Text>
+              </View>
+              <View style={styles.flex}>
+                <Text style={styles.cardTitle}>{item.title}</Text>
+                <Text style={styles.subText}>
+                  {item.duration} • {item.calories}
                 </Text>
               </View>
-
-              <View style={styles.sessionInfo}>
-                <Text style={styles.sessionTitle}>
-                  {session.title}
-                </Text>
-
-                <Text style={styles.sessionDuration}>
-                  {session.duration}
-                </Text>
-              </View>
-
-              <View style={styles.completedBadge}>
-                <Text style={styles.completedText}>
-                  ✓
-                </Text>
+              <View style={styles.doneIcon}>
+                <Ionicons name="checkmark" size={15} color={COLORS.white} />
               </View>
             </View>
           ))}
         </View>
-
-        {/* BUTTONS */}
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>
-            + Tạo buổi tập
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>
-            💬 Nhắn tin với hội viên
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const InfoCard = ({
-  value,
-  label,
-}: {
-  value: any;
-  label: string;
-}) => {
-  return (
-    <View style={styles.infoCard}>
-      <Text style={styles.infoValue}>{value}</Text>
-      <Text style={styles.infoLabel}>{label}</Text>
-    </View>
-  );
-};
+export default MemberDetail;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: COLORS.background,
   },
-
-  header: {
-    height: 60,
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+  scroll: {
+    backgroundColor: COLORS.background,
   },
-
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+  flex: {
+    flex: 1,
   },
-
-  backText: {
-    fontSize: 36,
-    color: "#111827",
-    lineHeight: 40,
-  },
-
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  moreButton: {
-    width: 40,
-    alignItems: "center",
-  },
-
-  moreText: {
-    fontSize: 28,
-    color: "#6B7280",
-  },
-
   content: {
-    padding: 16,
     paddingBottom: 40,
   },
-
-  profileCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 24,
-    alignItems: "center",
-    marginBottom: 24,
+  body: {
+    paddingHorizontal: 16,
+  },
+  subText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
   },
 
+  // HEADER
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 56,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  circleLg: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -80,
+    right: -60,
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  navTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  glassBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 20,
+  },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#111827",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
+    width: 76,
+    height: 76,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.6)',
   },
-
-  avatarText: {
-    
-    fontSize: 32,
-    fontWeight: "700",
+  name: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.white,
   },
-
-  memberName: {
-    fontSize: 21,
-    fontWeight: "700",
-    color: "#111827",
+  email: {
+    fontSize: 12.5,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
   },
-
-  memberEmail: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 5,
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
   },
-
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ECFDF5",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 12,
+  glassBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
-
+  glassBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
   statusDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "#10B981",
-    marginRight: 6,
+    backgroundColor: '#6EE7B7',
   },
 
-  statusText: {
-    color: "#059669",
-    fontSize: 12,
-    fontWeight: "600",
+  // STATS NỔI
+  statsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: -34,
+    borderRadius: 20,
+    paddingVertical: 14,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
-
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#6B7280",
-    marginBottom: 10,
-    letterSpacing: 0.5,
-  },
-
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
-
-  infoCard: {
-    width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-  },
-
-  infoValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  infoLabel: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 24,
-  },
-
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  cardLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-
-  progressValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  progressBackground: {
-    height: 9,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 10,
-    marginTop: 12,
-  },
-
-  progressFill: {
-    height: 9,
-    backgroundColor: "#111827",
-    borderRadius: 10,
-  },
-
-  progressPercent: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 8,
-  },
-
-  statRow: {
-    flexDirection: "row",
-    marginTop: 20,
-    paddingTop: 18,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-  },
-
   statItem: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
   },
-
-  statIcon: {
-    fontSize: 22,
-    marginRight: 10,
-  },
-
   statValue: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  statLabel: {
-    fontSize: 11,
-    color: "#9CA3AF",
-    marginTop: 2,
-  },
-
-  goalCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 18,
-    flexDirection: "row",
-    marginBottom: 24,
-  },
-
-  goalIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-
-  goalContent: {
-    flex: 1,
-  },
-
-  goalTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  goalDescription: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 3,
-  },
-
-  weightRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  currentWeight: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  arrow: {
-    marginHorizontal: 10,
-    color: "#9CA3AF",
-  },
-
-  targetWeight: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#10B981",
-  },
-
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  viewAll: {
-    fontSize: 12,
-    color: "#111827",
-    fontWeight: "600",
-  },
-
-  historyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-
-  sessionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-
-  lastSession: {
-    borderBottomWidth: 0,
-  },
-
-  dateBox: {
-    width: 48,
-    height: 42,
-    borderRadius: 10,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  dateText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#374151",
-  },
-
-  sessionInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  sessionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-
-  sessionDuration: {
-    fontSize: 12,
-    color: "#9CA3AF",
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     marginTop: 4,
   },
+  statLabel: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
+  divider: {
+    width: 1,
+    height: 36,
+    backgroundColor: COLORS.borderLight,
+  },
 
-  completedBadge: {
+  // HÀNH ĐỘNG
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  outlineBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
+  },
+  outlineBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  solidBtn: {
+    height: 48,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  solidBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+
+  // SECTION & CARD
+  sectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginTop: 12,
+  },
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  cardTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+
+  // TIẾN ĐỘ
+  progressHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  ring: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  progressTrack: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: COLORS.borderLight,
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 7,
+    borderRadius: 4,
+  },
+  miniRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  miniBox: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 12,
+  },
+  miniValue: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 6,
+  },
+
+  // MỤC TIÊU
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  weightItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  weightValue: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 2,
+  },
+  goalNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 14,
+  },
+  goalNoteText: {
+    flex: 1,
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#047857',
+  },
+
+  // BUỔI TẬP
+  sessionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  dateBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  monthText: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  doneIcon: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#ECFDF5",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  completedText: {
-    color: "#10B981",
-    fontWeight: "700",
-  },
-
-  primaryButton: {
-    backgroundColor: "#111827",
-    height: 52,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  primaryButtonText: {
-    
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  secondaryButton: {
-    backgroundColor: "#FFFFFF",
-    height: 52,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-
-  secondaryButtonText: {
-    color: "#111827",
-    fontSize: 14,
-    fontWeight: "600",
+    backgroundColor: COLORS.accentGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
-
-export default MemberDetail;

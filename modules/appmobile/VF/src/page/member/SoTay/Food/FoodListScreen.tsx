@@ -7,10 +7,13 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Image,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../../../general/api';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface FoodListScreenProps {
   navigation: any;
@@ -95,38 +98,40 @@ const FoodListScreen: React.FC<FoodListScreenProps> = ({ navigation, route }) =>
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerIconBtn}
+          activeOpacity={0.7}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} numberOfLines={1}>
           {categoryName}
         </Text>
 
-        <TouchableOpacity style={styles.headerIconBtn}>
-          <Ionicons name="filter-outline" size={24} color="#374151" />
+        <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+          <Ionicons name="options-outline" size={20} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Thanh tìm kiếm */}
       <View style={styles.searchSection}>
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" style={styles.searchIcon} />
+          <Ionicons name="search" size={19} color={COLORS.primary} style={styles.searchIcon} />
           <TextInput
             placeholder="Tìm kiếm"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={handleSearch}
             style={styles.searchInput}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')}>
-              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -134,14 +139,18 @@ const FoodListScreen: React.FC<FoodListScreenProps> = ({ navigation, route }) =>
 
       {/* Danh sách món ăn kèm Calo */}
       {loading && items.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 }}>
-          <ActivityIndicator size="large" color="#0D7F8D" />
-          <Text style={{ marginTop: 12, color: '#6B7280', fontSize: 14 }}>Đang tải danh sách món ăn...</Text>
+        <View style={styles.stateBox}>
+          <View style={styles.stateIcon}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+          <Text style={styles.stateText}>Đang tải danh sách món ăn...</Text>
         </View>
       ) : items.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 }}>
-          <Ionicons name="restaurant-outline" size={48} color="#9CA3AF" />
-          <Text style={{ marginTop: 12, color: '#6B7280', fontSize: 15 }}>Không tìm thấy món ăn nào</Text>
+        <View style={styles.stateBox}>
+          <View style={styles.stateIcon}>
+            <Ionicons name="restaurant-outline" size={34} color={COLORS.primary} />
+          </View>
+          <Text style={styles.stateTitle}>Không tìm thấy món ăn nào</Text>
         </View>
       ) : (
         <ScrollView
@@ -152,7 +161,7 @@ const FoodListScreen: React.FC<FoodListScreenProps> = ({ navigation, route }) =>
           {items.map((item) => (
             <TouchableOpacity
               key={item.id}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
               style={styles.foodRow}
               onPress={() =>
                 navigation.navigate('FoodDetail', {
@@ -161,12 +170,21 @@ const FoodListScreen: React.FC<FoodListScreenProps> = ({ navigation, route }) =>
                 })
               }
             >
-              <Text style={styles.foodName} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <View style={styles.foodRightGroup}>
-                <Text style={styles.foodCalories}>{item.calories} Kcal</Text>
-                <Ionicons name="chevron-forward" size={18} color="#00C4CC" />
+              {item.image ? (
+                <Image source={{ uri: item.image }} style={styles.foodThumb} resizeMode="cover" />
+              ) : (
+                <View style={[styles.foodThumb, styles.foodThumbPlaceholder]}>
+                  <Ionicons name="restaurant" size={24} color={COLORS.accentOrange} />
+                </View>
+              )}
+              <View style={styles.foodInfo}>
+                <Text style={styles.foodName} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <View style={styles.foodMetaRow}>
+                  <Text style={styles.foodCalories}>{item.calories} kcal</Text>
+                  <Text style={styles.foodMeta}>  •  {item.cookingTime} phút</Text>
+                </View>
               </View>
             </TouchableOpacity>
           ))}
@@ -181,90 +199,160 @@ export default FoodListScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.background,
   },
   header: {
-    height: 64,
-    backgroundColor: '#FFFFFF',
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
   },
   headerIconBtn: {
-    padding: 6,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#11343A',
-    paddingHorizontal: 8,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
   },
   searchSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   searchBox: {
-    height: 46,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 23,
+    height: 50,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8F0F1',
+    borderColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
+    ...SHADOWS.card,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: '#111827',
+    fontSize: 14,
+    color: COLORS.textPrimary,
     paddingVertical: 0,
+  },
+  stateBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 70,
+  },
+  stateIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stateText: {
+    marginTop: 14,
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  stateTitle: {
+    marginTop: 14,
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
   },
   scrollContainer: {
-    paddingTop: 4,
-    paddingBottom: 40,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
   foodRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    padding: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 12,
+    ...SHADOWS.card,
+  },
+  foodThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: COLORS.borderLight,
+    marginRight: 12,
+  },
+  foodThumbPlaceholder: {
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  foodInfo: {
+    flex: 1,
+    paddingRight: 8,
   },
   foodName: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    lineHeight: 22,
-    paddingRight: 10,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    lineHeight: 20,
   },
-  foodRightGroup: {
+  foodMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
+    marginTop: 6,
+  },
+  kcalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF1EC',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   foodCalories: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '500',
+    fontSize: 11.5,
+    color: COLORS.accentOrange,
+    fontWeight: '800',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  foodMeta: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  chevronWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

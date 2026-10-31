@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, DeviceEventEmitter, Alert, } from "react-native";
+import { StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, DeviceEventEmitter, Alert, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
+import { widthPercentageToDP as wp } from "react-native-responsive-screen";
 import apiFitlife from "../../../../general/api";
 import { useFocusEffect } from "@react-navigation/native";
-import AppHeader from "../../../../components/AppHeader";
-import { COLORS } from "../../../../general/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
+import { COLORS, SHADOWS } from "../../../../general/theme";
 
 type Exercise = {
   id: number;
@@ -652,87 +653,120 @@ const ExercisePage = ({ navigation, route }: any) => {
 
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="dark-content" />
-      <AppHeader
-        title="Bài tập hôm nay"
-        onBack={() => navigation?.goBack()}
-        rightComponent={
+
+      <View style={styles.body}>
+      {/* ================= HEADER GRADIENT ================= */}
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.circleLg} />
+        <View style={styles.circleSm} />
+
+        <View style={styles.headerRow}>
           <TouchableOpacity
             activeOpacity={0.7}
-            style={[styles.moreButton, hasStarted && { backgroundColor: COLORS.primaryLight }]}
+            style={styles.glassButton}
+            onPress={() => navigation?.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerSub}>Kế hoạch tập luyện</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>Bài tập hôm nay</Text>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.moreButton, hasStarted && styles.moreButtonActive]}
             onPress={handleSkip}
             disabled={skipping || hasStarted}
           >
             {skipping ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
+              <ActivityIndicator size="small" color={COLORS.white} />
             ) : hasStarted ? (
-              <Text style={{ color: COLORS.primary, fontWeight: "700" }}>
-                {formatTime(elapsedSeconds)}
-              </Text>
+              <View style={styles.timerRow}>
+                <View style={styles.timerDot} />
+                <Text style={styles.timerText}>
+                  {formatTime(elapsedSeconds)}
+                </Text>
+              </View>
             ) : (
               <Text style={styles.skipText}>Bỏ qua</Text>
             )}
           </TouchableOpacity>
-        }
-      />
+        </View>
+      </LinearGradient>
+
+      {/* ================= SESSION CARD (nổi) ================= */}
+      <View style={styles.sessionCard}>
+        {/* Left: Progress circle */}
+        <View style={styles.progressCircleWrapper}>
+          <View style={styles.progressCircleBg}>
+            <View
+              style={[styles.progressCircleFill, { borderColor: progressColor, },]} />
+            <View style={styles.progressCircleCenter}>
+              <Text style={[styles.progressText, { color: progressColor, },]}>
+                {progressPercent}%
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Middle: Info */}
+        <View style={styles.sessionInfo}>
+          <Text style={styles.sessionDayLabel}>Ngày tập {route.params?.ngayThu ?? 1}</Text>
+          <Text style={styles.sessionType} numberOfLines={1}>{route.params?.dayType ?? "Ngày tập luyện"}</Text>
+          <View style={styles.sessionMeta}>
+            <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
+            <Text style={styles.sessionMetaText}>~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
+            <View style={styles.metaDivider} />
+            <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
+            <Text style={styles.sessionMetaText}>
+              {totalExercises} bài
+            </Text>
+          </View>
+        </View>
+
+        {/* Right: Completed badge */}
+        <View style={styles.completedBadge}>
+          <Text style={styles.completedCount}>{completedCount}</Text>
+          <Text style={styles.completedLabel}>bài xong</Text>
+        </View>
+      </View>
 
       {/* ================= CONTENT ================= */}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* ================= SESSION CARD ================= */}
-        <View style={styles.sessionCard}>
-          {/* Left: Progress circle */}
-          <View style={styles.progressCircleWrapper}>
-            <View style={styles.progressCircleBg}>
-              <View
-                style={[styles.progressCircleFill, { borderColor: progressColor, },]} />
-              <View style={styles.progressCircleCenter}>
-                <Text style={[styles.progressText, { color: progressColor, },]}>
-                  {progressPercent}%
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Middle: Info */}
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionDayLabel}> Ngày tập {route.params?.ngayThu ?? 1} </Text>
-            <Text style={styles.sessionType}>{route.params?.dayType ?? "Ngày tập luyện"} </Text>
-            <View style={styles.sessionMeta}>
-              <Ionicons name="time-outline" size={wp("3.2%")} color="#8FA9B2" />
-              <Text style={styles.sessionMetaText}> ~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
-              <View style={styles.metaDivider} />
-              <Ionicons name="barbell-outline" size={wp("3.2%")} color="#8FA9B2" />
-              <Text style={styles.sessionMetaText}>
-                {totalExercises} bài
-              </Text>
-            </View>
-          </View>
-
-          {/* Right: Completed badge */}
-          <View style={styles.completedBadge}>
-            <Text style={styles.completedCount}>{completedCount}</Text>
-            <Text style={styles.completedLabel}> bài xong</Text>
-          </View>
-        </View>
-
         {/* ================= SECTION TITLE ================= */}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
-          <Text style={styles.sectionSubtitle}>
-            {completedCount}/{totalCount} hoàn thành
-          </Text>
+          <View style={styles.sectionBadge}>
+            <Text style={styles.sectionSubtitle}>
+              {completedCount}/{totalCount} hoàn thành
+            </Text>
+          </View>
         </View>
 
         {/* ================= EXERCISE LIST ================= */}
         {loading ? (
-          <ActivityIndicator size="large" color="#18BEC3" style={{ marginVertical: 30 }} />
+          <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
         ) : exercises.length === 0 ? (
-          <Text style={{ textAlign: "center", color: "#5B7C84", padding: 20 }}>
-            Ngày tập này chưa có bài tập.
-          </Text>
+          <View style={styles.emptyBox}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>
+              Ngày tập này chưa có bài tập.
+            </Text>
+          </View>
         ) : (
           <View style={styles.exerciseList}>
             {exercises.map((exercise, index) => (
@@ -741,6 +775,9 @@ const ExercisePage = ({ navigation, route }: any) => {
                   {/* Image */}
                   <View style={styles.exerciseImageWrapper}>
                     <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain" />
+                    <View style={styles.orderBadge}>
+                      <Text style={styles.orderText}>{index + 1}</Text>
+                    </View>
                   </View>
 
                   {/* Info */}
@@ -751,12 +788,12 @@ const ExercisePage = ({ navigation, route }: any) => {
 
                     <View style={styles.exerciseTags}>
                       <View style={styles.tagPill}>
-                        <Ionicons name="repeat-outline" size={wp("3%")} color="#18BEC3" />
+                        <Ionicons name="repeat-outline" size={11} color={COLORS.primary} />
                         <Text style={styles.tagText}>{exercise.sets}</Text>
                       </View>
 
                       <View style={[styles.tagPill, styles.tagPillGray]}>
-                        <Ionicons name="body-outline" size={wp("3%")} color="#8FA9B2" />
+                        <Ionicons name="time-outline" size={11} color={COLORS.textMuted} />
                         <Text style={[styles.tagText, styles.tagTextGray]}>
                           {exercise.duration}
                         </Text>
@@ -768,9 +805,9 @@ const ExercisePage = ({ navigation, route }: any) => {
                     const progress = exerciseProgress.find((item) => Number(item.id_bai_tap) === Number(exercise.id_bai_tap));
                     const percent = Number(progress?.phan_tram_hoan_thanh ?? 0);
                     if (percent <= 0) return null;
-                    const exerciseColor = percent <= 50 ? "#FFE08A" : "#18BEC3";
+                    const exerciseColor = percent <= 50 ? "#E6A94A" : "#18BEC3";
                     return (
-                      <Text style={{ color: exerciseColor, fontSize: wp("3.3%"), fontWeight: "700", minWidth: wp("10%"), textAlign: "right", }}>
+                      <Text style={[styles.exercisePercent, { color: exerciseColor }]}>
                         {percent}%
                       </Text>
                     );
@@ -790,7 +827,9 @@ const ExercisePage = ({ navigation, route }: any) => {
 
         <View style={styles.tipsCard}>
           <View style={styles.tipsHeader}>
-            <Ionicons name="bulb-outline" size={wp("4.5%")} color="#E8A020" />
+            <View style={styles.tipsIcon}>
+              <Ionicons name="bulb-outline" size={18} color="#E8A020" />
+            </View>
             <Text style={styles.tipsTitle}>Lưu ý buổi tập</Text>
           </View>
           <Text style={styles.tipsText}>
@@ -799,22 +838,17 @@ const ExercisePage = ({ navigation, route }: any) => {
           </Text>
         </View>
 
-
-
-
-
-
-
-
         {/* nhap tinh thoi gian  */}
         {showTimeSummary && (
           <View style={styles.timeSummary}>
             <View style={styles.timeSummaryItem}>
-              <Ionicons
-                name="barbell-outline"
-                size={wp("5%")}
-                color="#0D7F8D"
-              />
+              <View style={[styles.timeSummaryIcon, { backgroundColor: COLORS.surfaceTeal }]}>
+                <Ionicons
+                  name="barbell-outline"
+                  size={20}
+                  color={COLORS.primary}
+                />
+              </View>
               <Text style={styles.timeSummaryLabel}>
                 Tổng thời gian tập
               </Text>
@@ -823,16 +857,20 @@ const ExercisePage = ({ navigation, route }: any) => {
               </Text>
             </View>
 
+            <View style={styles.timeSummaryDivider} />
+
             <View style={styles.timeSummaryItem}>
-              <Ionicons
-                name="pause-circle-outline"
-                size={wp("5%")}
-                color="#E8A020"
-              />
+              <View style={[styles.timeSummaryIcon, { backgroundColor: "#FFF7ED" }]}>
+                <Ionicons
+                  name="pause-circle-outline"
+                  size={20}
+                  color="#E8A020"
+                />
+              </View>
               <Text style={styles.timeSummaryLabel}>
                 Tổng thời gian nghỉ
               </Text>
-              <Text style={styles.timeSummaryValue}>
+              <Text style={[styles.timeSummaryValue, { color: "#E8A020" }]}>
                 {formatTime(totalRestSeconds)}
               </Text>
             </View>
@@ -844,11 +882,19 @@ const ExercisePage = ({ navigation, route }: any) => {
 
       <View style={styles.bottomArea}>
         <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, isTraining && styles.startButtonStop,]} onPress={handleStart} >
-          <Ionicons name={isTraining ? "stop-circle" : "play"} size={wp("5%")} color="#FFFFFF" style={styles.startIcon} />
-          <Text style={styles.startButtonText}>
-            {endingSession ? "ĐANG LƯU..." : isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
-          </Text>
+          <LinearGradient
+            colors={isTraining ? ["#F05252", "#C62828"] : [COLORS.primary, COLORS.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.startGradient}
+          >
+            <Ionicons name={isTraining ? "stop-circle" : "play"} size={20} color="#FFFFFF" style={styles.startIcon} />
+            <Text style={styles.startButtonText}>
+              {endingSession ? "ĐANG LƯU..." : isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
+      </View>
       </View>
     </SafeAreaView>
   );
@@ -859,62 +905,111 @@ const ExercisePage = ({ navigation, route }: any) => {
 // ================================
 
 const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: "#F6FAFB",
+    backgroundColor: COLORS.background,
   },
+
+  // =================================================
+  // HEADER
+  // =================================================
   header: {
-    height: hp("7%"),
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 50,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: "hidden",
+  },
+  circleLg: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -90,
+    right: -60,
+  },
+  circleSm: {
+    position: "absolute",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    bottom: -50,
+    left: -30,
+  },
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: wp("4%"),
-    // backgroundColor: "#FFFFFF",
-    // borderBottomWidth: 1,
-    borderBottomColor: "#EEF3F5",
-    // elevation: 2,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
   },
-
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  headerSub: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.75)",
+  },
   headerTitle: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-    fontSize: wp("4.7%"),
+    fontSize: 19,
     fontWeight: "800",
-    color: "#111C1E",
+    color: COLORS.white,
+    marginTop: 2,
   },
-
-  backButton: {
-    width: wp("9%"),
-    height: wp("9%"),
-    borderRadius: wp("4.5%"),
+  glassButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F2F8F9",
-    zIndex: 10,
   },
 
   moreButton: {
-    width: wp("20%"),
-    height: wp("12%"),
-    borderRadius: wp("8%"),
-    // borderWidth: 1.5,
-    // borderColor: "#607D8B",
+    minWidth: 72,
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 13,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  moreButtonActive: {
+    backgroundColor: "rgba(255,255,255,0.24)",
   },
   skipText: {
-    fontSize: wp("4.2%"),
-    color: "#607D8B",
-    fontWeight: "600",
+    fontSize: 14,
+    color: COLORS.white,
+    fontWeight: "700",
   },
-
+  timerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  timerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#FF6B6B",
+  },
+  timerText: {
+    color: COLORS.white,
+    fontWeight: "800",
+    fontSize: 14,
+  },
 
   // =================================================
   // SCROLL VIEW
@@ -922,12 +1017,13 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
 
   scrollContent: {
-    paddingHorizontal: wp("4%"),
-    paddingTop: hp("2%"),
-    paddingBottom: hp("16%"),
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 110,
   },
 
   // =================================================
@@ -937,29 +1033,28 @@ const styles = StyleSheet.create({
   sessionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: wp("4%"),
-    paddingHorizontal: wp("4%"),
-    paddingVertical: hp("2%"),
-    marginBottom: hp("2%"),
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: -34,
     borderWidth: 1,
-    borderColor: "#DFF0F3",
-    elevation: 3,
-    shadowColor: "#0D7F8D",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    borderColor: COLORS.border,
+    zIndex: 2,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
 
   progressCircleWrapper: {
-    marginRight: wp("3.5%"),
+    marginRight: 14,
   },
 
   progressCircleBg: {
-    width: wp("14%"),
-    height: wp("14%"),
-    borderRadius: wp("7%"),
-    backgroundColor: "#F6FAFB",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -967,10 +1062,10 @@ const styles = StyleSheet.create({
 
   progressCircleFill: {
     position: "absolute",
-    width: wp("14%"),
-    height: wp("14%"),
-    borderRadius: wp("7%"),
-    borderWidth: 2.5,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 3,
   },
 
   progressCircleCenter: {
@@ -979,8 +1074,8 @@ const styles = StyleSheet.create({
   },
 
   progressText: {
-    fontSize: wp("3.5%"),
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
   },
 
   sessionInfo: {
@@ -988,55 +1083,57 @@ const styles = StyleSheet.create({
   },
 
   sessionDayLabel: {
-    color: "#8FA9B2",
-    fontSize: wp("3%"),
-    marginBottom: hp("0.2%"),
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 2,
   },
 
   sessionType: {
-    color: "#1A2F35",
-    fontSize: wp("4%"),
-    fontWeight: "700",
-    marginBottom: hp("0.5%"),
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 6,
   },
 
   sessionMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("1%"),
+    gap: 4,
   },
 
   sessionMetaText: {
-    color: "#8FA9B2",
-    fontSize: wp("2.9%"),
+    color: COLORS.textMuted,
+    fontSize: 12,
   },
 
   metaDivider: {
     width: 1,
-    height: hp("1.5%"),
-    backgroundColor: "#C9DADE",
-    marginHorizontal: wp("1.5%"),
+    height: 12,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 6,
   },
 
   completedBadge: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EAF9FB",
-    borderRadius: wp("2.5%"),
-    paddingHorizontal: wp("2.5%"),
-    paddingVertical: hp("0.6%"),
-    minWidth: wp("11%"),
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: 54,
   },
 
   completedCount: {
-    color: "#0D7F8D",
-    fontSize: wp("4.5%"),
+    color: COLORS.primary,
+    fontSize: 20,
     fontWeight: "800",
   },
 
   completedLabel: {
-    color: "#4AAAB5",
-    fontSize: wp("2.5%"),
+    color: COLORS.textMuted,
+    fontSize: 10.5,
+    fontWeight: "600",
   },
 
   // =================================================
@@ -1047,18 +1144,58 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: hp("1.5%"),
+    marginTop: 24,
+    marginBottom: 12,
   },
 
   sectionTitle: {
-    color: "#1A2F35",
-    fontSize: wp("4%"),
-    fontWeight: "700",
+    color: COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: "800",
+  },
+
+  sectionBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
 
   sectionSubtitle: {
-    color: "#8FA9B2",
-    fontSize: wp("3.2%"),
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  loader: {
+    marginVertical: 30,
+  },
+
+  emptyBox: {
+    alignItems: "center",
+    paddingVertical: 30,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 16,
+    ...SHADOWS.card,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
 
   // =================================================
@@ -1066,24 +1203,22 @@ const styles = StyleSheet.create({
   // =================================================
 
   exerciseList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: wp("4%"),
-    paddingHorizontal: wp("1%"),
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "#EEF3F5",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    marginBottom: hp("2%"),
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+    marginBottom: 16,
   },
 
   exerciseItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: wp("3%"),
-    paddingVertical: hp("1.2%"),
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    gap: 4,
   },
 
   exerciseItemDone: {
@@ -1108,16 +1243,38 @@ const styles = StyleSheet.create({
   },
 
   exerciseImageWrapper: {
-    width: wp("15%"),
-    height: hp("7%"),
+    width: 60,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: wp("2%"),
+    marginRight: 8,
   },
 
   exerciseImage: {
-    width: "85%",
-    height: "85%",
+    width: "82%",
+    height: "82%",
+  },
+
+  orderBadge: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  orderText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontWeight: "800",
   },
 
   exerciseImageDone: {
@@ -1126,15 +1283,15 @@ const styles = StyleSheet.create({
 
   exerciseInfo: {
     flex: 1,
-    paddingRight: wp("2%"),
+    paddingRight: 6,
   },
 
   exerciseName: {
-    color: "#1A2F35",
-    fontSize: wp("3.4%"),
-    fontWeight: "600",
-    lineHeight: wp("4.5%"),
-    marginBottom: hp("0.5%"),
+    color: COLORS.textPrimary,
+    fontSize: 14.5,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginBottom: 6,
   },
 
   exerciseNameDone: {
@@ -1145,32 +1302,39 @@ const styles = StyleSheet.create({
   exerciseTags: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("2%"),
+    gap: 6,
     flexWrap: "wrap",
   },
 
   tagPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("1%"),
-    backgroundColor: "#EAF9FB",
-    borderRadius: wp("3%"),
-    paddingHorizontal: wp("2%"),
-    paddingVertical: hp("0.3%"),
+    gap: 4,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
 
   tagPillGray: {
-    backgroundColor: "#F2F8F9",
+    backgroundColor: COLORS.borderLight,
   },
 
   tagText: {
-    color: "#18BEC3",
-    fontSize: wp("2.7%"),
-    fontWeight: "500",
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "700",
   },
 
   tagTextGray: {
-    color: "#8FA9B2",
+    color: COLORS.textMuted,
+  },
+
+  exercisePercent: {
+    fontSize: 13,
+    fontWeight: "800",
+    minWidth: 38,
+    textAlign: "right",
   },
 
   durationBadge: {
@@ -1187,8 +1351,9 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#EEF3F5",
-    marginLeft: wp("14%"),
+    backgroundColor: COLORS.borderLight,
+    marginLeft: 78,
+    marginRight: 12,
   },
 
   // =================================================
@@ -1196,31 +1361,42 @@ const styles = StyleSheet.create({
   // =================================================
 
   tipsCard: {
-    backgroundColor: "#FFFDF0",
-    borderRadius: wp("3.5%"),
-    padding: wp("4%"),
+    backgroundColor: "#FFFBEB",
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#F5E8C0",
-    marginBottom: hp("5%"),
+    marginBottom: 16,
   },
 
   tipsHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("2%"),
-    marginBottom: hp("0.8%"),
+    gap: 10,
+    marginBottom: 8,
+  },
+
+  tipsIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: "#FFF7ED",
+    borderWidth: 1,
+    borderColor: "#F5E8C0",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   tipsTitle: {
-    color: "#C07010",
-    fontSize: wp("3.5%"),
-    fontWeight: "700",
+    color: "#B45309",
+    fontSize: 15,
+    fontWeight: "800",
   },
 
   tipsText: {
     color: "#7A5A20",
-    fontSize: wp("3.2%"),
-    lineHeight: wp("4.8%"),
+    fontSize: 13,
+    lineHeight: 20,
   },
 
   // =================================================
@@ -1232,33 +1408,35 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: wp("4%"),
-    paddingTop: hp("1.5%"),
-    paddingBottom: hp("10%"),
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: "#EEF3F5",
+    borderTopColor: COLORS.borderLight,
     elevation: 10,
-    shadowColor: "#000",
+    shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
 
   startButton: {
     width: "100%",
-    height: hp("7%"),
-    backgroundColor: "#18BEC3",
-    borderRadius: wp("3%"),
+    height: 52,
+    borderRadius: 16,
+    overflow: "hidden",
+    ...SHADOWS.glow,
+  },
+
+  startGradient: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: wp("2%"),
-    elevation: 4,
-    shadowColor: "#0D7F8D",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    gap: 8,
   },
 
   startButtonDone: {
@@ -1266,46 +1444,61 @@ const styles = StyleSheet.create({
   },
 
   startIcon: {
-    marginRight: wp("1%"),
+    marginRight: 2,
   },
 
   startButtonText: {
     color: "#FFFFFF",
-    fontSize: wp("4.2%"),
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontSize: 15.5,
+    fontWeight: "800",
+    letterSpacing: 0.6,
   },
   startButtonStop: {
-    backgroundColor: "#E53935",
     shadowColor: "#C62828",
   },
   timeSummary: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: wp("4%"),
-    padding: wp("4%"),
-    marginBottom: hp("2%"),
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#DFF0F3",
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
 
   timeSummaryItem: {
     flex: 1,
     alignItems: "center",
-    gap: hp("0.5%"),
+    gap: 6,
+  },
+
+  timeSummaryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  timeSummaryDivider: {
+    width: 1,
+    height: 60,
+    backgroundColor: COLORS.borderLight,
   },
 
   timeSummaryLabel: {
-    fontSize: wp("3%"),
-    color: "#607D8B",
+    fontSize: 12,
+    color: COLORS.textMuted,
     textAlign: "center",
   },
 
   timeSummaryValue: {
-    fontSize: wp("5%"),
+    fontSize: 20,
     fontWeight: "800",
-    color: "#0D7F8D",
+    color: COLORS.primary,
   },
 
 });

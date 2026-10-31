@@ -6,12 +6,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
 import apiFitlife from '../../general/api';
+import { COLORS, SHADOWS } from '../../general/theme';
 
-const COLORS = {
-    primary: '#0D7F8D', dark: '#075865', background: '#F4FAFB',
-    white: '#FFFFFF', text: '#16383E', muted: '#76969B',
-    border: '#DFEAEC', soft: '#E7F5F6', gold: '#E5AC4D',
-};
 
 const PACKAGE_KEY = 'visionfit_selected_package';
 const TRAINER_KEY = 'visionfit_selected_pt';
@@ -229,11 +225,9 @@ const PTListScreen = ({ navigation, route }: any) => {
         try {
             if (!selectedTrainer) await AsyncStorage.removeItem(TRAINER_KEY);
 
-            if (navigation.getState()?.routeNames?.includes('RegistrationReview')) {
-                navigation.navigate('RegistrationReview', { selectedPackage, selectedTrainer: selectedTrainer || null });
-            } else {
-                Alert.alert('Đã lưu lựa chọn', 'Thông tin đã được lưu. Trang xem lại đăng ký sẽ được tạo ở bước tiếp theo.');
-            }
+            const routeNames = navigation.getState()?.routeNames || [];
+            const target = routeNames.includes('RegistrationReview') ? 'RegistrationReview' : routeNames.includes('RegistrationReviewScreen') ? 'RegistrationReviewScreen' : 'RegistrationReview';
+            navigation.navigate(target, { selectedPackage, selectedTrainer: selectedTrainer || null });
         } catch {
             Alert.alert('Lỗi', 'Không thể lưu thông tin đăng ký.');
         }
@@ -242,7 +236,7 @@ const PTListScreen = ({ navigation, route }: any) => {
     // Ảnh PT
     const renderAvatar = (trainer: Trainer, size = 70) => {
         const url = trainer.hinh_anh;
-        const avatarStyle = { width: size, height: size, borderRadius: size / 3 };
+        const avatarStyle = { width: size, height: size, borderRadius: size / 2 };
 
         return (
             <View style={[styles.avatar, avatarStyle]}>
@@ -262,24 +256,33 @@ const PTListScreen = ({ navigation, route }: any) => {
             <TouchableOpacity activeOpacity={0.9} onPress={() => handleSelectTrainer(item)}
                 style={[styles.trainerCard, selected && styles.trainerCardSelected]}>
 
+                {selected && <View style={styles.selectedStripe} />}
                 <View style={styles.trainerTop}>
-                    {renderAvatar(item)}
+                    <View>
+                        {renderAvatar(item, 64)}
+                        <View style={styles.onlineDot} />
+                    </View>
                     <View style={styles.trainerInfo}>
-                        <Text style={styles.trainerName}>{item.ho_ten}</Text>
+                        <View style={styles.nameRow}>
+                            <Text style={styles.trainerName} numberOfLines={1}>{item.ho_ten}</Text>
+                            <Ionicons name="checkmark-circle" size={15} color={COLORS.accentBlue} />
+                        </View>
                         <Text style={styles.trainerRole}>{item.chuc_danh || 'Huấn luyện viên'}</Text>
                         <View style={styles.experienceRow}>
-                            <Ionicons name="ribbon-outline" size={15} color={COLORS.primary} />
+                            <Ionicons name="ribbon" size={13} color={COLORS.accentGold} />
                             <Text style={styles.experienceText}>{getExperience(item)}</Text>
                         </View>
                     </View>
-                    <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={25}
-                        color={selected ? COLORS.primary : '#B9CED1'} />
+                    <View style={[styles.checkCircle, selected && styles.checkCircleActive]}>
+                        {selected && <Ionicons name="checkmark" size={15} color={COLORS.white} />}
+                    </View>
                 </View>
 
                 {getSpecialties(item).length > 0 && (
                     <View style={styles.tagsRow}>
                         {getSpecialties(item).map(tag => (
                             <View key={tag} style={styles.tag}>
+                                <Ionicons name="flash" size={11} color={COLORS.primary} />
                                 <Text style={styles.tagText}>{tag}</Text>
                             </View>
                         ))}
@@ -293,12 +296,14 @@ const PTListScreen = ({ navigation, route }: any) => {
                 <View style={styles.cardDivider} />
                 <View style={styles.trainerBottom}>
                     <TouchableOpacity style={styles.viewProfileButton} onPress={() => setDetail(item)}>
+                        <Ionicons name="document-text-outline" size={15} color={COLORS.primary} />
                         <Text style={styles.viewProfileText}>Xem hồ sơ PT</Text>
-                        <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={[styles.selectButton, selected && styles.selectButtonActive]}
                         onPress={() => handleSelectTrainer(item)}>
+                        <Ionicons name={selected ? 'checkmark-circle' : 'add-circle-outline'} size={16}
+                            color={selected ? COLORS.white : COLORS.primary} />
                         <Text style={[styles.selectButtonText, selected && styles.selectButtonTextActive]}>
                             {selected ? 'Đã chọn' : 'Lựa chọn'}
                         </Text>
@@ -313,7 +318,7 @@ const PTListScreen = ({ navigation, route }: any) => {
         return (
             <View style={styles.detailField}>
                 <View style={styles.detailFieldIcon}>
-                    <Ionicons name={icon} size={19} color={COLORS.primary} />
+                    <Ionicons name={icon} size={18} color={COLORS.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text style={styles.detailFieldTitle}>{title}</Text>
@@ -341,7 +346,9 @@ const PTListScreen = ({ navigation, route }: any) => {
                 title="Chọn huấn luyện viên"
                 onBack={() => navigation.goBack()}
                 rightComponent={
-                    <Ionicons name="people-outline" size={22} color={COLORS.primary} />
+                    <View style={styles.headerIcon}>
+                        <Ionicons name="people-outline" size={20} color={COLORS.primary} />
+                    </View>
                 }
             />
 
@@ -367,15 +374,17 @@ const PTListScreen = ({ navigation, route }: any) => {
                 ListHeaderComponent={
                     <>
                         {/* Banner */}
-                        <LinearGradient colors={['#087F8F', '#064E60']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+                            <View style={styles.heroDecor} />
+                            <View style={styles.heroDecorSmall} />
                             <View style={styles.heroBadge}>
-                                <Ionicons name="fitness-outline" size={15} color="#D4F9FA" />
+                                <Ionicons name="fitness-outline" size={14} color={COLORS.white} />
                                 <Text style={styles.heroBadgeText}>VISIONFIT TRAINERS</Text>
                             </View>
                             <Text style={styles.heroTitle}>Người đồng hành{'\n'}cùng mục tiêu của bạn</Text>
                             <Text style={styles.heroDescription}>Khám phá đội ngũ huấn luyện viên và tìm người phù hợp với hành trình tập luyện.</Text>
                             <View style={styles.heroFooter}>
-                                <Ionicons name="checkmark-circle-outline" size={17} color="#D9F6F6" />
+                                <View style={styles.heroLiveDot} />
                                 <Text style={styles.heroFooterText}>Huấn luyện viên đang hoạt động</Text>
                             </View>
                         </LinearGradient>
@@ -389,7 +398,7 @@ const PTListScreen = ({ navigation, route }: any) => {
                                 <Text style={styles.packageLabel}>GÓI TẬP ĐÃ CHỌN</Text>
                                 <Text style={styles.packageName} numberOfLines={2}>{selectedPackage?.ten_goi || 'Chưa chọn gói tập'}</Text>
                             </View>
-                            <Ionicons name="checkmark-circle" size={22} color={selectedPackage ? COLORS.primary : COLORS.muted} />
+                            <Ionicons name="checkmark-circle" size={22} color={selectedPackage ? COLORS.accentGreen : COLORS.textLight} />
                         </View>
 
                         {!selectedPackage && (
@@ -412,13 +421,13 @@ const PTListScreen = ({ navigation, route }: any) => {
 
                         {/* Tìm kiếm */}
                         <View style={styles.searchBox}>
-                            <Ionicons name="search-outline" size={20} color={COLORS.muted} />
+                            <Ionicons name="search-outline" size={19} color={COLORS.primary} />
                             <TextInput style={styles.searchInput} value={searchText} onChangeText={setSearchText}
-                                placeholder="Tìm tên hoặc chuyên môn PT..." placeholderTextColor="#91AAAE"
+                                placeholder="Tìm tên hoặc chuyên môn PT..." placeholderTextColor={COLORS.textLight}
                                 returnKeyType="search" onSubmitEditing={() => Keyboard.dismiss()} />
                             {searchText.length > 0 && (
                                 <TouchableOpacity onPress={() => setSearchText('')}>
-                                    <Ionicons name="close-circle" size={19} color={COLORS.muted} />
+                                    <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -447,7 +456,9 @@ const PTListScreen = ({ navigation, route }: any) => {
                             </>
                         ) : (
                             <>
-                                <Ionicons name={error ? 'cloud-offline-outline' : 'people-outline'} size={46} color={COLORS.muted} />
+                                <View style={styles.emptyIcon}>
+                                    <Ionicons name={error ? 'cloud-offline-outline' : 'people-outline'} size={34} color={COLORS.primary} />
+                                </View>
                                 <Text style={styles.emptyTitle}>{error ? 'Không thể tải dữ liệu' : 'Không tìm thấy PT phù hợp'}</Text>
                                 <Text style={styles.stateText}>{error || 'Hãy thử từ khóa hoặc bộ lọc khác.'}</Text>
                                 {error && (
@@ -461,7 +472,7 @@ const PTListScreen = ({ navigation, route }: any) => {
                 }
                 ListFooterComponent={
                     <View style={styles.noteBox}>
-                        <Ionicons name="information-circle-outline" size={19} color={COLORS.primary} />
+                        <Ionicons name="information-circle" size={19} color={COLORS.primary} />
                         <Text style={styles.noteText}>Việc lựa chọn PT và lịch tập sẽ được xác nhận theo điều kiện của gói đăng ký.</Text>
                     </View>
                 }
@@ -476,7 +487,9 @@ const PTListScreen = ({ navigation, route }: any) => {
                             <Text style={styles.summaryLabel}>HUẤN LUYỆN VIÊN ĐÃ CHỌN</Text>
                             <Text style={styles.summaryName} numberOfLines={1}>{selectedTrainer.ho_ten}</Text>
                         </View>
-                        <Ionicons name="checkmark-circle" size={23} color={COLORS.primary} />
+                        <View style={styles.summaryCheck}>
+                            <Ionicons name="checkmark" size={15} color={COLORS.white} />
+                        </View>
                     </View>
                 ) : (
                     <Text style={styles.noSelectionText}>
@@ -484,10 +497,17 @@ const PTListScreen = ({ navigation, route }: any) => {
                     </Text>
                 )}
 
-                <TouchableOpacity style={[styles.continueButton, cannotContinue && styles.continueButtonDisabled]}
+                <TouchableOpacity activeOpacity={0.85}
                     disabled={!!cannotContinue} onPress={handleContinue}>
-                    <Text style={styles.continueText}>{selectedTrainer ? 'Tiếp tục đăng ký' : 'Bỏ qua PT và tiếp tục'}</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                    <LinearGradient
+                        colors={cannotContinue ? ['#AECBD0', '#AECBD0'] : [COLORS.primary, COLORS.primaryDark]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.continueButton}
+                    >
+                        <Text style={styles.continueText}>{selectedTrainer ? 'Tiếp tục đăng ký' : 'Bỏ qua PT và tiếp tục'}</Text>
+                        <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
 
@@ -502,21 +522,32 @@ const PTListScreen = ({ navigation, route }: any) => {
 
                             <View style={styles.modalHeader}>
                                 <Text style={styles.modalTitle}>Hồ sơ huấn luyện viên</Text>
-                                <TouchableOpacity onPress={() => setDetail(null)}>
-                                    <Ionicons name="close-circle" size={28} color={COLORS.muted} />
+                                <TouchableOpacity onPress={() => setDetail(null)} style={styles.modalClose}>
+                                    <Ionicons name="close" size={20} color={COLORS.textSecondary} />
                                 </TouchableOpacity>
                             </View>
 
                             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalContent}>
-                                <View style={styles.profileHero}>
-                                    {renderAvatar(detail, 84)}
+                                <LinearGradient colors={[COLORS.surfaceTeal, COLORS.white]} style={styles.profileHero}>
+                                    <View style={styles.profileAvatarRing}>
+                                        {renderAvatar(detail, 84)}
+                                    </View>
                                     <Text style={styles.profileName}>{detail.ho_ten}</Text>
                                     <Text style={styles.profileRole}>{detail.chuc_danh || 'Huấn luyện viên cá nhân'}</Text>
                                     <View style={styles.profileExperience}>
-                                        <Ionicons name="ribbon-outline" size={17} color={COLORS.primary} />
+                                        <Ionicons name="ribbon" size={15} color={COLORS.accentGold} />
                                         <Text style={styles.profileExperienceText}>{getExperience(detail)}</Text>
                                     </View>
-                                </View>
+                                    {getSpecialties(detail).length > 0 && (
+                                        <View style={styles.profileTags}>
+                                            {getSpecialties(detail).map(tag => (
+                                                <View key={tag} style={styles.tag}>
+                                                    <Text style={styles.tagText}>{tag}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    )}
+                                </LinearGradient>
 
                                 {renderDetailField('person-outline', 'Giới thiệu', detail.mo_ta)}
                                 {renderDetailField('barbell-outline', 'Kinh nghiệm làm việc', detail.kinh_nghiem_lam_viec)}
@@ -525,16 +556,23 @@ const PTListScreen = ({ navigation, route }: any) => {
                                 {renderDetailField('trophy-outline', 'Thành tựu', detail.thanh_tuu)}
 
                                 <View style={styles.availableBadge}>
-                                    <Ionicons name="checkmark-circle" size={17} color={COLORS.primary} />
+                                    <View style={styles.heroLiveDotGreen} />
                                     <Text style={styles.availableText}>Đang hoạt động tại VisionFit</Text>
                                 </View>
                             </ScrollView>
 
-                            <TouchableOpacity style={styles.modalChooseButton} onPress={() => handleSelectTrainer(detail)}>
-                                <Text style={styles.modalChooseText}>
-                                    {selectedTrainerId === String(detail.id) ? 'Xác nhận lựa chọn' : 'Chọn huấn luyện viên này'}
-                                </Text>
-                                <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
+                            <TouchableOpacity activeOpacity={0.85} onPress={() => handleSelectTrainer(detail)}>
+                                <LinearGradient
+                                    colors={[COLORS.primary, COLORS.primaryDark]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.modalChooseButton}
+                                >
+                                    <Text style={styles.modalChooseText}>
+                                        {selectedTrainerId === String(detail.id) ? 'Xác nhận lựa chọn' : 'Chọn huấn luyện viên này'}
+                                    </Text>
+                                    <Ionicons name="arrow-forward" size={19} color={COLORS.white} />
+                                </LinearGradient>
                             </TouchableOpacity>
                         </SafeAreaView>
                     )}
@@ -553,41 +591,28 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 15,
-    },
-    header: {
-        height: 62,
-        paddingHorizontal: 19,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    backButton: {
-        width: 42,
-        height: 42,
-        borderRadius: 13,
-        backgroundColor: COLORS.white,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitle: {
-        fontSize: 17,
-        color: COLORS.text,
-        fontWeight: '800',
+        gap: 14,
     },
     headerIcon: {
-        width: 42,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     progressContainer: {
-        paddingHorizontal: 22,
+        paddingHorizontal: 16,
         paddingTop: 12,
-        paddingBottom: 18,
+        paddingBottom: 14,
+        backgroundColor: COLORS.white,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
     },
     progressRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 11,
+        marginBottom: 10,
     },
     progressStep: {
         fontSize: 11,
@@ -597,72 +622,105 @@ const styles = StyleSheet.create({
     },
     progressName: {
         fontSize: 12,
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontWeight: '600',
     },
     progressTrack: {
-        height: 5,
-        borderRadius: 8,
-        backgroundColor: '#DCEBED',
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: COLORS.primaryLight,
         overflow: 'hidden',
     },
     progressFill: {
         width: '50%',
         height: '100%',
         backgroundColor: COLORS.primary,
-        borderRadius: 8,
+        borderRadius: 3,
     },
     listContent: {
-        paddingHorizontal: 18,
+        paddingHorizontal: 16,
+        paddingTop: 16,
         paddingBottom: 24,
         flexGrow: 1,
     },
     hero: {
-        borderRadius: 23,
-        padding: 23,
-        marginTop: 7,
-        marginBottom: 17,
-        minHeight: 210,
+        borderRadius: 22,
+        padding: 20,
+        marginBottom: 16,
+        overflow: 'hidden',
+        ...SHADOWS.glow,
+    },
+    heroDecor: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        top: -70,
+        right: -50,
+    },
+    heroDecorSmall: {
+        position: 'absolute',
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        bottom: -40,
+        left: -30,
     },
     heroBadge: {
         alignSelf: 'flex-start',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 7,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.14)',
-        paddingHorizontal: 11,
-        paddingVertical: 7,
-        marginBottom: 20,
+        gap: 6,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.16)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginBottom: 14,
     },
     heroBadgeText: {
-        color: '#E5FCFC',
+        color: COLORS.white,
         fontSize: 10,
         fontWeight: '800',
         letterSpacing: 1,
     },
     heroTitle: {
         color: COLORS.white,
-        fontSize: 24,
-        lineHeight: 32,
+        fontSize: 22,
+        lineHeight: 29,
         fontWeight: '900',
     },
     heroDescription: {
-        color: '#D1EEF0',
-        fontSize: 12,
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 12.5,
         lineHeight: 19,
-        marginTop: 10,
+        marginTop: 8,
         maxWidth: 300,
     },
     heroFooter: {
         flexDirection: 'row',
-        gap: 7,
+        gap: 8,
         alignItems: 'center',
-        marginTop: 18,
+        marginTop: 14,
+    },
+    heroLiveDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#6EE7B7',
+    },
+    heroLiveDotGreen: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: COLORS.accentGreen,
     },
     heroFooterText: {
-        color: '#D4F1F2',
-        fontSize: 11,
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 11.5,
         fontWeight: '600',
     },
     packageBox: {
@@ -673,64 +731,68 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.border,
         padding: 14,
-        borderRadius: 17,
-        marginBottom: 26,
+        borderRadius: 18,
+        marginBottom: 22,
+        ...SHADOWS.card,
     },
     packageIcon: {
         width: 44,
         height: 44,
-        borderRadius: 13,
-        backgroundColor: COLORS.soft,
+        borderRadius: 14,
+        backgroundColor: COLORS.surfaceTeal,
         justifyContent: 'center',
         alignItems: 'center',
     },
     packageLabel: {
-        color: COLORS.muted,
-        fontSize: 10,
+        color: COLORS.textMuted,
+        fontSize: 10.5,
         fontWeight: '800',
         letterSpacing: 0.5,
-        marginBottom: 5,
+        marginBottom: 2,
     },
     packageName: {
-        fontSize: 14,
+        fontSize: 14.5,
         fontWeight: '800',
-        color: COLORS.text,
+        color: COLORS.textPrimary,
     },
     warningBox: {
         flexDirection: 'row',
         gap: 9,
-        padding: 13,
+        padding: 12,
+        marginTop: -8,
         marginBottom: 18,
-        backgroundColor: '#FFF5E6',
-        borderRadius: 12,
+        backgroundColor: '#FFF7ED',
+        borderWidth: 1,
+        borderColor: '#FDE6C4',
+        borderRadius: 14,
     },
     warningText: {
         flex: 1,
         color: '#976C29',
         fontSize: 12,
-        lineHeight: 19,
+        lineHeight: 18,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 18,
+        marginBottom: 12,
     },
     sectionTitle: {
-        fontSize: 19,
-        fontWeight: '900',
-        color: COLORS.text,
+        fontSize: 17,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
     sectionSubtitle: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 12,
-        marginTop: 5,
+        marginTop: 2,
     },
     countBadge: {
-        backgroundColor: COLORS.soft,
-        borderRadius: 15,
-        paddingHorizontal: 11,
-        paddingVertical: 7,
+        backgroundColor: COLORS.primaryLight,
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
     },
     countText: {
         color: COLORS.primary,
@@ -738,8 +800,8 @@ const styles = StyleSheet.create({
         fontWeight: '800',
     },
     searchBox: {
-        height: 51,
-        borderRadius: 15,
+        height: 50,
+        borderRadius: 14,
         borderWidth: 1,
         borderColor: COLORS.border,
         backgroundColor: COLORS.white,
@@ -747,23 +809,25 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        marginBottom: 17,
+        marginBottom: 12,
+        ...SHADOWS.small,
     },
     searchInput: {
         flex: 1,
         paddingVertical: 0,
-        fontSize: 13,
-        color: COLORS.text,
+        fontSize: 14,
+        color: COLORS.textPrimary,
     },
     filtersRow: {
         flexDirection: 'row',
-        gap: 9,
-        paddingBottom: 20,
+        gap: 8,
+        paddingBottom: 16,
     },
     filterChip: {
         paddingHorizontal: 16,
-        paddingVertical: 11,
-        borderRadius: 13,
+        height: 36,
+        justifyContent: 'center',
+        borderRadius: 18,
         borderWidth: 1,
         borderColor: COLORS.border,
         backgroundColor: COLORS.white,
@@ -771,11 +835,12 @@ const styles = StyleSheet.create({
     filterChipActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
+        ...SHADOWS.glow,
     },
     filterText: {
-        fontSize: 12,
+        fontSize: 12.5,
         fontWeight: '700',
-        color: COLORS.muted,
+        color: COLORS.textSecondary,
     },
     filterTextActive: {
         color: COLORS.white,
@@ -783,19 +848,28 @@ const styles = StyleSheet.create({
     trainerCard: {
         borderWidth: 1.5,
         borderColor: COLORS.border,
-        borderRadius: 21,
-        padding: 17,
+        borderRadius: 20,
+        padding: 16,
         backgroundColor: COLORS.white,
-        marginBottom: 15,
+        marginBottom: 14,
+        ...SHADOWS.card,
     },
     trainerCardSelected: {
         borderColor: COLORS.primary,
-        backgroundColor: '#FCFFFF',
-        elevation: 2,
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.07,
-        shadowOffset: { width: 0, height: 3 },
-        shadowRadius: 8,
+        backgroundColor: '#FBFEFE',
+        ...SHADOWS.card,
+        shadowOpacity: 0.12,
+        elevation: 6,
+    },
+    selectedStripe: {
+        position: 'absolute',
+        top: 20,
+        left: -1.5,
+        bottom: 20,
+        width: 4,
+        borderTopRightRadius: 4,
+        borderBottomRightRadius: 4,
+        backgroundColor: COLORS.primary,
     },
     trainerTop: {
         flexDirection: 'row',
@@ -803,7 +877,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatar: {
-        backgroundColor: COLORS.soft,
+        backgroundColor: COLORS.surfaceTeal,
+        borderWidth: 2,
+        borderColor: COLORS.borderFocus,
         overflow: 'hidden',
         justifyContent: 'center',
         alignItems: 'center',
@@ -812,87 +888,133 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontWeight: '900',
     },
+    onlineDot: {
+        position: 'absolute',
+        right: 2,
+        bottom: 2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: COLORS.accentGreen,
+        borderWidth: 2.5,
+        borderColor: COLORS.white,
+    },
     trainerInfo: {
         flex: 1,
     },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginBottom: 2,
+    },
     trainerName: {
-        color: COLORS.text,
+        flexShrink: 1,
+        color: COLORS.textPrimary,
         fontSize: 16,
-        fontWeight: '900',
-        marginBottom: 5,
+        fontWeight: '800',
     },
     trainerRole: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 12,
-        marginBottom: 9,
+        marginBottom: 6,
     },
     experienceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
+        alignSelf: 'flex-start',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
+        backgroundColor: '#FFF7ED',
     },
     experienceText: {
-        color: COLORS.primary,
+        color: '#B47A30',
         fontSize: 11,
         fontWeight: '700',
+    },
+    checkCircle: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        borderWidth: 2,
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.white,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkCircleActive: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.primary,
     },
     tagsRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 7,
-        marginTop: 16,
+        gap: 6,
+        marginTop: 14,
     },
     tag: {
-        paddingHorizontal: 11,
-        paddingVertical: 7,
-        borderRadius: 8,
-        backgroundColor: COLORS.soft,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+        backgroundColor: COLORS.primaryLight,
     },
     tagText: {
         color: COLORS.primary,
-        fontSize: 11,
+        fontSize: 11.5,
         fontWeight: '700',
     },
     trainerDescription: {
-        color: '#55747A',
-        fontSize: 12,
-        lineHeight: 20,
-        marginTop: 14,
+        color: COLORS.textSecondary,
+        fontSize: 12.5,
+        lineHeight: 19,
+        marginTop: 12,
     },
     cardDivider: {
         height: 1,
-        backgroundColor: COLORS.border,
-        marginVertical: 16,
+        backgroundColor: COLORS.borderLight,
+        marginVertical: 14,
     },
     trainerBottom: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        gap: 10,
     },
     viewProfileButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 8,
+        height: 38,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
     },
     viewProfileText: {
-        fontSize: 12,
+        fontSize: 12.5,
         fontWeight: '800',
         color: COLORS.primary,
     },
     selectButton: {
-        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        borderWidth: 1.5,
         borderColor: COLORS.primary,
-        paddingHorizontal: 17,
-        paddingVertical: 10,
-        borderRadius: 11,
+        paddingHorizontal: 14,
+        height: 38,
+        borderRadius: 12,
         backgroundColor: COLORS.white,
     },
     selectButtonActive: {
         backgroundColor: COLORS.primary,
     },
     selectButtonText: {
-        fontSize: 12,
+        fontSize: 12.5,
         color: COLORS.primary,
         fontWeight: '800',
     },
@@ -901,39 +1023,52 @@ const styles = StyleSheet.create({
     },
     noteBox: {
         flexDirection: 'row',
-        gap: 9,
-        marginTop: 8,
+        gap: 10,
+        marginTop: 6,
         padding: 14,
-        borderRadius: 13,
-        backgroundColor: COLORS.soft,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
+        borderWidth: 1,
+        borderColor: COLORS.borderFocus,
     },
     noteText: {
         flex: 1,
-        color: COLORS.primary,
-        fontSize: 11,
+        color: COLORS.primaryDark,
+        fontSize: 12,
         lineHeight: 18,
     },
     emptyState: {
-        paddingVertical: 48,
+        paddingVertical: 40,
         alignItems: 'center',
-        gap: 12,
+        gap: 10,
+    },
+    emptyIcon: {
+        width: 72,
+        height: 72,
+        borderRadius: 24,
+        backgroundColor: COLORS.surfaceTeal,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 4,
     },
     emptyTitle: {
-        color: COLORS.text,
+        color: COLORS.textPrimary,
         fontSize: 15,
         fontWeight: '800',
     },
     stateText: {
-        color: COLORS.muted,
-        fontSize: 12,
-        lineHeight: 19,
+        color: COLORS.textMuted,
+        fontSize: 12.5,
+        lineHeight: 18,
         textAlign: 'center',
     },
     retryButton: {
         backgroundColor: COLORS.primary,
         paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 11,
+        height: 42,
+        justifyContent: 'center',
+        borderRadius: 14,
+        marginTop: 4,
     },
     retryText: {
         color: COLORS.white,
@@ -941,47 +1076,59 @@ const styles = StyleSheet.create({
     },
     bottomBar: {
         backgroundColor: COLORS.white,
-        paddingHorizontal: 18,
-        paddingTop: 13,
+        paddingHorizontal: 16,
+        paddingTop: 14,
         paddingBottom: 12,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        borderTopColor: COLORS.borderLight,
+        ...SHADOWS.card,
+        shadowOffset: { width: 0, height: -4 },
+        elevation: 10,
     },
     selectionSummary: {
         flexDirection: 'row',
-        gap: 11,
+        gap: 12,
         alignItems: 'center',
-        marginBottom: 14,
+        marginBottom: 12,
+        padding: 10,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
     },
     summaryLabel: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 0.5,
-        marginBottom: 5,
+        marginBottom: 2,
     },
     summaryName: {
-        fontSize: 14,
+        fontSize: 14.5,
         fontWeight: '800',
-        color: COLORS.text,
+        color: COLORS.textPrimary,
+    },
+    summaryCheck: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     noSelectionText: {
-        fontSize: 12,
-        color: COLORS.muted,
+        fontSize: 12.5,
+        color: COLORS.textMuted,
         textAlign: 'center',
-        marginBottom: 13,
+        marginBottom: 12,
     },
     continueButton: {
-        backgroundColor: COLORS.primary,
         borderRadius: 16,
-        height: 54,
+        height: 52,
         flexDirection: 'row',
-        gap: 12,
+        gap: 10,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    continueButtonDisabled: {
-        backgroundColor: '#AECBD0',
     },
     continueText: {
         color: COLORS.white,
@@ -1002,117 +1149,145 @@ const styles = StyleSheet.create({
     },
     modalSheet: {
         maxHeight: '85%',
-        paddingHorizontal: 21,
-        paddingBottom: 15,
+        paddingHorizontal: 16,
+        paddingBottom: 14,
         backgroundColor: COLORS.white,
-        borderTopLeftRadius: 27,
-        borderTopRightRadius: 27,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
     },
     modalHandle: {
-        width: 44,
+        width: 42,
         height: 5,
-        borderRadius: 5,
-        backgroundColor: '#D8E7E9',
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
         alignSelf: 'center',
-        marginTop: 12,
-        marginBottom: 18,
+        marginTop: 10,
+        marginBottom: 14,
     },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 15,
+        marginBottom: 14,
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: '900',
-        color: COLORS.text,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+    },
+    modalClose: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     modalContent: {
-        paddingBottom: 20,
+        paddingBottom: 16,
     },
     profileHero: {
         alignItems: 'center',
         paddingVertical: 20,
-        borderRadius: 19,
-        backgroundColor: COLORS.background,
-        marginBottom: 20,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        marginBottom: 8,
+    },
+    profileAvatarRing: {
+        padding: 4,
+        borderRadius: 50,
+        backgroundColor: COLORS.white,
+        ...SHADOWS.card,
     },
     profileName: {
-        marginTop: 13,
+        marginTop: 12,
         fontSize: 19,
-        fontWeight: '900',
-        color: COLORS.text,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
     profileRole: {
-        color: COLORS.muted,
-        fontSize: 12,
-        marginTop: 6,
+        color: COLORS.textMuted,
+        fontSize: 12.5,
+        marginTop: 3,
     },
     profileExperience: {
         flexDirection: 'row',
-        gap: 6,
+        gap: 5,
         alignItems: 'center',
-        marginTop: 11,
+        marginTop: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+        backgroundColor: '#FFF7ED',
     },
     profileExperienceText: {
-        color: COLORS.primary,
+        color: '#B47A30',
         fontWeight: '700',
         fontSize: 12,
+    },
+    profileTags: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: 12,
     },
     detailField: {
         flexDirection: 'row',
         gap: 12,
-        paddingVertical: 15,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        borderBottomColor: COLORS.borderLight,
     },
     detailFieldIcon: {
-        width: 37,
-        height: 37,
-        borderRadius: 11,
-        backgroundColor: COLORS.soft,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: COLORS.surfaceTeal,
         alignItems: 'center',
         justifyContent: 'center',
     },
     detailFieldTitle: {
-        fontSize: 13,
+        fontSize: 13.5,
         fontWeight: '800',
-        color: COLORS.text,
-        marginBottom: 6,
+        color: COLORS.textPrimary,
+        marginBottom: 3,
     },
     detailFieldText: {
-        fontSize: 12,
-        color: '#57747A',
-        lineHeight: 20,
+        fontSize: 12.5,
+        color: COLORS.textSecondary,
+        lineHeight: 19,
     },
     availableBadge: {
         flexDirection: 'row',
         alignSelf: 'flex-start',
         gap: 7,
         alignItems: 'center',
-        borderRadius: 9,
+        borderRadius: 12,
         paddingHorizontal: 12,
-        paddingVertical: 10,
-        backgroundColor: COLORS.soft,
-        marginTop: 18,
+        paddingVertical: 8,
+        backgroundColor: '#ECFDF5',
+        marginTop: 16,
     },
     availableText: {
-        fontSize: 11,
-        color: COLORS.primary,
+        fontSize: 11.5,
+        color: COLORS.accentGreen,
         fontWeight: '700',
     },
     modalChooseButton: {
-        height: 54,
-        backgroundColor: COLORS.primary,
-        borderRadius: 15,
+        height: 52,
+        borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
     },
     modalChooseText: {
-        fontSize: 14,
+        fontSize: 15,
         color: COLORS.white,
         fontWeight: '800',
     },
