@@ -1,1 +1,334 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VisionFit — Mascot Lab</title><link rel="stylesheet" href="/mascot/mascot.css"></head><body><main><h1>Phòng thử linh vật</h1><p>Khu vực phát triển giao diện độc lập. Các lựa chọn ở đây chỉ là dữ liệu mẫu, không ghi nhận buổi tập hoặc cấp độ thật.</p><label>Nhân vật <select id="species"></select></label><label>Cấp ngoại hình <select id="stage"></select></label><div id="preview" role="img" aria-label="Linh vật minh họa">🐻</div><p id="status" aria-live="polite"></p><div id="states"></div><p>Đổi emoji mẫu thành SVG/animation tại <code>apps/web/mascot/</code>.</p><a href="/">Về ứng dụng</a></main><script type="module" src="/mascot/lab.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VisionFit — Mascot Lab & Testing Studio</title>
+  <link rel="stylesheet" href="/mascot/mascot.css">
+  <style>
+    /* Bổ sung giao diện phòng thử */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #edf5ef;
+      color: #123326;
+      margin: 0;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .lab-container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    header.lab-header {
+      background: #ffffff;
+      padding: 20px 24px;
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(18, 50, 36, 0.08);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .lab-header h1 {
+      margin: 0 0 6px 0;
+      font-size: 22px;
+      color: #123326;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lab-badge {
+      font-size: 11px;
+      background: #e1f5e8;
+      color: #1b8a5a;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+    .lab-header p {
+      margin: 0;
+      font-size: 13.5px;
+      color: #555;
+    }
+    .lab-nav-links a {
+      color: #1b8a5a;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: #f0f7f3;
+    }
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+    }
+    @media (max-width: 860px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .lab-main-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(18, 50, 36, 0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .lab-preview-box {
+      width: 240px;
+      height: 280px;
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .lab-status-bar {
+      width: 100%;
+      background: #f4faf6;
+      border: 1px solid #d2e8db;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 13.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .lab-controls-panel {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(18, 50, 36, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .control-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 6px;
+    }
+    .lab-btn {
+      background: #f0f5f2;
+      border: 1px solid #c9ded2;
+      color: #123326;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+    .lab-btn:hover {
+      background: #e2ede6;
+    }
+    .lab-btn[aria-pressed="true"], .lab-btn.active {
+      background: #1b8a5a;
+      color: #ffffff;
+      border-color: #1b8a5a;
+      box-shadow: 0 2px 8px rgba(27, 138, 90, 0.28);
+    }
+    .lab-select {
+      font-size: 14px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid #c9ded2;
+      background: #fafcfb;
+      color: #123326;
+      outline: none;
+    }
+    .lab-action-btn {
+      background: #1b8a5a;
+      color: #ffffff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .lab-action-btn.secondary {
+      background: #f0f5f2;
+      color: #123326;
+      border: 1px solid #c9ded2;
+    }
+    .lab-notice {
+      background: #fff8e6;
+      border-left: 3px solid #f9b233;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #634300;
+      line-height: 1.45;
+    }
+    .stages-showcase {
+      margin-top: 24px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(18, 50, 36, 0.06);
+    }
+    .stages-showcase h3 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      color: #123326;
+    }
+    .stages-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 680px) {
+      .stages-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .stage-item {
+      text-align: center;
+      padding: 12px;
+      background: #f7faf8;
+      border-radius: 14px;
+      border: 1px solid #e1ebe4;
+    }
+    .stage-item .stage-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1b8a5a;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+    .stage-item .stage-desc {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+    .stage-preview {
+      width: 100px;
+      height: 120px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="lab-container">
+    <header class="lab-header">
+      <div>
+        <h1>Phòng Thử Linh Vật <span class="lab-badge">Mascot Lab v1.0</span></h1>
+        <p>Kiểm thử độc lập chuyển động, 4 cấp ngoại hình, widget nổi và mô phỏng sự kiện tập luyện.</p>
+      </div>
+      <div class="lab-nav-links">
+        <a href="/">← Quay lại ứng dụng chat</a>
+      </div>
+    </header>
+
+    <div class="lab-grid">
+      <!-- Cột chính: Canvas xem linh vật lớn -->
+      <section class="lab-main-card">
+        <div class="lab-status-bar">
+          <div>
+            Nhân vật: <strong id="lbl-species">Gấu VIF</strong> ·
+            Cấp độ: <strong id="lbl-stage">starter</strong> ·
+            Trạng thái: <strong id="lbl-state">idle</strong>
+          </div>
+          <span class="lab-badge" id="lbl-workout-status">Nghỉ ngơi</span>
+        </div>
+
+        <div class="lab-preview-box" id="lab-mascot-preview"></div>
+
+        <div class="lab-notice">
+          ℹ <strong>Dữ liệu thử nghiệm (DEMO):</strong> Tất cả lựa chọn ở đây phục vụ kiểm thử giao diện. Cấp độ thật và xác nhận hoàn thành tập luyện phải do backend xác thực, không tự ghi nhận thành tích từ browser.
+        </div>
+      </section>
+
+      <!-- Cột phụ: Bảng điều khiển giả lập -->
+      <aside class="lab-controls-panel">
+        <div class="control-group">
+          <label for="sel-species">1. Chọn linh vật</label>
+          <select id="sel-species" class="lab-select">
+            <option value="bear">🐻 Gấu VIF (Sức mạnh & Bền bỉ)</option>
+            <option value="cat">🐱 Mèo VIF (Nhanh nhẹn & Khéo léo)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="sel-stage">2. Cấp ngoại hình (Demo)</label>
+          <select id="sel-stage" class="lab-select">
+            <option value="starter">starter (Mới bắt đầu · Nhỏ nhắn)</option>
+            <option value="active">active (Khỏe khoắn · Áo tập VIF)</option>
+            <option value="strong">strong (Săn chắc · Đai lưng Pro)</option>
+            <option value="champion">champion (Vô địch · 6 múi & Huy chương)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>3. Trạng thái cử động (7 states)</label>
+          <div class="btn-grid" id="states-grid"></div>
+        </div>
+
+        <div class="control-group">
+          <label>4. Giảm chuyển động (A11y)</label>
+          <button type="button" class="lab-btn" id="btn-toggle-motion">Chế độ bình thường</button>
+        </div>
+
+        <div class="control-group">
+          <label>5. Mô phỏng sự kiện tập luyện</label>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button type="button" class="lab-action-btn" id="btn-workout-start">▶ Bắt đầu tập (Training)</button>
+            <button type="button" class="lab-action-btn secondary" id="btn-workout-pause">⏸ Tạm dừng (Pause)</button>
+            <button type="button" class="lab-action-btn secondary" id="btn-workout-complete">🎉 Hoàn thành buổi tập (Celebrating)</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>6. Thử nghiệm Widget nổi</label>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="lab-action-btn secondary" style="flex:1;" id="btn-test-widget">Toggle Widget</button>
+            <button type="button" class="lab-action-btn secondary" style="flex:1;" id="btn-test-greet">Thử Lời Chào</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>7. Mô phỏng API & Lỗi</label>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button type="button" class="lab-btn" id="btn-sim-slow">⏳ Mô phỏng phản hồi chậm (3s)</button>
+            <button type="button" class="lab-btn" id="btn-sim-error">⚠️ Mô phỏng lỗi API 500</button>
+            <button type="button" class="lab-btn" id="btn-sim-expired">🔒 Mô phỏng hết phiên (401)</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Hàng so sánh cả 4 cấp ngoại hình song song -->
+    <section class="stages-showcase">
+      <h3>So sánh 4 cấp ngoại hình (Tiến hóa đồng nhất)</h3>
+      <div class="stages-row" id="stages-comparison-row"></div>
+    </section>
+  </div>
+
+  <script type="module" src="/mascot/lab.js"></script>
+</body>
+</html>

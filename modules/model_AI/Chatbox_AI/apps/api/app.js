@@ -99,7 +99,28 @@ export function createApp(c, { logger = console.info } = {}) {
         throw new AppError(404, 'Không tìm thấy API.');
       }
       if (req.method !== 'GET') throw new AppError(405, 'Phương thức không được hỗ trợ.');
-      const files = { '/': ['index.html','text/html'], '/app.js': ['app.js','text/javascript'], '/styles.css': ['styles.css','text/css'], '/favicon.svg': ['favicon.svg','image/svg+xml'], '/services/api.js': ['services/api.js','text/javascript'], '/mascot-lab': ['mascot/lab.html','text/html'], '/mascot/lab.js': ['mascot/lab.js','text/javascript'], '/mascot/mascot.css': ['mascot/mascot.css','text/css'], '/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript'] };
+      const files = {
+        '/': ['index.html','text/html'],
+        '/app.js': ['app.js','text/javascript'],
+        '/styles.css': ['styles.css','text/css'],
+        '/favicon.svg': ['favicon.svg','image/svg+xml'],
+        '/services/api.js': ['services/api.js','text/javascript'],
+        '/services/chatboxCore.js': ['services/chatboxCore.js','text/javascript'],
+        '/mascot-lab': ['mascot/lab.html','text/html'],
+        '/mascot/lab.js': ['mascot/lab.js','text/javascript'],
+        '/mascot/mascot.css': ['mascot/mascot.css','text/css'],
+        '/mascot/bear.js': ['mascot/bear.js','text/javascript'],
+        '/mascot/cat.js': ['mascot/cat.js','text/javascript'],
+        '/mascot/renderer.js': ['mascot/renderer.js','text/javascript'],
+        '/mascot/selector.js': ['mascot/selector.js','text/javascript'],
+        '/widget-demo': ['widget/demo.html','text/html'],
+        '/widget/demo.js': ['widget/demo.js','text/javascript'],
+        '/widget/widget.css': ['widget/widget.css','text/css'],
+        '/widget/widget.js': ['widget/widget.js','text/javascript'],
+        '/widget/adapter.js': ['widget/adapter.js','text/javascript'],
+        '/widget/sanitizer.js': ['widget/sanitizer.js','text/javascript'],
+        '/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript']
+      };
       if (!files[path]) throw new AppError(404, 'Không tìm thấy trang.');
       const [file, type] = files[path];
       res.writeHead(200, { 'Content-Type': `${type}; charset=utf-8` }); res.end(await readFile(PUBLIC + file));

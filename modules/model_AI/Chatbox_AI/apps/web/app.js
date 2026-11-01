@@ -17,12 +17,66 @@ function updateMode() {
   $('demo-info').hidden = state.dataMode !== 'demo';
   $('mode-notice').textContent = state.dataMode === 'demo' ? 'Bạn đang dùng dữ liệu minh họa. Đây chưa phải thông tin hội viên thật.' : state.aiMode === 'demo' ? 'Đang đọc dữ liệu thật từ VisionFit. Trả lời cơ bản theo từ khóa; chưa bật mô hình AI.' : 'Thông tin được tra cứu theo quyền tài khoản. Trợ lý hiện chỉ hỗ trợ đọc dữ liệu.';
 }
+function escapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function isSafeURL(url) {
+  if (!url || typeof url !== 'string') return false;
+  const t = url.trim().toLowerCase();
+  return t.startsWith('https://') || t.startsWith('http://');
+}
+function formatInline(str) {
+  return str
+    .replace(/`([^`]+)`/g, '<code class="vif-inline-code">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, url) => {
+      const unescaped = url.replace(/&amp;/g, '&');
+      return isSafeURL(unescaped) ? `<a href="${url}" target="_blank" rel="noopener noreferrer" class="vif-msg-link">${label} ↗</a>` : label;
+    });
+}
+function formatSafeHTML(text) {
+  if (typeof text !== 'string') return '';
+  const escaped = escapeHTML(text);
+  const lines = escaped.split(/\r?\n/);
+  const parts = [];
+  let inUl = false, inOl = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const isUl = /^[-*]\s+(.*)$/.test(trimmed);
+    const isOl = /^(\d+)\.\s+(.*)$/.test(trimmed);
+    if (isUl || isOl) {
+      const match = isUl ? trimmed.match(/^[-*]\s+(.*)$/) : trimmed.match(/^(\d+)\.\s+(.*)$/);
+      const content = match ? match[1] || match[2] : trimmed;
+      if (isUl && !inUl) { if (inOl) { parts.push('</ol>'); inOl = false; } parts.push('<ul class="vif-msg-list">'); inUl = true; }
+      else if (isOl && !inOl) { if (inUl) { parts.push('</ul>'); inUl = false; } parts.push('<ol class="vif-msg-list">'); inOl = true; }
+      parts.push(`<li>${formatInline(content)}</li>`);
+    } else {
+      if (inUl) { parts.push('</ul>'); inUl = false; }
+      if (inOl) { parts.push('</ol>'); inOl = false; }
+      if (trimmed === '') parts.push('<div style="height:6px"></div>');
+      else parts.push(`<p class="vif-msg-p">${formatInline(line)}</p>`);
+    }
+  }
+  if (inUl) parts.push('</ul>');
+  if (inOl) parts.push('</ol>');
+  return parts.join('');
+}
 function renderMessages(messages) {
   $('messages').replaceChildren(); $('welcome').hidden = messages.length > 0;
   for (const m of messages) {
     const row = document.createElement('div'); row.className = `bubble-row ${m.role === 'user' ? 'user' : 'assistant'}`;
     if (m.role !== 'user') { const avatar = document.createElement('div'); avatar.className = 'bubble-avatar'; avatar.textContent = '✦'; row.append(avatar); }
-    const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.textContent = m.content; row.append(bubble); $('messages').append(row);
+    const bubble = document.createElement('div'); bubble.className = 'bubble';
+    if (m.role === 'user') {
+      bubble.textContent = m.content;
+    } else {
+      bubble.innerHTML = formatSafeHTML(m.content);
+    }
+    row.append(bubble); $('messages').append(row);
   }
   $('chat-scroll').scrollTop = $('chat-scroll').scrollHeight;
 }
@@ -54,6 +108,7 @@ async function showApp(auth) {
   state.generation++; Object.assign(state, auth); const generation = state.generation;
   $('login-view').hidden = true; $('app-view').hidden = false; $('password').value = '';
   $('user-name').textContent = state.user.name; $('user-avatar').textContent = state.user.name.slice(0, 1); $('user-role').textContent = roles[state.user.role]; updateMode();
+  if ($('welcome-title')) $('welcome-title').innerHTML = `Hôm nay mình cùng<br>tiến thêm một chút nhé, <em>${escapeHTML(state.user.name)}</em>?`;
   renderMessages([]); $('context-content').replaceChildren();
   await Promise.allSettled([loadContext(generation), (async()=>{
     try { const r = await api('/api/messages'); if (generation === state.generation && state.user) renderMessages(r.messages); }
