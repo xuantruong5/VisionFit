@@ -170,3 +170,7 @@ Route::group(['prefix' => 'admin','middleware' => 'AdminMiddleware'], function (
 
 
 
+
+
+// VisionFit Assistant integration
+require __DIR__ . '/assistant.php';
