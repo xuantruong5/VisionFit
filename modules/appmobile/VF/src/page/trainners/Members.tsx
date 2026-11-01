@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: 'rgba(255,255,255,0.75)',
   },
   headerTitle: {
@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'rgba(255,255,255,0.75)',
     marginTop: 2,
+    fontWeight: '600',
   },
 
   // TÌM KIẾM
@@ -273,6 +274,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
     paddingVertical: 0,
+    fontWeight: '600',
   },
 
   // CHIPS
@@ -295,7 +297,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
   },
   chipTextActive: {
@@ -362,7 +364,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.accentGreen,
   },
   percentBadge: {
@@ -406,6 +408,7 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: COLORS.textMuted,
+    fontWeight: '600',
   },
   metaTextActive: {
     color: COLORS.primary,

@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: 'rgba(255,255,255,0.75)',
     marginTop: 3,
+    fontWeight: '600',
   },
   infoRow: {
     flexDirection: 'row',
@@ -272,6 +273,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 1,
+    fontWeight: '600',
   },
 
   // SAO
@@ -305,14 +307,11 @@ const styles = StyleSheet.create({
 
   // SECTION
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
   },
 
   // CƯỜNG ĐỘ
@@ -366,7 +365,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.primary,
   },
   tagTextActive: {
@@ -383,12 +382,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
     padding: 0,
+    fontWeight: '600',
   },
   counter: {
     alignSelf: 'flex-end',
     fontSize: 11,
     color: COLORS.textLight,
     marginTop: 6,
+    fontWeight: '600',
   },
 
   // LƯU

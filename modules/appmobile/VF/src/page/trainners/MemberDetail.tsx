@@ -231,6 +231,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
 
   // HEADER
@@ -295,6 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: 'rgba(255,255,255,0.75)',
     marginTop: 2,
+    fontWeight: '600',
   },
   badgeRow: {
     flexDirection: 'row',
@@ -349,6 +351,7 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 11,
     color: COLORS.textMuted,
+    fontWeight: '600',
   },
   divider: {
     width: 1,
@@ -400,14 +403,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
   },
   seeAll: {
     fontSize: 13,
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
   goalNoteText: {
     flex: 1,
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#047857',
   },
 
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
   monthText: {
     fontSize: 10.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textMuted,
   },
   doneIcon: {

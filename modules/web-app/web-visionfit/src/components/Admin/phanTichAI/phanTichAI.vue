@@ -609,14 +609,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-refresh {
@@ -625,7 +625,7 @@ export default {
     border-radius: 11px;
     background: white;
     color: #0d7f8d;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
     transition: 0.15s ease;
 }
@@ -659,14 +659,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -706,7 +706,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .filter-bar select {
@@ -718,7 +718,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .ai-table {
@@ -730,8 +730,8 @@ export default {
     padding: 11px 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9.5px;
-    font-weight: 750;
+    font-size: 13px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -740,7 +740,7 @@ export default {
     padding: 13px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #34585d;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .ai-table tbody tr {
@@ -758,13 +758,13 @@ export default {
 
 .session-cell strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .session-cell span {
     margin-top: 3px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .user-cell {
@@ -782,21 +782,21 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 800;
 }
 
 .user-cell strong {
     display: block;
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .user-cell span {
     display: block;
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .exercise-badge {
@@ -805,7 +805,7 @@ export default {
     border-radius: 999px;
     background: #e3f8fb;
     color: #0b7481;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 700;
 }
 
@@ -816,13 +816,13 @@ export default {
 
 .rep-info strong {
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .rep-info span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .confidence {
@@ -832,8 +832,8 @@ export default {
 .confidence-value {
     margin-bottom: 5px;
     color: #075e68;
-    font-size: 10px;
-    font-weight: 750;
+    font-size: 13.5px;
+    font-weight: 700;
 }
 
 .confidence-bar {
@@ -857,7 +857,7 @@ export default {
     gap: 5px;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -902,7 +902,7 @@ export default {
     border-radius: 8px;
     background: white;
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -953,7 +953,7 @@ export default {
 
 .ai-label {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -961,13 +961,13 @@ export default {
 .modal-header h3 {
     margin: 3px 0 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-close {
@@ -977,7 +977,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .summary-grid {
@@ -996,14 +996,14 @@ export default {
 .summary-box span {
     display: block;
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .summary-box strong {
     display: block;
     margin-top: 5px;
     color: #075e68;
-    font-size: 20px;
+    font-size: 22px;
 }
 
 .summary-box.good strong {
@@ -1023,13 +1023,13 @@ export default {
 .section h4 {
     margin: 0;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .section-title p {
     margin: 3px 0 0;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .rep-list {
@@ -1064,7 +1064,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 800;
 }
 
@@ -1080,13 +1080,13 @@ export default {
 
 .rep-head strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .rep-result {
     padding: 4px 7px;
     border-radius: 999px;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 700;
 }
 
@@ -1103,12 +1103,12 @@ export default {
 .rep-main p {
     margin: 6px 0;
     color: #597d82;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .rep-confidence {
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .ai-summary {
@@ -1135,13 +1135,13 @@ export default {
 
 .ai-summary strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .ai-summary p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .trainer-review {
@@ -1164,7 +1164,7 @@ export default {
     border-radius: 11px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 800;
 }
 
@@ -1175,19 +1175,19 @@ export default {
 
 .trainer-review strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .trainer-review span {
     margin-top: 2px;
     color: #2c7c60;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .trainer-review p {
     margin: 7px 0 0;
     color: #597d82;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .waiting-review {
@@ -1196,7 +1196,7 @@ export default {
     border-radius: 11px;
     background: #fff8e9;
     color: #9d701f;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .state-box {
@@ -1236,14 +1236,14 @@ export default {
 .state-box h4 {
     margin: 0;
     color: #11343a;
-    font-size: 14px;
+    font-size: 16.5px;
 }
 
 .state-box p {
     max-width: 430px;
     margin: 7px auto 0;
     color: #71949a;
-    font-size: 10px;
+    font-size: 13.5px;
     line-height: 1.6;
 }
 
@@ -1258,7 +1258,7 @@ export default {
 .btn-save {
     padding: 9px 15px;
     border-radius: 10px;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 }
 

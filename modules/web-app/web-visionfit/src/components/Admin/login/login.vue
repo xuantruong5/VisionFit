@@ -297,7 +297,7 @@ export default {
         },
 
         forgotPassword() {
-            alert('Demo: Chức năng quên mật khẩu sẽ làm sau.');
+            this.$router.push('/admin/quen-mat-khau');
         }
     }
 }
@@ -429,7 +429,7 @@ export default {
     border-radius: 999px;
     background: rgba(10, 22, 24, 0.48);
     color: white;
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: 1.3px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
@@ -467,8 +467,8 @@ export default {
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.96);
     color: #0d7f8d;
-    font-size: 17px;
-    font-weight: 850;
+    font-size: 19px;
+    font-weight: 800;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.17);
 }
 
@@ -482,7 +482,7 @@ export default {
     display: inline-flex;
     margin-bottom: 11px;
     color: rgba(255, 255, 255, 0.82);
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
     letter-spacing: 2.4px;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
@@ -504,7 +504,7 @@ export default {
     max-width: 470px;
     margin: 16px 0 0;
     color: rgba(255, 255, 255, 0.92);
-    font-size: 11.5px;
+    font-size: 15px;
     line-height: 1.75;
     text-shadow:
         0 2px 6px rgba(0, 0, 0, 0.72);
@@ -556,7 +556,7 @@ export default {
     border-radius: 13px;
     background: rgba(255, 255, 255, 0.13);
     color: white;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
 }
 
@@ -571,19 +571,19 @@ export default {
 
 .feature-text strong {
     color: white;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .feature-text small {
     margin-top: 3px;
     color: rgba(255, 255, 255, 0.68);
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .feature-arrow {
     margin-right: 4px;
     color: rgba(255, 255, 255, 0.46);
-    font-size: 11px;
+    font-size: 14.5px;
     transition: 0.2s ease;
 }
 
@@ -648,7 +648,7 @@ export default {
 
 .portal-label {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1.7px;
 }
@@ -664,7 +664,7 @@ export default {
 .login-header p {
     margin: 6px 0 0;
     color: #71949a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 /* =========================================================
@@ -683,7 +683,7 @@ form {
     display: block;
     margin-bottom: 6px;
     color: #456a70;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 700;
 }
 
@@ -703,7 +703,7 @@ form {
     border: none;
     background: transparent;
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 700;
 }
 
@@ -728,7 +728,7 @@ form {
 
 .input-icon {
     color: #79a4aa;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .input-box input {
@@ -739,7 +739,7 @@ form {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .input-box input::placeholder {
@@ -751,7 +751,7 @@ form {
     border: none;
     background: transparent;
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 700;
 }
 
@@ -762,7 +762,7 @@ form {
     width: fit-content;
     color: #66898e;
     cursor: pointer;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .remember input {
@@ -776,7 +776,7 @@ form {
     border-radius: 10px;
     background: #fff5f5;
     color: #b94f4f;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 /* =========================================================
@@ -795,8 +795,8 @@ form {
     border-radius: 15px;
     background: #0d7f8d;
     color: white;
-    font-size: 10px;
-    font-weight: 750;
+    font-size: 13.5px;
+    font-weight: 700;
     box-shadow:
         0 9px 22px rgba(13, 127, 141, 0.18);
     transition: 0.2s ease;
@@ -814,7 +814,7 @@ form {
 }
 
 .login-arrow {
-    font-size: 13px;
+    font-size: 16px;
     transition: 0.2s ease;
 }
 
@@ -857,7 +857,7 @@ form {
     padding: 0 12px;
     background: white;
     color: #91aaae;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .btn-google {
@@ -871,7 +871,7 @@ form {
     border-radius: 15px;
     background: white;
     color: #34585d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
     transition: 0.2s ease;
 }
@@ -897,8 +897,8 @@ form {
 
 .google-blue {
     color: #4285f4;
-    font-size: 15px;
-    font-weight: 900;
+    font-size: 17px;
+    font-weight: 800;
 }
 
 /* =========================================================
@@ -918,7 +918,7 @@ form {
     align-items: center;
     gap: 6px;
     color: #0d7f8d;
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -950,13 +950,13 @@ form {
 
 .demo-account span {
     color: #839fa4;
-    font-size: 7px;
+    font-size: 11px;
 }
 
 .demo-account strong {
     margin-top: 3px;
     color: #34585d;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .btn-demo {
@@ -966,7 +966,7 @@ form {
     border-radius: 9px;
     background: white;
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 700;
     transition: 0.18s ease;
 }
@@ -986,7 +986,7 @@ form {
     gap: 6px;
     margin-top: 17px;
     color: #9bb2b6;
-    font-size: 7px;
+    font-size: 11px;
 }
 
 /* =========================================================

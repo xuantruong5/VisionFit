@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 3,
+    fontWeight: '600',
   },
 
   // HEADER
@@ -255,6 +256,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: 'rgba(255,255,255,0.75)',
     marginTop: 2,
+    fontWeight: '600',
   },
 
   // TÌM KIẾM & LỌC
@@ -277,6 +279,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
     paddingVertical: 0,
+    fontWeight: '600',
   },
   chipRow: {
     flexDirection: 'row',
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
   },
   chipTextActive: {
@@ -375,7 +378,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
   },
   reviewPill: {

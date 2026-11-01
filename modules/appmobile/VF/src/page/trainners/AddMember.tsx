@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   headerSpace: {
@@ -164,13 +164,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: COLORS.textPrimary,
+    fontWeight: '600',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
@@ -198,13 +196,14 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   memberSub: {
     fontSize: 12.5,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
   radio: {
     width: 24,
@@ -236,13 +235,14 @@ const styles = StyleSheet.create({
   },
   pkgName: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   pkgNote: {
     fontSize: 12.5,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
   pkgPrice: {
     fontSize: 15,
@@ -260,13 +260,14 @@ const styles = StyleSheet.create({
   },
   inviteTitle: {
     fontSize: 14.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   inviteSub: {
     fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 2,
+    fontWeight: '600',
   },
   codePill: {
     backgroundColor: COLORS.white,

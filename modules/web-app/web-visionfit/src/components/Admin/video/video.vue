@@ -505,14 +505,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-refresh {
@@ -521,7 +521,7 @@ export default {
     border-radius: 11px;
     background: white;
     color: #0d7f8d;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
     transition: 0.15s ease;
 }
@@ -555,14 +555,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -602,7 +602,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .filter-bar select {
@@ -614,7 +614,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .video-table {
@@ -626,8 +626,8 @@ export default {
     padding: 11px 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9.5px;
-    font-weight: 750;
+    font-size: 13px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -636,7 +636,7 @@ export default {
     padding: 13px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #34585d;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .video-table tbody tr {
@@ -681,14 +681,14 @@ export default {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .video-cell strong,
 .gymmer-cell strong {
     display: block;
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .video-cell span,
@@ -696,7 +696,7 @@ export default {
     display: block;
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .avatar {
@@ -709,7 +709,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 800;
 }
 
@@ -719,7 +719,7 @@ export default {
     border-radius: 999px;
     background: #e3f8fb;
     color: #0b7481;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 700;
 }
 
@@ -730,13 +730,13 @@ export default {
 
 .date-cell strong {
     color: #34585d;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .date-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .status {
@@ -745,7 +745,7 @@ export default {
     gap: 5px;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -781,7 +781,7 @@ export default {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -807,7 +807,7 @@ export default {
     border-radius: 8px;
     background: white;
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -855,13 +855,13 @@ export default {
 .modal-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-close {
@@ -871,7 +871,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .fake-video {
@@ -900,13 +900,13 @@ export default {
 }
 
 .fake-video strong {
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .fake-video span {
     margin-top: 4px;
     color: #cfe8eb;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .video-info-grid {
@@ -926,14 +926,14 @@ export default {
 .video-info-grid span {
     display: block;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .video-info-grid strong {
     display: block;
     margin-top: 4px;
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .ai-summary {
@@ -952,7 +952,7 @@ export default {
 
 .ai-summary-head span {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -960,12 +960,12 @@ export default {
 .ai-summary-head h4 {
     margin: 3px 0 0;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .ai-summary-head > strong {
     color: #075e68;
-    font-size: 24px;
+    font-size: 26px;
 }
 
 .ai-data {
@@ -984,14 +984,14 @@ export default {
 .ai-data span {
     display: block;
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .ai-data strong {
     display: block;
     margin-top: 4px;
     color: #11343a;
-    font-size: 14px;
+    font-size: 16.5px;
 }
 
 .modal-actions {
@@ -1005,7 +1005,7 @@ export default {
 .btn-save {
     padding: 9px 15px;
     border-radius: 10px;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 }
 

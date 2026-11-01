@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: "center",
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "700",
         color: C.textPrimary,
         paddingHorizontal: 8,
     },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     },
     tabText: {
         fontSize: 13,
-        fontWeight: "600",
+        fontWeight: "700",
         color: C.textMuted,
     },
     activeTabText: {
@@ -252,13 +252,14 @@ const styles = StyleSheet.create({
         lineHeight: 21,
         color: C.textSecondary,
         marginBottom: 18,
+      fontWeight: '600',
     },
     inputGroup: {
         marginBottom: 14,
     },
     label: {
         fontSize: 13,
-        fontWeight: "600",
+        fontWeight: "700",
         color: C.textPrimary,
         marginBottom: 8,
     },
@@ -269,6 +270,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
         fontSize: 14,
         color: C.textPrimary,
+      fontWeight: '600',
     },
     passwordContainer: {
         flexDirection: "row",
@@ -283,6 +285,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         color: C.textPrimary,
+      fontWeight: '600',
     },
     eyeButton: {
         width: 38,
@@ -292,7 +295,7 @@ const styles = StyleSheet.create({
     },
     helpText: {
         fontSize: 13,
-        fontWeight: "600",
+        fontWeight: "700",
         color: C.primaryDark,
         marginBottom: 20,
     },
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
     },
     socialText: {
         fontSize: 14.5,
-        fontWeight: "600",
+        fontWeight: "700",
         color: C.textPrimary,
     },
     registerButton: {
@@ -338,6 +341,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: C.textMuted,
         textAlign: "center",
+      fontWeight: '600',
     },
     termsRow: {
         flexDirection: "row",
@@ -345,7 +349,7 @@ const styles = StyleSheet.create({
     },
     termsLink: {
         fontSize: 12,
-        fontWeight: "600",
+        fontWeight: "700",
         color: C.primaryDark,
     },
 });

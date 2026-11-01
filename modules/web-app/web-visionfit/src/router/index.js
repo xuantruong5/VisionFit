@@ -127,6 +127,30 @@ const routes = [
     },
 
     {
+        path: '/admin/gymmer/:id',
+        component: () => import('../components/Admin/gymmer/gymmerDetail.vue'),
+        meta: {
+            layout: 'admin'
+        }
+    },
+
+    {
+        path: '/admin/trainer/:id',
+        component: () => import('../components/Admin/trainer/trainerDetail.vue'),
+        meta: {
+            layout: 'admin'
+        }
+    },
+
+    {
+        path: '/admin/quen-mat-khau',
+        component: () => import('../components/Admin/login/forgotPassword.vue'),
+        meta: {
+            layout: 'blank'
+        }
+    },
+
+    {
         path: '/admin/login',
         name: 'AdminLogin',
         component: () => import('../components/Admin/login/login.vue'),

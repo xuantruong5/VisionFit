@@ -586,14 +586,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-add {
@@ -602,7 +602,7 @@ export default {
     border-radius: 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 700;
     transition: 0.18s ease;
 }
@@ -636,14 +636,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -683,7 +683,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .toolbar select {
@@ -695,7 +695,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .week-tabs {
@@ -712,7 +712,7 @@ export default {
     border-radius: 10px;
     background: white;
     color: #64888d;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
     transition: 0.15s ease;
 }
@@ -761,13 +761,13 @@ export default {
 
 .class-time strong {
     color: #075e68;
-    font-size: 17px;
+    font-size: 19px;
 }
 
 .class-time span {
     margin-top: 4px;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .class-info {
@@ -783,7 +783,7 @@ export default {
 
 .class-type {
     color: #0d7f8d;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -792,8 +792,8 @@ export default {
 .class-top h3 {
     margin: 4px 0 0;
     color: #11343a;
-    font-size: 14px;
-    font-weight: 750;
+    font-size: 16.5px;
+    font-weight: 700;
 }
 
 .class-meta {
@@ -812,14 +812,14 @@ export default {
 .class-meta span {
     display: block;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .class-meta strong {
     display: block;
     margin-top: 3px;
     color: #34585d;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .capacity {
@@ -834,12 +834,12 @@ export default {
 
 .capacity-head span {
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .capacity-head strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .progress {
@@ -867,7 +867,7 @@ export default {
 .btn-edit {
     padding: 6px 9px;
     border-radius: 8px;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -887,7 +887,7 @@ export default {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -947,13 +947,13 @@ export default {
 .modal-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-close {
@@ -963,7 +963,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .form-grid {
@@ -980,7 +980,7 @@ export default {
     display: block;
     margin-bottom: 6px;
     color: #51777d;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 
@@ -993,7 +993,7 @@ export default {
     border-radius: 10px;
     outline: none;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .form-group input,
@@ -1024,7 +1024,7 @@ export default {
 .btn-save {
     padding: 9px 15px;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
 }
 

@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   headerSpace: {
@@ -153,11 +153,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
@@ -189,18 +186,20 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     fontSize: 14.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   rowSub: {
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
   version: {
     textAlign: 'center',
     fontSize: 12,
     color: COLORS.textLight,
     marginTop: 20,
+    fontWeight: '600',
   },
 });
