@@ -27,9 +27,9 @@ const SCHEDULES = [
 ];
 
 const STATUS = {
-  done: { label: 'Hoàn thành', color: COLORS.accentGreen, bg: '#E2ECD4' },
-  next: { label: 'Sắp diễn ra', color: COLORS.accentOrange, bg: '#F5E6D6' },
-  upcoming: { label: 'Đã lên lịch', color: COLORS.accentBlue, bg: '#E4EBF1' },
+  done: { label: 'Hoàn thành', color: COLORS.accentGreen, bg: '#ECFDF5' },
+  next: { label: 'Sắp diễn ra', color: COLORS.accentOrange, bg: '#FFF1EC' },
+  upcoming: { label: 'Đã lên lịch', color: COLORS.accentBlue, bg: '#EAF3FC' },
 };
 
 const Schedule = ({ navigation }: any) => {
@@ -77,7 +77,7 @@ const Schedule = ({ navigation }: any) => {
                   {isToday ? 'Hôm nay' : item.day}
                 </Text>
                 {selected ? (
-                  <LinearGradient colors={['#A7BD8C', COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.dayCircle, styles.dayCircleSelected]}>
+                  <LinearGradient colors={['#5FD0DA', COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.dayCircle, styles.dayCircleSelected]}>
                     <Text style={[styles.dayDate, styles.dayDateActive]}>{item.date}</Text>
                     {hasSchedule && <View style={styles.innerDot} />}
                   </LinearGradient>

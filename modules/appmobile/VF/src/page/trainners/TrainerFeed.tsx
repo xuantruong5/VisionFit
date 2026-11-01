@@ -481,13 +481,13 @@ const TrainerFeed = () => {
                                 setShowCreateMenu(false);
                             }}>
                             <Text style={styles.title}>TrainerFeed</Text>
-                            <Ionicons name="chevron-down" size={17} color="#2E3A2B" />
+                            <Ionicons name="chevron-down" size={17} color="#11343A" />
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.headerActions}>
                         <TouchableOpacity style={styles.savedButton} onPress={openSavedPosts}>
-                            <Ionicons name="bookmark-outline" size={24} color="#5E7547" />
+                            <Ionicons name="bookmark-outline" size={24} color="#075E68" />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -496,7 +496,7 @@ const TrainerFeed = () => {
                                 setShowCreateMenu(!showCreateMenu);
                                 setShowFilter(false);
                             }}>
-                            <Ionicons name="add" size={27} color="#5E7547" />
+                            <Ionicons name="add" size={27} color="#075E68" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -506,7 +506,7 @@ const TrainerFeed = () => {
                     <View style={styles.filterMenu}>
                         <TouchableOpacity style={styles.filterActive}>
                             <Text style={styles.filterActiveText}>Tất cả bài viết</Text>
-                            <Ionicons name="checkmark" size={19} color="#7A9161" />
+                            <Ionicons name="checkmark" size={19} color="#0D7F8D" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.filterItem}>
                             <Text style={styles.filterText}>Học viên của tôi</Text>
@@ -524,7 +524,7 @@ const TrainerFeed = () => {
                 {showCreateMenu && (
                     <View style={styles.createMenu}>
                         <TouchableOpacity style={styles.createItem} onPress={() => openCreate('Chia sẻ kinh nghiệm')}>
-                            <Ionicons name="create-outline" size={22} color="#2E3A2B" />
+                            <Ionicons name="create-outline" size={22} color="#11343A" />
                             <View style={styles.createInfo}>
                                 <Text style={styles.createName}>Bài viết HLV</Text>
                                 <Text style={styles.createDescription}>Kinh nghiệm, giáo án & tư vấn</Text>
@@ -532,7 +532,7 @@ const TrainerFeed = () => {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.createItem} onPress={() => openCreate('Kỹ thuật & Mẹo tập')}>
-                            <Ionicons name="fitness-outline" size={22} color="#2E3A2B" />
+                            <Ionicons name="fitness-outline" size={22} color="#11343A" />
                             <View style={styles.createInfo}>
                                 <Text style={styles.createName}>Mẹo & Kỹ thuật</Text>
                                 <Text style={styles.createDescription}>Hướng dẫn form chuẩn cho học viên</Text>
@@ -540,7 +540,7 @@ const TrainerFeed = () => {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.createItem} onPress={() => openCreate('Thành tích học viên')}>
-                            <Ionicons name="trophy-outline" size={22} color="#2E3A2B" />
+                            <Ionicons name="trophy-outline" size={22} color="#11343A" />
                             <View style={styles.createInfo}>
                                 <Text style={styles.createName}>Thành tích học viên</Text>
                                 <Text style={styles.createDescription}>Chia sẻ sự tiến bộ của hội viên</Text>
@@ -560,7 +560,7 @@ const TrainerFeed = () => {
                             <Text style={styles.avatarText}>HLV</Text>
                         </View>
                         <Text style={styles.quickText}>Chia sẻ bài tập, mẹo huấn luyện hoặc kết quả học viên...</Text>
-                        <Ionicons name="images-outline" size={22} color="#6B7565" />
+                        <Ionicons name="images-outline" size={22} color="#71949A" />
                     </TouchableOpacity>
 
                     {baiDang
@@ -587,7 +587,7 @@ const TrainerFeed = () => {
                                             <Ionicons
                                                 name={item.pham_vi_hien_thi === '0' ? 'earth-outline' : 'people-outline'}
                                                 size={12}
-                                                color="#6B7565"
+                                                color="#71949A"
                                             />
                                         </View>
                                     </View>
@@ -598,7 +598,7 @@ const TrainerFeed = () => {
                                             onPress={() =>
                                                 setShowPostMenu(showPostMenu === item.id_bai_dang ? null : item.id_bai_dang)
                                             }>
-                                            <Ionicons name="ellipsis-horizontal" size={22} color="#56624F" />
+                                            <Ionicons name="ellipsis-horizontal" size={22} color="#506E73" />
                                         </TouchableOpacity>
 
                                         {showPostMenu === item.id_bai_dang && (
@@ -612,7 +612,7 @@ const TrainerFeed = () => {
                                                                 setEditCaption(item.caption || '');
                                                                 setShowPostMenu(null);
                                                             }}>
-                                                            <Ionicons name="create-outline" size={19} color="#2E3A2B" />
+                                                            <Ionicons name="create-outline" size={19} color="#11343A" />
                                                             <Text style={styles.postMenuText}>Chỉnh sửa</Text>
                                                         </TouchableOpacity>
                                                         <TouchableOpacity
@@ -625,11 +625,11 @@ const TrainerFeed = () => {
                                                 ) : (
                                                     <>
                                                         <TouchableOpacity style={styles.postMenuItem}>
-                                                            <Ionicons name="flag-outline" size={19} color="#2E3A2B" />
+                                                            <Ionicons name="flag-outline" size={19} color="#11343A" />
                                                             <Text style={styles.postMenuText}>Báo cáo</Text>
                                                         </TouchableOpacity>
                                                         <TouchableOpacity style={styles.postMenuItem}>
-                                                            <Ionicons name="eye-off-outline" size={19} color="#2E3A2B" />
+                                                            <Ionicons name="eye-off-outline" size={19} color="#11343A" />
                                                             <Text style={styles.postMenuText}>Ẩn bài viết</Text>
                                                         </TouchableOpacity>
                                                     </>
@@ -685,16 +685,16 @@ const TrainerFeed = () => {
                                             <Ionicons
                                                 name={item.da_thich ? 'heart' : 'heart-outline'}
                                                 size={27}
-                                                color={item.da_thich ? '#E74C3C' : '#2E3A2B'}
+                                                color={item.da_thich ? '#E74C3C' : '#11343A'}
                                             />
                                         </TouchableOpacity>
 
                                         <TouchableOpacity style={styles.actionButton} onPress={() => openComments(item)}>
-                                            <Ionicons name="chatbubble-outline" size={25} color="#2E3A2B" />
+                                            <Ionicons name="chatbubble-outline" size={25} color="#11343A" />
                                         </TouchableOpacity>
 
                                         <TouchableOpacity>
-                                            <Ionicons name="paper-plane-outline" size={25} color="#2E3A2B" />
+                                            <Ionicons name="paper-plane-outline" size={25} color="#11343A" />
                                         </TouchableOpacity>
                                     </View>
 
@@ -702,7 +702,7 @@ const TrainerFeed = () => {
                                         <Ionicons
                                             name={item.da_luu ? 'bookmark' : 'bookmark-outline'}
                                             size={26}
-                                            color={item.da_luu ? '#7A9161' : '#2E3A2B'}
+                                            color={item.da_luu ? '#0D7F8D' : '#11343A'}
                                         />
                                     </TouchableOpacity>
                                 </View>
@@ -758,14 +758,14 @@ const TrainerFeed = () => {
                                 multiline
                                 style={styles.textArea}
                                 placeholder="Chia sẻ kiến thức huấn luyện, mẹo động tác hoặc lưu ý cho học viên..."
-                                placeholderTextColor="#A3AA9C"
+                                placeholderTextColor="#8AA3A7"
                             />
 
                             <TouchableOpacity style={styles.addMedia} onPress={chonMedia}>
                                 {selectedMedia ? (
                                     selectedMedia.type?.startsWith('video') ? (
                                         <View style={styles.videoSelected}>
-                                            <Ionicons name="videocam-outline" size={32} color="#5E7547" />
+                                            <Ionicons name="videocam-outline" size={32} color="#075E68" />
                                             <Text style={styles.addMediaText}>{selectedMedia.fileName || 'Video đã chọn'}</Text>
                                             <Text style={styles.changeMedia}>Nhấn để đổi video</Text>
                                         </View>
@@ -774,7 +774,7 @@ const TrainerFeed = () => {
                                     )
                                 ) : (
                                     <>
-                                        <Ionicons name="image-outline" size={29} color="#5E7547" />
+                                        <Ionicons name="image-outline" size={29} color="#075E68" />
                                         <Text style={styles.addMediaText}>Thêm ảnh hoặc video bài tập</Text>
                                     </>
                                 )}
@@ -789,12 +789,12 @@ const TrainerFeed = () => {
                                     setShowPrivacyPicker(false);
                                 }}>
                                 <View style={styles.optionLeft}>
-                                    <Ionicons name="barbell-outline" size={21} color="#2E3A2B" />
+                                    <Ionicons name="barbell-outline" size={21} color="#11343A" />
                                     <Text style={styles.optionText}>Chủ đề bài tập</Text>
                                 </View>
                                 <View style={styles.optionRight}>
                                     <Text style={styles.optionValue}>{selectedExercise}</Text>
-                                    <Ionicons name={showExercisePicker ? 'chevron-up' : 'chevron-down'} size={17} color="#6B7565" />
+                                    <Ionicons name={showExercisePicker ? 'chevron-up' : 'chevron-down'} size={17} color="#71949A" />
                                 </View>
                             </TouchableOpacity>
 
@@ -809,7 +809,7 @@ const TrainerFeed = () => {
                                                 setShowExercisePicker(false);
                                             }}>
                                             <Text style={[styles.pickerText, selectedExercise === item && styles.pickerTextActive]}>{item}</Text>
-                                            {selectedExercise === item && <Ionicons name="checkmark" size={18} color="#7A9161" />}
+                                            {selectedExercise === item && <Ionicons name="checkmark" size={18} color="#0D7F8D" />}
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -824,14 +824,14 @@ const TrainerFeed = () => {
                                     setShowPrivacyPicker(false);
                                 }}>
                                 <View style={styles.optionLeft}>
-                                    <Ionicons name="trophy-outline" size={21} color="#2E3A2B" />
+                                    <Ionicons name="trophy-outline" size={21} color="#11343A" />
                                     <Text style={styles.optionText}>Mục tiêu / Thành tích</Text>
                                 </View>
                                 <View style={styles.optionRight}>
                                     <Text style={selectedAchievement ? styles.optionValue : styles.optionPlaceholder}>
                                         {selectedAchievement || 'Thêm'}
                                     </Text>
-                                    <Ionicons name={showAchievementPicker ? 'chevron-up' : 'chevron-down'} size={17} color="#6B7565" />
+                                    <Ionicons name={showAchievementPicker ? 'chevron-up' : 'chevron-down'} size={17} color="#71949A" />
                                 </View>
                             </TouchableOpacity>
 
@@ -846,7 +846,7 @@ const TrainerFeed = () => {
                                                 setShowAchievementPicker(false);
                                             }}>
                                             <Text style={[styles.pickerText, selectedAchievement === item && styles.pickerTextActive]}>{item}</Text>
-                                            {selectedAchievement === item && <Ionicons name="checkmark" size={18} color="#7A9161" />}
+                                            {selectedAchievement === item && <Ionicons name="checkmark" size={18} color="#0D7F8D" />}
                                         </TouchableOpacity>
                                     ))}
                                     <TouchableOpacity
@@ -869,12 +869,12 @@ const TrainerFeed = () => {
                                     setShowAchievementPicker(false);
                                 }}>
                                 <View style={styles.optionLeft}>
-                                    <Ionicons name="earth-outline" size={21} color="#2E3A2B" />
+                                    <Ionicons name="earth-outline" size={21} color="#11343A" />
                                     <Text style={styles.optionText}>Ai có thể xem?</Text>
                                 </View>
                                 <View style={styles.optionRight}>
                                     <Text style={styles.optionValue}>{privacyLabel}</Text>
-                                    <Ionicons name={showPrivacyPicker ? 'chevron-up' : 'chevron-down'} size={17} color="#6B7565" />
+                                    <Ionicons name={showPrivacyPicker ? 'chevron-up' : 'chevron-down'} size={17} color="#71949A" />
                                 </View>
                             </TouchableOpacity>
 
@@ -893,10 +893,10 @@ const TrainerFeed = () => {
                                                 setShowPrivacyPicker(false);
                                             }}>
                                             <View style={styles.optionLeft}>
-                                                <Ionicons name={item.icon} size={19} color="#2E3A2B" />
+                                                <Ionicons name={item.icon} size={19} color="#11343A" />
                                                 <Text style={styles.pickerLabel}>{item.label}</Text>
                                             </View>
-                                            {phamViHienThi === item.value && <Ionicons name="checkmark" size={18} color="#7A9161" />}
+                                            {phamViHienThi === item.value && <Ionicons name="checkmark" size={18} color="#0D7F8D" />}
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -918,7 +918,7 @@ const TrainerFeed = () => {
                         <View style={styles.commentHeader}>
                             <Text style={styles.commentTitle}>Bình luận</Text>
                             <TouchableOpacity onPress={() => setShowComments(false)}>
-                                <Ionicons name="close" size={25} color="#2E3A2B" />
+                                <Ionicons name="close" size={25} color="#11343A" />
                             </TouchableOpacity>
                         </View>
 
@@ -927,7 +927,7 @@ const TrainerFeed = () => {
                                 <Text style={styles.commentLoading}>Đang tải bình luận...</Text>
                             ) : comments.length === 0 ? (
                                 <View style={styles.commentEmpty}>
-                                    <Ionicons name="chatbubbles-outline" size={42} color="#A3AA9C" />
+                                    <Ionicons name="chatbubbles-outline" size={42} color="#9AB4B8" />
                                     <Text style={styles.commentEmptyTitle}>Chưa có bình luận</Text>
                                     <Text style={styles.commentEmptyText}>Hãy là người đầu tiên bình luận và chia sẻ ý kiến.</Text>
                                 </View>
@@ -978,7 +978,7 @@ const TrainerFeed = () => {
                                                             showCommentMenu === comment.id_binh_luan ? null : comment.id_binh_luan
                                                         )
                                                     }>
-                                                    <Ionicons name="ellipsis-horizontal" size={20} color="#6B7565" />
+                                                    <Ionicons name="ellipsis-horizontal" size={20} color="#71949A" />
                                                 </TouchableOpacity>
 
                                                 {showCommentMenu === comment.id_binh_luan && (
@@ -991,7 +991,7 @@ const TrainerFeed = () => {
                                                                 setCommentText(comment.noi_dung);
                                                                 setShowCommentMenu(null);
                                                             }}>
-                                                            <Ionicons name="create-outline" size={18} color="#2E3A2B" />
+                                                            <Ionicons name="create-outline" size={18} color="#11343A" />
                                                             <Text style={styles.commentMenuText}>Chỉnh sửa</Text>
                                                         </TouchableOpacity>
 
@@ -1017,7 +1017,7 @@ const TrainerFeed = () => {
                             <View style={styles.inputModeBar}>
                                 <Text style={styles.inputModeText}>Đang trả lời {replyingTo.ten_nguoi_dung}</Text>
                                 <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                                    <Ionicons name="close" size={18} color="#6B7565" />
+                                    <Ionicons name="close" size={18} color="#71949A" />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -1030,7 +1030,7 @@ const TrainerFeed = () => {
                                         setEditingComment(null);
                                         setCommentText('');
                                     }}>
-                                    <Ionicons name="close" size={18} color="#6B7565" />
+                                    <Ionicons name="close" size={18} color="#71949A" />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -1043,7 +1043,7 @@ const TrainerFeed = () => {
                                 value={commentText}
                                 onChangeText={setCommentText}
                                 placeholder="Thêm ý kiến huấn luyện viên..."
-                                placeholderTextColor="#A3AA9C"
+                                placeholderTextColor="#8AA3A7"
                                 style={styles.commentInput}
                             />
                             <TouchableOpacity onPress={guiBinhLuan} disabled={!commentText.trim()}>
@@ -1064,7 +1064,7 @@ const TrainerFeed = () => {
                 <SafeAreaView style={styles.savedContainer}>
                     <View style={styles.savedHeader}>
                         <TouchableOpacity onPress={() => setShowSavedPosts(false)}>
-                            <Ionicons name="arrow-back" size={25} color="#2E3A2B" />
+                            <Ionicons name="arrow-back" size={25} color="#11343A" />
                         </TouchableOpacity>
                         <Text style={styles.savedTitle}>Bài viết đã lưu</Text>
                         <View style={{ width: 25 }} />
@@ -1074,7 +1074,7 @@ const TrainerFeed = () => {
                         <Text style={styles.savedMessage}>Đang tải...</Text>
                     ) : savedPostsData.length === 0 ? (
                         <View style={styles.savedEmpty}>
-                            <Ionicons name="bookmark-outline" size={55} color="#A3AA9C" />
+                            <Ionicons name="bookmark-outline" size={55} color="#9AB4B8" />
                             <Text style={styles.savedEmptyTitle}>Chưa có bài viết đã lưu</Text>
                             <Text style={styles.savedEmptyText}>Những bài bạn lưu sẽ xuất hiện ở đây.</Text>
                         </View>
@@ -1088,7 +1088,7 @@ const TrainerFeed = () => {
                                             <Text style={styles.savedTime}>{formatTime(item.created_at)}</Text>
                                         </View>
                                         <TouchableOpacity onPress={() => boLuuBaiDang(item)}>
-                                            <Ionicons name="bookmark" size={24} color="#7A9161" />
+                                            <Ionicons name="bookmark" size={24} color="#0D7F8D" />
                                         </TouchableOpacity>
                                     </View>
 
@@ -1136,7 +1136,7 @@ const TrainerFeed = () => {
                             onChangeText={setEditCaption}
                             multiline
                             placeholder="Nội dung bài viết..."
-                            placeholderTextColor="#A3AA9C"
+                            placeholderTextColor="#8AA3A7"
                             style={styles.editPostInput}
                         />
                     </View>
@@ -1155,7 +1155,7 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        backgroundColor: '#F1F2EC',
+        backgroundColor: '#F5FBFC',
     },
     header: {
         height: 76,
@@ -1169,7 +1169,7 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '800',
         letterSpacing: 2,
-        color: '#7A9161',
+        color: '#0D7F8D',
     },
     titleRow: {
         flexDirection: 'row',
@@ -1179,7 +1179,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 27,
         fontWeight: '800',
-        color: '#2E3A2B',
+        color: '#11343A',
         marginRight: 5,
     },
     addButton: {
@@ -1188,7 +1188,7 @@ const styles = StyleSheet.create({
         borderRadius: 13,
         backgroundColor: '#FFFFFF',
         borderWidth: 1.2,
-        borderColor: '#7A9161',
+        borderColor: '#0D7F8D',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1208,7 +1208,7 @@ const styles = StyleSheet.create({
     },
     filterActive: {
         height: 43,
-        backgroundColor: '#EEF2E4',
+        backgroundColor: '#E5F7F8',
         borderRadius: 11,
         paddingHorizontal: 13,
         flexDirection: 'row',
@@ -1221,11 +1221,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 13,
     },
     filterText: {
-        color: '#2E3A2B',
+        color: '#11343A',
         fontSize: 14,
     },
     filterActiveText: {
-        color: '#5E7547',
+        color: '#075E68',
         fontWeight: '700',
     },
     createMenu: {
@@ -1252,12 +1252,12 @@ const styles = StyleSheet.create({
         marginLeft: 13,
     },
     createName: {
-        color: '#2E3A2B',
+        color: '#11343A',
         fontSize: 14,
         fontWeight: '700',
     },
     createDescription: {
-        color: '#6B7565',
+        color: '#71949A',
         fontSize: 11,
         marginTop: 2,
     },
@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 18,
         borderWidth: 1,
-        borderColor: '#E3E6DA',
+        borderColor: '#E5F1F3',
         flexDirection: 'row',
         alignItems: 'center',
         elevation: 2,
@@ -1285,7 +1285,7 @@ const styles = StyleSheet.create({
         width: 43,
         height: 43,
         borderRadius: 22,
-        backgroundColor: '#7A9161',
+        backgroundColor: '#0D7F8D',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1293,7 +1293,7 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: 21,
-        backgroundColor: '#8AA270',
+        backgroundColor: '#10A6B5',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1306,7 +1306,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 12,
         fontSize: 14,
-        color: '#7E8778',
+        color: '#78979C',
     },
     post: {
         backgroundColor: '#FFFFFF',
@@ -1314,7 +1314,7 @@ const styles = StyleSheet.create({
         marginBottom: 14,
         borderRadius: 18,
         borderWidth: 1,
-        borderColor: '#E3E6DA',
+        borderColor: '#E5F1F3',
         overflow: 'hidden',
         elevation: 2,
         shadowColor: '#000',
@@ -1339,30 +1339,30 @@ const styles = StyleSheet.create({
     },
     dot: {
         marginHorizontal: 5,
-        color: '#6B7565',
+        color: '#71949A',
         fontSize: 11,
     },
     userName: {
         fontSize: 15,
         fontWeight: '700',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     postTime: {
-        color: '#6B7565',
+        color: '#71949A',
         fontSize: 12,
         marginTop: 2,
     },
     caption: {
         paddingHorizontal: 14,
         paddingBottom: 12,
-        color: '#2E3A2B',
+        color: '#11343A',
         fontSize: 14,
         lineHeight: 20,
     },
     postImage: {
         width: '100%',
         height: 390,
-        backgroundColor: '#EEF2E4',
+        backgroundColor: '#EAF9FB',
     },
     actionRow: {
         height: 50,
@@ -1384,11 +1384,11 @@ const styles = StyleSheet.create({
     likes: {
         fontWeight: '700',
         fontSize: 13,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     postCaption: {
         marginTop: 5,
-        color: '#2E3A2B',
+        color: '#11343A',
         fontSize: 13,
     },
     captionUser: {
@@ -1396,7 +1396,7 @@ const styles = StyleSheet.create({
     },
     comments: {
         marginTop: 6,
-        color: '#8E9787',
+        color: '#83999D',
         fontSize: 13,
     },
     modalOverlay: {
@@ -1415,7 +1415,7 @@ const styles = StyleSheet.create({
     modalHandle: {
         width: 45,
         height: 4,
-        backgroundColor: '#E3E6DA',
+        backgroundColor: '#DCE4E6',
         borderRadius: 10,
         alignSelf: 'center',
         marginTop: 8,
@@ -1427,16 +1427,16 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     cancel: {
-        color: '#6B7565',
+        color: '#71949A',
         fontWeight: '600',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     publish: {
-        backgroundColor: '#7A9161',
+        backgroundColor: '#0D7F8D',
         paddingHorizontal: 15,
         paddingVertical: 9,
         borderRadius: 12,
@@ -1457,19 +1457,19 @@ const styles = StyleSheet.create({
         minHeight: 110,
         marginTop: 18,
         fontSize: 15,
-        color: '#2E3A2B',
+        color: '#11343A',
         textAlignVertical: 'top',
     },
     addMedia: {
         height: 120,
-        backgroundColor: '#F6F7F1',
+        backgroundColor: '#F1FAFB',
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 12,
     },
     addMediaText: {
-        color: '#5E7547',
+        color: '#075E68',
         fontWeight: '700',
         marginTop: 7,
     },
@@ -1486,14 +1486,14 @@ const styles = StyleSheet.create({
     optionText: {
         marginLeft: 12,
         fontSize: 14,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     optionValue: {
-        color: '#7A9161',
+        color: '#0D7F8D',
         fontWeight: '600',
     },
     optionPlaceholder: {
-        color: '#8E9787',
+        color: '#82999D',
     },
     previewImage: {
         width: '100%',
@@ -1507,7 +1507,7 @@ const styles = StyleSheet.create({
     changeMedia: {
         marginTop: 5,
         fontSize: 11,
-        color: '#6B7565',
+        color: '#71949A',
     },
     avatarImage: {
         width: 42,
@@ -1520,7 +1520,7 @@ const styles = StyleSheet.create({
         gap: 7,
     },
     pickerBox: {
-        backgroundColor: '#F1F2EC',
+        backgroundColor: '#F5FBFC',
         borderRadius: 14,
         padding: 6,
         marginBottom: 8,
@@ -1534,20 +1534,20 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     pickerOptionActive: {
-        backgroundColor: '#E6EFD0',
+        backgroundColor: '#E2F6F8',
     },
     pickerText: {
         fontSize: 14,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     pickerTextActive: {
-        color: '#7A9161',
+        color: '#0D7F8D',
         fontWeight: '700',
     },
     pickerLabel: {
         marginLeft: 10,
         fontSize: 14,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     commentOverlay: {
         flex: 1,
@@ -1565,7 +1565,7 @@ const styles = StyleSheet.create({
         width: 45,
         height: 4,
         borderRadius: 2,
-        backgroundColor: '#E3E6DA',
+        backgroundColor: '#D8E3E5',
         alignSelf: 'center',
         marginTop: 8,
         marginBottom: 12,
@@ -1576,12 +1576,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingBottom: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E6EFD0',
+        borderBottomColor: '#D8EEF1',
     },
     commentTitle: {
         fontSize: 17,
         fontWeight: '800',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     commentEmpty: {
         flex: 1,
@@ -1592,28 +1592,28 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontSize: 16,
         fontWeight: '700',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     commentEmptyText: {
         marginTop: 4,
         fontSize: 13,
-        color: '#6B7565',
+        color: '#71949A',
     },
     commentInputRow: {
         minHeight: 68,
         flexDirection: 'row',
         alignItems: 'center',
         borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: '#E6EFD0',
+        borderTopColor: '#D8EEF1',
     },
     commentInput: {
         flex: 1,
         marginHorizontal: 10,
         fontSize: 14,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     sendComment: {
-        color: '#7A9161',
+        color: '#0D7F8D',
         fontWeight: '700',
         fontSize: 14,
     },
@@ -1626,7 +1626,7 @@ const styles = StyleSheet.create({
     commentLoading: {
         textAlign: 'center',
         marginTop: 30,
-        color: '#6B7565',
+        color: '#71949A',
     },
     commentItem: {
         flexDirection: 'row',
@@ -1636,7 +1636,7 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: '#E6EFD0',
+        backgroundColor: '#DDF3F5',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 10,
@@ -1647,18 +1647,18 @@ const styles = StyleSheet.create({
     commentUser: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     commentBody: {
         marginTop: 2,
         fontSize: 14,
         lineHeight: 20,
-        color: '#4E5A49',
+        color: '#24484E',
     },
     commentTime: {
         marginTop: 4,
         fontSize: 11,
-        color: '#A3AA9C',
+        color: '#8AA3A7',
     },
     deleteCommentButton: {
         padding: 6,
@@ -1674,17 +1674,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E6EFD0',
+        borderBottomColor: '#D8EEF1',
     },
     savedTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     savedMessage: {
         textAlign: 'center',
         marginTop: 40,
-        color: '#6B7565',
+        color: '#71949A',
     },
     savedEmpty: {
         flex: 1,
@@ -1695,17 +1695,17 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 17,
         fontWeight: '700',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     savedEmptyText: {
         marginTop: 5,
         fontSize: 13,
-        color: '#6B7565',
+        color: '#71949A',
     },
     savedPost: {
         paddingVertical: 15,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E6EFD0',
+        borderBottomColor: '#D8EEF1',
     },
     savedPostHeader: {
         paddingHorizontal: 16,
@@ -1716,19 +1716,19 @@ const styles = StyleSheet.create({
     savedUser: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     savedTime: {
         marginTop: 2,
         fontSize: 11,
-        color: '#8E9787',
+        color: '#81999D',
     },
     savedCaption: {
         paddingHorizontal: 16,
         marginTop: 10,
         marginBottom: 10,
         fontSize: 14,
-        color: '#4E5A49',
+        color: '#24484E',
     },
     savedImage: {
         width: '100%',
@@ -1745,7 +1745,7 @@ const styles = StyleSheet.create({
         borderRadius: 13,
         backgroundColor: '#FFFFFF',
         borderWidth: 1.2,
-        borderColor: '#E6EFD0',
+        borderColor: '#D8EEF1',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1775,7 +1775,7 @@ const styles = StyleSheet.create({
     commentMenuText: {
         marginLeft: 9,
         fontSize: 13,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     commentDeleteText: {
         marginLeft: 9,
@@ -1791,14 +1791,14 @@ const styles = StyleSheet.create({
     commentActionText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#6B7565',
+        color: '#71949A',
     },
     commentLikedText: {
-        color: '#7A9161',
+        color: '#0D7F8D',
     },
     commentLikeCount: {
         fontSize: 11,
-        color: '#6B7565',
+        color: '#71949A',
         marginLeft: -8,
     },
     replyComment: {
@@ -1807,14 +1807,14 @@ const styles = StyleSheet.create({
     inputModeBar: {
         height: 37,
         paddingHorizontal: 8,
-        backgroundColor: '#F6F7F1',
+        backgroundColor: '#F1FAFB',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
     inputModeText: {
         fontSize: 12,
-        color: '#56624F',
+        color: '#50757B',
     },
     postMenuWrapper: {
         position: 'relative',
@@ -1845,7 +1845,7 @@ const styles = StyleSheet.create({
     postMenuText: {
         marginLeft: 10,
         fontSize: 13,
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     postDeleteText: {
         marginLeft: 10,
@@ -1873,22 +1873,22 @@ const styles = StyleSheet.create({
     editPostTitle: {
         fontSize: 17,
         fontWeight: '800',
-        color: '#2E3A2B',
+        color: '#11343A',
     },
     editCancel: {
         fontSize: 14,
-        color: '#6B7565',
+        color: '#71949A',
     },
     editSave: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#7A9161',
+        color: '#0D7F8D',
     },
     editPostInput: {
         minHeight: 150,
         marginTop: 20,
         fontSize: 15,
-        color: '#2E3A2B',
+        color: '#11343A',
         textAlignVertical: 'top',
     },
     videoContainer: {

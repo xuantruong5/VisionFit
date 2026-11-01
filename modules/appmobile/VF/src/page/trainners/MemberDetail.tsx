@@ -128,7 +128,7 @@ const MemberDetail = ({ navigation, route }: any) => {
                 <Text style={styles.subText}>Còn {member.totalSessions - member.sessions} buổi • Hết hạn {member.expiry}</Text>
                 <View style={styles.progressTrack}>
                   <LinearGradient
-                    colors={['#9DB383', COLORS.primary]}
+                    colors={['#22B8C8', COLORS.primary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={[styles.progressFill, { width: `${progress}%` }]}
@@ -138,7 +138,7 @@ const MemberDetail = ({ navigation, route }: any) => {
             </View>
 
             <View style={styles.miniRow}>
-              <View style={[styles.miniBox, { backgroundColor: '#F5E6D6' }]}>
+              <View style={[styles.miniBox, { backgroundColor: '#FFF1EC' }]}>
                 <Ionicons name="flame" size={18} color={COLORS.accentOrange} />
                 <Text style={styles.miniValue}>{member.calories}</Text>
                 <Text style={styles.subText}>kcal tiêu hao</Text>
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#D7E6B8',
+    backgroundColor: '#6EE7B7',
   },
 
   // STATS NỔI
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#E2ECD4',
+    backgroundColor: '#ECFDF5',
     borderRadius: 12,
     padding: 10,
     marginTop: 14,

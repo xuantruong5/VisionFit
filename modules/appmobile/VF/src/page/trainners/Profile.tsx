@@ -11,9 +11,9 @@ const AVATAR = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=3
 
 const STATS = [
   { icon: 'barbell', value: '32', label: 'Buổi dạy', color: COLORS.primary, bg: COLORS.surfaceTeal },
-  { icon: 'people', value: '24', label: 'Học viên', color: COLORS.accentGreen, bg: '#E2ECD4' },
-  { icon: 'star', value: '4.9', label: 'Đánh giá', color: COLORS.accentGold, bg: '#F1EFCF' },
-  { icon: 'trophy', value: '5 năm', label: 'Kinh nghiệm', color: '#6E6590', bg: '#E9E6F0' },
+  { icon: 'people', value: '24', label: 'Học viên', color: COLORS.accentGreen, bg: '#ECFDF5' },
+  { icon: 'star', value: '4.9', label: 'Đánh giá', color: COLORS.accentGold, bg: '#FFF7ED' },
+  { icon: 'trophy', value: '5 năm', label: 'Kinh nghiệm', color: '#8B5CF6', bg: '#F5F3FF' },
 ];
 
 const SPECIALTIES = ['Strength Training', 'Cardio', 'Giảm mỡ', 'Phục hồi chức năng'];
@@ -30,10 +30,10 @@ const PERSONAL_INFO = [
 ];
 
 const MENU = [
-  { icon: 'wallet', title: 'Doanh thu & Thu nhập', sub: '12.500.000 ₫ tháng này', color: COLORS.accentGold, bg: '#F1EFCF', route: 'Income' },
-  { icon: 'time', title: 'Lịch sử buổi dạy', sub: 'Nhật ký các ca huấn luyện', color: '#6E6590', bg: '#E9E6F0', route: 'SessionHistory' },
-  { icon: 'notifications', title: 'Cài đặt thông báo', sub: 'Nhắc ca dạy, học viên check-in', color: COLORS.accentBlue, bg: '#E4EBF1', route: 'TrainerSettings' },
-  { icon: 'shield-checkmark', title: 'Bảo mật & Mật khẩu', sub: 'Đổi mật khẩu, xác thực 2 lớp', color: COLORS.accentGreen, bg: '#E2ECD4', route: 'TrainerSettings' },
+  { icon: 'wallet', title: 'Doanh thu & Thu nhập', sub: '12.500.000 ₫ tháng này', color: COLORS.accentGold, bg: '#FFF7ED', route: 'Income' },
+  { icon: 'time', title: 'Lịch sử buổi dạy', sub: 'Nhật ký các ca huấn luyện', color: '#8B5CF6', bg: '#F5F3FF', route: 'SessionHistory' },
+  { icon: 'notifications', title: 'Cài đặt thông báo', sub: 'Nhắc ca dạy, học viên check-in', color: COLORS.accentBlue, bg: '#EAF3FC', route: 'TrainerSettings' },
+  { icon: 'shield-checkmark', title: 'Bảo mật & Mật khẩu', sub: 'Đổi mật khẩu, xác thực 2 lớp', color: COLORS.accentGreen, bg: '#ECFDF5', route: 'TrainerSettings' },
   { icon: 'help-circle', title: 'Trợ giúp & Hỗ trợ', sub: 'Hotline: 1900 6868', color: COLORS.primary, bg: COLORS.surfaceTeal, route: 'TrainerSettings' },
 ];
 
@@ -46,7 +46,7 @@ const Profile = ({ navigation }: any) => {
         {/* 1. ẢNH BÌA */}
         <View style={styles.cover}>
           <Image source={{ uri: COVER }} style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={['rgba(122,145,97,0.55)', 'rgba(70,90,55,0.95)']} style={styles.coverOverlay}>
+          <LinearGradient colors={['rgba(13,127,141,0.55)', 'rgba(7,88,101,0.95)']} style={styles.coverOverlay}>
             <View style={styles.coverRow}>
               <Text style={styles.coverTitle}>Hồ sơ của tôi</Text>
               <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#F1EFCF',
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -426,9 +426,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     marginTop: 24,
-    backgroundColor: '#F6E3DF',
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: '#EBC9C3',
+    borderColor: '#FECACA',
   },
   logoutText: {
     fontSize: 14,

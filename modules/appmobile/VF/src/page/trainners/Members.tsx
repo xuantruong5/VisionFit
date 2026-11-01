@@ -128,7 +128,7 @@ const Members = ({ navigation }: any) => {
 
                 <View style={styles.progressTrack}>
                   <LinearGradient
-                    colors={paused ? [COLORS.textLight, COLORS.textLight] : ['#9DB383', COLORS.primary]}
+                    colors={paused ? [COLORS.textLight, COLORS.textLight] : ['#22B8C8', COLORS.primary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={[styles.progressFill, { width: `${progress}%` }]}

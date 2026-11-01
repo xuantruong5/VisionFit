@@ -13,7 +13,7 @@ const GROUPS: { title: string; items: Noti[] }[] = [
   {
     title: 'Hôm nay',
     items: [
-      { id: '1', type: 'Ca dạy', icon: 'time-outline', bg: '#F5E6D6', ink: '#A9744A', title: 'Ca dạy sắp bắt đầu', desc: 'Trần Minh Anh • Cardio & Giảm mỡ lúc 14:30', time: '13:45', unread: true },
+      { id: '1', type: 'Ca dạy', icon: 'time-outline', bg: '#FFF1EC', ink: '#A9744A', title: 'Ca dạy sắp bắt đầu', desc: 'Trần Minh Anh • Cardio & Giảm mỡ lúc 14:30', time: '13:45', unread: true },
       { id: '2', type: 'Học viên', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', title: 'Nguyễn Văn An đã check-in', desc: 'Phòng Gym A • sẵn sàng cho buổi tập', time: '08:52', unread: true },
       { id: '3', type: 'Học viên', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80', title: 'Phạm Thu Hà đánh giá 5 sao', desc: '“Buổi tập rất hiệu quả, cảm ơn HLV!”', time: '07:30' },
     ],
@@ -21,9 +21,9 @@ const GROUPS: { title: string; items: Noti[] }[] = [
   {
     title: 'Hôm qua',
     items: [
-      { id: '4', type: 'Hệ thống', icon: 'wallet-outline', bg: '#E2ECD4', ink: '#5E7B45', title: 'Đã nhận thanh toán', desc: '+500.000 ₫ từ buổi PT với Nguyễn Văn An', time: '19:10' },
-      { id: '5', type: 'Ca dạy', icon: 'close-circle-outline', bg: '#F6E3DF', ink: '#C0625A', title: 'Học viên huỷ ca dạy', desc: 'Lê Hoàng Nam huỷ ca 18:00 • Full Body', time: '15:22' },
-      { id: '6', type: 'Hệ thống', icon: 'megaphone-outline', bg: '#E4EBF1', ink: '#6E8CA8', title: 'Cập nhật chính sách', desc: 'Chính sách thưởng theo buổi dạy tháng 11', time: '09:00' },
+      { id: '4', type: 'Hệ thống', icon: 'wallet-outline', bg: '#ECFDF5', ink: '#5E7B45', title: 'Đã nhận thanh toán', desc: '+500.000 ₫ từ buổi PT với Nguyễn Văn An', time: '19:10' },
+      { id: '5', type: 'Ca dạy', icon: 'close-circle-outline', bg: '#FEF2F2', ink: '#C0625A', title: 'Học viên huỷ ca dạy', desc: 'Lê Hoàng Nam huỷ ca 18:00 • Full Body', time: '15:22' },
+      { id: '6', type: 'Hệ thống', icon: 'megaphone-outline', bg: '#EAF3FC', ink: '#6E8CA8', title: 'Cập nhật chính sách', desc: 'Chính sách thưởng theo buổi dạy tháng 11', time: '09:00' },
     ],
   },
 ];

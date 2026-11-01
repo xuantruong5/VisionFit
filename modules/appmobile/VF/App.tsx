@@ -158,8 +158,8 @@ function MainTabs() {
             />
           );
         },
-        tabBarActiveTintColor: "#7A9161",
-        tabBarInactiveTintColor: "#A3AA9C",
+        tabBarActiveTintColor: "#0D7F8D",
+        tabBarInactiveTintColor: "#71949A",
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "bold",
@@ -308,7 +308,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="MainTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />

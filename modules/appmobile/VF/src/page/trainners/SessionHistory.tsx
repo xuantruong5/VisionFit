@@ -345,14 +345,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#E2ECD4',
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
     alignSelf: 'flex-start',
   },
   cancelledBadge: {
-    backgroundColor: '#F6E3DF',
+    backgroundColor: '#FEF2F2',
   },
   statusText: {
     fontSize: 11,

@@ -116,29 +116,9 @@ export const SAGE = {
   track: '#E6E8DF',
 };
 
-// Bộ màu trainer theo tông sage, cùng tên khoá với COLORS để dùng thay thế trực tiếp
+// Bộ màu trainer: dùng chung màu xanh teal với member
 export const TRAINER_COLORS = {
   ...COLORS,
-  primary: '#7A9161',
-  primaryDark: '#5E7547',
-  primaryLight: '#E6EFD0',
-  primarySoft: '#EEF2E4',
-  background: '#F1F2EC',
-  cardBg: '#FFFFFF',
-  surfaceTeal: '#E6EFD0',
-  textPrimary: '#2E3A2B',
-  textDark: '#2E3A2B',
-  textSecondary: '#4E5A49',
-  textMuted: '#6B7565',
-  textLight: '#A3AA9C',
-  border: '#E3E6DA',
-  borderLight: '#EEF0E8',
-  borderFocus: '#C9D6B0',
-  accentOrange: '#C98A5A',
-  accentGold: '#B39A45',
-  accentGreen: '#5E7B45',
-  accentBlue: '#6E8CA8',
-  accentRed: '#C0625A',
 };
 
 export const TRAINER_SHADOWS = {

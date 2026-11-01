@@ -8,8 +8,8 @@ import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../gene
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const OVERVIEW = [
   { icon: 'barbell', value: '32', label: 'Ca dạy', color: COLORS.primary, bg: COLORS.surfaceTeal },
-  { icon: 'checkmark-done', value: '11.3tr', label: 'Đã nhận', color: COLORS.accentGreen, bg: '#E2ECD4' },
-  { icon: 'hourglass', value: '1.2tr', label: 'Chờ duyệt', color: COLORS.accentGold, bg: '#F1EFCF' },
+  { icon: 'checkmark-done', value: '11.3tr', label: 'Đã nhận', color: COLORS.accentGreen, bg: '#ECFDF5' },
+  { icon: 'hourglass', value: '1.2tr', label: 'Chờ duyệt', color: COLORS.accentGold, bg: '#FFF7ED' },
 ];
 
 // Chiều cao cột theo % so với tháng cao nhất
@@ -99,7 +99,7 @@ const Income = ({ navigation }: any) => {
                     )}
                     <View style={styles.barTrack}>
                       <LinearGradient
-                        colors={current ? ['#9DB383', COLORS.primaryDark] : [COLORS.borderFocus, COLORS.borderFocus]}
+                        colors={current ? ['#22B8C8', COLORS.primaryDark] : [COLORS.borderFocus, COLORS.borderFocus]}
                         style={[styles.barFill, { height: `${item.percent}%` }]}
                       />
                     </View>
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   growthText: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: '#D7E6B8',
+    color: '#6EE7B7',
   },
 
   // TỔNG QUAN
@@ -399,14 +399,14 @@ const styles = StyleSheet.create({
     color: COLORS.accentGreen,
   },
   txBadge: {
-    backgroundColor: '#E2ECD4',
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
     marginTop: 4,
   },
   txBadgePending: {
-    backgroundColor: '#F1EFCF',
+    backgroundColor: '#FFF7ED',
   },
   txBadgeText: {
     fontSize: 10.5,
