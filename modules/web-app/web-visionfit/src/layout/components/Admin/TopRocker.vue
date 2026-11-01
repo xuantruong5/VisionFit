@@ -21,11 +21,11 @@
                     @click="showMenu = !showMenu"
                 >
                     <div class="admin-avatar">
-                        AD
+                        {{ avatarInitial }}
                     </div>
 
                     <div class="admin-info">
-                        <strong>VisionFit Admin</strong>
+                        <strong>{{ adminName }}</strong>
                         <span>Gym Admin</span>
                     </div>
 
@@ -43,12 +43,12 @@
                 >
                     <div class="menu-profile">
                         <div class="admin-avatar large">
-                            AD
+                            {{ avatarInitial }}
                         </div>
 
                         <div>
-                            <strong>VisionFit Admin</strong>
-                            <span>admin@visionfit.vn</span>
+                            <strong>{{ adminName }}</strong>
+                            <span>{{ adminEmail }}</span>
                         </div>
                     </div>
 
@@ -84,12 +84,27 @@
 </template>
 
 <script>
+import api from '../../../services/api'
+import { createToaster } from '@meforma/vue-toaster'
+
+const toaster = createToaster({ position: 'top-right' })
+
 export default {
     name: "TopRocker",
 
     data() {
         return {
-            showMenu: false
+            showMenu: false,
+            adminName: localStorage.getItem('ho_ten_admin') || 'VisionFit Admin',
+            adminEmail: localStorage.getItem('email_admin') || 'admin@visionfit.vn',
+        }
+    },
+
+    computed: {
+        avatarInitial() {
+            if (!this.adminName) return 'AD';
+            const parts = this.adminName.trim().split(' ');
+            return parts[parts.length - 1].charAt(0).toUpperCase();
         }
     },
 
@@ -101,6 +116,14 @@ export default {
 
         logout() {
             this.showMenu = false;
+            const token = localStorage.getItem('token_admin');
+            if (token) {
+                api.post('/admin/logout').catch(() => {});
+            }
+            localStorage.removeItem('token_admin');
+            localStorage.removeItem('ho_ten_admin');
+            localStorage.removeItem('email_admin');
+            toaster.success('Đã đăng xuất khỏi hệ thống quản trị');
             this.$router.push('/admin/login');
         }
     }

@@ -210,34 +210,6 @@
                         </button>
                     </form>
 
-                    <div class="demo-box">
-                        <div class="demo-head">
-                            <span class="demo-dot"></span>
-
-                            <span>DEMO ACCOUNT</span>
-                        </div>
-
-                        <div class="demo-account">
-                            <div>
-                                <span>Email</span>
-                                <strong>admin@visionfit.vn</strong>
-                            </div>
-
-                            <div>
-                                <span>Password</span>
-                                <strong>123456</strong>
-                            </div>
-                        </div>
-
-                        <button
-                            type="button"
-                            class="btn-demo"
-                            @click="fillDemoAccount"
-                        >
-                            Dùng tài khoản demo
-                        </button>
-                    </div>
-
                     <div class="login-footer">
                         <span>VisionFit © 2026</span>
                         <span>•</span>
@@ -251,6 +223,10 @@
 
 <script>
 import gymLogin from '../../../assets/images/gym-login.jpg'
+import api, { API_BASE_URL } from '../../../services/api'
+import { createToaster } from '@meforma/vue-toaster'
+
+const toaster = createToaster({ position: 'top-right' })
 
 export default {
     name: "AdminLogin",
@@ -270,30 +246,66 @@ export default {
         }
     },
 
-    methods: {
-        fillDemoAccount() {
-            this.form.username = 'admin@visionfit.vn';
-            this.form.password = '123456';
-        },
+    mounted() {
+        // Nếu đã có token hợp lệ thì tự động chuyển vào dashboard
+        const token = localStorage.getItem('token_admin');
+        if (token) {
+            api
+                .get('/admin/check-token')
+                .then((res) => {
+                    if (res.data.status) {
+                        this.$router.push('/admin/dashboard');
+                    }
+                })
+                .catch(() => {});
+        }
+    },
 
+    methods: {
         login() {
             this.errorMessage = '';
 
             if (!this.form.username || !this.form.password) {
                 this.errorMessage = 'Vui lòng nhập tài khoản và mật khẩu.';
+                toaster.warning(this.errorMessage);
                 return;
             }
 
             this.loading = true;
 
-            setTimeout(() => {
-                this.loading = false;
-                this.$router.push('/admin/dashboard');
-            }, 500);
+            api
+                .post('/admin/login', {
+                    email: this.form.username,
+                    password: this.form.password,
+                })
+                .then((res) => {
+                    this.loading = false;
+                    if (res.data.status) {
+                        localStorage.setItem('token_admin', res.data.token);
+                        localStorage.setItem('ho_ten_admin', res.data.ho_ten || 'VisionFit Admin');
+                        if (res.data.email) {
+                            localStorage.setItem('email_admin', res.data.email);
+                        }
+                        toaster.success(res.data.message || 'Đăng nhập thành công!');
+                        this.$router.push('/admin/dashboard');
+                    } else {
+                        this.errorMessage = res.data.message || 'Tài khoản hoặc mật khẩu không đúng!';
+                        toaster.error(this.errorMessage);
+                    }
+                })
+                .catch((err) => {
+                    this.loading = false;
+                    console.error('Login Error:', err);
+                    const msg =
+                        err.response?.data?.message ||
+                        `Không thể kết nối đến máy chủ (${API_BASE_URL})! Vui lòng kiểm tra lệnh "php artisan serve"`;
+                    this.errorMessage = msg;
+                    toaster.error(msg);
+                });
         },
 
         loginGoogle() {
-            alert('Demo UI: Đăng nhập Google sẽ nối API sau.');
+            toaster.info('Chức năng đăng nhập Google đang được tích hợp thêm.');
         },
 
         forgotPassword() {

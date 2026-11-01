@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     glassBtn: {
         width: 40,
         height: 40,
-        borderRadius: 13,
+        borderRadius: 20,
         backgroundColor: "rgba(255,255,255,0.16)",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.2)",
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         marginHorizontal: 16,
         marginTop: -36,
-        borderRadius: 24,
+        borderRadius: 28,
         padding: 18,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     tabContainer: {
         height: 50,
         backgroundColor: COLORS.background,
-        borderRadius: 16,
+        borderRadius: 25,
         flexDirection: "row",
         padding: 4,
         marginBottom: 22,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     },
     tab: {
         flex: 1,
-        borderRadius: 12,
+        borderRadius: 21,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     inputWrap: {
         height: 50,
         backgroundColor: COLORS.background,
-        borderRadius: 14,
+        borderRadius: 25,
         borderWidth: 1,
         borderColor: COLORS.border,
         flexDirection: "row",
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         gap: 10,
         padding: 12,
-        borderRadius: 14,
+        borderRadius: 18,
         backgroundColor: COLORS.surfaceTeal,
         marginTop: 2,
         marginBottom: 20,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     },
     mainButton: {
         height: 52,
-        borderRadius: 16,
+        borderRadius: 26,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
