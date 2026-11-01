@@ -10,6 +10,8 @@ import { renderBearSVG } from './bear.js';
 import { renderCatSVG } from './cat.js';
 
 const $ = (id) => document.getElementById(id);
+const bindClick = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+const setAttr = (id, attr, val) => { const el = $(id); if (el) el.setAttribute(attr, val); };
 
 // Trạng thái hiện tại của phòng thử
 let currentSpecies = 'bear';
@@ -34,11 +36,12 @@ function clearAllLabTimers() {
   activeTimers.clear();
 }
 
-// Khởi tạo MascotRenderer chính cho khung preview
-const previewContainer = $('lab-mascot-preview');
 let mainRenderer = null;
 
 function initMainRenderer() {
+  const previewContainer = $('lab-mascot-preview');
+  if (!previewContainer) return;
+
   if (mainRenderer) {
     mainRenderer.destroy();
     mainRenderer = null;
@@ -58,34 +61,41 @@ function initMainRenderer() {
 }
 
 function updateStatusLabels() {
-  $('lbl-species').textContent = currentSpecies === 'bear' ? 'Gấu VIF' : 'Mèo VIF';
-  $('lbl-stage').textContent = currentStage;
-  $('lbl-state').textContent = currentState;
-  $('lbl-workout-status').textContent = currentWorkout === 'training'
-    ? 'Đang tập (Training)'
-    : currentWorkout === 'paused'
-    ? 'Tạm dừng (Paused)'
-    : currentWorkout === 'completed'
-    ? 'Đã xong buổi tập!'
-    : 'Nghỉ ngơi';
+  const lblSpecies = $('lbl-species');
+  if (lblSpecies) lblSpecies.textContent = currentSpecies === 'bear' ? 'Gấu VIF' : 'Mèo VIF';
+  const lblStage = $('lbl-stage');
+  if (lblStage) lblStage.textContent = currentStage;
+  const lblState = $('lbl-state');
+  if (lblState) lblState.textContent = currentState;
+  const lblWorkout = $('lbl-workout-status');
+  if (lblWorkout) {
+    lblWorkout.textContent = currentWorkout === 'training'
+      ? 'Đang tập (Training)'
+      : currentWorkout === 'paused'
+      ? 'Tạm dừng (Paused)'
+      : currentWorkout === 'completed'
+      ? 'Đã xong buổi tập!'
+      : 'Nghỉ ngơi';
+  }
 }
 
 function updateButtonStates() {
   // Cập nhật nút chọn loài
-  $('btn-species-bear').setAttribute('aria-pressed', String(currentSpecies === 'bear'));
-  $('btn-species-cat').setAttribute('aria-pressed', String(currentSpecies === 'cat'));
+  setAttr('btn-species-bear', 'aria-pressed', String(currentSpecies === 'bear'));
+  setAttr('btn-species-cat', 'aria-pressed', String(currentSpecies === 'cat'));
 
   // Cập nhật nút chọn cấp
   for (const stage of EVOLUTION_STAGES) {
-    const btn = $(`btn-stage-${stage}`);
-    if (btn) btn.setAttribute('aria-pressed', String(currentStage === stage));
+    setAttr(`btn-stage-${stage}`, 'aria-pressed', String(currentStage === stage));
   }
 
   // Cập nhật 7 nút trạng thái
   const statesGrid = $('states-grid');
-  for (const child of statesGrid.children) {
-    const isMatched = child.getAttribute('data-state') === currentState;
-    child.setAttribute('aria-pressed', String(isMatched));
+  if (statesGrid) {
+    for (const child of statesGrid.children) {
+      const isMatched = child.getAttribute('data-state') === currentState;
+      child.setAttribute('aria-pressed', String(isMatched));
+    }
   }
 
   // Cập nhật lưới so sánh 4 cấp
@@ -99,6 +109,7 @@ function updateButtonStates() {
 // Dựng 7 nút trạng thái cảm xúc từ contract chung
 function setupStatesButtons() {
   const statesGrid = $('states-grid');
+  if (!statesGrid) return;
   statesGrid.innerHTML = '';
   for (const state of MASCOT_STATES) {
     const btn = document.createElement('button');
@@ -152,7 +163,7 @@ function renderStagesComparison() {
 }
 
 // Bắt sự kiện chọn Loài
-$('btn-species-bear').onclick = () => {
+bindClick('btn-species-bear', () => {
   if (currentSpecies === 'bear') return;
   currentSpecies = 'bear';
   clearAllLabTimers();
@@ -160,9 +171,9 @@ $('btn-species-bear').onclick = () => {
   renderStagesComparison();
   updateStatusLabels();
   updateButtonStates();
-};
+});
 
-$('btn-species-cat').onclick = () => {
+bindClick('btn-species-cat', () => {
   if (currentSpecies === 'cat') return;
   currentSpecies = 'cat';
   clearAllLabTimers();
@@ -170,31 +181,28 @@ $('btn-species-cat').onclick = () => {
   renderStagesComparison();
   updateStatusLabels();
   updateButtonStates();
-};
+});
 
 // Bắt sự kiện chọn Cấp
 for (const stage of EVOLUTION_STAGES) {
-  const btn = $(`btn-stage-${stage}`);
-  if (btn) {
-    btn.onclick = () => {
-      currentStage = stage;
-      clearAllLabTimers();
-      if (mainRenderer) mainRenderer.setStage(stage);
-      updateStatusLabels();
-      updateButtonStates();
-    };
-  }
+  bindClick(`btn-stage-${stage}`, () => {
+    currentStage = stage;
+    clearAllLabTimers();
+    if (mainRenderer) mainRenderer.setStage(stage);
+    updateStatusLabels();
+    updateButtonStates();
+  });
 }
 
 // Tín hiệu buổi tập (Host Workout Signal)
-$('btn-workout-start').onclick = () => {
+bindClick('btn-workout-start', () => {
   clearAllLabTimers();
   currentWorkout = 'training';
   if (mainRenderer) mainRenderer.setWorkoutActive(true);
   updateStatusLabels();
-};
+});
 
-$('btn-workout-pause').onclick = () => {
+bindClick('btn-workout-pause', () => {
   clearAllLabTimers();
   currentWorkout = 'paused';
   if (mainRenderer) {
@@ -202,9 +210,9 @@ $('btn-workout-pause').onclick = () => {
     mainRenderer.setState('idle');
   }
   updateStatusLabels();
-};
+});
 
-$('btn-workout-complete').onclick = () => {
+bindClick('btn-workout-complete', () => {
   clearAllLabTimers();
   currentWorkout = 'completed';
   if (mainRenderer) {
@@ -212,9 +220,9 @@ $('btn-workout-complete').onclick = () => {
     mainRenderer.setState('celebrating', 4000);
   }
   updateStatusLabels();
-};
+});
 
-$('btn-workout-stop').onclick = () => {
+bindClick('btn-workout-stop', () => {
   clearAllLabTimers();
   currentWorkout = 'idle';
   if (mainRenderer) {
@@ -222,10 +230,10 @@ $('btn-workout-stop').onclick = () => {
     mainRenderer.setState('idle');
   }
   updateStatusLabels();
-};
+});
 
 // Kịch bản mô phỏng phản hồi API có hủy timer an toàn
-$('btn-scenario-chat').onclick = () => {
+bindClick('btn-scenario-chat', () => {
   clearAllLabTimers();
   if (!mainRenderer) return;
 
@@ -246,14 +254,14 @@ $('btn-scenario-chat').onclick = () => {
       updateStatusLabels();
     }, 2500);
   }, 1200);
-};
+});
 
-$('btn-scenario-celebrate').onclick = () => {
+bindClick('btn-scenario-celebrate', () => {
   clearAllLabTimers();
   if (mainRenderer) mainRenderer.setState('celebrating', 3200);
-};
+});
 
-$('btn-scenario-error').onclick = () => {
+bindClick('btn-scenario-error', () => {
   clearAllLabTimers();
   if (mainRenderer) {
     mainRenderer.setState('error');
@@ -261,23 +269,27 @@ $('btn-scenario-error').onclick = () => {
       if (mainRenderer) mainRenderer.setState(mainRenderer.baselineState);
     }, 3000);
   }
-};
+});
 
-$('btn-reset-all').onclick = () => {
+bindClick('btn-reset-all', () => {
   clearAllLabTimers();
   currentSpecies = 'bear';
   currentStage = 'starter';
   currentState = 'idle';
   currentWorkout = 'idle';
   document.body.className = 'lab-bg-light';
-  previewContainer.classList.remove('speed-slow', 'speed-paused', 'debug-joints');
-  $('btn-bg-light').setAttribute('aria-pressed', 'true');
-  $('btn-bg-dark').setAttribute('aria-pressed', 'false');
-  $('btn-bg-grid').setAttribute('aria-pressed', 'false');
-  $('btn-speed-normal').setAttribute('aria-pressed', 'true');
-  $('btn-speed-slow').setAttribute('aria-pressed', 'false');
-  $('btn-speed-pause').setAttribute('aria-pressed', 'false');
-  $('btn-toggle-motion').setAttribute('aria-pressed', 'false');
+  const previewContainer = $('lab-mascot-preview');
+  if (previewContainer) {
+    previewContainer.classList.remove('speed-slow', 'speed-paused', 'debug-joints');
+  }
+  setAttr('btn-bg-light', 'aria-pressed', 'true');
+  setAttr('btn-bg-dark', 'aria-pressed', 'false');
+  setAttr('btn-bg-grid', 'aria-pressed', 'false');
+  setAttr('btn-speed-normal', 'aria-pressed', 'true');
+  setAttr('btn-speed-slow', 'aria-pressed', 'false');
+  setAttr('btn-speed-pause', 'aria-pressed', 'false');
+  setAttr('btn-toggle-motion', 'aria-pressed', 'false');
+  setAttr('btn-toggle-joints', 'aria-pressed', 'false');
 
   if (mainRenderer) {
     mainRenderer.setReducedMotion(false);
@@ -289,79 +301,92 @@ $('btn-reset-all').onclick = () => {
   renderStagesComparison();
   updateStatusLabels();
   updateButtonStates();
-};
+});
 
 // Đổi màu nền xem trước
-$('btn-bg-light').onclick = () => {
+bindClick('btn-bg-light', () => {
   document.body.className = 'lab-bg-light';
-  $('btn-bg-light').setAttribute('aria-pressed', 'true');
-  $('btn-bg-dark').setAttribute('aria-pressed', 'false');
-  $('btn-bg-grid').setAttribute('aria-pressed', 'false');
-};
+  setAttr('btn-bg-light', 'aria-pressed', 'true');
+  setAttr('btn-bg-dark', 'aria-pressed', 'false');
+  setAttr('btn-bg-grid', 'aria-pressed', 'false');
+});
 
-$('btn-bg-dark').onclick = () => {
+bindClick('btn-bg-dark', () => {
   document.body.className = 'lab-bg-dark';
-  $('btn-bg-light').setAttribute('aria-pressed', 'false');
-  $('btn-bg-dark').setAttribute('aria-pressed', 'true');
-  $('btn-bg-grid').setAttribute('aria-pressed', 'false');
-};
+  setAttr('btn-bg-light', 'aria-pressed', 'false');
+  setAttr('btn-bg-dark', 'aria-pressed', 'true');
+  setAttr('btn-bg-grid', 'aria-pressed', 'false');
+});
 
-$('btn-bg-grid').onclick = () => {
+bindClick('btn-bg-grid', () => {
   document.body.className = 'lab-bg-grid';
-  $('btn-bg-light').setAttribute('aria-pressed', 'false');
-  $('btn-bg-dark').setAttribute('aria-pressed', 'false');
-  $('btn-bg-grid').setAttribute('aria-pressed', 'true');
-};
+  setAttr('btn-bg-light', 'aria-pressed', 'false');
+  setAttr('btn-bg-dark', 'aria-pressed', 'false');
+  setAttr('btn-bg-grid', 'aria-pressed', 'true');
+});
 
 // Điều khiển tốc độ
-$('btn-speed-normal').onclick = () => {
-  previewContainer.classList.remove('speed-slow', 'speed-paused');
-  $('btn-speed-normal').setAttribute('aria-pressed', 'true');
-  $('btn-speed-slow').setAttribute('aria-pressed', 'false');
-  $('btn-speed-pause').setAttribute('aria-pressed', 'false');
-};
+bindClick('btn-speed-normal', () => {
+  const previewContainer = $('lab-mascot-preview');
+  if (previewContainer) previewContainer.classList.remove('speed-slow', 'speed-paused');
+  setAttr('btn-speed-normal', 'aria-pressed', 'true');
+  setAttr('btn-speed-slow', 'aria-pressed', 'false');
+  setAttr('btn-speed-pause', 'aria-pressed', 'false');
+});
 
-$('btn-speed-slow').onclick = () => {
-  previewContainer.classList.remove('speed-paused');
-  previewContainer.classList.add('speed-slow');
-  $('btn-speed-normal').setAttribute('aria-pressed', 'false');
-  $('btn-speed-slow').setAttribute('aria-pressed', 'true');
-  $('btn-speed-pause').setAttribute('aria-pressed', 'false');
-};
+bindClick('btn-speed-slow', () => {
+  const previewContainer = $('lab-mascot-preview');
+  if (previewContainer) {
+    previewContainer.classList.remove('speed-paused');
+    previewContainer.classList.add('speed-slow');
+  }
+  setAttr('btn-speed-normal', 'aria-pressed', 'false');
+  setAttr('btn-speed-slow', 'aria-pressed', 'true');
+  setAttr('btn-speed-pause', 'aria-pressed', 'false');
+});
 
-$('btn-speed-pause').onclick = () => {
-  previewContainer.classList.add('speed-paused');
-  $('btn-speed-normal').setAttribute('aria-pressed', 'false');
-  $('btn-speed-slow').setAttribute('aria-pressed', 'false');
-  $('btn-speed-pause').setAttribute('aria-pressed', 'true');
-};
+bindClick('btn-speed-pause', () => {
+  const previewContainer = $('lab-mascot-preview');
+  if (previewContainer) previewContainer.classList.add('speed-paused');
+  setAttr('btn-speed-normal', 'aria-pressed', 'false');
+  setAttr('btn-speed-slow', 'aria-pressed', 'false');
+  setAttr('btn-speed-pause', 'aria-pressed', 'true');
+});
 
 // Giảm chuyển động
 let isReducedMotion = false;
-$('btn-toggle-motion').onclick = () => {
+bindClick('btn-toggle-motion', () => {
   isReducedMotion = !isReducedMotion;
-  $('btn-toggle-motion').setAttribute('aria-pressed', String(isReducedMotion));
+  setAttr('btn-toggle-motion', 'aria-pressed', String(isReducedMotion));
   if (mainRenderer) mainRenderer.setReducedMotion(isReducedMotion);
-};
+});
 
 // Hiển thị khớp (Debug Joints)
 let isDebugJoints = false;
-const btnToggleJoints = $('btn-toggle-joints');
-if (btnToggleJoints) {
-  btnToggleJoints.onclick = () => {
-    isDebugJoints = !isDebugJoints;
-    btnToggleJoints.setAttribute('aria-pressed', String(isDebugJoints));
+bindClick('btn-toggle-joints', () => {
+  const previewContainer = $('lab-mascot-preview');
+  isDebugJoints = !isDebugJoints;
+  setAttr('btn-toggle-joints', 'aria-pressed', String(isDebugJoints));
+  if (previewContainer) {
     if (isDebugJoints) {
       previewContainer.classList.add('debug-joints');
     } else {
       previewContainer.classList.remove('debug-joints');
     }
-  };
+  }
+});
+
+// Khởi chạy phòng thử khi DOM sẵn sàng
+function boot() {
+  setupStatesButtons();
+  initMainRenderer();
+  renderStagesComparison();
+  updateStatusLabels();
+  updateButtonStates();
 }
 
-// Khởi chạy phòng thử
-setupStatesButtons();
-initMainRenderer();
-renderStagesComparison();
-updateStatusLabels();
-updateButtonStates();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
