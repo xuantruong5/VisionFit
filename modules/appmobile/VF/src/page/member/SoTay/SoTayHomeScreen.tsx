@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS, SHADOWS } from '../../../general/theme';
 
 interface SoTayHomeScreenProps {
@@ -49,10 +50,28 @@ const SoTayHomeScreen: React.FC<SoTayHomeScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="dark-content" />
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Tiêu đề */}
-        <Text style={styles.eyebrow}>VISIONFIT</Text>
-        <Text style={styles.title}>Sổ tay</Text>
-        <Text style={styles.subtitle}>Kiến thức tập luyện và dinh dưỡng trong tầm tay</Text>
+        {/* Header gradient giống trang Đoạn chat */}
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.circleLg} />
+          <View style={styles.circleSm} />
+          <View style={styles.headerRow}>
+            <View style={styles.flex}>
+              <Text style={styles.headerSub}>Kiến thức tập luyện & dinh dưỡng</Text>
+              <Text style={styles.headerTitle}>Sổ tay</Text>
+            </View>
+            <View style={styles.headerIcon}>
+              <Ionicons name="book" size={20} color={COLORS.white} />
+            </View>
+          </View>
+          <Text style={styles.headerDesc}>
+            Tra cứu bài tập, dinh dưỡng và kiến thức sức khỏe mọi lúc bạn cần.
+          </Text>
+        </LinearGradient>
 
         {/* Thẻ nổi bật */}
         <TouchableOpacity
@@ -113,28 +132,100 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 6,
     paddingBottom: 24,
+  },
+  flex: {
+    flex: 1,
   },
 
   // TIÊU ĐỀ
-  eyebrow: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: COLORS.primary,
-    letterSpacing: 1.5,
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 18,
+    borderRadius: 28,
+    overflow: 'hidden',
   },
-  title: {
-    fontSize: 30,
+  circleLg: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -80,
+    right: -60,
+  },
+  circleSm: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    bottom: -50,
+    left: -30,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerSub: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+  },
+  headerTitle: {
+    fontSize: 24,
     fontWeight: '800',
-    color: COLORS.textPrimary,
+    color: COLORS.white,
     marginTop: 2,
   },
-  subtitle: {
+  headerDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 10,
+    maxWidth: '85%',
+  },
+  headerStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  headerStat: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 5,
+  },
+  headerStatValue: {
     fontSize: 14,
-    color: COLORS.textMuted,
-    marginTop: 4,
-    marginBottom: 20,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  headerStatLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+  },
+  headerStatDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginHorizontal: 12,
+  },
+  headerIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // THẺ ẢNH
@@ -145,7 +236,8 @@ const styles = StyleSheet.create({
     ...SHADOWS.card,
   },
   featuredCard: {
-    height: 210,
+    height: 200,
+    marginTop: 16,
   },
   halfCard: {
     flex: 1,

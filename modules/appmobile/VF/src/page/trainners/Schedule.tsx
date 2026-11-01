@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - tuần 26/10 → 01/11/2026
 const TODAY = 31;
@@ -32,7 +32,7 @@ const STATUS = {
   upcoming: { label: 'Đã lên lịch', color: COLORS.accentBlue, bg: '#EAF3FC' },
 };
 
-const Schedule = () => {
+const Schedule = ({ navigation }: any) => {
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const daySchedules = SCHEDULES.filter((item) => item.date === selectedDate);
   const doneCount = daySchedules.filter((item) => item.status === 'done').length;
@@ -54,31 +54,45 @@ const Schedule = () => {
             <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
               <Ionicons name="calendar-outline" size={20} color={COLORS.white} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.glassBtn, styles.addBtn]} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.glassBtn, styles.addBtn]} activeOpacity={0.8} onPress={() => navigation?.navigate('CreateSchedule')}>
               <Ionicons name="add" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.weekRow}>
-            {WEEK.map((item) => {
-              const selected = item.date === selectedDate;
-              const hasSchedule = SCHEDULES.some((s) => s.date === item.date);
-              return (
-                <TouchableOpacity
-                  key={item.date}
-                  activeOpacity={0.8}
-                  onPress={() => setSelectedDate(item.date)}
-                  style={[styles.dayPill, selected && styles.dayPillActive]}>
-                  <Text style={[styles.dayLabel, selected && styles.dayLabelActive]}>{item.day}</Text>
-                  <Text style={[styles.dayDate, selected && styles.dayDateActive]}>{item.date}</Text>
-                  <View style={[styles.dayDot, hasSchedule && styles.dayDotOn, selected && hasSchedule && styles.dayDotActive]} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
         </LinearGradient>
 
-        {/* 2. TÓM TẮT NGÀY */}
+        {/* 2. DẢI CHỌN NGÀY TRONG TUẦN */}
+        <LinearGradient colors={[COLORS.primaryLight, COLORS.primarySoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.weekStrip}>
+          {WEEK.map((item) => {
+            const selected = item.date === selectedDate;
+            const isToday = item.date === TODAY;
+            const hasSchedule = SCHEDULES.some((s) => s.date === item.date);
+            return (
+              <TouchableOpacity
+                key={item.date}
+                activeOpacity={0.8}
+                onPress={() => setSelectedDate(item.date)}
+                style={styles.dayItem}>
+                <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]} numberOfLines={1}>
+                  {isToday ? 'Hôm nay' : item.day}
+                </Text>
+                {selected ? (
+                  <LinearGradient colors={['#5FD0DA', COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.dayCircle, styles.dayCircleSelected]}>
+                    <Text style={[styles.dayDate, styles.dayDateActive]}>{item.date}</Text>
+                    {hasSchedule && <View style={styles.innerDot} />}
+                  </LinearGradient>
+                ) : (
+                  <View style={[styles.dayCircle, hasSchedule && styles.dayCircleWithDot]}>
+                    <Text style={styles.dayDate}>{item.date}</Text>
+                    {hasSchedule && <View style={[styles.innerDot, styles.innerDotIdle]} />}
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </LinearGradient>
+
+        {/* 3. TÓM TẮT NGÀY */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryIcon}>
             <Ionicons name="barbell" size={20} color={COLORS.primary} />
@@ -93,7 +107,7 @@ const Schedule = () => {
           </View>
         </View>
 
-        {/* 3. DANH SÁCH CA DẠY */}
+        {/* 4. DANH SÁCH CA DẠY */}
         <View style={styles.body}>
           {daySchedules.map((item) => {
             const status = STATUS[item.status as keyof typeof STATUS];
@@ -139,7 +153,7 @@ const Schedule = () => {
               </View>
               <Text style={styles.emptyTitle}>Ngày nghỉ ngơi</Text>
               <Text style={styles.subText}>Chưa có buổi tập nào được lên lịch.</Text>
-              <TouchableOpacity style={styles.emptyBtn} activeOpacity={0.85}>
+              <TouchableOpacity style={styles.emptyBtn} activeOpacity={0.85} onPress={() => navigation?.navigate('CreateSchedule')}>
                 <Ionicons name="add" size={18} color={COLORS.white} />
                 <Text style={styles.emptyBtnText}>Thêm ca dạy</Text>
               </TouchableOpacity>
@@ -180,8 +194,8 @@ const styles = StyleSheet.create({
   // HEADER
   header: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 50,
+    paddingTop: 16,
+    paddingBottom: 18,
     borderRadius: 28,
     marginHorizontal: 12,
     marginTop: 6,
@@ -208,7 +222,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
     marginTop: 2,
   },
@@ -225,51 +239,64 @@ const styles = StyleSheet.create({
   addBtn: {
     backgroundColor: COLORS.white,
   },
-  weekRow: {
+  weekStrip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
+    marginHorizontal: 16,
+    marginTop: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderRadius: 28,
   },
-  dayPill: {
-    width: 44,
-    paddingVertical: 10,
-    borderRadius: 16,
+  dayItem: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  dayPillActive: {
-    backgroundColor: COLORS.white,
-    ...SHADOWS.card,
   },
   dayLabel: {
     fontSize: 11.5,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    marginBottom: 8,
   },
-  dayLabelActive: {
-    color: COLORS.textMuted,
+  dayLabelToday: {
+    color: COLORS.primaryDark,
+    fontWeight: '700',
+  },
+  dayCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayCircleSelected: {
+    borderColor: COLORS.white,
+    paddingBottom: 6,
+  },
+  dayCircleWithDot: {
+    paddingBottom: 6,
   },
   dayDate: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.white,
-    marginTop: 4,
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   dayDateActive: {
-    color: COLORS.primary,
+    color: COLORS.white,
   },
-  dayDot: {
-    width: 5,
-    height: 5,
+  innerDot: {
+    position: 'absolute',
+    bottom: 4,
+    width: 6,
+    height: 6,
     borderRadius: 3,
-    marginTop: 5,
-    backgroundColor: COLORS.transparent,
+    borderWidth: 1.5,
+    borderColor: COLORS.white,
   },
-  dayDotOn: {
-    backgroundColor: '#9EE7E5',
-  },
-  dayDotActive: {
-    backgroundColor: COLORS.accentOrange,
+  innerDotIdle: {
+    borderColor: COLORS.primary,
   },
 
   // TÓM TẮT
@@ -279,12 +306,10 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: COLORS.white,
     marginHorizontal: 16,
-    marginTop: -30,
-    borderRadius: 18,
+    marginTop: 14,
+    borderRadius: 26,
     padding: 14,
     ...SHADOWS.card,
-    shadowOpacity: 0.12,
-    elevation: 6,
   },
   summaryIcon: {
     width: 42,
@@ -296,7 +321,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
 
@@ -311,7 +336,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   endText: {
@@ -322,11 +347,9 @@ const styles = StyleSheet.create({
   scheduleCard: {
     flex: 1,
     backgroundColor: COLORS.white,
-    borderRadius: 18,
+    borderRadius: 26,
     padding: 14,
     paddingLeft: 18,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     overflow: 'hidden',
     ...SHADOWS.card,
   },
@@ -403,7 +426,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   emptyBtn: {

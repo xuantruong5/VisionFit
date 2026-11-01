@@ -6,8 +6,12 @@ import DashboardScreen from "../Tab/DashboardScreen";
 import DietScreen from "../Tab/DietScreen";
 import WorkoutExercisePlan from "../Tab/WorkoutExercisePlan";
 import MyPlansModal from "./MyPlansModal";
-import LinearGradient from "react-native-linear-gradient";
-import { COLORS } from "../../../../general/theme";
+import { COLORS, PASTEL, SOFT_SHADOW } from "../../../../general/theme";
+
+// Nhãn ngày hôm nay hiển thị trên header
+const WEEKDAY_NAMES = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
+const NOW = new Date();
+const TODAY_LABEL = `${WEEKDAY_NAMES[NOW.getDay()]}, ${NOW.getDate()} tháng ${NOW.getMonth() + 1}`;
 
 const HeaderPage = ({ navigation, route }: any) => {
   const [activeTab, setActiveTab] = useState("Trang tổng quan");
@@ -31,45 +35,35 @@ const HeaderPage = ({ navigation, route }: any) => {
       <StatusBar barStyle="dark-content" />
 
       <View style={styles.body}>
-      {/* HEADER GRADIENT */}
-      <LinearGradient
-        colors={[COLORS.primary, COLORS.primaryDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <View style={styles.circleLg} />
-        <View style={styles.circleSm} />
-
-        {/* HEADER TOP */}
+      {/* HEADER SÁNG */}
+      <View style={styles.header}>
         <View style={styles.headerTop}>
+          <View style={styles.datePill}>
+            <Ionicons name="sunny" size={14} color={COLORS.accentGold} />
+            <Text style={styles.dateText}>{TODAY_LABEL}</Text>
+          </View>
+
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.navigate("WorkoutPlanScreen");
-              }
-            }}
+            onPress={() => setActiveTab("Trang tổng quan")}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            <Ionicons name="calendar-outline" size={20} color={PASTEL.ink} />
           </TouchableOpacity>
-
-          <View style={styles.titleWrap}>
-            <Text style={styles.subtitle}>Hành trình luyện tập</Text>
-            <Text style={styles.title}>Kế hoạch của tôi</Text>
-          </View>
 
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => setMyPlansVisible(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="list-outline" size={20} color={COLORS.white} />
+            <Ionicons name="list-outline" size={20} color={PASTEL.ink} />
           </TouchableOpacity>
         </View>
+
+        <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.titleLight}>Kế hoạch tập </Text>
+          của tôi<Text style={styles.titleDot}>.</Text>
+        </Text>
 
         {/* THANH CHỌN TAB TRONG HEADER */}
         <View style={styles.tabContainer}>
@@ -85,7 +79,7 @@ const HeaderPage = ({ navigation, route }: any) => {
                 <Ionicons
                   name={tab.icon}
                   size={16}
-                  color={isActive ? COLORS.primary : "rgba(255,255,255,0.85)"}
+                  color={isActive ? COLORS.white : COLORS.textMuted}
                   style={styles.tabIcon}
                 />
                 <Text style={[styles.tabText, isActive && styles.activeTabText]}>
@@ -95,7 +89,7 @@ const HeaderPage = ({ navigation, route }: any) => {
             );
           })}
         </View>
-      </LinearGradient>
+      </View>
 
       {/* NỘI DUNG TAB */}
       <View style={styles.content}>
@@ -120,100 +114,90 @@ export default HeaderPage;
 const styles = StyleSheet.create({
   body: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: PASTEL.background,
   },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: PASTEL.background,
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    borderRadius: 28,
-    marginHorizontal: 12,
-    marginTop: 6,
-    overflow: "hidden",
-  },
-  circleLg: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    top: -90,
-    right: -50,
-  },
-  circleSm: {
-    position: "absolute",
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    bottom: -45,
-    left: -25,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 10,
   },
-  titleWrap: {
+  datePill: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    alignSelf: "center",
+    gap: 6,
   },
-  subtitle: {
-    fontSize: 12,
+  dateText: {
+    fontSize: 13,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.75)",
+    color: COLORS.textSecondary,
+  },
+  titleLight: {
+    fontWeight: "400",
   },
   title: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: "800",
-    color: COLORS.white,
-    marginTop: 2,
+    color: PASTEL.ink,
+    letterSpacing: -0.5,
+    marginTop: 6,
+  },
+  titleDot: {
+    color: COLORS.primary,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: "rgba(255,255,255,0.16)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.white,
     alignItems: "center",
     justifyContent: "center",
+    ...SOFT_SHADOW,
   },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.14)",
-    marginTop: 16,
-    padding: 4,
+    backgroundColor: COLORS.white,
+    marginTop: 18,
+    padding: 5,
     gap: 4,
-    borderRadius: 16,
+    borderRadius: 26,
+    ...SOFT_SHADOW,
   },
   tab: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 40,
-    borderRadius: 12,
+    height: 42,
+    borderRadius: 21,
   },
   activeTab: {
-    backgroundColor: COLORS.white,
+    backgroundColor: PASTEL.dark,
   },
   tabIcon: {
     marginRight: 6,
   },
   tabText: {
     fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
+    color: COLORS.textMuted,
     fontWeight: "600",
   },
   activeTabText: {
-    color: COLORS.primary,
+    color: COLORS.white,
     fontWeight: "700",
   },
   content: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: PASTEL.background,
   },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Status
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const DEFAULT_SESSION = {
@@ -234,13 +234,13 @@ const styles = StyleSheet.create({
   avatar: {
     width: 56,
     height: 56,
-    borderRadius: 18,
+    borderRadius: 26,
     borderWidth: 2.5,
     borderColor: 'rgba(255,255,255,0.6)',
   },
   memberName: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
   },
   memberSub: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
     marginTop: 4,
   },
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     marginHorizontal: 16,
     marginTop: -32,
-    borderRadius: 22,
+    borderRadius: 28,
     paddingVertical: 18,
     paddingHorizontal: 16,
     ...SHADOWS.card,
@@ -305,11 +305,14 @@ const styles = StyleSheet.create({
 
   // SECTION
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
+    fontFamily: 'serif',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
 
   // CƯỜNG ĐỘ
@@ -323,8 +326,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     gap: 6,
   },
   diffCardActive: {
@@ -373,9 +374,7 @@ const styles = StyleSheet.create({
   },
   commentBox: {
     backgroundColor: COLORS.white,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderRadius: 26,
     padding: 14,
     ...SHADOWS.small,
   },

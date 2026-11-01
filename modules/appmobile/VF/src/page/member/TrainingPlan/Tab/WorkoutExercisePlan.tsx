@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, StatusBar } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
-import { COLORS, SHADOWS } from "../../../../general/theme";
+import { PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
 
 const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const navHook = useNavigation<any>();
@@ -122,101 +121,87 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* TOP BANNER */}
-        <View style={styles.bannerWrapper}>
-          <View style={styles.bannerContainer}>
-            <Image
-              source={{
-                uri:
-                  program?.anh_dai_dien ||
-                  "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-              }}
-              style={styles.bannerImage}
-              resizeMode="cover"
-            />
-            <LinearGradient
-              colors={["rgba(13,127,141,0.55)", "rgba(7,88,101,0.95)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.bannerOverlay}
-            >
-              <View style={styles.bannerCircle} />
-              <View style={styles.bannerContent}>
-                <Text style={styles.bannerTitle}>
-                  {program?.ten_chuong_trinh ?? "Chương trình tập"}
+        {/* Tóm tắt chương trình */}
+        <View style={styles.summaryCard}>
+          <Image
+            source={{
+              uri:
+                program?.anh_dai_dien ||
+                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
+            }}
+            style={styles.summaryImage}
+            resizeMode="cover"
+          />
+          <View style={styles.flex}>
+            <Text style={styles.summaryTitle} numberOfLines={2}>
+              {program?.ten_chuong_trinh ?? "Chương trình tập"}
+            </Text>
+            <Text style={styles.summaryMeta}>
+              {program?.so_ngay ?? 0} ngày · {program?.so_buoi_moi_tuan ?? 0} buổi/tuần
+            </Text>
+            <View style={styles.chipRow}>
+              <View style={[styles.chip, { backgroundColor: PASTEL.tealSoft }]}>
+                <Text style={[styles.chipText, { color: PASTEL.teal }]} numberOfLines={1}>
+                  {program?.ten_noi_tap ?? "Chưa xác định"}
                 </Text>
-
-                <View style={styles.bannerInfoRow}>
-                  <View style={styles.badge}>
-                    <Ionicons name="location-outline" size={12} color={COLORS.white} />
-                    <Text style={styles.badgeText}>
-                      {program?.ten_noi_tap ?? "Chưa xác định"}
-                    </Text>
-                  </View>
-                  <View style={styles.badge}>
-                    <Ionicons name="speedometer-outline" size={12} color={COLORS.white} />
-                    <Text style={styles.badgeText}>
-                      {program?.ten_cap_do ?? "Trung cấp"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.bannerHighlightRow}>
-                <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.85)" />
-                <Text style={styles.bannerHighlightText}>
-                  {program?.so_ngay ?? 0} ngày ({program?.so_buoi_moi_tuan ?? 0} buổi/tuần) • Đã xong:{" "}
-                  {tongNgayDaHoanThanh}/{tongNgayTap} ngày
-                </Text>
-                </View>
               </View>
-            </LinearGradient>
+              <View style={[styles.chip, { backgroundColor: PASTEL.butter }]}>
+                <Text style={[styles.chipText, { color: PASTEL.butterInk }]} numberOfLines={1}>
+                  {program?.ten_cap_do ?? "Trung cấp"}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.summaryCount}>
+            <Text style={styles.summaryCountValue}>{tongNgayDaHoanThanh}</Text>
+            <Text style={styles.summaryCountTotal}>/{tongNgayTap}</Text>
           </View>
         </View>
 
-        {/* LIST HEADER */}
+        {/* Tiêu đề danh sách */}
         <View style={styles.listHeaderRow}>
-          <Text style={styles.listHeaderTitle}>Danh sách ngày tập luyện</Text>
+          <Text style={styles.listHeaderTitle}>Ngày tập luyện</Text>
           <TouchableOpacity
             style={styles.sortButton}
             onPress={() => setIsReversed((prev) => !prev)}
             activeOpacity={0.7}
           >
-            <Ionicons name="swap-vertical" size={16} color={COLORS.primary} />
+            <Ionicons name="swap-vertical" size={15} color={PASTEL.ink} />
             <Text style={styles.sortButtonText}>{isReversed ? "Giảm dần" : "Tăng dần"}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* LIST OF DAYS */}
-        <View style={styles.daysListContainer}>
-          {loading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.loadingText}>Đang tải lịch tập...</Text>
-            </View>
-          ) : apiData.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
-              </View>
-              <Text style={styles.emptyText}>Chưa có ngày tập luyện nào.</Text>
-            </View>
-          ) : (
-            (isReversed ? [...apiData].reverse() : apiData).map((day: any) => {
-              const isUnlocked = Number(day.tinh_trang) === 1;
-              const progress = progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0;
-              const progressColor =
-                progress >= 100 ? COLORS.accentGreen : progress > 0 ? COLORS.accentGold : COLORS.primary;
+        {/* Danh sách ngày tập */}
+        {loading ? (
+          <View style={styles.stateBox}>
+            <ActivityIndicator size="large" color={PASTEL.teal} />
+            <Text style={styles.stateText}>Đang tải lịch tập...</Text>
+          </View>
+        ) : apiData.length === 0 ? (
+          <View style={styles.stateBox}>
+            <Text style={styles.stateText}>Chưa có ngày tập luyện nào.</Text>
+          </View>
+        ) : (
+          (isReversed ? [...apiData].reverse() : apiData).map((day: any) => {
+            const isUnlocked = Number(day.tinh_trang) === 1;
+            const progress = progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0;
+            const ring =
+              progress >= 100
+                ? { bg: PASTEL.mint, ink: PASTEL.mintInk }
+                : progress > 0
+                ? { bg: PASTEL.butter, ink: PASTEL.butterInk }
+                : { bg: PASTEL.tealSoft, ink: PASTEL.teal };
 
-              return (
-                <TouchableOpacity
-                  key={day.id_chuong_trinh_bai_tap}
-                  style={[styles.dayCard, !isUnlocked && styles.dayCardLocked]}
-                  activeOpacity={isUnlocked ? 0.8 : 1}
+            return (
+              <TouchableOpacity
+                key={day.id_chuong_trinh_bai_tap}
+                style={[styles.dayCard, !isUnlocked && styles.dayCardLocked]}
+                activeOpacity={isUnlocked ? 0.8 : 1}
                   onPress={() => {
                     if (!isUnlocked) return;
                     const params = {
@@ -230,42 +215,30 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                     };
                     navigation.navigate("ExercisePage", params);
                   }}
-                >
-                  {/* Status Circle */}
-                  <View style={styles.dayCardIconWrapper}>
-                    {isUnlocked ? (
-                      <View style={[styles.progressCircle, { borderColor: progressColor }]}>
-                        <Text style={[styles.progressText, { color: progressColor }]}>
-                          {progress}%
-                        </Text>
-                      </View>
-                    ) : (
-                      <View style={styles.lockCircle}>
-                        <Ionicons name="lock-closed" size={18} color={COLORS.textMuted} />
-                      </View>
-                    )}
+              >
+                {isUnlocked ? (
+                  <View style={[styles.statusCircle, { backgroundColor: ring.bg }]}>
+                    <Text style={[styles.statusText, { color: ring.ink }]}>{progress}%</Text>
                   </View>
-
-                  {/* Info */}
-                  <View style={styles.dayCardInfo}>
-                    <Text style={styles.dayLabelText}>Ngày thứ {day.ngay_thu}</Text>
-                    <Text style={styles.dayTypeText} numberOfLines={1}>
-                      {day.ten_ngay_tap}
-                    </Text>
-                    <View style={styles.metaRow}>
-                      <Text style={styles.sessionText}>Buổi {day.buoi_thuc_te}</Text>
-                      <Text style={styles.dotSeparator}>•</Text>
-                      <Text style={styles.dateText}>
-                        {day.thu_tap || "Thứ 2"} · {day.ngay_tap_hien_thi || "Hôm nay"}
-                      </Text>
-                    </View>
+                ) : (
+                  <View style={[styles.statusCircle, styles.statusCircleLocked]}>
+                    <Ionicons name="lock-closed-outline" size={18} color={PASTEL.inkMuted} />
                   </View>
+                )}
 
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
+                <View style={styles.flex}>
+                  <Text style={styles.dayLabel}>Ngày thứ {day.ngay_thu}</Text>
+                  <Text style={styles.dayTitle} numberOfLines={1}>
+                    {day.ten_ngay_tap}
+                  </Text>
+                  <Text style={styles.dayMeta}>
+                    Buổi {day.buoi_thuc_te} · {day.thu_tap || "Thứ 2"} · {day.ngay_tap_hien_thi || "Hôm nay"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -276,233 +249,157 @@ export default WorkoutExercisePlan;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: PASTEL.background,
+  },
+  flex: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 24,
   },
-  bannerWrapper: {
-    borderRadius: 22,
-    overflow: "hidden",
-    backgroundColor: COLORS.primaryDark,
-    ...SHADOWS.card,
-    shadowOpacity: 0.14,
-    elevation: 6,
-  },
-  bannerContainer: {
-    width: "100%",
-    height: 172,
-  },
-  bannerImage: {
-    ...StyleSheet.absoluteFill,
-    width: "100%",
-    height: "100%",
-  },
-  bannerOverlay: {
-    flex: 1,
-    padding: 18,
-    justifyContent: "flex-end",
-  },
-  bannerCircle: {
-    position: "absolute",
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    top: -70,
-    right: -50,
-  },
-  bannerContent: {},
-  bannerTitle: {
-    color: COLORS.white,
-    fontSize: 21,
-    fontWeight: "800",
-    marginBottom: 10,
-  },
-  bannerInfoRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 10,
-  },
-  badge: {
+
+  // TÓM TẮT
+  summaryCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.16)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    gap: 14,
+    backgroundColor: PASTEL.surface,
+    borderRadius: RADIUS.lg,
+    padding: 10,
+    paddingRight: 16,
+    ...SOFT_SHADOW,
+  },
+  summaryImage: {
+    width: 92,
+    height: 104,
+    borderRadius: 22,
+  },
+  summaryTitle: {
+    fontSize: 17,
+    fontWeight: "500",
+    color: PASTEL.ink,
+  },
+  summaryMeta: {
+    fontSize: 12.5,
+    color: PASTEL.inkSoft,
+    marginTop: 4,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 10,
+  },
+  chip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 10,
-    gap: 4,
+    borderRadius: RADIUS.pill,
   },
-  badgeText: {
-    color: COLORS.white,
+  chipText: {
     fontSize: 11.5,
-    fontWeight: "700",
-  },
-  bannerHighlightRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  bannerHighlightText: {
-    flex: 1,
-    color: "rgba(255,255,255,0.88)",
-    fontSize: 12,
     fontWeight: "600",
   },
+  summaryCount: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  summaryCountValue: {
+    fontSize: 30,
+    fontWeight: "300",
+    color: PASTEL.ink,
+  },
+  summaryCountTotal: {
+    fontSize: 14,
+    color: PASTEL.inkMuted,
+    marginBottom: 5,
+  },
+
+  // TIÊU ĐỀ DANH SÁCH
   listHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 24,
     marginBottom: 12,
   },
   listHeaderTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 17,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "600",
+    color: PASTEL.ink,
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    paddingHorizontal: 12,
-    height: 34,
-    borderRadius: 17,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    gap: 6,
+    backgroundColor: PASTEL.surface,
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: RADIUS.pill,
+    ...SOFT_SHADOW,
   },
   sortButtonText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontSize: 12.5,
+    fontWeight: "600",
+    color: PASTEL.ink,
   },
-  daysListContainer: {
-    gap: 12,
-  },
-  loadingBox: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    color: COLORS.textMuted,
-    fontSize: 13,
-  },
-  emptyBox: {
-    paddingVertical: 32,
-    alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: COLORS.surfaceTeal,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    marginTop: 12,
-    color: COLORS.textPrimary,
-    fontSize: 15,
-    fontWeight: "800",
-  },
+
+  // NGÀY TẬP
   dayCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
+    gap: 14,
+    backgroundColor: PASTEL.surface,
+    borderRadius: 24,
+    padding: 12,
+    paddingRight: 16,
+    marginBottom: 10,
+    ...SOFT_SHADOW,
   },
   dayCardLocked: {
-    opacity: 0.6,
-    backgroundColor: COLORS.white,
-    elevation: 0,
+    backgroundColor: PASTEL.surfaceSoft,
     shadowOpacity: 0,
+    elevation: 0,
   },
-  dayCardIconWrapper: {
-    width: 50,
+  statusCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
   },
-  progressCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 3,
-    backgroundColor: COLORS.surfaceTeal,
-    alignItems: "center",
-    justifyContent: "center",
+  statusCircleLocked: {
+    backgroundColor: PASTEL.track,
   },
-  progressText: {
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  lockCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.borderLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dayCardInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  dayLabelText: {
-    color: COLORS.primary,
-    fontSize: 11.5,
+  statusText: {
+    fontSize: 13,
     fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
   },
-  dayTypeText: {
-    color: COLORS.textPrimary,
-    fontSize: 15.5,
-    fontWeight: "800",
+  dayLabel: {
+    fontSize: 12,
+    color: PASTEL.inkMuted,
+  },
+  dayTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: PASTEL.ink,
     marginTop: 2,
   },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  sessionText: {
+  dayMeta: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    color: PASTEL.inkSoft,
+    marginTop: 3,
   },
-  dotSeparator: {
-    marginHorizontal: 6,
-    color: COLORS.textLight,
-  },
-  dateText: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  chevronWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: COLORS.primaryLight,
+
+  // TRẠNG THÁI
+  stateBox: {
     alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
+    paddingVertical: 36,
+    gap: 10,
   },
-  chevronWrapLocked: {
-    backgroundColor: COLORS.borderLight,
+  stateText: {
+    fontSize: 13.5,
+    color: PASTEL.inkSoft,
   },
 });

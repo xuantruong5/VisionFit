@@ -69,6 +69,12 @@ import PaymentScreen from "./src/page/member/PaymentScreen";
 import RegistrationSuccessScreen from "./src/page/member/RegistrationSuccessScreen";
 import MyPackagesScreen from "./src/page/member/MyPackagesScreen";
 import MyPackageDetailScreen from "./src/page/member/MyPackageDetailScreen";
+import WorkoutHistory from "./src/page/member/WorkoutHistory";
+import CreateSchedule from "./src/page/trainners/CreateSchedule";
+import TrainerNotifications from "./src/page/trainners/TrainerNotifications";
+import EditTrainerProfile from "./src/page/trainners/EditTrainerProfile";
+import AddMember from "./src/page/trainners/AddMember";
+import TrainerSettings from "./src/page/trainners/TrainerSettings";
 
 
 
@@ -302,12 +308,11 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="MainTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
         <Stack.Screen name="Onloading" component={Onloading}/>
-        <Stack.Screen name="MainTabs" component={MainTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
@@ -344,6 +349,7 @@ const App = () => {
         <Stack.Screen name="MyPackages" component={MyPackagesScreen} />
         <Stack.Screen name="MyPackageDetailScreen" component={MyPackageDetailScreen} />
         <Stack.Screen name="MyPackageDetail" component={MyPackageDetailScreen} />
+        <Stack.Screen name="WorkoutHistory" component={WorkoutHistory} />
 
 
         {/* // gioi thieu */}
@@ -357,7 +363,8 @@ const App = () => {
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
-        <Stack.Screen name="Dashboard" component={Dashboard} />
+        {/* <Stack.Screen name="Dashboard" component={Dashboard} /> */}
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="TrainerFeed" component={TrainerFeed} />
         <Stack.Screen name="Income" component={Income} />
         <Stack.Screen name="MemberDetail" component={MemberDetail} />
@@ -366,6 +373,11 @@ const App = () => {
         <Stack.Screen name="Schedule" component={Schedule} />
         <Stack.Screen name="SessionHistory" component={SessionHistory} />
         <Stack.Screen name="SessionReview" component={SessionReview} />
+        <Stack.Screen name="CreateSchedule" component={CreateSchedule} />
+        <Stack.Screen name="TrainerNotifications" component={TrainerNotifications} />
+        <Stack.Screen name="EditTrainerProfile" component={EditTrainerProfile} />
+        <Stack.Screen name="AddMember" component={AddMember} />
+        <Stack.Screen name="TrainerSettings" component={TrainerSettings} />
         <Stack.Screen name="MemberProfile" component={MemberProfile} />
 
 

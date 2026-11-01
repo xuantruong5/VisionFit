@@ -6,7 +6,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { widthPercentageToDP as wp } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
-import { COLORS, SHADOWS } from "../../../../general/theme";
+import { COLORS, SHADOWS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
+
+// Nhãn thứ trong tuần cho dải chọn ngày
+const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 const DietScreen = () => {
     // do trang header dang reder trực tiếp nên mới dùng cách này còn kh mọi người cứ dùng cách cũ 
@@ -26,7 +29,6 @@ const DietScreen = () => {
     const today = new Date();
     const [selectedDay, setSelectedDay] = useState(today.getDate());
     const [selectedDate, setSelectedDate] = useState(formatDate(today));
-    const [showDays, setShowDays] = useState(false);
 
     // Danh sách 7 ngày, giữ nguyên giao diện chọn ngày
     const days = Array.from({ length: 7 }, (_, index) => {
@@ -123,40 +125,33 @@ const DietScreen = () => {
     return (
         <View style={styles.container}>
             {/* Thanh chọn ngày */}
-            <View style={styles.daySection}>
+            <LinearGradient colors={[PASTEL.tealSoft, PASTEL.surfaceSoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.daySection}>
                 <View style={styles.daysRow}>
-                    {days.map((item, index) => (
-                        <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => { setSelectedDay(item.day); setSelectedDate(item.date); }}
-                            style={[styles.dayItem, selectedDay === item.day && styles.selectedDay,]} >
-                            <Text style={[styles.dayText, selectedDay === item.day && styles.selectedDayText,]} >
-                                {item.day}
-                            </Text>
-                            <Text style={[styles.monthText, selectedDay === item.day && styles.selectedMonthText,]} >
-                                Th{item.month}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {days.map((item, index) => {
+                        const isSelected = selectedDay === item.day;
+                        const weekday = index === 0 ? "Hôm nay" : WEEKDAYS[new Date(item.date).getDay()];
+                        return (
+                            <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => { setSelectedDay(item.day); setSelectedDate(item.date); }}
+                                style={styles.dayItem} >
+                                <Text style={[styles.weekdayText, index === 0 && styles.todayLabel]} numberOfLines={1}>
+                                    {weekday}
+                                </Text>
+                                {isSelected ? (
+                                    <LinearGradient colors={["#5FD0DA", COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.dayCircle, styles.dayCircleSelected]}>
+                                        <Text style={[styles.dayText, styles.selectedDayText]}>{item.day}</Text>
+                                        <View style={styles.innerDot} />
+                                    </LinearGradient>
+                                ) : (
+                                    <View style={[styles.dayCircle, index === 0 && styles.dayCircleWithDot]}>
+                                        <Text style={styles.dayText}>{item.day}</Text>
+                                        {index === 0 && <View style={[styles.innerDot, styles.innerDotToday]} />}
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
-                {/* Nút mở rộng */}
-                <TouchableOpacity style={styles.dropdownButton} onPress={() => setShowDays(!showDays)} >
-                    <Ionicons name={showDays ? "chevron-up" : "chevron-down"} size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-                {showDays && (
-                    <View style={styles.dropdownContent}>
-                        <View style={styles.dropdownIcon}>
-                            <Ionicons name="calendar" size={18} color={COLORS.primary} />
-                        </View>
-                        <View style={styles.dropdownTextWrap}>
-                            <Text style={styles.dropdownTitle}>
-                                Ngày đang chọn: {selectedDate}
-                            </Text>
-                            <Text style={styles.dropdownDescription}>
-                                Chọn ngày để xem thực đơn dinh dưỡng.
-                            </Text>
-                        </View>
-                    </View>
-                )}
-            </View>
+            </LinearGradient>
             {/* Danh sách các bữa ăn */}
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
                 {loading ? (
@@ -170,15 +165,11 @@ const DietScreen = () => {
                         <View key={meal.id} style={styles.mealSection}>
                             <View style={styles.mealHeader}>
                                 <View style={styles.mealHeaderLeft}>
-                                    <View style={styles.mealIcon}>
-                                        <Ionicons name="restaurant-outline" size={18} color={COLORS.accentOrange} />
-                                    </View>
                                     <Text style={styles.mealName}>
                                         {meal.name}
                                     </Text>
                                 </View>
                                 <View style={styles.mealTimeBadge}>
-                                    <Ionicons name="time-outline" size={13} color={COLORS.primary} />
                                     <Text style={styles.mealTime}>
                                         {meal.time}
                                     </Text>
@@ -194,7 +185,7 @@ const DietScreen = () => {
                                         <View style={styles.foodImage}>
                                             <Image source={{ uri: food.image }} style={styles.foodImageRadius} resizeMode="cover" />
                                             <LinearGradient
-                                                colors={["rgba(7,88,101,0)", "rgba(7,40,46,0.85)"]}
+                                                colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.7)"]}
                                                 start={{ x: 0, y: 0 }}
                                                 end={{ x: 0, y: 1 }}
                                                 style={styles.gradient}>
@@ -204,16 +195,8 @@ const DietScreen = () => {
                                                     </Text>
                                                     <View style={styles.foodMeta}>
                                                         <View style={styles.foodMetaPill}>
-                                                            <Ionicons name="flame" size={11} color="#FDBA74" />
                                                             <Text style={styles.foodMetaText}>
-                                                                {food.calories}
-                                                            </Text>
-                                                        </View>
-
-                                                        <View style={styles.foodMetaPill}>
-                                                            <Ionicons name="scale-outline" size={11} color={COLORS.white} />
-                                                            <Text style={styles.foodMetaText}>
-                                                                {food.weight}
+                                                                {food.calories} · {food.weight}
                                                             </Text>
                                                         </View>
                                                     </View>
@@ -333,61 +316,73 @@ const DietScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: PASTEL.background,
     },
 
     daySection: {
         marginHorizontal: 16,
-        marginTop: 16,
-        paddingTop: 12,
-        paddingHorizontal: 10,
-        paddingBottom: 4,
-        backgroundColor: COLORS.white,
-        borderRadius: 24,
-        ...SHADOWS.card,
+        marginTop: 14,
+        paddingTop: 14,
+        paddingHorizontal: 8,
+        paddingBottom: 14,
+        borderRadius: 28,
     },
-
     daysRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "center",
     },
-
     dayItem: {
-        width: 42,
-        height: 60,
-        justifyContent: "center",
+        flex: 1,
         alignItems: "center",
-        borderRadius: 21,
-        backgroundColor: COLORS.white,
     },
-
-    selectedDay: {
-        backgroundColor: COLORS.primary,
+    weekdayText: {
+        fontSize: 11.5,
+        color: COLORS.textSecondary,
+        fontWeight: "500",
+        marginBottom: 8,
     },
-
+    todayLabel: {
+        color: COLORS.primary,
+        fontWeight: "700",
+    },
+    dayCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.95)",
+        backgroundColor: "rgba(255,255,255,0.5)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    dayCircleSelected: {
+        borderColor: COLORS.white,
+        paddingBottom: 7,
+    },
+    dayCircleWithDot: {
+        paddingBottom: 7,
+    },
     dayText: {
-        fontSize: 16,
+        fontSize: 15,
         color: COLORS.textPrimary,
         fontWeight: "700",
     },
-
     selectedDayText: {
         color: COLORS.white,
         fontWeight: "800",
     },
-
-    monthText: {
-        fontSize: 10,
-        color: COLORS.textMuted,
-        fontWeight: "600",
-        marginTop: 2,
+    innerDot: {
+        position: "absolute",
+        bottom: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        borderWidth: 1.5,
+        borderColor: COLORS.white,
     },
-
-    selectedMonthText: {
-        color: "rgba(255,255,255,0.8)",
+    innerDotToday: {
+        borderColor: COLORS.primary,
     },
-
     dropdownButton: {
         alignSelf: "center",
         marginTop: 4,
@@ -493,25 +488,23 @@ const styles = StyleSheet.create({
     },
 
     mealName: {
-        fontSize: 17,
-        color: COLORS.textPrimary,
-        fontWeight: "800",
+        fontSize: 18,
+        color: PASTEL.ink,
+        fontWeight: "600",
     },
 
     mealTimeBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-        backgroundColor: COLORS.primaryLight,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 12,
+        backgroundColor: PASTEL.surface,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: RADIUS.pill,
+        ...SOFT_SHADOW,
     },
 
     mealTime: {
         fontSize: 13,
-        color: COLORS.primary,
-        fontWeight: "800",
+        color: PASTEL.ink,
+        fontWeight: "600",
     },
 
     foodList: {
@@ -522,12 +515,11 @@ const styles = StyleSheet.create({
 
     foodCard: {
         width: wp("72%"),
-        height: 140,
+        height: 150,
         marginRight: 12,
-        borderRadius: 20,
+        borderRadius: 24,
         overflow: "hidden",
-        backgroundColor: COLORS.primaryLight,
-        ...SHADOWS.card,
+        backgroundColor: PASTEL.tealSoft,
     },
 
     foodImage: {
@@ -568,32 +560,26 @@ const styles = StyleSheet.create({
     },
 
     foodMetaPill: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-        backgroundColor: "rgba(255,255,255,0.16)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.2)",
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 10,
+        alignSelf: "flex-start",
+        backgroundColor: "rgba(255,255,255,0.22)",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: RADIUS.pill,
     },
 
     foodMetaText: {
         color: COLORS.white,
         fontSize: 12,
-        fontWeight: "700",
+        fontWeight: "600",
     },
     // Card tổng chứa tab và dinh dưỡng
     planCard: {
         marginHorizontal: 16,
         marginTop: 24,
         padding: 14,
-        borderRadius: 20,
-        backgroundColor: COLORS.white,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        ...SHADOWS.card,
+        borderRadius: RADIUS.lg,
+        backgroundColor: PASTEL.surface,
+        ...SOFT_SHADOW,
     },
     // Thanh tab
     tabRow: {
@@ -602,20 +588,19 @@ const styles = StyleSheet.create({
         marginBottom: 14,
         padding: 4,
         gap: 4,
-        borderRadius: 14,
-        backgroundColor: COLORS.background,
+        borderRadius: RADIUS.pill,
+        backgroundColor: PASTEL.background,
     },
     tabButton: {
         flex: 1,
-        minHeight: 36,
+        minHeight: 38,
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 6,
-        borderRadius: 11,
+        borderRadius: RADIUS.pill,
     },
     activeTabButton: {
-        backgroundColor: COLORS.primary,
-        ...SHADOWS.small,
+        backgroundColor: PASTEL.dark,
     },
     tabText: {
         fontSize: 12.5,

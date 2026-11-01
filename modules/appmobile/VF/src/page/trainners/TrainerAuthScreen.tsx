@@ -1,20 +1,23 @@
 import React, { useState } from "react";
-import {StyleSheet,Text,View,TextInput,TouchableOpacity, ScrollView, SafeAreaView, StatusBar,} from "react-native";
+import {StyleSheet,Text,View,TextInput,TouchableOpacity, ScrollView, StatusBar,} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp,} from "react-native-responsive-screen";
+import { widthPercentageToDP as wp } from "react-native-responsive-screen";
+import { TRAINER_COLORS as C, SOFT_SHADOW } from "../../general/theme";
 
 const TrainerAuthScreen = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState("social");
     const [showPassword, setShowPassword] = useState(false);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            <StatusBar barStyle="dark-content" />
             <ScrollView showsVerticalScrollIndicator={false}contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 {/* HEADER */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} >
-                        <Ionicons name="arrow-back" size={wp("6%")} color="#444" />
+                        <Ionicons name="chevron-back" size={22} color={C.textPrimary} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>
                         Đăng ký dành cho huấn luyện viên
@@ -48,7 +51,7 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             <Text style={styles.label}>
                                 Mã
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor="#C8C8C8"/>
+                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor={C.textLight}/>
                         </View>
                         <TouchableOpacity>
                             <Text style={styles.helpText}>
@@ -56,14 +59,14 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[ styles.socialButton, styles.appleButton, ]} >
-                            <MaterialCommunityIcons name="google" size={wp("7%")} color="#11343A" />
+                            <MaterialCommunityIcons name="google" size={wp("7%")} color={C.textPrimary} />
                             <Text style={styles.socialText}>
                                 Đăng nhập bằng Google
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.socialButton,styles.facebookButton,]} >
-                            <Ionicons name="logo-facebook" size={wp("7%")} color="#11343A"/>
+                            <Ionicons name="logo-facebook" size={wp("7%")} color={C.textPrimary}/>
                             <Text style={styles.socialText}>
                                 Đăng nhập bằng Facebook
                             </Text>
@@ -97,7 +100,7 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhập địa chỉ email của bạn"
-                                placeholderTextColor="#C8C8C8"
+                                placeholderTextColor={C.textLight}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
@@ -111,12 +114,12 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                                 <TextInput
                                     style={styles.passwordInput}
                                     placeholder="Nhập mật khẩu của bạn"
-                                    placeholderTextColor="#C8C8C8"
+                                    placeholderTextColor={C.textLight}
                                     secureTextEntry={!showPassword}
                                     autoCapitalize="none"
                                 />
                                 <TouchableOpacity style={styles.eyeButton} onPress={() =>setShowPassword(!showPassword)} >
-                                    <Ionicons name={ showPassword? "eye-outline" : "eye-off-outline" } size={wp("6%")} color="#BDBDBD" />
+                                    <Ionicons name={ showPassword? "eye-outline" : "eye-off-outline" } size={wp("6%")} color={C.textLight} />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -126,19 +129,19 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             <Text style={styles.label}>
                                 Tên
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập tên của bạn" placeholderTextColor="#C8C8C8" />
+                            <TextInput style={styles.input} placeholder="Nhập tên của bạn" placeholderTextColor={C.textLight} />
                         </View>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>
                                 Họ
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập họ của bạn" placeholderTextColor="#C8C8C8" />
+                            <TextInput style={styles.input} placeholder="Nhập họ của bạn" placeholderTextColor={C.textLight} />
                         </View>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>
                                 Mã
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor="#C8C8C8" />
+                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor={C.textLight} />
                         </View>
                  
                         <TouchableOpacity>
@@ -176,216 +179,175 @@ const TrainerAuthScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
-        paddingTop: 40,
+        backgroundColor: C.background,
     },
-
     scrollContent: {
-        paddingBottom: hp("5%"),
+        paddingHorizontal: 16,
+        paddingBottom: 32,
     },
-
-    // HEADER
     header: {
-        height: hp("10%"),
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: wp("4%"),
+        paddingTop: 8,
+        paddingBottom: 16,
     },
-
     backButton: {
-        width: wp("11%"),
-        height: wp("11%"),
-        borderRadius: wp("6%"),
-        backgroundColor: "#F6F6F6",
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: C.white,
         alignItems: "center",
         justifyContent: "center",
+        ...SOFT_SHADOW,
     },
-
     headerTitle: {
         flex: 1,
         textAlign: "center",
-        fontSize: wp("5%"),
-        fontWeight: "700",
-        color: "#303030",
-        marginHorizontal: wp("2%"),
+        fontSize: 16,
+        fontWeight: "600",
+        color: C.textPrimary,
+        paddingHorizontal: 8,
     },
-
     headerSpace: {
-        width: wp("11%"),
+        width: 44,
     },
-
-    // TAB
     tabContainer: {
-        height: hp("6%"),
-        marginHorizontal: wp("4%"),
-        backgroundColor: "#E5E8E9",
-        borderRadius: hp("3%"),
         flexDirection: "row",
-        padding: wp("0.5%"),
+        backgroundColor: C.white,
+        borderRadius: 26,
+        padding: 5,
+        gap: 4,
+        ...SOFT_SHADOW,
     },
-
     tab: {
         flex: 1,
-        borderRadius: hp("3%"),
+        height: 42,
+        borderRadius: 21,
         alignItems: "center",
         justifyContent: "center",
     },
-
     activeTab: {
-        backgroundColor: "#315B7A",
+        backgroundColor: C.primary,
     },
-
     tabText: {
-        fontSize: wp("3.9%"),
-        fontWeight: "500",
-        color: "#899499",
+        fontSize: 13,
+        fontWeight: "600",
+        color: C.textMuted,
     },
-
     activeTabText: {
-        
+        color: C.white,
         fontWeight: "700",
     },
-
-    // CONTENT
     content: {
-        paddingHorizontal: wp("4%"),
-        paddingTop: hp("3%"),
+        backgroundColor: C.white,
+        borderRadius: 28,
+        padding: 20,
+        marginTop: 16,
+        ...SOFT_SHADOW,
     },
-
     description: {
-        fontSize: wp("4%"),
-        lineHeight: hp("3%"),
-        color: "#626262",
-        marginBottom: hp("3%"),
+        fontSize: 14,
+        lineHeight: 21,
+        color: C.textSecondary,
+        marginBottom: 18,
     },
-
-    // INPUT
     inputGroup: {
-        marginBottom: hp("2.3%"),
+        marginBottom: 14,
     },
-
     label: {
-        fontSize: wp("4.2%"),
-        color: "#414141",
-        fontWeight: "500",
-        marginBottom: hp("0.7%"),
+        fontSize: 13,
+        fontWeight: "600",
+        color: C.textPrimary,
+        marginBottom: 8,
     },
-
     input: {
-        height: hp("6.5%"),
-        borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
-        fontSize: wp("4.2%"),
-        color: "#333333",
-        paddingHorizontal: 0,
-        paddingVertical: 0,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: C.background,
+        paddingHorizontal: 18,
+        fontSize: 14,
+        color: C.textPrimary,
     },
-
-    // PASSWORD
     passwordContainer: {
-        height: hp("6.5%"),
-        borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
         flexDirection: "row",
         alignItems: "center",
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: C.background,
+        paddingLeft: 18,
+        paddingRight: 8,
     },
-
     passwordInput: {
         flex: 1,
-        height: "100%",
-        fontSize: wp("4.2%"),
-        color: "#333333",
-        paddingHorizontal: 0,
-        paddingVertical: 0,
+        fontSize: 14,
+        color: C.textPrimary,
     },
-
     eyeButton: {
-        width: wp("10%"),
-        height: "100%",
+        width: 38,
+        height: 38,
         alignItems: "center",
         justifyContent: "center",
     },
-
-    // HELP
     helpText: {
-        fontSize: wp("4.2%"),
+        fontSize: 13,
         fontWeight: "600",
-        color: "#35AAA6",
-        marginTop: hp("0.2%"),
-        marginBottom: hp("3%"),
+        color: C.primaryDark,
+        marginBottom: 20,
     },
-
-    // SOCIAL
     socialButton: {
-        height: hp("7.5%"),
-        borderRadius: hp("1.5%"),
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: hp("2%"),
+        gap: 10,
+        height: 54,
+        borderRadius: 27,
+        marginBottom: 12,
     },
-
     appleButton: {
-        backgroundColor: "#181818",
+        backgroundColor: C.background,
     },
-
     facebookButton: {
-        backgroundColor: "#4267B2",
+        backgroundColor: C.primaryLight,
     },
-
     socialText: {
-        
-        fontSize: wp("4.6%"),
-        fontWeight: "700",
-        marginLeft: wp("5%"),
+        fontSize: 14.5,
+        fontWeight: "600",
+        color: C.textPrimary,
     },
-
-    // REGISTER
     registerButton: {
-        height: hp("7.5%"),
-        backgroundColor: "#F1F2F2",
-        borderRadius: hp("1.5%"),
+        height: 54,
+        borderRadius: 27,
+        backgroundColor: C.primary,
         alignItems: "center",
         justifyContent: "center",
-        marginTop: hp("3%"),
+        marginBottom: 4,
     },
-
     registerText: {
-        color: "#C8C8C8",
-        fontSize: wp("4.7%"),
+        fontSize: 15,
         fontWeight: "700",
+        letterSpacing: 1,
+        color: C.white,
     },
-
-    // TERMS
     termsContainer: {
-        marginTop: hp("5%"),
         alignItems: "center",
-        paddingHorizontal: wp("3%"),
+        marginTop: 16,
     },
-
     termsText: {
-        fontSize: wp("3.6%"),
-        color: "#777777",
+        fontSize: 12,
+        color: C.textMuted,
         textAlign: "center",
-        lineHeight: hp("2.7%"),
     },
-
     termsRow: {
         flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        flexWrap: "wrap",
+        marginTop: 2,
     },
-
     termsLink: {
-        fontSize: wp("3.6%"),
-        color: "#35AAA6",
-        lineHeight: hp("2.7%"),
+        fontSize: 12,
+        fontWeight: "600",
+        color: C.primaryDark,
     },
-
 });
 
 export default TrainerAuthScreen;
