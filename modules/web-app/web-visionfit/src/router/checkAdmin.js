@@ -1,4 +1,4 @@
-import api from "../services/api";
+import api from "../core/baseRequestAdmin";
 import { createToaster } from "@meforma/vue-toaster";
 
 const toaster = createToaster({ position: "top-right" });
@@ -13,7 +13,7 @@ export default function (to, from, next) {
     }
 
     api
-        .get("/admin/check-token")
+        .get("admin/check-token")
         .then((res) => {
             if (res.data.status) {
                 localStorage.setItem("ho_ten_admin", res.data.ho_ten || "VisionFit Admin");
