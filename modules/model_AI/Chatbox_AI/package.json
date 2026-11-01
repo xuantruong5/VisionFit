@@ -10,10 +10,11 @@
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env apps/api/index.js",
     "start": "node --env-file-if-exists=.env apps/api/index.js",
-    "test": "node --test tests/api/*.test.js tests/contracts/*.test.js",
+    "test": "node --test tests/api/*.test.js tests/contracts/*.test.js tests/web/*.test.js",
     "check": "node scripts/check.js",
     "setup:visionfit": "node scripts/install-visionfit.js",
     "test:api": "node --test tests/api/*.test.js",
-    "test:contracts": "node --test tests/contracts/*.test.js"
+    "test:contracts": "node --test tests/contracts/*.test.js",
+    "test:web": "node --test tests/web/*.test.js"
   }
 }
