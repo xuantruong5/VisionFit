@@ -484,14 +484,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-add {
@@ -500,7 +500,7 @@ export default {
     border-radius: 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 700;
     transition: 0.18s ease;
 }
@@ -534,14 +534,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -581,7 +581,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .filter-bar select {
@@ -593,7 +593,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .package-grid {
@@ -623,15 +623,19 @@ export default {
     border: 1.5px solid #0d7f8d;
 }
 
+.package-card.featured .package-top {
+    padding-top: 22px;
+}
+
 .featured-label {
     position: absolute;
     top: 0;
     right: 0;
-    padding: 6px 11px;
+    padding: 5px 12px;
     border-radius: 0 17px 0 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 0.8px;
 }
@@ -645,7 +649,7 @@ export default {
 
 .package-type {
     color: #0d7f8d;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -653,8 +657,8 @@ export default {
 .package-top h3 {
     margin: 5px 0 0;
     color: #11343a;
-    font-size: 15px;
-    font-weight: 750;
+    font-size: 17px;
+    font-weight: 700;
 }
 
 .price {
@@ -666,14 +670,14 @@ export default {
 
 .price span {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 600;
 }
 
 .duration {
     margin-top: 3px;
     color: #71949a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .benefit-list {
@@ -691,7 +695,7 @@ export default {
     align-items: center;
     gap: 8px;
     color: #51777d;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .check {
@@ -704,7 +708,7 @@ export default {
     border-radius: 50%;
     background: #dff6f8;
     color: #0d7f8d;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 800;
 }
 
@@ -718,14 +722,14 @@ export default {
 .package-footer span {
     display: block;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .package-footer strong {
     display: block;
     margin-top: 2px;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .status {
@@ -734,7 +738,7 @@ export default {
     gap: 5px;
     padding: 5px 7px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -761,7 +765,7 @@ export default {
     border-radius: 9px;
     background: white;
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -810,13 +814,13 @@ export default {
 .modal-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-close {
@@ -826,7 +830,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .form-grid {
@@ -843,7 +847,7 @@ export default {
     display: block;
     margin-bottom: 6px;
     color: #51777d;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 
@@ -856,7 +860,7 @@ export default {
     border-radius: 10px;
     outline: none;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .form-group input,
@@ -892,7 +896,7 @@ export default {
     gap: 8px;
     margin: 0 !important;
     color: #51777d !important;
-    font-size: 10.5px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
 }
 
@@ -913,7 +917,7 @@ export default {
 .btn-save {
     padding: 9px 15px;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
 }
 

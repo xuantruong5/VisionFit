@@ -189,18 +189,15 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   headerSpace: {
     width: 44,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 22,
     marginBottom: 12,
@@ -232,6 +229,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: COLORS.textMuted,
     marginTop: 6,
+    fontWeight: '600',
   },
   memberNameActive: {
     color: COLORS.textPrimary,
@@ -254,6 +252,7 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: COLORS.textSecondary,
     marginBottom: 8,
+    fontWeight: '600',
   },
   dayCircle: {
     width: 40,
@@ -295,7 +294,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
   },
   segment: {
@@ -323,6 +322,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
     ...SOFT_SHADOW,
+    fontWeight: '600',
   },
   summary: {
     backgroundColor: COLORS.primaryLight,
@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 12,
     color: COLORS.textMuted,
+    fontWeight: '600',
   },
   summaryText: {
     fontSize: 16,
@@ -344,6 +345,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     marginTop: 3,
+    fontWeight: '600',
   },
 
   // FOOTER

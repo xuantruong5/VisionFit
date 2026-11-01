@@ -16,9 +16,36 @@
                     Làm mới
                 </button>
 
-                <button class="btn-primary">
-                    Chọn ngày
-                </button>
+                <div class="date-picker">
+                    <button class="btn-primary" @click="showRange = !showRange">
+                        📅 {{ selectedRange }}
+                    </button>
+
+                    <!-- Bảng chọn khoảng ngày (chỉ giao diện, lọc dữ liệu sẽ nối API sau) -->
+                    <div v-if="showRange" class="range-menu">
+                        <button
+                            v-for="item in ranges"
+                            :key="item"
+                            class="range-item"
+                            :class="{ active: item === selectedRange }"
+                            @click="selectedRange = item; showRange = false"
+                        >
+                            {{ item }}
+                        </button>
+
+                        <div class="range-custom">
+                            <span>Tùy chọn</span>
+                            <div class="range-inputs">
+                                <input type="date">
+                                <span>→</span>
+                                <input type="date">
+                            </div>
+                            <button class="btn-apply" @click="selectedRange = 'Tùy chọn'; showRange = false">
+                                Áp dụng
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -177,7 +204,10 @@ export default {
 
     data() {
         return {
-            isLoading: false
+            isLoading: false,
+            showRange: false,
+            selectedRange: '7 ngày gần đây',
+            ranges: ['Hôm nay', '7 ngày gần đây', '30 ngày gần đây', 'Tháng này']
         }
     },
 
@@ -205,14 +235,14 @@ export default {
 .dashboard-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .dashboard-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .actions {
@@ -224,7 +254,7 @@ export default {
 .btn-primary {
     padding: 9px 14px;
     border-radius: 11px;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 700;
     transition: 0.16s ease;
 }
@@ -257,6 +287,92 @@ export default {
 .btn-primary:hover {
     background: #075e68;
     transform: translateY(-1px);
+}
+
+.date-picker {
+    position: relative;
+}
+
+.range-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 20;
+    width: 300px;
+    padding: 10px;
+    border: 1px solid #d8eef1;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 16px 36px rgba(13, 127, 141, 0.16);
+}
+
+.range-item {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #24484e;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.range-item:hover {
+    background: #f4fafb;
+}
+
+.range-item.active {
+    background: #e6f5f6;
+    color: #0d7f8d;
+    font-weight: 700;
+}
+
+.range-custom {
+    margin-top: 8px;
+    padding: 12px;
+    border-top: 1px solid #eef5f6;
+}
+
+.range-custom > span {
+    color: #71949a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.range-inputs input {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
+    padding: 0 8px;
+    border: 1px solid #d3e9ec;
+    border-radius: 10px;
+    color: #11343a;
+    font-size: 13.5px;
+}
+
+.range-inputs span {
+    color: #71949a;
+}
+
+.btn-apply {
+    width: 100%;
+    height: 40px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #0d7f8d;
+    color: white;
+    font-size: 14.5px;
+    font-weight: 700;
 }
 
 .stat-card {
@@ -294,8 +410,8 @@ export default {
 
 .stat-label {
     color: #71949a;
-    font-size: 11px;
-    font-weight: 650;
+    font-size: 14.5px;
+    font-weight: 600;
 }
 
 .stat-number {
@@ -310,7 +426,7 @@ export default {
     padding-top: 10px;
     border-top: 1px solid #edf6f7;
     color: #4f7f84;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .content-card {
@@ -325,8 +441,8 @@ export default {
 .card-title {
     margin-bottom: 14px;
     color: #11343a;
-    font-size: 14px;
-    font-weight: 750;
+    font-size: 16.5px;
+    font-weight: 700;
 }
 
 .table {
@@ -335,7 +451,7 @@ export default {
 
 .table th {
     color: #84a5aa;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -344,7 +460,7 @@ export default {
     padding: 12px 8px;
     border-color: #eef6f7;
     color: #34585d;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .badge-success,
@@ -353,7 +469,7 @@ export default {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -379,7 +495,7 @@ export default {
     padding: 12px 0;
     border-bottom: 1px solid #eef6f7;
     color: #71949a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .metric:last-child {
