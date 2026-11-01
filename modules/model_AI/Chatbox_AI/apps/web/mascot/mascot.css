@@ -1,6 +1,7 @@
 /* ==========================================================================
    VisionFit Mascot System - CSS Animations & Layer Styles
-   Hỗ trợ 2 nhân vật (Bear/Cat), 4 cấp độ (starter/active/strong/champion)
+   Hệ thống phân cấp khớp động học (kinematic joint hierarchy).
+   Hỗ trợ 2 loài (Bear/Cat), 4 cấp (starter/active/strong/champion)
    và 7 trạng thái (idle, greeting, thinking, speaking, training, celebrating, error).
    ========================================================================== */
 
@@ -28,11 +29,9 @@
   height: 100%;
   overflow: visible;
   filter: drop-shadow(0 6px 14px rgba(18, 50, 36, 0.12));
-  transform-origin: center bottom;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Các lớp mặc định */
+/* Các lớp mặc định bật/tắt theo ngữ cảnh */
 .vif-mascot-svg .mouth-open,
 .vif-mascot-svg .mouth-tongue,
 .vif-mascot-svg .prop-dumbbell-left,
@@ -45,41 +44,75 @@
   display: block;
 }
 
+/* Thiết lập tâm xoay (Transform Origins) chuẩn xác theo tọa độ giải phẫu */
+.vif-mascot-svg .character-root {
+  transform-origin: 100px 224px;
+}
+
+.vif-mascot-svg .layer-shadow ellipse {
+  transform-origin: 100px 225px;
+}
+
+.vif-mascot-svg .torso-rig {
+  transform-origin: 100px 205px;
+}
+
+.vif-mascot-svg .layer-head-group {
+  transform-origin: 100px 120px; /* Khớp cổ xoay tự nhiên */
+}
+
+.vif-mascot-svg .arm-left {
+  transform-origin: 64px 132px; /* Khớp vai trái cố định */
+}
+
+.vif-mascot-svg .arm-right {
+  transform-origin: 136px 132px; /* Khớp vai phải cố định */
+}
+
+.vif-mascot-svg .layer-tail {
+  transform-origin: 135px 195px; /* Gốc đuôi mèo */
+}
+
+.vif-mascot-svg .part-eye.eye-left {
+  transform-origin: 80px 74px; /* Tâm mắt trái */
+}
+
+.vif-mascot-svg .part-eye.eye-right {
+  transform-origin: 120px 74px; /* Tâm mắt phải */
+}
+
 /* ==========================================================================
    1. IDLE: Thở nhẹ, mắt chớp tự nhiên, đuôi vẫy khẽ
    ========================================================================== */
-.vif-mascot-svg.state-idle .layer-body {
+.vif-mascot-svg.state-idle .torso-rig {
   animation: vif-breathe 3.2s ease-in-out infinite;
-  transform-origin: 100px 170px;
 }
 
 .vif-mascot-svg.state-idle .layer-head-group {
   animation: vif-head-bob 3.2s ease-in-out infinite;
-  transform-origin: 100px 125px;
 }
 
 .vif-mascot-svg.state-idle .part-leg {
   animation: vif-feet-settle 3.2s ease-in-out infinite;
-  transform-origin: 100px 220px;
 }
 
-.vif-mascot-svg.state-idle .eye-ball,
-.vif-mascot-svg.state-idle .eye-glint,
-.vif-mascot-svg.state-idle .eye-glint-small {
+.vif-mascot-svg.state-idle .part-eye {
   animation: vif-blink 4.5s ease-in-out infinite;
-  transform-origin: center;
 }
 
 .vif-mascot-svg.state-idle .layer-tail {
   animation: vif-tail-swish 3s ease-in-out infinite alternate;
-  transform-origin: 135px 195px;
 }
 
 /* ==========================================================================
-   2. GREETING: Vẫy tay chào vui tươi, mở miệng cười rạng rỡ
+   2. GREETING: Vẫy tay chào vui tươi, mở miệng cười rạng rỡ, bật nảy nhẹ
    ========================================================================== */
-.vif-mascot-svg.state-greeting {
-  animation: vif-hop 0.8s ease-out 1;
+.vif-mascot-svg.state-greeting .character-root {
+  animation: vif-hop 0.85s ease-out 1;
+}
+
+.vif-mascot-svg.state-greeting .layer-shadow ellipse {
+  animation: vif-shadow-hop 0.85s ease-out 1;
 }
 
 .vif-mascot-svg.state-greeting .mouth-line {
@@ -92,25 +125,21 @@
 
 .vif-mascot-svg.state-greeting .arm-right {
   animation: vif-wave 0.45s ease-in-out 4 alternate;
-  transform-origin: 135px 135px;
 }
 
 .vif-mascot-svg.state-greeting .layer-head-group {
   animation: vif-head-nod 0.45s ease-in-out 4 alternate;
-  transform-origin: 100px 125px;
 }
 
 /* ==========================================================================
-   3. THINKING: Nghiêng đầu tò mò, dấu chấm nảy (KHÔNG xoay cả người)
+   3. THINKING: Nghiêng đầu tò mò, dấu chấm nảy (khớp vai giữ nguyên)
    ========================================================================== */
 .vif-mascot-svg.state-thinking .layer-head-group {
   animation: vif-think-tilt 2.2s ease-in-out infinite alternate;
-  transform-origin: 100px 125px;
 }
 
 .vif-mascot-svg.state-thinking .arm-left {
   animation: vif-chin-touch 2.2s ease-in-out infinite alternate;
-  transform-origin: 65px 132px;
 }
 
 .vif-mascot-svg.state-thinking .acc-thinking-bubbles {
@@ -119,8 +148,7 @@
   transform-origin: 174px 18px;
 }
 
-.vif-mascot-svg.state-thinking .eye-left,
-.vif-mascot-svg.state-thinking .eye-right {
+.vif-mascot-svg.state-thinking .part-eye {
   animation: vif-look-up 2.2s ease-in-out infinite alternate;
 }
 
@@ -129,7 +157,6 @@
    ========================================================================== */
 .vif-mascot-svg.state-speaking .layer-head-group {
   animation: vif-speak-nod 0.6s ease-in-out infinite alternate;
-  transform-origin: 100px 125px;
 }
 
 .vif-mascot-svg.state-speaking .mouth-open,
@@ -144,38 +171,41 @@
 
 .vif-mascot-svg.state-speaking .arm-left {
   animation: vif-gesture-left 0.8s ease-in-out infinite alternate;
-  transform-origin: 65px 132px;
 }
 
 /* ==========================================================================
-   5. TRAINING: Động tác nâng tạ / squat thể thao nhịp nhàng
+   5. TRAINING: Động tác nâng tạ thể thao chuẩn xác quanh khớp vai
    ========================================================================== */
 .vif-mascot-svg.state-training .prop-dumbbell-left,
 .vif-mascot-svg.state-training .prop-dumbbell-right {
   display: block;
 }
 
+.vif-mascot-svg.state-training .character-root {
+  animation: vif-train-bounce 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+}
+
+.vif-mascot-svg.state-training .torso-rig {
+  animation: vif-train-torso 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+}
+
 .vif-mascot-svg.state-training .arm-left {
   animation: vif-curl-left 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
-  transform-origin: 65px 132px;
 }
 
 .vif-mascot-svg.state-training .arm-right {
   animation: vif-curl-right 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
-  transform-origin: 135px 132px;
-}
-
-.vif-mascot-svg.state-training .layer-body,
-.vif-mascot-svg.state-training .layer-head-group {
-  animation: vif-squat 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
-  transform-origin: 100px 210px;
 }
 
 /* ==========================================================================
-   6. CELEBRATING: Nhảy mừng chiến thắng, giơ hai tay ăn mừng
+   6. CELEBRATING: Nhảy mừng chiến thắng, hai tay giơ đối xứng tự nhiên
    ========================================================================== */
-.vif-mascot-svg.state-celebrating {
+.vif-mascot-svg.state-celebrating .character-root {
   animation: vif-jump-cheer 0.75s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-celebrating .layer-shadow ellipse {
+  animation: vif-shadow-jump 0.75s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-celebrating .mouth-line {
@@ -187,34 +217,30 @@
 }
 
 .vif-mascot-svg.state-celebrating .arm-left {
-  transform: rotate(-135deg);
-  transform-origin: 65px 132px;
-  animation: vif-arm-cheer 0.4s ease-in-out infinite alternate;
+  animation: vif-arm-cheer-left 0.4s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-celebrating .arm-right {
-  transform: rotate(135deg);
-  transform-origin: 135px 132px;
-  animation: vif-arm-cheer 0.4s ease-in-out infinite alternate-reverse;
+  animation: vif-arm-cheer-right 0.4s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-celebrating .layer-head-group {
   animation: vif-head-joy 0.5s ease-in-out infinite alternate;
-  transform-origin: 100px 125px;
 }
 
 /* ==========================================================================
    7. ERROR: Biểu cảm bối rối nhẹ, ân cần
    ========================================================================== */
 .vif-mascot-svg.state-error .layer-head-group {
-  transform: rotate(-5deg) translateY(3px);
-  transform-origin: 100px 125px;
   animation: vif-pout 2s ease-in-out infinite alternate;
 }
 
-.vif-mascot-svg.state-error .arm-left,
+.vif-mascot-svg.state-error .arm-left {
+  transform: rotate(6deg);
+}
+
 .vif-mascot-svg.state-error .arm-right {
-  transform: translateY(3px) scale(0.97);
+  transform: rotate(-6deg);
 }
 
 .vif-mascot-svg.state-error .eye-brow {
@@ -223,26 +249,26 @@
 }
 
 /* ==========================================================================
-   KEYFRAMES DEFINITIONS
+   KEYFRAME DEFINITIONS (Tọa độ khớp sạch sẽ, không kéo rời tứ chi)
    ========================================================================== */
 @keyframes vif-breathe {
-  0%, 100% { transform: scale(1) translateY(0); }
-  50% { transform: scaleY(1.025) scaleX(0.985) translateY(-2px); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scaleY(1.02) scaleX(0.99); }
 }
 
 @keyframes vif-head-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2.5px) rotate(0.5deg); }
 }
 
 @keyframes vif-feet-settle {
   0%, 100% { transform: scaleX(1); }
-  50% { transform: scaleX(1.02); }
+  50% { transform: scaleX(1.015); }
 }
 
 @keyframes vif-blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  94% { transform: scaleY(0.08); }
+  0%, 90%, 100% { transform: scaleY(1); }
+  93% { transform: scaleY(0.08); }
   96% { transform: scaleY(1); }
 }
 
@@ -253,34 +279,42 @@
 
 @keyframes vif-wave {
   0% { transform: rotate(-35deg); }
-  100% { transform: rotate(25deg); }
+  100% { transform: rotate(20deg); }
 }
 
 @keyframes vif-head-nod {
-  0% { transform: rotate(-4deg); }
-  100% { transform: rotate(4deg); }
+  0% { transform: rotate(-3deg); }
+  100% { transform: rotate(3deg); }
 }
 
 @keyframes vif-hop {
   0% { transform: translateY(0); }
-  40% { transform: translateY(-16px) scale(1.05); }
-  70% { transform: translateY(2px) scale(0.96); }
+  40% { transform: translateY(-16px) scale(1.04); }
+  70% { transform: translateY(2px) scale(0.97); }
   100% { transform: translateY(0) scale(1); }
 }
 
-@keyframes vif-think-tilt {
-  0% { transform: rotate(-8deg) translateY(-2px); }
-  100% { transform: rotate(10deg) translateY(-1px); }
+@keyframes vif-shadow-hop {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(0.82); opacity: 0.55; }
+  70% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes vif-think-tilt {
+  0% { transform: rotate(-7deg); }
+  100% { transform: rotate(9deg); }
+}
+
+/* Chin touch: Xoay cánh tay quanh vai đưa bàn tay chạm má, không dịch cả vai */
 @keyframes vif-chin-touch {
   0% { transform: rotate(0deg); }
-  100% { transform: rotate(-45deg) translateY(-12px); }
+  100% { transform: rotate(-45deg); }
 }
 
 @keyframes vif-bubble-pulse {
-  0% { opacity: 0.6; transform: scale(0.9) translateY(2px); }
-  100% { opacity: 1; transform: scale(1.08) translateY(-2px); }
+  0% { opacity: 0.55; transform: scale(0.92) translateY(2px); }
+  100% { opacity: 1; transform: scale(1.06) translateY(-2px); }
 }
 
 @keyframes vif-look-up {
@@ -290,52 +324,95 @@
 
 @keyframes vif-speak-nod {
   0% { transform: translateY(0) rotate(0deg); }
-  100% { transform: translateY(-3px) rotate(2deg); }
+  100% { transform: translateY(-2px) rotate(2deg); }
 }
 
 @keyframes vif-mouth-move {
-  0% { transform: scaleY(0.6); }
+  0% { transform: scaleY(0.65); }
   100% { transform: scaleY(1.15); }
 }
 
+/* Gesture left: Xoay quanh vai tự nhiên */
 @keyframes vif-gesture-left {
   0% { transform: rotate(0deg); }
-  100% { transform: rotate(-18deg) translateY(-4px); }
+  100% { transform: rotate(-22deg); }
 }
 
+/* Curl left/right: Cử tạ xoay góc quanh khớp vai, không dùng translateY làm rời tay */
 @keyframes vif-curl-left {
-  0% { transform: rotate(0deg) translateY(0); }
-  100% { transform: rotate(-55deg) translateY(-16px); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-62deg); }
 }
 
 @keyframes vif-curl-right {
-  0% { transform: rotate(-55deg) translateY(-16px); }
-  100% { transform: rotate(0deg) translateY(0); }
+  0% { transform: rotate(62deg); }
+  100% { transform: rotate(0deg); }
 }
 
-@keyframes vif-squat {
-  0% { transform: scaleY(1) translateY(0); }
-  100% { transform: scaleY(0.93) scaleX(1.04) translateY(8px); }
+@keyframes vif-train-bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(3px); }
 }
 
+@keyframes vif-train-torso {
+  0% { transform: scale(1); }
+  100% { transform: scaleY(0.98) scaleX(1.015); }
+}
+
+/* Jump cheer: Nhảy toàn thân trên character-root */
 @keyframes vif-jump-cheer {
   0% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-18px) scale(1.04); }
+  100% { transform: translateY(-18px) scale(1.03); }
 }
 
-@keyframes vif-arm-cheer {
+@keyframes vif-shadow-jump {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.82); opacity: 0.5; }
+}
+
+/* Arm cheer: Tách riêng góc âm cho tay trái và góc dương cho tay phải */
+@keyframes vif-arm-cheer-left {
+  0% { transform: rotate(-120deg); }
+  100% { transform: rotate(-145deg); }
+}
+
+@keyframes vif-arm-cheer-right {
   0% { transform: rotate(120deg); }
   100% { transform: rotate(145deg); }
 }
 
 @keyframes vif-head-joy {
-  0% { transform: rotate(-6deg); }
-  100% { transform: rotate(6deg); }
+  0% { transform: rotate(-5deg); }
+  100% { transform: rotate(5deg); }
 }
 
 @keyframes vif-pout {
-  0% { transform: rotate(-5deg) translateY(2px); }
-  100% { transform: rotate(-2deg) translateY(4px); }
+  0% { transform: rotate(-4deg) translateY(2px); }
+  100% { transform: rotate(-1deg) translateY(4px); }
+}
+
+/* ==========================================================================
+   DEBUG JOINTS (Dành cho Mascot Lab: Hiển thị chấm tròn tại các tâm khớp)
+   ========================================================================== */
+.debug-joints .arm-left::after,
+.debug-joints .arm-right::after {
+  content: '';
+}
+.debug-joints circle.joint-marker {
+  display: block;
+}
+
+/* ==========================================================================
+   SLOW MOTION & PAUSE (Điều khiển tốc độ trong phòng thử nghiệm)
+   ========================================================================== */
+.speed-slow .vif-mascot-svg,
+.speed-slow .vif-mascot-svg * {
+  animation-duration: 400% !important;
+}
+
+.speed-paused .vif-mascot-svg,
+.speed-paused .vif-mascot-svg * {
+  animation-play-state: paused !important;
 }
 
 /* ==========================================================================
@@ -357,7 +434,8 @@
   transition: none !important;
 }
 
-/* Khi tab bị ẩn (document.hidden), tạm dừng animation để tiết kiệm CPU/pin */
+/* Khi tab bị ẩn (document.hidden), tạm dừng animation toàn bộ SVG để tiết kiệm tài nguyên */
+.tab-hidden .vif-mascot-svg,
 .tab-hidden .vif-mascot-svg * {
   animation-play-state: paused !important;
 }

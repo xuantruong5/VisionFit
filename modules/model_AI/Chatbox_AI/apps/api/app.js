@@ -108,6 +108,7 @@ export function createApp(c, { logger = console.info } = {}) {
         '/services/chatboxCore.js': ['services/chatboxCore.js','text/javascript'],
         '/mascot-lab': ['mascot/lab.html','text/html'],
         '/mascot/lab.js': ['mascot/lab.js','text/javascript'],
+        '/mascot/lab.css': ['mascot/lab.css','text/css'],
         '/mascot/mascot.css': ['mascot/mascot.css','text/css'],
         '/mascot/bear.js': ['mascot/bear.js','text/javascript'],
         '/mascot/cat.js': ['mascot/cat.js','text/javascript'],
@@ -119,7 +120,8 @@ export function createApp(c, { logger = console.info } = {}) {
         '/widget/widget.js': ['widget/widget.js','text/javascript'],
         '/widget/adapter.js': ['widget/adapter.js','text/javascript'],
         '/widget/sanitizer.js': ['widget/sanitizer.js','text/javascript'],
-        '/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript']
+        '/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript'],
+        '/packages/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript']
       };
       if (!files[path]) throw new AppError(404, 'Không tìm thấy trang.');
       const [file, type] = files[path];
