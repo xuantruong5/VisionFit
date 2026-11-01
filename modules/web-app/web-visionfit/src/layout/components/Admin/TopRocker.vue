@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import api from '../../../services/api'
+import api from '../../../core/baseRequestAdmin';
 import { createToaster } from '@meforma/vue-toaster'
 
 const toaster = createToaster({ position: 'top-right' })

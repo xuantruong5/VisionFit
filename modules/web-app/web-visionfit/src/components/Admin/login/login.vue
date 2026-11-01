@@ -6,11 +6,7 @@
         <div class="login-wrapper">
             <!-- ================= LEFT IMAGE ================= -->
             <section class="brand-panel">
-                <img
-                    :src="gymLogin"
-                    alt="VisionFit Gym"
-                    class="brand-image"
-                >
+                <img :src="gymLogin" alt="VisionFit Gym" class="brand-image">
 
                 <!-- Chỉ là hiệu ứng trang trí, không phủ màu ảnh -->
                 <div class="ring ring-one"></div>
@@ -112,11 +108,7 @@
                             <div class="input-box">
                                 <span class="input-icon">@</span>
 
-                                <input
-                                    v-model="form.username"
-                                    type="text"
-                                    placeholder="admin@visionfit.vn"
-                                >
+                                <input v-model="form.username" type="text" placeholder="admin@visionfit.vn">
                             </div>
                         </div>
 
@@ -124,11 +116,7 @@
                             <div class="password-label">
                                 <label>Mật khẩu</label>
 
-                                <button
-                                    type="button"
-                                    class="forgot"
-                                    @click="forgotPassword"
-                                >
+                                <button type="button" class="forgot" @click="forgotPassword">
                                     Quên mật khẩu?
                                 </button>
                             </div>
@@ -136,46 +124,26 @@
                             <div class="input-box">
                                 <span class="input-icon">⌁</span>
 
-                                <input
-                                    v-model="form.password"
-                                    :type="showPassword ? 'text' : 'password'"
-                                    placeholder="Nhập mật khẩu"
-                                >
+                                <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
+                                    placeholder="Nhập mật khẩu">
 
-                                <button
-                                    type="button"
-                                    class="show-password"
-                                    @click="showPassword = !showPassword"
-                                >
+                                <button type="button" class="show-password" @click="showPassword = !showPassword">
                                     {{ showPassword ? 'Ẩn' : 'Hiện' }}
                                 </button>
                             </div>
                         </div>
 
                         <label class="remember">
-                            <input
-                                v-model="form.remember"
-                                type="checkbox"
-                            >
+                            <input v-model="form.remember" type="checkbox">
                             <span>Ghi nhớ đăng nhập</span>
                         </label>
 
-                        <div
-                            v-if="errorMessage"
-                            class="error-message"
-                        >
+                        <div v-if="errorMessage" class="error-message">
                             {{ errorMessage }}
                         </div>
 
-                        <button
-                            type="submit"
-                            class="btn-login"
-                            :disabled="loading"
-                        >
-                            <span
-                                v-if="loading"
-                                class="loading"
-                            ></span>
+                        <button type="submit" class="btn-login" :disabled="loading">
+                            <span v-if="loading" class="loading"></span>
 
                             <span>
                                 {{
@@ -185,10 +153,7 @@
                                 }}
                             </span>
 
-                            <span
-                                v-if="!loading"
-                                class="login-arrow"
-                            >
+                            <span v-if="!loading" class="login-arrow">
                                 →
                             </span>
                         </button>
@@ -197,11 +162,7 @@
                             <span>Hoặc</span>
                         </div>
 
-                        <button
-                            type="button"
-                            class="btn-google"
-                            @click="loginGoogle"
-                        >
+                        <button type="button" class="btn-google" @click="loginGoogle">
                             <span class="google-logo">
                                 <span class="google-blue">G</span>
                             </span>
@@ -221,99 +182,82 @@
     </div>
 </template>
 
-<script>
-import gymLogin from '../../../assets/images/gym-login.jpg'
-import api, { API_BASE_URL } from '../../../services/api'
-import { createToaster } from '@meforma/vue-toaster'
 
-const toaster = createToaster({ position: 'top-right' })
+<script>
+import gymLogin from '../../../assets/images/gym-login.jpg';
+import baseRequestAdmin from '../../../core/baseRequestAdmin';
+import { createToaster } from '@meforma/vue-toaster';
+
+const toaster = createToaster({ position: 'top-right' });
 
 export default {
-    name: "AdminLogin",
-
     data() {
         return {
             gymLogin,
-            loading: false,
-            showPassword: false,
-            errorMessage: '',
-
             form: {
                 username: '',
                 password: '',
                 remember: false
-            }
-        }
-    },
-
-    mounted() {
-        // Nếu đã có token hợp lệ thì tự động chuyển vào dashboard
-        const token = localStorage.getItem('token_admin');
-        if (token) {
-            api
-                .get('/admin/check-token')
-                .then((res) => {
-                    if (res.data.status) {
-                        this.$router.push('/admin/dashboard');
-                    }
-                })
-                .catch(() => {});
-        }
+            },
+            showPassword: false,
+            loading: false,
+            errorMessage: ''
+        };
     },
 
     methods: {
         login() {
+            if (this.loading) return;
             this.errorMessage = '';
-
-            if (!this.form.username || !this.form.password) {
-                this.errorMessage = 'Vui lòng nhập tài khoản và mật khẩu.';
-                toaster.warning(this.errorMessage);
-                return;
-            }
-
             this.loading = true;
-
-            api
-                .post('/admin/login', {
-                    email: this.form.username,
-                    password: this.form.password,
-                })
+            baseRequestAdmin.post('admin/login', {
+                email: this.form.username,
+                password: this.form.password
+            })
                 .then((res) => {
-                    this.loading = false;
                     if (res.data.status) {
-                        localStorage.setItem('token_admin', res.data.token);
-                        localStorage.setItem('ho_ten_admin', res.data.ho_ten || 'VisionFit Admin');
-                        if (res.data.email) {
-                            localStorage.setItem('email_admin', res.data.email);
-                        }
-                        toaster.success(res.data.message || 'Đăng nhập thành công!');
+                        localStorage.setItem( 'token_admin', res.data.token );
+                        localStorage.setItem( 'ho_ten_admin', res.data.ho_ten || 'VisionFit Admin' );
+                        if (res.data.email) {  localStorage.setItem( 'email_admin', res.data.email );}
+
+                        toaster.success(res.data.message);
                         this.$router.push('/admin/dashboard');
                     } else {
-                        this.errorMessage = res.data.message || 'Tài khoản hoặc mật khẩu không đúng!';
-                        toaster.error(this.errorMessage);
+                        this.errorMessage = res.data.message;
+                        toaster.error(res.data.message);
                     }
                 })
                 .catch((err) => {
+                    const errors = err.response?.data?.errors;
+                    if (errors) {
+                        Object.values(errors).forEach((error) => {
+                            toaster.error(error[0]);
+                        });D
+                    } else {
+                        const message =
+                            err.response?.data?.message ||
+                            'Không thể kết nối Backend!';
+
+                        this.errorMessage = message;
+                        toaster.error(message);
+                    }
+                })
+                .finally(() => {
                     this.loading = false;
-                    console.error('Login Error:', err);
-                    const msg =
-                        err.response?.data?.message ||
-                        `Không thể kết nối đến máy chủ (${API_BASE_URL})! Vui lòng kiểm tra lệnh "php artisan serve"`;
-                    this.errorMessage = msg;
-                    toaster.error(msg);
                 });
         },
 
-        loginGoogle() {
-            toaster.info('Chức năng đăng nhập Google đang được tích hợp thêm.');
+        forgotPassword() {
+            toaster.info('Chức năng quên mật khẩu đang được phát triển!');
         },
 
-        forgotPassword() {
-            this.$router.push('/admin/quen-mat-khau');
+        loginGoogle() {
+            toaster.info('Chức năng đăng nhập Google đang được phát triển!');
         }
     }
-}
+};
 </script>
+
 
 <style scoped>
 /* =========================================================
