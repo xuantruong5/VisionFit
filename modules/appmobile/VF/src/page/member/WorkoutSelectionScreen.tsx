@@ -299,6 +299,24 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                             </View>
                         </LinearGradient>
 
+                        {/* Banner Nhập mã HLV */}
+                        <TouchableOpacity
+                            style={styles.referralEntryBanner}
+                            onPress={() => navigation.navigate('EnterTrainerCodeScreen')}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.referralEntryLeft}>
+                                <View style={styles.referralIconCircle}>
+                                    <Ionicons name="key" size={16} color={COLORS.primary} />
+                                </View>
+                                <View style={{ marginLeft: 10, flex: 1 }}>
+                                    <Text style={styles.referralEntryTitle}>Bạn đã có mã Huấn Luyện Viên?</Text>
+                                    <Text style={styles.referralEntrySub}>Nhập mã HLV để được hỗ trợ giáo trình riêng</Text>
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                        </TouchableOpacity>
+
                         {/* Danh sách gói */}
                         <View style={styles.sectionTitleRow}>
                             <View>
@@ -585,6 +603,42 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: '#C8EAED',
         fontWeight: '500',
+    },
+    referralEntryBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: COLORS.white,
+        borderRadius: 18,
+        padding: 14,
+        marginTop: 14,
+        marginBottom: 8,
+        borderWidth: 1.5,
+        borderColor: '#BEE7EB',
+        ...SHADOWS.small,
+    },
+    referralEntryLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    referralIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.soft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    referralEntryTitle: {
+        fontSize: 13.5,
+        fontWeight: '800',
+        color: COLORS.text,
+    },
+    referralEntrySub: {
+        fontSize: 11.5,
+        color: COLORS.muted,
+        marginTop: 2,
     },
     sectionTitleRow: {
         flexDirection: 'row',

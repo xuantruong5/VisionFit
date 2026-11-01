@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import apiFitlife from "../../../../general/api";
 import { COLORS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
 
 const DashboardScreen = () => {
+  const navigation = useNavigation<any>();
   const [program, setProgram] = useState<any>(null);
   const [trainingDates, setTrainingDates] = useState<string[]>([]);
   const [tongNgayDaHoanThanh, setTongNgayDaHoanThanh] = useState(0);
@@ -171,7 +173,17 @@ const DashboardScreen = () => {
         </View>
 
         {/* Lịch tập luyện */}
-        <Text style={styles.sectionTitle}>Lịch tập trong tháng</Text>
+        <View style={styles.calendarHeaderRow}>
+          <Text style={styles.sectionTitle}>Lịch tập trong tháng</Text>
+          <TouchableOpacity
+            style={styles.changeScheduleQuickBtn}
+            onPress={() => navigation.navigate("ChangeWorkoutScheduleScreen")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
+            <Text style={styles.changeScheduleQuickText}>Đổi lịch tập</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.calendarWrapper}>
           <Calendar
             current={today}
@@ -408,12 +420,33 @@ const styles = StyleSheet.create({
   },
 
   // LỊCH
+  calendarHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: PASTEL.ink,
-    marginTop: 24,
-    marginBottom: 12,
+  },
+  changeScheduleQuickBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.tealSoft,
+    borderWidth: 1,
+    borderColor: "rgba(13, 127, 141, 0.2)",
+  },
+  changeScheduleQuickText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.primary,
+    marginLeft: 5,
   },
   calendarWrapper: {
     backgroundColor: PASTEL.surface,

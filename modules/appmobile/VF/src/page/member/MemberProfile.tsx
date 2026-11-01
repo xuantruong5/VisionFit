@@ -445,8 +445,37 @@ const MemberProfile = ({ navigation }: any) => {
                                 icon="location-outline"
                                 title="Cơ sở tập luyện chính"
                                 value={member.co_so}
-                                last
                             />
+
+                            <TouchableOpacity
+                                style={[styles.profileItem, styles.itemBorder]}
+                                onPress={() => navigation?.navigate('EnterTrainerCodeScreen')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.itemIconWrap, { backgroundColor: '#EAF9FB' }]}>
+                                    <Ionicons name="key-outline" size={18} color={COLORS.primary} />
+                                </View>
+                                <View style={styles.itemContent}>
+                                    <Text style={styles.itemTitle}>Nhập mã Huấn Luyện Viên</Text>
+                                    <Text style={[styles.itemValue, { color: COLORS.primary }]}>Liên kết HLV riêng bằng mã</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.profileItem}
+                                onPress={() => navigation?.navigate('ChangeWorkoutScheduleScreen')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.itemIconWrap, { backgroundColor: '#FFF7ED' }]}>
+                                    <Ionicons name="calendar-outline" size={18} color="#D97706" />
+                                </View>
+                                <View style={styles.itemContent}>
+                                    <Text style={styles.itemTitle}>Đổi lịch tập luyện</Text>
+                                    <Text style={[styles.itemValue, { color: '#D97706' }]}>Theo HLV hoặc chu kỳ tập/nghỉ</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
