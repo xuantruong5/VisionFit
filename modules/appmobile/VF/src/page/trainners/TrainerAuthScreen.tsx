@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {StyleSheet,Text,View,TextInput,TouchableOpacity, ScrollView, StatusBar,} from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, StatusBar, Modal, } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
@@ -9,6 +9,17 @@ import { TRAINER_COLORS as C, SOFT_SHADOW } from "../../general/theme";
 const TrainerAuthScreen = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState("social");
     const [showPassword, setShowPassword] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [referralCode, setReferralCode] = useState("");
+
+    const handleRegister = () => {
+        // Mở popup thông báo chờ duyệt theo đúng yêu cầu nghiệp vụ
+        setShowSuccessModal(true);
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={["top"]}>
@@ -103,6 +114,8 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                                 placeholderTextColor={C.textLight}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                value={email}
+                                onChangeText={setEmail}
                             />
                         </View>
                         {/* PASSWORD */}
@@ -117,6 +130,8 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                                     placeholderTextColor={C.textLight}
                                     secureTextEntry={!showPassword}
                                     autoCapitalize="none"
+                                    value={password}
+                                    onChangeText={setPassword}
                                 />
                                 <TouchableOpacity style={styles.eyeButton} onPress={() =>setShowPassword(!showPassword)} >
                                     <Ionicons name={ showPassword? "eye-outline" : "eye-off-outline" } size={wp("6%")} color={C.textLight} />
@@ -129,19 +144,19 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             <Text style={styles.label}>
                                 Tên
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập tên của bạn" placeholderTextColor={C.textLight} />
+                            <TextInput style={styles.input} placeholder="Nhập tên của bạn" placeholderTextColor={C.textLight} value={firstName} onChangeText={setFirstName} />
                         </View>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>
                                 Họ
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập họ của bạn" placeholderTextColor={C.textLight} />
+                            <TextInput style={styles.input} placeholder="Nhập họ của bạn" placeholderTextColor={C.textLight} value={lastName} onChangeText={setLastName} />
                         </View>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>
                                 Mã
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor={C.textLight} />
+                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor={C.textLight} value={referralCode} onChangeText={setReferralCode} />
                         </View>
                  
                         <TouchableOpacity>
@@ -150,7 +165,7 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             </Text>
                         </TouchableOpacity>
                  
-                        <TouchableOpacity style={styles.registerButton} >
+                        <TouchableOpacity style={styles.registerButton} onPress={handleRegister} activeOpacity={0.85}>
                             <Text style={styles.registerText}>
                                 ĐĂNG KÝ
                             </Text>
@@ -174,6 +189,37 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                     </View>
                 )}
             </ScrollView>
+
+            {/* POPUP THÔNG BÁO ĐĂNG KÝ CHỜ DUYỆT */}
+            {showSuccessModal && (
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalCard}>
+                        <View style={styles.modalIconBox}>
+                            <Ionicons name="mail-unread" size={38} color={C.primary} />
+                        </View>
+                        <Text style={styles.modalTitle}>Đăng Ký Thành Công!</Text>
+                        <Text style={styles.modalMessage}>
+                            Chúng tôi đã nhận được thông tin đăng ký của bạn. Ban quản trị VisionFit sẽ xét duyệt hồ sơ và liên hệ với bạn trong vòng 2 ngày tới qua email.
+                        </Text>
+                        <View style={styles.modalTipBox}>
+                            <Ionicons name="information-circle-outline" size={18} color="#D97706" />
+                            <Text style={styles.modalTipText}>
+                                Vui lòng kiểm tra hộp thư email (kể cả mục Thư rác/Quảng cáo) để theo dõi thông báo kích hoạt tài khoản.
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.modalCloseBtn}
+                            onPress={() => {
+                                setShowSuccessModal(false);
+                                navigation.navigate("Login");
+                            }}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={styles.modalCloseBtnText}>VỀ TRANG ĐĂNG NHẬP</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -351,6 +397,84 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "700",
         color: C.primaryDark,
+    },
+    modalOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+        zIndex: 9999,
+        elevation: 20,
+    },
+    modalCard: {
+        width: "100%",
+        backgroundColor: C.white,
+        borderRadius: 28,
+        padding: 24,
+        alignItems: "center",
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+    },
+    modalIconBox: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: C.primaryLight,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "800",
+        color: C.textPrimary,
+        marginBottom: 10,
+        textAlign: "center",
+    },
+    modalMessage: {
+        fontSize: 14,
+        color: C.textSecondary,
+        textAlign: "center",
+        lineHeight: 22,
+        marginBottom: 16,
+    },
+    modalTipBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FEF3C7",
+        borderRadius: 14,
+        padding: 12,
+        gap: 8,
+        marginBottom: 20,
+    },
+    modalTipText: {
+        flex: 1,
+        fontSize: 12,
+        color: "#92400E",
+        lineHeight: 18,
+        fontWeight: "500",
+    },
+    modalCloseBtn: {
+        width: "100%",
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: C.primary,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    modalCloseBtnText: {
+        fontSize: 14,
+        fontWeight: "700",
+        letterSpacing: 0.8,
+        color: C.white,
     },
 });
 
