@@ -344,6 +344,21 @@ $('btn-toggle-motion').onclick = () => {
   if (mainRenderer) mainRenderer.setReducedMotion(isReducedMotion);
 };
 
+// Hiển thị khớp (Debug Joints)
+let isDebugJoints = false;
+const btnToggleJoints = $('btn-toggle-joints');
+if (btnToggleJoints) {
+  btnToggleJoints.onclick = () => {
+    isDebugJoints = !isDebugJoints;
+    btnToggleJoints.setAttribute('aria-pressed', String(isDebugJoints));
+    if (isDebugJoints) {
+      previewContainer.classList.add('debug-joints');
+    } else {
+      previewContainer.classList.remove('debug-joints');
+    }
+  };
+}
+
 // Khởi chạy phòng thử
 setupStatesButtons();
 initMainRenderer();

@@ -28,6 +28,16 @@ test('Bear SVG generator renders all stages and states with semantic layers and 
       const rootIndex = svg.indexOf('class="character-root"');
       assert.ok(shadowIndex !== -1 && rootIndex !== -1 && shadowIndex < rootIndex, 'layer-shadow must precede character-root');
 
+      // Khớp cẳng tay (forearm) và bàn tay (paw) gập khuỷu
+      assert.ok(svg.includes('forearm-left') && svg.includes('forearm-right'), 'Missing 2-segment forearm rig');
+      assert.ok(svg.includes('paw-left') && svg.includes('paw-right'), 'Missing paws in forearm');
+      assert.ok(svg.includes('joint-marker'), 'Missing SVG joint markers');
+
+      // Tạ phải là con của nhóm cẳng tay
+      const forearmLeftIdx = svg.indexOf('class="forearm forearm-left"');
+      const dumbbellLeftIdx = svg.indexOf('class="prop-dumbbell-left"');
+      assert.ok(forearmLeftIdx !== -1 && dumbbellLeftIdx !== -1 && forearmLeftIdx < dumbbellLeftIdx, 'Dumbbell must belong to forearm group');
+
       // Không dùng rx trên thẻ path
       assert.equal(/<path[^>]*\brx=/i.test(svg), false, 'SVG path must not contain invalid rx attribute');
     }
@@ -55,6 +65,8 @@ test('Cat SVG generator renders all stages with whiskers, tail and joint hierarc
       assert.ok(svg.includes('species-cat'), `Missing species-cat in stage ${stage}`);
       assert.ok(svg.includes('character-root'), 'Missing character-root in cat');
       assert.ok(svg.includes('torso-rig'), 'Missing torso-rig in cat');
+      assert.ok(svg.includes('forearm-left') && svg.includes('forearm-right'), 'Cat missing 2-segment forearms');
+      assert.ok(svg.includes('paw-left') && svg.includes('paw-right'), 'Cat missing paws');
       assert.ok(svg.includes('layer-whiskers'), 'Cat must have whiskers layer');
       assert.ok(svg.includes('layer-tail'), 'Cat must have tail layer');
       assert.equal(/<path[^>]*\brx=/i.test(svg), false, 'Cat SVG path must not contain invalid rx attribute');
@@ -66,11 +78,11 @@ test('Multiple instances have unique gradient IDs preventing collision', () => {
   const svg1 = renderBearSVG('active', 'idle', { idPrefix: 'inst-1' });
   const svg2 = renderBearSVG('active', 'idle', { idPrefix: 'inst-2' });
 
-  assert.ok(svg1.includes('id="inst-1-fur"'));
-  assert.ok(svg1.includes('url(#inst-1-fur)'));
-  assert.ok(svg2.includes('id="inst-2-fur"'));
-  assert.ok(svg2.includes('url(#inst-2-fur)'));
-  assert.equal(svg1.includes('id="inst-2-fur"'), false);
+  assert.ok(svg1.includes('id="inst-1-fabric"') || svg1.includes('id="inst-1-shadow"'));
+  assert.ok(svg1.includes('url(#inst-1-shadow)'));
+  assert.ok(svg2.includes('id="inst-2-fabric"') || svg2.includes('id="inst-2-shadow"'));
+  assert.ok(svg2.includes('url(#inst-2-shadow)'));
+  assert.equal(svg1.includes('id="inst-2-shadow"'), false);
 });
 
 test('mascot.css keyframes eliminate limb detachment and enforce proper physics', async () => {
@@ -106,6 +118,9 @@ test('mascot.css keyframes eliminate limb detachment and enforce proper physics'
   // 4. Tab-hidden pauses root SVG and descendants
   assert.ok(css.includes('.tab-hidden .vif-mascot-svg,') || css.includes('.tab-hidden .vif-mascot-svg'), 'tab-hidden must pause root SVG');
   assert.ok(css.includes('animation-play-state: paused !important'));
+
+  // 5. CSS animation-duration hợp lệ (không dùng 400%)
+  assert.equal(css.includes('animation-duration: 400%'), false, 'animation-duration must not be 400%');
 });
 
 test('MascotRenderer updates DOM state attributes without innerHTML thrashing', () => {
