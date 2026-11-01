@@ -1,71 +1,89 @@
 import React from "react";
-import { StyleSheet, Text, View, ImageBackground, TouchableOpacity, StatusBar,} from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar,} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp,} from "react-native-responsive-screen";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+
+const BG = "#071A1D";
+const MINT = "#5FD3DC";
+
 const Login = ({ navigation }: any) => {
     return (
         <View style={styles.container}>
-            <ImageBackground source={require("../assets/anh-fi.jpg")} style={styles.background}  resizeMode="cover" >
-                <View style={styles.overlay} />
-                <View style={styles.content}>
-                    <Text style={styles.title}>
-                       VisionFit
-                    </Text>
-                    <Text style={styles.loginBy}>
-                        Đăng nhập bằng
-                    </Text>
-                    <TouchableOpacity style={[ styles.loginButton, styles.googleButton, ]} >
-                        <MaterialCommunityIcons name="google" size={wp("7.5%")} color="#11343A" />
-                        <Text style={styles.buttonText}>
-                            Đăng nhập bằng Google
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[ styles.loginButton, styles.facebookButton, ]} >
-                        <Ionicons name="logo-facebook" size={wp("7.5%")} color="#11343A" />
-                        <Text style={styles.buttonText}>
-                            Đăng nhập bằng Facebook
-                        </Text>
-                    </TouchableOpacity>
-                    {/* EMAIL */}
-                    <TouchableOpacity style={styles.emailButton} onPress={() => navigation.navigate("AuthScreen")}>
-                        <Text style={styles.emailText}>
-                            Đăng nhập/Đăng ký bằng địa chỉ email
-                        </Text>
-                    </TouchableOpacity>
-                    {/* TRAINER */}
-                    <View style={styles.trainerContainer}>
-                        <Text style={styles.trainerQuestion}>
-                            Bạn có phải là huấn luyện viên không?
-                        </Text>
-                        <TouchableOpacity>
-                            <Text style={styles.trainerLink} onPress={() => navigation.navigate("TrainerAuthScreen")}>
-                                Nhấn vào đây
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                    {/* POLICY */}
-                    <View style={styles.policyContainer}>
-                        <Text style={styles.policyText}>
-                            Bằng việc tiếp tục sử dụng Fitness Online, bạn đồng ý
-                        </Text>
-                        <Text style={styles.policyText}>
-                            chấp nhận
-                        </Text>
-                        <View style={styles.policyLinks}>
-                            <Text style={styles.policyLink}>
-                                Thỏa thuận người dùng
-                            </Text>
-                            <Text style={styles.policyAnd}>
-                                {" "}và{" "}
-                            </Text>
-                            <Text style={styles.policyLink}>
-                                Chính sách bảo mật
-                            </Text>
-                        </View>
-                    </View>
+            <StatusBar barStyle="light-content" />
+
+            {/* ẢNH NỀN PHÍA TRÊN, MỜ DẦN XUỐNG NỀN TỐI */}
+            <Image source={require("../assets/fitness-bg.png")} style={styles.heroPhoto} />
+            <LinearGradient
+                colors={["rgba(7,26,29,0.6)", "rgba(7,26,29,0)", "rgba(7,26,29,0.55)", BG]}
+                locations={[0, 0.2, 0.42, 0.58]}
+                style={styles.heroImage}
+            />
+
+            <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+                {/* LOGO */}
+                <Text style={styles.brandName}>
+                    VISION<Text style={styles.brandAccent}>FIT</Text>
+                </Text>
+
+                <View style={styles.flexSpace} />
+
+                {/* TIÊU ĐỀ */}
+                <Text style={styles.heroTitle}>
+                    Hành trình khỏe mạnh{"\n"}
+                    <Text style={styles.brandAccent}>bắt đầu từ đây</Text>
+                </Text>
+                <Text style={styles.heroSub}>
+                    Lịch tập cá nhân, huấn luyện viên riêng và AI đồng hành cùng bạn mỗi ngày.
+                </Text>
+
+                {/* EMAIL */}
+                <TouchableOpacity onPress={() => navigation.navigate("AuthScreen")} activeOpacity={0.85}>
+                    <LinearGradient
+                        colors={["#3CC3CE", "#0D7F8D"]}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={styles.primaryButton}
+                    >
+                        <Text style={styles.primaryText}>Bắt đầu với Email</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                <View style={styles.dividerRow}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>Hoặc</Text>
+                    <View style={styles.dividerLine} />
                 </View>
-            </ImageBackground>
+
+                {/* SOCIAL */}
+                <View style={styles.socialRow}>
+                    <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
+                        <MaterialCommunityIcons name="google" size={20} color="#FFFFFF" />
+                        <Text style={styles.socialText}>Google</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
+                        <Ionicons name="logo-facebook" size={20} color="#FFFFFF" />
+                        <Text style={styles.socialText}>Facebook</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* TRAINER */}
+                <View style={styles.trainerRow}>
+                    <Text style={styles.trainerQuestion}>Bạn là huấn luyện viên? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate("TrainerAuthScreen")}>
+                        <Text style={styles.trainerLink}>Đăng nhập Trainer</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* POLICY */}
+                <Text style={styles.policyText}>
+                    Tiếp tục nghĩa là bạn đồng ý với{" "}
+                    <Text style={styles.policyLink}>Điều khoản</Text>
+                    {" "}và{" "}
+                    <Text style={styles.policyLink}>Chính sách bảo mật</Text>
+                </Text>
+            </SafeAreaView>
         </View>
     );
 };
@@ -73,151 +91,142 @@ const Login = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: BG,
     },
-    background: {
+    heroImage: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    heroPhoto: {
+        position: "absolute",
+        top: "-26%",
+        left: 0,
+        width: "100%",
+        height: undefined,
+        aspectRatio: 736 / 1444,
+    },
+    safe: {
         flex: 1,
-        width: wp("100%"),
-        height: hp("100%"),
+        paddingHorizontal: 24,
+        paddingBottom: 10,
     },
-    overlay: {
-        backgroundColor: "rgba(0, 0, 0, 0.62)",
+    flexSpace: {
+        flex: 1,
     },
 
-    closeButton: {
-        position: "absolute",
-        top: hp("5%"),
-        left: wp("3%"),
-        width: wp("15%"),
-        height: wp("15%"),
-        borderRadius: wp("7.5%"),
-        borderWidth: 1,
-        borderColor: "rgba(120, 130, 140, 0.4)",
-        backgroundColor: "rgba(0, 0, 0, 0.3)",
+    brandName: {
+        marginTop: 26,
+        textAlign: "center",
+        fontSize: 30,
+        fontWeight: "900",
+        letterSpacing: 3,
+        color: "#FFFFFF",
+    },
+    brandAccent: {
+        color: MINT,
+    },
+
+    heroTitle: {
+        fontSize: 30,
+        lineHeight: 38,
+        fontWeight: "800",
+        color: "#FFFFFF",
+    },
+    heroSub: {
+        marginTop: 10,
+        marginBottom: 26,
+        fontSize: 15,
+        lineHeight: 22,
+        fontWeight: "500",
+        color: "rgba(255,255,255,0.72)",
+    },
+
+    primaryButton: {
+        shadowColor: "#0D7F8D",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.45,
+        shadowRadius: 16,
+        elevation: 8,
+        height: 56,
+        borderRadius: 28,
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 10,
+    },
+    primaryText: {
+        fontSize: 16,
+        fontWeight: "800",
+        color: "#FFFFFF",
     },
 
-    content: {
-        flex: 1,
+    dividerRow: {
+        flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: wp("5%"),
-        paddingTop: hp("23%"),
+        marginVertical: 18,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: "rgba(255,255,255,0.12)",
+    },
+    dividerText: {
+        marginHorizontal: 12,
+        fontSize: 13,
+        fontWeight: "600",
+        color: "rgba(255,255,255,0.5)",
     },
 
-    title: {
-        
-        fontSize: wp("10%"),
-        fontWeight: "900",
-        letterSpacing: 0.5,
-        color: "#FFFFFF",
+    socialRow: {
+        flexDirection: "row",
+        gap: 12,
     },
-
-    titleThin: {
-        fontWeight: "300",
-    },
-
-    loginBy: {
-        fontSize: wp("6.5%"),
-        fontWeight: "500",
-        marginTop: hp("3%"),
-        marginBottom: hp("4%"),
-        color: "#FFFFFF",
-    },
-
-    loginButton: {
-        width: wp("92%"),
-        height: hp("6%"),
-        borderRadius: wp("3%"),
+    socialButton: {
+        flex: 1,
+        height: 54,
+        borderRadius: 27,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: hp("1.5%"),
-        gap: wp("3%"),
-    },
-
-    googleButton: {
-        backgroundColor: "#FFFFFF",
+        gap: 8,
+        backgroundColor: "#10282C",
         borderWidth: 1,
-        borderColor: "#DADCE0",
-        borderRadius: 10,
+        borderColor: "rgba(255,255,255,0.08)",
     },
-
-    facebookButton: {
-        backgroundColor: "#4385e9",
-    },
-    buttonText: {
-        fontSize: wp("5.3%"),
+    socialText: {
+        fontSize: 15,
         fontWeight: "700",
-    },
-
-    emailButton: {
-        marginTop: hp("3%"),
-    },
-
-    emailText: {
-        fontSize: wp("5%"),
-        fontWeight: "600",
-        textDecorationLine: "underline",
         color: "#FFFFFF",
     },
 
-    trainerContainer: {
+    trainerRow: {
+        flexDirection: "row",
+        justifyContent: "center",
         alignItems: "center",
-        marginTop: hp("10%"),
+        marginTop: 24,
     },
-
     trainerQuestion: {
-        
-        fontSize: wp("5%"),
-        fontWeight: "700",
-        textAlign: "center",
-        color: "#FFFFFF",
+        fontSize: 14.5,
+        fontWeight: "500",
+        color: "rgba(255,255,255,0.75)",
     },
-
     trainerLink: {
-        
-        fontSize: wp("5.2%"),
-        fontWeight: "600",
-        textDecorationLine: "underline",
-        marginTop: hp("0.7%"),
-        color: "#FFFFFF",
-    },
-
-    policyContainer: {
-        position: "absolute",
-        bottom: hp("4%"),
-        left: wp("4%"),
-        right: wp("4%"),
-        alignItems: "center",
+        fontSize: 14.5,
+        fontWeight: "800",
+        color: MINT,
     },
 
     policyText: {
-        
-        fontSize: wp("3.4%"),
+        marginTop: 14,
+        fontSize: 12,
+        lineHeight: 18,
         textAlign: "center",
-        lineHeight: hp("2.5%"),
-        color: "#FFFFFF",
+        color: "rgba(255,255,255,0.4)",
     },
-
-    policyLinks: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: hp("0.2%"),
-        color: "#FFFFFF",
-    },
-
     policyLink: {
-        
-        fontSize: wp("3.4%"),
         fontWeight: "700",
-        textDecorationLine: "underline",
-        color: "#FFFFFF",
-    },
-
-    policyAnd: {
-        color: "#FFFFFF",
-        fontSize: wp("3.4%"),
+        color: "rgba(255,255,255,0.65)",
     },
 });
 

@@ -164,8 +164,9 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
 
 // admin
 Route::post('admin/login', [AdminController::class, 'loginAdmin']);
-Route::group(['prefix' => 'admin','middleware' => 'AdminMiddleware'], function () {
+Route::group(['prefix' => 'admin', 'middleware' => 'AdminMiddleware'], function () {
     Route::post('logout', [AdminController::class, 'logoutAdmin']);
+    Route::get('/check-token', [AdminController::class, 'checkTokenAdmin']);
 });
 
 
