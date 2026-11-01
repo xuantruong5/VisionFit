@@ -313,7 +313,6 @@ const App = () => {
       >
         <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
         <Stack.Screen name="Onloading" component={Onloading}/>
-        <Stack.Screen name="MainTabs" component={MainTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="MemberTabs" component={MemberTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="MemberHome" component={MemberHome} />
         <Stack.Screen name="Login" component={Login} />
@@ -364,7 +363,8 @@ const App = () => {
 
         {/* cua trainner  */}
         <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
-        <Stack.Screen name="Dashboard" component={Dashboard} />
+        {/* <Stack.Screen name="Dashboard" component={Dashboard} /> */}
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
         <Stack.Screen name="TrainerFeed" component={TrainerFeed} />
         <Stack.Screen name="Income" component={Income} />
         <Stack.Screen name="MemberDetail" component={MemberDetail} />
