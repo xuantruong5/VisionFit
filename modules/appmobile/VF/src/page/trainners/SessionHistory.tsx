@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Status
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const SESSIONS = [
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
   },
   summaryLabel: {
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   // TÌM KIẾM & LỌC
   searchBox: {
     height: 52,
-    borderRadius: 18,
+    borderRadius: 26,
     backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
@@ -286,11 +286,9 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 16,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 26,
     justifyContent: 'center',
     backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   chipActive: {
     backgroundColor: COLORS.textPrimary,
@@ -309,18 +307,16 @@ const styles = StyleSheet.create({
   // DANH SÁCH
   dateLabel: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
     marginTop: 20,
     marginBottom: 10,
   },
   sessionCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 18,
+    borderRadius: 26,
     padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   sessionCardCancelled: {
@@ -349,14 +345,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E2ECD4',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
     alignSelf: 'flex-start',
   },
   cancelledBadge: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#F6E3DF',
   },
   statusText: {
     fontSize: 11,

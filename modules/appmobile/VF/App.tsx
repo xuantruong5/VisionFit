@@ -69,6 +69,12 @@ import PaymentScreen from "./src/page/member/PaymentScreen";
 import RegistrationSuccessScreen from "./src/page/member/RegistrationSuccessScreen";
 import MyPackagesScreen from "./src/page/member/MyPackagesScreen";
 import MyPackageDetailScreen from "./src/page/member/MyPackageDetailScreen";
+import WorkoutHistory from "./src/page/member/WorkoutHistory";
+import CreateSchedule from "./src/page/trainners/CreateSchedule";
+import TrainerNotifications from "./src/page/trainners/TrainerNotifications";
+import EditTrainerProfile from "./src/page/trainners/EditTrainerProfile";
+import AddMember from "./src/page/trainners/AddMember";
+import TrainerSettings from "./src/page/trainners/TrainerSettings";
 
 
 
@@ -152,8 +158,8 @@ function MainTabs() {
             />
           );
         },
-        tabBarActiveTintColor: "#0D7F8D",
-        tabBarInactiveTintColor: "#71949A",
+        tabBarActiveTintColor: "#7A9161",
+        tabBarInactiveTintColor: "#A3AA9C",
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "bold",
@@ -344,6 +350,7 @@ const App = () => {
         <Stack.Screen name="MyPackages" component={MyPackagesScreen} />
         <Stack.Screen name="MyPackageDetailScreen" component={MyPackageDetailScreen} />
         <Stack.Screen name="MyPackageDetail" component={MyPackageDetailScreen} />
+        <Stack.Screen name="WorkoutHistory" component={WorkoutHistory} />
 
 
         {/* // gioi thieu */}
@@ -366,6 +373,11 @@ const App = () => {
         <Stack.Screen name="Schedule" component={Schedule} />
         <Stack.Screen name="SessionHistory" component={SessionHistory} />
         <Stack.Screen name="SessionReview" component={SessionReview} />
+        <Stack.Screen name="CreateSchedule" component={CreateSchedule} />
+        <Stack.Screen name="TrainerNotifications" component={TrainerNotifications} />
+        <Stack.Screen name="EditTrainerProfile" component={EditTrainerProfile} />
+        <Stack.Screen name="AddMember" component={AddMember} />
+        <Stack.Screen name="TrainerSettings" component={TrainerSettings} />
         <Stack.Screen name="MemberProfile" component={MemberProfile} />
 
 

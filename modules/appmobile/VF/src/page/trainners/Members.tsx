@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Status
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const MEMBERS = [
@@ -47,7 +47,7 @@ const Members = ({ navigation }: any) => {
               <Text style={styles.headerSub}>Quản lý & theo dõi tiến độ</Text>
               <Text style={styles.headerTitle}>Học viên của tôi</Text>
             </View>
-            <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.addBtn} activeOpacity={0.8} onPress={() => navigation?.navigate('AddMember')}>
               <Ionicons name="person-add" size={19} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
@@ -128,7 +128,7 @@ const Members = ({ navigation }: any) => {
 
                 <View style={styles.progressTrack}>
                   <LinearGradient
-                    colors={paused ? [COLORS.textLight, COLORS.textLight] : ['#22B8C8', COLORS.primary]}
+                    colors={paused ? [COLORS.textLight, COLORS.textLight] : ['#9DB383', COLORS.primary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={[styles.progressFill, { width: `${progress}%` }]}
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
     marginTop: 2,
   },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
   },
   statLabel: {
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   // TÌM KIẾM
   searchBox: {
     height: 52,
-    borderRadius: 18,
+    borderRadius: 26,
     backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
@@ -285,11 +285,9 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 16,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 26,
     justifyContent: 'center',
     backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   chipActive: {
     backgroundColor: COLORS.textPrimary,
@@ -308,11 +306,9 @@ const styles = StyleSheet.create({
   // THẺ HỌC VIÊN
   memberCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: 26,
     padding: 14,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   cardTop: {
@@ -323,7 +319,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 52,
     height: 52,
-    borderRadius: 18,
+    borderRadius: 26,
   },
   avatarPaused: {
     opacity: 0.6,
@@ -383,7 +379,7 @@ const styles = StyleSheet.create({
   },
   percentText: {
     fontSize: 12.5,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.primary,
   },
   progressTrack: {

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const COVER = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80';
@@ -11,9 +11,9 @@ const AVATAR = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=3
 
 const STATS = [
   { icon: 'barbell', value: '32', label: 'Buổi dạy', color: COLORS.primary, bg: COLORS.surfaceTeal },
-  { icon: 'people', value: '24', label: 'Học viên', color: COLORS.accentGreen, bg: '#ECFDF5' },
-  { icon: 'star', value: '4.9', label: 'Đánh giá', color: COLORS.accentGold, bg: '#FFF7ED' },
-  { icon: 'trophy', value: '5 năm', label: 'Kinh nghiệm', color: '#8B5CF6', bg: '#F5F3FF' },
+  { icon: 'people', value: '24', label: 'Học viên', color: COLORS.accentGreen, bg: '#E2ECD4' },
+  { icon: 'star', value: '4.9', label: 'Đánh giá', color: COLORS.accentGold, bg: '#F1EFCF' },
+  { icon: 'trophy', value: '5 năm', label: 'Kinh nghiệm', color: '#6E6590', bg: '#E9E6F0' },
 ];
 
 const SPECIALTIES = ['Strength Training', 'Cardio', 'Giảm mỡ', 'Phục hồi chức năng'];
@@ -30,11 +30,11 @@ const PERSONAL_INFO = [
 ];
 
 const MENU = [
-  { icon: 'wallet', title: 'Doanh thu & Thu nhập', sub: '12.500.000 ₫ tháng này', color: COLORS.accentGold, bg: '#FFF7ED', route: 'Income' },
-  { icon: 'time', title: 'Lịch sử buổi dạy', sub: 'Nhật ký các ca huấn luyện', color: '#8B5CF6', bg: '#F5F3FF', route: 'SessionHistory' },
-  { icon: 'notifications', title: 'Cài đặt thông báo', sub: 'Nhắc ca dạy, học viên check-in', color: COLORS.accentBlue, bg: '#EAF3FC' },
-  { icon: 'shield-checkmark', title: 'Bảo mật & Mật khẩu', sub: 'Đổi mật khẩu, xác thực 2 lớp', color: COLORS.accentGreen, bg: '#ECFDF5' },
-  { icon: 'help-circle', title: 'Trợ giúp & Hỗ trợ', sub: 'Hotline: 1900 6868', color: COLORS.primary, bg: COLORS.surfaceTeal },
+  { icon: 'wallet', title: 'Doanh thu & Thu nhập', sub: '12.500.000 ₫ tháng này', color: COLORS.accentGold, bg: '#F1EFCF', route: 'Income' },
+  { icon: 'time', title: 'Lịch sử buổi dạy', sub: 'Nhật ký các ca huấn luyện', color: '#6E6590', bg: '#E9E6F0', route: 'SessionHistory' },
+  { icon: 'notifications', title: 'Cài đặt thông báo', sub: 'Nhắc ca dạy, học viên check-in', color: COLORS.accentBlue, bg: '#E4EBF1', route: 'TrainerSettings' },
+  { icon: 'shield-checkmark', title: 'Bảo mật & Mật khẩu', sub: 'Đổi mật khẩu, xác thực 2 lớp', color: COLORS.accentGreen, bg: '#E2ECD4', route: 'TrainerSettings' },
+  { icon: 'help-circle', title: 'Trợ giúp & Hỗ trợ', sub: 'Hotline: 1900 6868', color: COLORS.primary, bg: COLORS.surfaceTeal, route: 'TrainerSettings' },
 ];
 
 const Profile = ({ navigation }: any) => {
@@ -46,13 +46,13 @@ const Profile = ({ navigation }: any) => {
         {/* 1. ẢNH BÌA */}
         <View style={styles.cover}>
           <Image source={{ uri: COVER }} style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={['rgba(13,127,141,0.55)', 'rgba(7,88,101,0.95)']} style={styles.coverOverlay}>
+          <LinearGradient colors={['rgba(122,145,97,0.55)', 'rgba(70,90,55,0.95)']} style={styles.coverOverlay}>
             <View style={styles.coverRow}>
               <Text style={styles.coverTitle}>Hồ sơ của tôi</Text>
               <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
                 <Ionicons name="share-social-outline" size={19} color={COLORS.white} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('TrainerSettings')}>
                 <Ionicons name="settings-outline" size={19} color={COLORS.white} />
               </TouchableOpacity>
             </View>
@@ -63,7 +63,7 @@ const Profile = ({ navigation }: any) => {
         <View style={styles.profileCard}>
           <View style={styles.avatarWrap}>
             <Image source={{ uri: AVATAR }} style={styles.avatar} />
-            <TouchableOpacity style={styles.cameraBadge} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cameraBadge} activeOpacity={0.8} onPress={() => navigation?.navigate('EditTrainerProfile')}>
               <Ionicons name="camera" size={14} color={COLORS.white} />
             </TouchableOpacity>
           </View>
@@ -94,7 +94,7 @@ const Profile = ({ navigation }: any) => {
             ))}
           </View>
 
-          <TouchableOpacity style={styles.editBtnWrap} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.editBtnWrap} activeOpacity={0.85} onPress={() => navigation?.navigate('EditTrainerProfile')}>
             <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.editBtn}>
               <Ionicons name="create-outline" size={17} color={COLORS.white} />
               <Text style={styles.editBtnText}>Chỉnh sửa hồ sơ</Text>
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   coverTitle: {
     flex: 1,
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
   },
   glassBtn: {
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 21,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   role: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   statLabel: {
@@ -353,18 +353,19 @@ const styles = StyleSheet.create({
 
   // SECTION & CARD
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
+    fontFamily: 'serif',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: 26,
     paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   row: {
@@ -397,16 +398,14 @@ const styles = StyleSheet.create({
   },
   certCard: {
     width: 200,
-    borderRadius: 18,
+    borderRadius: 26,
     padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   certIcon: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F1EFCF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -427,9 +426,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     marginTop: 24,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#F6E3DF',
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: '#EBC9C3',
   },
   logoutText: {
     fontSize: 14,

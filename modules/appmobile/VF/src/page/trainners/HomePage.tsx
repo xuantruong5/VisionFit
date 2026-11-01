@@ -2,33 +2,25 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { SAGE as PASTEL, RADIUS, SOFT_SHADOW } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const TRAINER_AVATAR = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80';
 
 const STATS = [
-  { icon: 'calendar', value: '8', label: 'Ca hôm nay', color: COLORS.primary },
-  { icon: 'people', value: '24', label: 'Học viên', color: COLORS.accentGreen },
-  { icon: 'star', value: '4.9', label: 'Đánh giá', color: COLORS.accentGold },
+  { icon: 'calendar-outline', value: '8', label: 'Ca hôm nay', bg: PASTEL.tealSoft, ink: PASTEL.teal, route: 'Schedule' },
+  { icon: 'people-outline', value: '24', label: 'Học viên', bg: PASTEL.mint, ink: PASTEL.mintInk, route: 'Members' },
+  { icon: 'star-outline', value: '4.9', label: 'Đánh giá', bg: PASTEL.butter, ink: PASTEL.butterInk, route: 'Profile' },
+  { icon: 'wallet-outline', value: '12.5tr', label: 'Thu nhập', bg: PASTEL.peach, ink: PASTEL.peachInk, route: 'Income' },
 ];
 
 const NEXT_SESSION = {
   member: 'Trần Minh Anh',
   avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
   type: 'Cardio & Giảm mỡ',
-  time: '14:30 - 15:15',
-  place: 'Khu Cardio • Tầng 2',
-  countdown: 'Bắt đầu sau 45 phút',
+  start: '14:30',
+  place: 'Khu Cardio',
 };
-
-const SHORTCUTS = [
-  { icon: 'people', title: 'Học viên', colors: ['#34D399', '#059669'], route: 'Members' },
-  { icon: 'calendar', title: 'Lịch dạy', colors: ['#22B8C8', '#0D7F8D'], route: 'Schedule' },
-  { icon: 'document-text', title: 'Lịch sử', colors: ['#A78BFA', '#7C3AED'], route: 'SessionHistory' },
-  { icon: 'wallet', title: 'Thu nhập', colors: ['#FBBF24', '#E6A94A'], route: 'Income' },
-];
 
 const TODAY_SESSIONS = [
   { time: '09:00', member: 'Nguyễn Văn An', type: 'Tập thể lực & Tăng cơ', done: true },
@@ -40,7 +32,6 @@ const RECENT_MEMBERS = [
   { name: 'Nguyễn Văn An', goal: 'Giảm cân', sessions: 18, totalSessions: 24, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
   { name: 'Trần Minh Anh', goal: 'Tăng cơ', sessions: 12, totalSessions: 20, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80' },
   { name: 'Phạm Thu Hà', goal: 'Giảm cân', sessions: 21, totalSessions: 24, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80' },
-  { name: 'Lê Hoàng Nam', goal: 'Duy trì', sessions: 8, totalSessions: 16, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
 ];
 
 const HomePage = ({ navigation }: any) => {
@@ -48,177 +39,149 @@ const HomePage = ({ navigation }: any) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* 1. HEADER GRADIENT */}
-        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <View style={styles.circleLg} />
-          <View style={styles.circleSm} />
-
-          <View style={styles.headerRow}>
-            <TouchableOpacity activeOpacity={0.85} onPress={() => navigation?.navigate('Profile')}>
-              <Image source={{ uri: TRAINER_AVATAR }} style={styles.avatar} />
-              <View style={styles.onlineDot} />
-            </TouchableOpacity>
-            <View style={styles.flex}>
-              <Text style={styles.greeting}>Chào buổi sáng 👋</Text>
-              <Text style={styles.name}>HLV Nguyễn Trainer</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* 1. LỜI CHÀO */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => navigation?.navigate('Profile')}>
+            <Image source={{ uri: TRAINER_AVATAR }} style={styles.avatar} />
+          </TouchableOpacity>
+          <View style={styles.flex}>
+            <View style={styles.greetingRow}>
+              <Ionicons name="sunny" size={13} color={PASTEL.butterInk} />
+              <Text style={styles.greeting}>Chào buổi sáng</Text>
             </View>
-            <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('ChatList')}>
-              <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.white} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
-              <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
-              <View style={styles.notiDot} />
-            </TouchableOpacity>
+            <Text style={styles.name}>HLV Nguyễn Trainer</Text>
           </View>
+          <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('ChatList')}>
+            <Ionicons name="chatbubble-outline" size={19} color={PASTEL.ink} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('TrainerNotifications')}>
+            <Ionicons name="notifications-outline" size={19} color={PASTEL.ink} />
+            <View style={styles.notiDot} />
+          </TouchableOpacity>
+        </View>
 
-          <Text style={styles.dateText}>THỨ BẢY, 31 THÁNG 10</Text>
-          <Text style={styles.heroTitle}>Hôm nay bạn có 8 ca dạy 💪</Text>
-          <View style={styles.progressRow}>
-            <View style={styles.heroTrack}>
-              <View style={[styles.heroFill, { width: '37%' }]} />
+        {/* 2. TỔNG QUAN HÔM NAY */}
+        <View style={styles.todayCard}>
+          <View style={styles.flex}>
+            <Text style={styles.todayLabel}>Hôm nay bạn có</Text>
+            <Text style={styles.todayValue}>
+              8 <Text style={styles.todayUnit}>ca dạy</Text>
+            </Text>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: '37%' }]} />
             </View>
-            <Text style={styles.progressText}>3/8 ca</Text>
           </View>
-        </LinearGradient>
+          <View style={styles.todayCount}>
+            <Text style={styles.todayCountValue}>3</Text>
+            <Text style={styles.todayCountTotal}>/8 xong</Text>
+          </View>
+        </View>
 
-        {/* 2. THỐNG KÊ NỔI */}
-        <View style={styles.statsCard}>
-          {STATS.map((item, index) => (
-            <React.Fragment key={item.label}>
-              {index > 0 && <View style={styles.divider} />}
-              <View style={styles.statItem}>
-                <View style={styles.statValueRow}>
-                  <Ionicons name={item.icon} size={16} color={item.color} />
-                  <Text style={styles.statValue}>{item.value}</Text>
-                </View>
-                <Text style={styles.statLabel}>{item.label}</Text>
+        {/* 3. THỐNG KÊ */}
+        <Text style={styles.sectionTitle}>Tổng quan</Text>
+        <View style={styles.grid}>
+          {STATS.map((item) => (
+            <TouchableOpacity
+              key={item.label}
+              style={styles.statCard}
+              activeOpacity={0.85}
+              onPress={() => navigation?.navigate(item.route)}>
+              <View style={[styles.statIcon, { backgroundColor: item.bg }]}>
+                <Ionicons name={item.icon} size={18} color={item.ink} />
               </View>
-            </React.Fragment>
+              <View>
+                <Text style={styles.statLabel}>{item.label}</Text>
+                <Text style={styles.statValue}>{item.value}</Text>
+              </View>
+            </TouchableOpacity>
           ))}
         </View>
 
-        <View style={styles.body}>
-          {/* 3. CA DẠY TIẾP THEO */}
-          <Text style={styles.sectionTitle}>Ca dạy tiếp theo</Text>
-          <View style={styles.nextCard}>
-            <View style={styles.nextTop}>
-              <Image source={{ uri: NEXT_SESSION.avatar }} style={styles.nextAvatar} />
-              <View style={styles.flex}>
-                <Text style={styles.nextName}>{NEXT_SESSION.member}</Text>
-                <Text style={styles.subText}>{NEXT_SESSION.type}</Text>
-              </View>
-              <View style={styles.countdownBadge}>
-                <View style={styles.pulseDot} />
-                <Text style={styles.countdownText}>45'</Text>
-              </View>
-            </View>
-
-            <View style={styles.nextInfoRow}>
-              <View style={styles.nextInfo}>
-                <Ionicons name="time-outline" size={15} color={COLORS.primary} />
-                <Text style={styles.nextInfoText}>{NEXT_SESSION.time}</Text>
-              </View>
-              <View style={styles.nextInfo}>
-                <Ionicons name="location-outline" size={15} color={COLORS.primary} />
-                <Text style={styles.nextInfoText}>{NEXT_SESSION.place}</Text>
-              </View>
-            </View>
-
-            <View style={styles.nextActions}>
-              <TouchableOpacity
-                style={styles.outlineBtn}
-                activeOpacity={0.8}
-                onPress={() => navigation?.navigate('ChatRoom', { name: NEXT_SESSION.member })}>
-                <Ionicons name="chatbubble-outline" size={16} color={COLORS.primary} />
-                <Text style={styles.outlineBtnText}>Nhắn tin</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.flex} activeOpacity={0.85}>
-                <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.solidBtn}>
-                  <Ionicons name="play" size={15} color={COLORS.white} />
-                  <Text style={styles.solidBtnText}>Bắt đầu ca</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+        {/* 4. CA DẠY TIẾP THEO - KHỐI TỐI */}
+        <View style={styles.darkBlock}>
+          <View style={styles.darkHeader}>
+            <Text style={styles.darkTitle}>Ca dạy tiếp theo</Text>
+            <Text style={styles.darkTime}>{NEXT_SESSION.start}</Text>
           </View>
-
-          {/* 4. LỐI TẮT */}
-          <View style={styles.shortcutRow}>
-            {SHORTCUTS.map((item) => (
-              <TouchableOpacity
-                key={item.title}
-                style={styles.shortcut}
-                activeOpacity={0.8}
-                onPress={() => navigation?.navigate(item.route)}>
-                <LinearGradient colors={item.colors} style={styles.shortcutIcon}>
-                  <Ionicons name={item.icon} size={22} color={COLORS.white} />
-                </LinearGradient>
-                <Text style={styles.shortcutText}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* 5. LỊCH HÔM NAY - TIMELINE */}
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Lịch hôm nay</Text>
-            <TouchableOpacity onPress={() => navigation?.navigate('Schedule')}>
-              <Text style={styles.seeAll}>Xem lịch</Text>
+          <View style={styles.nextRow}>
+            <Image source={{ uri: NEXT_SESSION.avatar }} style={styles.nextAvatar} />
+            <View style={styles.flex}>
+              <Text style={styles.nextName}>{NEXT_SESSION.member}</Text>
+              <Text style={styles.nextSub}>
+                {NEXT_SESSION.type} · {NEXT_SESSION.place}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.whiteCircle}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate('ChatRoom', { name: NEXT_SESSION.member })}>
+              <Ionicons name="chatbubble-outline" size={17} color={PASTEL.dark} />
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.card}>
-            {TODAY_SESSIONS.map((item, index) => (
-              <View key={item.time} style={styles.timelineRow}>
-                <Text style={[styles.timeText, item.next && { color: COLORS.primary }]}>{item.time}</Text>
-                <View style={styles.timelineCol}>
-                  <View style={[styles.timelineDot, item.done && styles.dotDone, item.next && styles.dotNext]}>
-                    {item.done && <Ionicons name="checkmark" size={10} color={COLORS.white} />}
-                  </View>
-                  {index < TODAY_SESSIONS.length - 1 && <View style={styles.timelineLine} />}
-                </View>
-                <View style={[styles.timelineContent, item.next && styles.timelineContentActive]}>
-                  <Text style={[styles.rowTitle, item.done && { color: COLORS.textMuted }]}>{item.member}</Text>
-                  <Text style={styles.subText}>{item.type}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* 6. HỌC VIÊN GẦN ĐÂY */}
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Học viên gần đây</Text>
-            <TouchableOpacity onPress={() => navigation?.navigate('Members')}>
-              <Text style={styles.seeAll}>Tất cả</Text>
+            <TouchableOpacity style={styles.whiteCircle} activeOpacity={0.8}>
+              <Ionicons name="call-outline" size={17} color={PASTEL.dark} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.memberList}>
+        {/* 5. LỊCH HÔM NAY */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Lịch hôm nay</Text>
+          <TouchableOpacity style={styles.linkPill} onPress={() => navigation?.navigate('Schedule')}>
+            <Text style={styles.linkText}>Xem lịch</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.card}>
+          {TODAY_SESSIONS.map((item) => (
+            <View key={item.time} style={[styles.sessionRow, item.next && styles.sessionRowActive]}>
+              <Text style={[styles.sessionTime, item.done && styles.mutedText]}>{item.time}</Text>
+              <View style={styles.flex}>
+                <Text style={[styles.sessionName, item.done && styles.mutedText]}>{item.member}</Text>
+                <Text style={styles.sessionType}>{item.type}</Text>
+              </View>
+              {item.done ? (
+                <View style={[styles.statusPill, styles.statusDone]}>
+                  <Text style={[styles.statusText, styles.statusDoneText]}>Xong</Text>
+                </View>
+              ) : item.next ? (
+                <View style={[styles.statusPill, styles.statusNext]}>
+                  <Text style={[styles.statusText, styles.statusNextText]}>Sắp tới</Text>
+                </View>
+              ) : null}
+            </View>
+          ))}
+        </View>
+
+        {/* 6. HỌC VIÊN GẦN ĐÂY */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Học viên gần đây</Text>
+          <TouchableOpacity style={styles.linkPill} onPress={() => navigation?.navigate('Members')}>
+            <Text style={styles.linkText}>Tất cả</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.card}>
           {RECENT_MEMBERS.map((item) => {
             const progress = Math.round((item.sessions / item.totalSessions) * 100);
             return (
               <TouchableOpacity
                 key={item.name}
-                style={styles.memberCard}
-                activeOpacity={0.85}
+                style={styles.memberRow}
+                activeOpacity={0.8}
                 onPress={() => navigation?.navigate('MemberDetail', { member: item })}>
                 <Image source={{ uri: item.avatar }} style={styles.memberAvatar} />
-                <Text style={styles.memberName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <View style={styles.goalTag}>
-                  <Text style={styles.goalText}>{item.goal}</Text>
+                <View style={styles.flex}>
+                  <Text style={styles.memberName}>{item.name}</Text>
+                  <Text style={styles.memberGoal}>
+                    {item.goal} · {progress}% lộ trình
+                  </Text>
+                  <View style={styles.memberTrack}>
+                    <View style={[styles.memberFill, { width: `${progress}%` }]} />
+                  </View>
                 </View>
-                <View style={styles.miniTrack}>
-                  <View style={[styles.miniFill, { width: `${progress}%` }]} />
-                </View>
-                <Text style={styles.subText}>
-                  {item.sessions}/{item.totalSessions} buổi
-                </Text>
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -229,54 +192,18 @@ export default HomePage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scroll: {
-    backgroundColor: COLORS.background,
+    backgroundColor: PASTEL.background,
   },
   flex: {
     flex: 1,
   },
   content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 24,
   },
-  body: {
-    paddingHorizontal: 16,
-  },
-  subText: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 3,
-  },
 
-  // HEADER
-  header: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 58,
-    borderRadius: 28,
-    marginHorizontal: 12,
-    marginTop: 6,
-    overflow: 'hidden',
-  },
-  circleLg: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    top: -70,
-    right: -60,
-  },
-  circleSm: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    bottom: -40,
-    left: -30,
-  },
+  // LỜI CHÀO
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -286,125 +213,91 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.7)',
   },
-  onlineDot: {
-    position: 'absolute',
-    right: 1,
-    bottom: 1,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.accentGreen,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-  },
-  greeting: {
-    fontSize: 12.5,
-    color: 'rgba(255,255,255,0.75)',
-    fontWeight: '600',
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.white,
-    marginTop: 2,
-  },
-  glassBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notiDot: {
-    position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.accentOrange,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-  },
-  dateText: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#9EE7E5',
-    letterSpacing: 1,
-    marginTop: 22,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.white,
-    marginTop: 6,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 14,
-  },
-  heroTrack: {
-    flex: 1,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  heroFill: {
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#9EE7E5',
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-
-  // STATS NỔI
-  statsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: -36,
-    borderRadius: 20,
-    paddingVertical: 16,
-    ...SHADOWS.card,
-    shadowOpacity: 0.12,
-    elevation: 6,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValueRow: {
+  greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+  greeting: {
+    fontSize: 12.5,
+    color: PASTEL.inkSoft,
   },
-  statLabel: {
-    fontSize: 11.5,
-    color: COLORS.textMuted,
-    marginTop: 3,
+  name: {
+    fontSize: 17,
     fontWeight: '600',
+    color: PASTEL.ink,
+    marginTop: 2,
   },
-  divider: {
-    width: 1,
-    height: 30,
-    backgroundColor: COLORS.borderLight,
+  roundBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PASTEL.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SOFT_SHADOW,
+  },
+  notiDot: {
+    position: 'absolute',
+    top: 11,
+    right: 12,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: PASTEL.peachInk,
+  },
+
+  // HÔM NAY
+  todayCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 16,
+    backgroundColor: PASTEL.surface,
+    borderRadius: RADIUS.lg,
+    padding: 20,
+    marginTop: 18,
+    ...SOFT_SHADOW,
+  },
+  todayLabel: {
+    fontSize: 13,
+    color: PASTEL.inkSoft,
+  },
+  todayValue: {
+    fontSize: 34,
+    fontWeight: '300',
+    color: PASTEL.ink,
+    marginTop: 2,
+  },
+  todayUnit: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: PASTEL.inkSoft,
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.track,
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    width: '37%',
+    height: 8,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.teal,
+  },
+  todayCount: {
+    alignItems: 'flex-end',
+  },
+  todayCountValue: {
+    fontSize: 30,
+    fontWeight: '300',
+    color: PASTEL.ink,
+  },
+  todayCountTotal: {
+    fontSize: 12,
+    color: PASTEL.inkMuted,
   },
 
   // SECTION
@@ -414,262 +307,208 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginTop: 24,
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'serif',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: PASTEL.ink,
+    marginTop: 26,
     marginBottom: 12,
   },
-  seeAll: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.primary,
+  linkPill: {
+    backgroundColor: PASTEL.surface,
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: RADIUS.pill,
+    justifyContent: 'center',
     marginTop: 12,
+    ...SOFT_SHADOW,
+  },
+  linkText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: PASTEL.ink,
   },
   card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  rowTitle: {
-    fontSize: 14.5,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    backgroundColor: PASTEL.surface,
+    borderRadius: RADIUS.lg,
+    padding: 8,
+    ...SOFT_SHADOW,
   },
 
-  // CA TIẾP THEO
-  nextCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 22,
+  // THỐNG KÊ
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+  },
+  statCard: {
+    width: '48.3%',
+    height: 124,
+    justifyContent: 'space-between',
+    backgroundColor: PASTEL.surface,
+    borderRadius: 28,
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderFocus,
-    ...SHADOWS.card,
+    ...SOFT_SHADOW,
   },
-  nextTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  nextAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-  },
-  nextName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-  },
-  countdownBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#FFF1EC',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  pulseDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: COLORS.accentOrange,
-  },
-  countdownText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: COLORS.accentOrange,
-  },
-  nextInfoRow: {
-    backgroundColor: COLORS.background,
-    borderRadius: 14,
-    padding: 12,
-    marginTop: 14,
-    gap: 8,
-  },
-  nextInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  nextInfoText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  nextActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-  },
-  outlineBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 14,
-    flexDirection: 'row',
+  statIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: COLORS.borderFocus,
-    backgroundColor: COLORS.primarySoft,
   },
-  outlineBtnText: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: COLORS.primary,
+  statLabel: {
+    fontSize: 12.5,
+    color: PASTEL.inkSoft,
   },
-  solidBtn: {
-    height: 44,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  solidBtnText: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: COLORS.white,
+  statValue: {
+    fontSize: 26,
+    fontWeight: '300',
+    color: PASTEL.ink,
+    marginTop: 2,
   },
 
-  // LỐI TẮT
-  shortcutRow: {
+  // KHỐI TỐI
+  darkBlock: {
+    backgroundColor: PASTEL.dark,
+    borderRadius: RADIUS.lg,
+    padding: 18,
+    marginTop: 14,
+  },
+  darkHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  shortcut: {
-    flex: 1,
     alignItems: 'center',
+    marginBottom: 14,
   },
-  shortcutIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+  darkTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: PASTEL.surface,
   },
-  shortcutText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
+  darkTime: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: PASTEL.surface,
   },
-
-  // TIMELINE
-  timelineRow: {
+  nextRow: {
     flexDirection: 'row',
-  },
-  timeText: {
-    width: 46,
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginTop: 12,
-  },
-  timelineCol: {
-    width: 22,
     alignItems: 'center',
+    gap: 10,
   },
-  timelineDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
-    marginTop: 13,
+  nextAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  nextName: {
+    fontSize: 15.5,
+    fontWeight: '500',
+    color: PASTEL.surface,
+  },
+  nextSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 2,
+  },
+  whiteCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: PASTEL.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotDone: {
-    backgroundColor: COLORS.accentGreen,
-    borderColor: COLORS.accentGreen,
+
+  // LỊCH HÔM NAY
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 20,
   },
-  dotNext: {
-    borderColor: COLORS.primary,
-    borderWidth: 4,
+  sessionRowActive: {
+    backgroundColor: PASTEL.surfaceSoft,
   },
-  timelineLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: COLORS.borderLight,
-    marginVertical: 2,
+  sessionTime: {
+    width: 48,
+    fontSize: 15,
+    fontWeight: '500',
+    color: PASTEL.ink,
   },
-  timelineContent: {
-    flex: 1,
-    marginLeft: 10,
-    marginBottom: 8,
-    padding: 10,
-    borderRadius: 14,
+  sessionName: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: PASTEL.ink,
   },
-  timelineContentActive: {
-    backgroundColor: COLORS.surfaceTeal,
+  sessionType: {
+    fontSize: 12,
+    color: PASTEL.inkSoft,
+    marginTop: 2,
+  },
+  mutedText: {
+    color: PASTEL.inkMuted,
+  },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+  },
+  statusText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  statusDone: {
+    backgroundColor: PASTEL.mint,
+  },
+  statusDoneText: {
+    color: PASTEL.mintInk,
+  },
+  statusNext: {
+    backgroundColor: PASTEL.peach,
+  },
+  statusNextText: {
+    color: PASTEL.peachInk,
   },
 
-  // HỌC VIÊN NGANG
-  memberList: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  memberCard: {
-    width: 140,
+  // HỌC VIÊN
+  memberRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
   },
   memberAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 3,
-    borderColor: COLORS.primaryLight,
-    marginBottom: 8,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   memberName: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: '500',
+    color: PASTEL.ink,
   },
-  goalTag: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginTop: 5,
+  memberGoal: {
+    fontSize: 12,
+    color: PASTEL.inkSoft,
+    marginTop: 2,
   },
-  goalText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.primary,
+  memberTrack: {
+    height: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.track,
+    marginTop: 8,
+    overflow: 'hidden',
   },
-  miniTrack: {
-    alignSelf: 'stretch',
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.borderLight,
-    marginTop: 10,
-  },
-  miniFill: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.primary,
+  memberFill: {
+    height: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.mintInk,
   },
 });

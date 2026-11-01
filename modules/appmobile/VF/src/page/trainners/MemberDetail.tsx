@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const DEFAULT_MEMBER = {
@@ -128,7 +128,7 @@ const MemberDetail = ({ navigation, route }: any) => {
                 <Text style={styles.subText}>Còn {member.totalSessions - member.sessions} buổi • Hết hạn {member.expiry}</Text>
                 <View style={styles.progressTrack}>
                   <LinearGradient
-                    colors={['#22B8C8', COLORS.primary]}
+                    colors={['#9DB383', COLORS.primary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={[styles.progressFill, { width: `${progress}%` }]}
@@ -138,7 +138,7 @@ const MemberDetail = ({ navigation, route }: any) => {
             </View>
 
             <View style={styles.miniRow}>
-              <View style={[styles.miniBox, { backgroundColor: '#FFF1EC' }]}>
+              <View style={[styles.miniBox, { backgroundColor: '#F5E6D6' }]}>
                 <Ionicons name="flame" size={18} color={COLORS.accentOrange} />
                 <Text style={styles.miniValue}>{member.calories}</Text>
                 <Text style={styles.subText}>kcal tiêu hao</Text>
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
   },
   email: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#6EE7B7',
+    backgroundColor: '#D7E6B8',
   },
 
   // STATS NỔI
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     marginHorizontal: 16,
     marginTop: -34,
-    borderRadius: 20,
+    borderRadius: 26,
     paddingVertical: 14,
     ...SHADOWS.card,
     shadowOpacity: 0.12,
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
     marginTop: 4,
   },
@@ -400,11 +400,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
+    fontFamily: 'serif',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   seeAll: {
     fontSize: 13,
@@ -414,10 +417,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: 26,
     padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   cardTitle: {
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
   },
   ringValue: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.primary,
   },
   progressTrack: {
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
   },
   miniValue: {
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
     marginTop: 6,
   },
@@ -487,7 +488,7 @@ const styles = StyleSheet.create({
   },
   weightValue: {
     fontSize: 19,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
     marginTop: 2,
   },
@@ -495,7 +496,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E2ECD4',
     borderRadius: 12,
     padding: 10,
     marginTop: 14,
@@ -513,11 +514,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: COLORS.white,
-    borderRadius: 18,
+    borderRadius: 26,
     padding: 12,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   dateBox: {
@@ -530,7 +529,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.primary,
   },
   monthText: {

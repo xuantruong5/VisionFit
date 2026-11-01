@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, ScrollView, StatusBar, TouchableOpacity, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS, SHADOWS } from '../../general/theme';
+import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const OVERVIEW = [
   { icon: 'barbell', value: '32', label: 'Ca dạy', color: COLORS.primary, bg: COLORS.surfaceTeal },
-  { icon: 'checkmark-done', value: '11.3tr', label: 'Đã nhận', color: COLORS.accentGreen, bg: '#ECFDF5' },
-  { icon: 'hourglass', value: '1.2tr', label: 'Chờ duyệt', color: COLORS.accentGold, bg: '#FFF7ED' },
+  { icon: 'checkmark-done', value: '11.3tr', label: 'Đã nhận', color: COLORS.accentGreen, bg: '#E2ECD4' },
+  { icon: 'hourglass', value: '1.2tr', label: 'Chờ duyệt', color: COLORS.accentGold, bg: '#F1EFCF' },
 ];
 
 // Chiều cao cột theo % so với tháng cao nhất
@@ -99,7 +99,7 @@ const Income = ({ navigation }: any) => {
                     )}
                     <View style={styles.barTrack}>
                       <LinearGradient
-                        colors={current ? ['#22B8C8', COLORS.primaryDark] : [COLORS.borderFocus, COLORS.borderFocus]}
+                        colors={current ? ['#9DB383', COLORS.primaryDark] : [COLORS.borderFocus, COLORS.borderFocus]}
                         style={[styles.barFill, { height: `${item.percent}%` }]}
                       />
                     </View>
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.16)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 26,
     marginTop: 22,
   },
   monthPillText: {
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   amount: {
     fontSize: 34,
-    fontWeight: '900',
+    fontWeight: '700',
     color: COLORS.white,
     marginTop: 10,
   },
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   growthText: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: '#6EE7B7',
+    color: '#D7E6B8',
   },
 
   // TỔNG QUAN
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     marginHorizontal: 16,
     marginTop: -36,
-    borderRadius: 20,
+    borderRadius: 26,
     paddingVertical: 14,
     ...SHADOWS.card,
     shadowOpacity: 0.12,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   overviewValue: {
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   divider: {
@@ -292,11 +292,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
+    fontFamily: 'serif',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   unitText: {
     fontSize: 11.5,
@@ -311,10 +314,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: 26,
     padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
 
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
   },
   tooltipText: {
     fontSize: 10.5,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.white,
   },
   barTrack: {
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   barMonthCurrent: {
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.primary,
   },
 
@@ -374,11 +375,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: COLORS.white,
-    borderRadius: 18,
+    borderRadius: 26,
     padding: 12,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.card,
   },
   txAvatar: {
@@ -396,18 +395,18 @@ const styles = StyleSheet.create({
   },
   txAmount: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.accentGreen,
   },
   txBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E2ECD4',
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
     marginTop: 4,
   },
   txBadgePending: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F1EFCF',
   },
   txBadgeText: {
     fontSize: 10.5,

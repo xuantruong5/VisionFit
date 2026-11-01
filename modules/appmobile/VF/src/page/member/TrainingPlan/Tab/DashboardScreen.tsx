@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import apiFitlife from "../../../../general/api";
-import { COLORS, SHADOWS } from "../../../../general/theme";
+import { COLORS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
 
 const DashboardScreen = () => {
   const [program, setProgram] = useState<any>(null);
@@ -85,163 +84,159 @@ const DashboardScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Banner mẹo tập luyện */}
+        {/* Mẹo tập luyện */}
         <View style={styles.noticeCard}>
-          <View style={styles.noticeIconCircle}>
-            <Ionicons name="sparkles" size={18} color={COLORS.primary} />
-          </View>
-          <View style={styles.noticeTextContainer}>
-            <Text style={styles.noticeTitle}>Theo dõi buổi tập mỗi ngày</Text>
-            <Text style={styles.noticeSub}>
-              Hoàn thành đầy đủ các hiệp để hệ thống tự động ghi nhận tiến độ
-            </Text>
-          </View>
+          <Text style={styles.noticeTitle}>Theo dõi buổi tập mỗi ngày</Text>
+          <Text style={styles.noticeSub}>
+            Hoàn thành đầy đủ các hiệp để hệ thống tự động ghi nhận tiến độ
+          </Text>
         </View>
 
-        {/* Card chương trình hiện tại */}
+        {/* Chương trình hiện tại */}
         <View style={styles.programCard}>
-          <View style={styles.programImage}>
-            <Image
-              source={{
-                uri:
-                  program?.anh_dai_dien ||
-                  "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-              }}
-              style={styles.programImageStyle}
-              resizeMode="cover"
-            />
-            <LinearGradient
-              colors={["rgba(13,127,141,0.55)", "rgba(7,88,101,0.92)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.overlay}
-            />
-            <View style={styles.circleDeco} />
-            <View style={styles.programContent}>
-              <View style={styles.badgeRow}>
-                <View style={styles.programBadge}>
-                  <Ionicons name="barbell-outline" size={13} color={COLORS.white} />
-                  <Text style={styles.programBadgeText}>
-                    {program?.ten_noi_tap || "Tại gym"}
-                  </Text>
-                </View>
-                <View style={styles.programBadge}>
-                  <Ionicons name="speedometer-outline" size={13} color={COLORS.white} />
-                  <Text style={styles.programBadgeText}>
-                    {program?.ten_cap_do || "Trung cấp"}
-                  </Text>
+          <Image
+            source={{
+              uri:
+                program?.anh_dai_dien ||
+                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
+            }}
+            style={styles.programImage}
+            resizeMode="cover"
+          />
+          <View style={styles.programBody}>
+            <View style={styles.chipRow}>
+              <View style={[styles.chip, { backgroundColor: PASTEL.tealSoft }]}>
+                <Text style={[styles.chipText, { color: PASTEL.teal }]}>
+                  {program?.ten_noi_tap || "Tại gym"}
+                </Text>
+              </View>
+              <View style={[styles.chip, { backgroundColor: PASTEL.butter }]}>
+                <Text style={[styles.chipText, { color: PASTEL.butterInk }]}>
+                  {program?.ten_cap_do || "Trung cấp"}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.programTitle}>
+              {program?.ten_chuong_trinh || "Chương trình luyện tập"}
+            </Text>
+
+            <View style={styles.progressRow}>
+              <View style={styles.flex}>
+                <Text style={styles.progressLabel}>
+                  Tiến độ {tongNgayDaHoanThanh}/{tongNgayTap} ngày
+                </Text>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
                 </View>
               </View>
-
-              <Text style={styles.programTitle}>
-                {program?.ten_chuong_trinh || "Chương trình luyện tập"}
-              </Text>
-
-              {/* Tiến độ hoàn thành */}
-              <View style={styles.progressSection}>
-                <View style={styles.progressLabelRow}>
-                  <Text style={styles.progressText}>
-                    Tiến độ: {tongNgayDaHoanThanh}/{tongNgayTap} ngày
-                  </Text>
-                  <Text style={styles.progressPercent}>{progressPercent}%</Text>
-                </View>
-                <View style={styles.progressBarTrack}>
-                  <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-                </View>
-              </View>
+              <Text style={styles.progressPercent}>{progressPercent}%</Text>
             </View>
           </View>
         </View>
 
-        {/* Huấn luyện tiếp theo */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Buổi tập tiếp theo</Text>
-        </View>
+        {/* Buổi tập tiếp theo - khối tối */}
+        <View style={styles.darkBlock}>
+          <View style={styles.darkHeader}>
+            <Text style={styles.darkTitle}>Buổi tập tiếp theo</Text>
+            <Text style={styles.darkCount}>
+              {tongNgayDaHoanThanh}/{tongNgayTap}
+            </Text>
+          </View>
 
-        <View style={styles.workoutList}>
           {workouts.length > 0 ? (
             workouts.map((item) => {
               const isLocked = Number(item.tinh_trang) === 0;
               return (
-                <View
-                  key={item.id}
-                  style={[styles.workoutCard, isLocked && styles.workoutCardLocked]}
-                >
-                  <View
-                    style={[
-                      styles.statusCircle,
-                      isLocked ? styles.statusCircleLocked : styles.statusCircleActive,
-                    ]}
-                  >
+                <View key={item.id} style={[styles.workoutRow, isLocked && styles.workoutRowLocked]}>
+                  <View style={[styles.workoutIcon, isLocked && styles.workoutIconLocked]}>
                     <Ionicons
-                      name={isLocked ? "lock-closed" : "play"}
+                      name={isLocked ? "lock-closed-outline" : "play"}
                       size={16}
-                      color={isLocked ? COLORS.textMuted : COLORS.white}
+                      color={isLocked ? PASTEL.inkMuted : PASTEL.teal}
                     />
                   </View>
-
-                  <View style={styles.workoutInfo}>
-                    <Text style={styles.workoutDay}>Ngày thứ {item.ngay_thu}</Text>
+                  <View style={styles.flex}>
                     <Text style={styles.workoutTitle} numberOfLines={1}>
                       {item.ten_ngay_tap}
                     </Text>
+                    <Text style={styles.workoutDay}>Ngày thứ {item.ngay_thu}</Text>
                   </View>
-
                 </View>
               );
             })
           ) : (
-            <View style={styles.emptyWorkoutBox}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="calendar-clear-outline" size={32} color={COLORS.primary} />
-              </View>
-              <Text style={styles.emptyWorkoutText}>Chưa có lịch buổi tập tiếp theo.</Text>
-            </View>
+            <Text style={styles.darkEmpty}>Chưa có lịch buổi tập tiếp theo.</Text>
           )}
         </View>
 
         {/* Lịch tập luyện */}
-        <View style={styles.calendarSection}>
-          <View style={styles.calendarTitleRow}>
-            <Text style={styles.calendarTitle}>Lịch tập luyện trong tháng</Text>
-          </View>
-
-          <View style={styles.calendarWrapper}>
-            <Calendar
-              current={today}
-              firstDay={1}
-              enableSwipeMonths={true}
-              markedDates={markedDates}
-              onDayPress={(day) => setSelectedDate(day.dateString)}
-              theme={{
-                backgroundColor: COLORS.white,
-                calendarBackground: COLORS.white,
-                textSectionTitleColor: COLORS.textMuted,
-                dayTextColor: COLORS.textPrimary,
-                todayTextColor: COLORS.primary,
-                selectedDayBackgroundColor: COLORS.primary,
-                selectedDayTextColor: COLORS.white,
-                monthTextColor: COLORS.textPrimary,
-                textMonthFontSize: 16,
-                textMonthFontWeight: "700",
-                textDayFontSize: 14,
-                textDayFontWeight: "500",
-                arrowColor: COLORS.primary,
-              }}
-            />
-          </View>
+        <Text style={styles.sectionTitle}>Lịch tập trong tháng</Text>
+        <View style={styles.calendarWrapper}>
+          <Calendar
+            current={today}
+            firstDay={1}
+            enableSwipeMonths={true}
+            markedDates={markedDates}
+            onDayPress={(day) => setSelectedDate(day.dateString)}
+            dayComponent={({ date, state, marking, onPress }: any) => {
+              if (!date) return <View style={styles.dayCell} />;
+              const isSelected = !!marking?.selected;
+              const hasTraining = !!marking?.marked;
+              const isToday = state === "today";
+              const isOther = state === "disabled";
+              return (
+                <TouchableOpacity activeOpacity={0.8} onPress={() => onPress?.(date)} style={styles.dayCell}>
+                  <View
+                    style={[
+                      styles.dayCircle,
+                      hasTraining && styles.dayCircleTraining,
+                      isToday && styles.dayCircleToday,
+                      isSelected && styles.dayCircleSelected,
+                      isOther && styles.dayCircleOther,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayNumber,
+                        hasTraining && styles.dayNumberTraining,
+                        isSelected && styles.dayNumberSelected,
+                      ]}
+                    >
+                      {date.day}
+                    </Text>
+                  </View>
+                  {hasTraining && <View style={styles.todayDot} />}
+                </TouchableOpacity>
+              );
+            }}
+            theme={{
+              backgroundColor: PASTEL.surface,
+              calendarBackground: PASTEL.surface,
+              textSectionTitleColor: PASTEL.inkMuted,
+              monthTextColor: PASTEL.ink,
+              textMonthFontSize: 17,
+              textMonthFontWeight: "400",
+              arrowColor: PASTEL.ink,
+            }}
+          />
 
           {/* Ngày đang chọn */}
-          <View style={styles.selectedDateCard}>
-            <View style={styles.selectedDateIconCircle}>
-              <Ionicons name="calendar" size={18} color={COLORS.primary} />
-            </View>
-            <View style={styles.selectedDateInfo}>
-              <Text style={styles.selectedDateLabel}>Ngày đang chọn:</Text>
-              <Text style={styles.selectedDateValue}>{selectedDate}</Text>
-            </View>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>
+          <View style={styles.selectedRow}>
+            <Text style={styles.selectedLabel}>Ngày đang chọn</Text>
+            <Text style={styles.selectedValue}>{selectedDate}</Text>
+            <View
+              style={[
+                styles.statusPill,
+                trainingDates.includes(selectedDate) ? styles.statusPillActive : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  trainingDates.includes(selectedDate) ? styles.statusPillTextActive : null,
+                ]}
+              >
                 {trainingDates.includes(selectedDate) ? "Có lịch tập" : "Nghỉ ngơi"}
               </Text>
             </View>
@@ -257,288 +252,261 @@ export default DashboardScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: PASTEL.background,
+  },
+  flex: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 24,
   },
+
+  // MẸO
   noticeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 16,
-    ...SHADOWS.card,
-  },
-  noticeIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: COLORS.surfaceTeal,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  noticeTextContainer: {
-    flex: 1,
+    backgroundColor: PASTEL.butter,
+    borderRadius: RADIUS.md,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
   },
   noticeTitle: {
     fontSize: 14.5,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
+    fontWeight: "600",
+    color: PASTEL.ink,
   },
   noticeSub: {
-    fontSize: 12,
-    color: COLORS.textMuted,
+    fontSize: 12.5,
+    color: PASTEL.inkSoft,
     marginTop: 3,
-    lineHeight: 17,
+    lineHeight: 18,
   },
+
+  // CHƯƠNG TRÌNH
   programCard: {
-    width: "100%",
-    height: 196,
-    borderRadius: 22,
-    overflow: "hidden",
-    backgroundColor: COLORS.primaryDark,
-    ...SHADOWS.card,
-    shadowOpacity: 0.14,
-    elevation: 6,
+    backgroundColor: PASTEL.surface,
+    borderRadius: RADIUS.lg,
+    padding: 8,
+    marginTop: 14,
+    ...SOFT_SHADOW,
   },
   programImage: {
     width: "100%",
-    height: "100%",
-    justifyContent: "flex-end",
+    height: 150,
+    borderRadius: 22,
   },
-  programImageStyle: {
-    ...StyleSheet.absoluteFill,
-    width: "100%",
-    height: "100%",
+  programBody: {
+    paddingHorizontal: 12,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-  },
-  circleDeco: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    top: -70,
-    right: -50,
-  },
-  programContent: {
-    padding: 18,
-  },
-  badgeRow: {
+  chipRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 10,
   },
-  programBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.16)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    gap: 4,
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
   },
-  programBadgeText: {
-    color: COLORS.white,
-    fontSize: 11.5,
-    fontWeight: "700",
-  },
-  programTitle: {
-    color: COLORS.white,
-    fontSize: 21,
-    fontWeight: "800",
-    lineHeight: 27,
-    marginBottom: 14,
-  },
-  progressSection: {},
-  progressLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 7,
-  },
-  progressText: {
-    color: "rgba(255,255,255,0.85)",
+  chipText: {
     fontSize: 12,
     fontWeight: "600",
   },
-  progressPercent: {
-    color: COLORS.white,
-    fontSize: 13,
-    fontWeight: "800",
+  programTitle: {
+    fontSize: 22,
+    fontWeight: "400",
+    color: PASTEL.ink,
+    marginTop: 10,
   },
-  progressBarTrack: {
-    height: 7,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 4,
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 16,
+    marginTop: 14,
+  },
+  progressLabel: {
+    fontSize: 12.5,
+    color: PASTEL.inkSoft,
+    marginBottom: 8,
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.track,
     overflow: "hidden",
   },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#5EEAD4",
-    borderRadius: 4,
+  progressFill: {
+    height: 8,
+    borderRadius: RADIUS.pill,
+    backgroundColor: PASTEL.teal,
   },
-  sectionHeaderRow: {
-    marginTop: 24,
-    marginBottom: 12,
+  progressPercent: {
+    fontSize: 30,
+    fontWeight: "300",
+    color: PASTEL.ink,
+    lineHeight: 34,
   },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
+
+  // KHỐI TỐI
+  darkBlock: {
+    backgroundColor: PASTEL.tealSoft,
+    borderRadius: RADIUS.lg,
+    padding: 18,
+    marginTop: 14,
   },
-  workoutList: {
-    gap: 10,
+  darkHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  workoutCard: {
+  darkTitle: {
+    fontSize: 19,
+    fontWeight: "600",
+    color: PASTEL.ink,
+  },
+  darkCount: {
+    fontSize: 30,
+    fontWeight: "300",
+    color: PASTEL.teal,
+  },
+  workoutRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
+    gap: 14,
+    paddingVertical: 9,
   },
-  workoutCardLocked: {
-    backgroundColor: COLORS.cardBg,
-    opacity: 0.65,
+  workoutRowLocked: {
+    opacity: 0.55,
   },
-  statusCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+  workoutIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PASTEL.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  statusCircleActive: {
-    backgroundColor: COLORS.primary,
-    ...SHADOWS.glow,
-  },
-  statusCircleLocked: {
-    backgroundColor: COLORS.borderLight,
-  },
-  workoutInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  workoutDay: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    fontWeight: "600",
+  workoutIconLocked: {
+    backgroundColor: "rgba(255,255,255,0.55)",
   },
   workoutTitle: {
     fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
+    fontWeight: "600",
+    color: PASTEL.ink,
+  },
+  workoutDay: {
+    fontSize: 12,
+    color: PASTEL.inkSoft,
     marginTop: 2,
   },
-  chevronWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
+  darkEmpty: {
+    fontSize: 13.5,
+    color: PASTEL.inkSoft,
+    paddingVertical: 10,
   },
-  chevronWrapLocked: {
-    backgroundColor: COLORS.borderLight,
-  },
-  emptyWorkoutBox: {
-    alignItems: "center",
-    paddingVertical: 24,
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: COLORS.surfaceTeal,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyWorkoutText: {
-    marginTop: 10,
-    fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
-  },
-  calendarSection: {
+
+  // LỊCH
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: PASTEL.ink,
     marginTop: 24,
-  },
-  calendarTitleRow: {
     marginBottom: 12,
   },
-  calendarTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-  },
   calendarWrapper: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 20,
+    backgroundColor: PASTEL.surface,
+    borderRadius: RADIUS.lg,
     padding: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     overflow: "hidden",
-    ...SHADOWS.card,
+    ...SOFT_SHADOW,
   },
-  selectedDateCard: {
-    flexDirection: "row",
+  dayCell: {
+    width: 40,
+    height: 46,
     alignItems: "center",
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
-    padding: 14,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
   },
-  selectedDateIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: COLORS.surfaceTeal,
+  dayCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: PASTEL.track,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
-  selectedDateInfo: {
+  dayCircleTraining: {
+    borderColor: PASTEL.track,
+  },
+  dayCircleToday: {
+    borderColor: PASTEL.teal,
+  },
+  dayCircleSelected: {
+    backgroundColor: PASTEL.dark,
+    borderColor: PASTEL.dark,
+  },
+  dayCircleOther: {
+    opacity: 0.35,
+    borderStyle: "dashed",
+  },
+  dayNumber: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: PASTEL.ink,
+  },
+  dayNumberTraining: {
+    color: PASTEL.ink,
+  },
+  dayNumberSelected: {
+    color: PASTEL.surface,
+    fontWeight: "700",
+  },
+  todayDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: PASTEL.teal,
+    marginTop: 3,
+  },
+  selectedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: PASTEL.surfaceSoft,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 8,
+    paddingLeft: 16,
+    paddingRight: 8,
+    marginTop: 6,
+    marginHorizontal: 4,
+    marginBottom: 4,
+  },
+  selectedLabel: {
+    fontSize: 12.5,
+    color: PASTEL.inkMuted,
+  },
+  selectedValue: {
     flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: PASTEL.ink,
   },
-  selectedDateLabel: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  selectedDateValue: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    marginTop: 2,
-  },
-  statusBadge: {
-    backgroundColor: COLORS.primaryLight,
+  statusPill: {
+    backgroundColor: PASTEL.track,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: RADIUS.pill,
   },
-  statusBadgeText: {
+  statusPillActive: {
+    backgroundColor: PASTEL.mint,
+  },
+  statusPillText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontWeight: "600",
+    color: PASTEL.inkSoft,
+  },
+  statusPillTextActive: {
+    color: PASTEL.mintInk,
   },
 });
