@@ -28,6 +28,7 @@ class TrainerSeeder extends Seeder
                 'hinh_anh' => 'trainer1.jpg',
                 'chuc_danh' => 'Personal Trainer',
                 'so_nam_kinh_nghiem' => '5',
+                'chuyen_mon' => 'Tăng cơ',
                 'kinh_nghiem_lam_viec' => '5 năm làm việc trong lĩnh vực thể hình.',
                 'qua_trinh_dao_tao' => 'Tốt nghiệp chuyên ngành Thể dục thể thao.',
                 'chung_chi' => 'Chứng chỉ Personal Trainer',
@@ -41,7 +42,6 @@ class TrainerSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
             [
                 'ho_ten' => 'Trần Minh Tuấn',
                 'email' => 'trainer2@gmail.com',
@@ -53,6 +53,7 @@ class TrainerSeeder extends Seeder
                 'hinh_anh' => 'trainer2.jpg',
                 'chuc_danh' => 'Fitness Trainer',
                 'so_nam_kinh_nghiem' => '3',
+                'chuyen_mon' => 'Giảm cân',
                 'kinh_nghiem_lam_viec' => '3 năm huấn luyện cá nhân.',
                 'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về Fitness.',
                 'chung_chi' => 'Fitness Trainer Certificate',
@@ -66,7 +67,6 @@ class TrainerSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
             [
                 'ho_ten' => 'Lê Quốc Bảo',
                 'email' => 'trainer3@gmail.com',
@@ -78,6 +78,7 @@ class TrainerSeeder extends Seeder
                 'hinh_anh' => 'trainer3.jpg',
                 'chuc_danh' => 'Strength Coach',
                 'so_nam_kinh_nghiem' => '7',
+                'chuyen_mon' => 'Tăng cơ',
                 'kinh_nghiem_lam_viec' => '7 năm trong lĩnh vực huấn luyện thể hình.',
                 'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về Strength Training.',
                 'chung_chi' => 'Strength Coach Certificate',
@@ -91,7 +92,6 @@ class TrainerSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
             [
                 'ho_ten' => 'Phạm Hoàng Nam',
                 'email' => 'trainer4@gmail.com',
@@ -103,6 +103,7 @@ class TrainerSeeder extends Seeder
                 'hinh_anh' => 'trainer4.jpg',
                 'chuc_danh' => 'Senior Trainer',
                 'so_nam_kinh_nghiem' => '10',
+                'chuyen_mon' => 'Phục hồi thể lực',
                 'kinh_nghiem_lam_viec' => '10 năm huấn luyện và tư vấn thể hình.',
                 'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về thể thao và phục hồi.',
                 'chung_chi' => 'Senior Personal Trainer',
@@ -116,7 +117,6 @@ class TrainerSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
             [
                 'ho_ten' => 'Nguyễn Thị Lan',
                 'email' => 'trainer5@gmail.com',
@@ -128,6 +128,7 @@ class TrainerSeeder extends Seeder
                 'hinh_anh' => 'trainer5.jpg',
                 'chuc_danh' => 'Fitness & Yoga Trainer',
                 'so_nam_kinh_nghiem' => '4',
+                'chuyen_mon' => 'Yoga, Fitness',
                 'kinh_nghiem_lam_viec' => '4 năm huấn luyện Fitness và Yoga.',
                 'qua_trinh_dao_tao' => 'Đào tạo Yoga và Fitness chuyên nghiệp.',
                 'chung_chi' => 'Yoga Instructor Certificate',
@@ -141,7 +142,6 @@ class TrainerSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
             [
                 'ho_ten' => 'Đỗ Minh Khôi',
                 'email' => 'trainer6@gmail.com',
@@ -153,6 +153,7 @@ class TrainerSeeder extends Seeder
                 'hinh_anh' => 'trainer6.jpg',
                 'chuc_danh' => 'CrossFit Coach',
                 'so_nam_kinh_nghiem' => '8',
+                'chuyen_mon' => 'CrossFit, Thể lực',
                 'kinh_nghiem_lam_viec' => '8 năm trong lĩnh vực CrossFit.',
                 'qua_trinh_dao_tao' => 'Đào tạo chuyên sâu về CrossFit và Strength.',
                 'chung_chi' => 'CrossFit Level 2',

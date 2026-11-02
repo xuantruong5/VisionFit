@@ -877,87 +877,231 @@ class BuoiTapController extends Controller
 
 
    public function getHuanLuyenTiepTheo()
-{
-    // 1. Lấy hội viên đang đăng nhập
-    $user = Auth::guard('sanctum')->user();
+    {
+        // 1. Lấy hội viên đang đăng nhập
+        $user = Auth::guard('sanctum')->user();
 
-    if (!$user) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Chưa đăng nhập',
-        ], 401);
-    }
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
 
-    // 2. Lấy chương trình hội viên đang đăng ký
-    $dangKy = DKChuongTrinh::where('id_hoi_vien', $user->id)
-        ->whereIn('tinh_trang', [0, 1, 3])
-        ->latest('id')
-        ->first();
+        // 2. Lấy chương trình hội viên đang đăng ký
+        $dangKy = DKChuongTrinh::where('id_hoi_vien', $user->id)
+            ->whereIn('tinh_trang', [0, 1, 3])
+            ->latest('id')
+            ->first();
 
-    if (!$dangKy) {
+        if (!$dangKy) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn chưa đăng ký chương trình tập',
+                'data' => [
+                    'tong_ngay_da_hoan_thanh' => 0,
+                    'tong_ngay_tap' => 0,
+                    'huan_luyen_tiep_theo' => [],
+                ],
+            ]);
+        }
+
+        // 3. Lấy toàn bộ ngày tập của chương trình
+        $ngayTap = ChuongTrinhBaiTap::where(
+            'id_chuong_trinh',
+            $dangKy->id_chuong_trinh
+        )
+            ->orderBy('id', 'asc')
+            ->get();
+
+        // 4. Lấy ID những ngày đã hoàn thành
+        $idNgayDaHoanThanh = BuoiTap::where(
+            'id_hoi_vien',
+            $user->id
+        )
+            ->whereIn(
+                'id_chuong_trinh_bai_tap',
+                $ngayTap->pluck('id')->toArray()
+            )
+            ->where('tinh_trang', 2)
+            ->select('id_chuong_trinh_bai_tap')
+            ->distinct()
+            ->pluck('id_chuong_trinh_bai_tap')
+            ->toArray();
+
+        // 5. Đếm tổng ngày tập đã hoàn thành
+        $tongNgayDaHoanThanh = count($idNgayDaHoanThanh);
+
+        // 6. Lấy 3 ngày chưa hoàn thành tiếp theo
+        $tiepTheo = ChuongTrinhBaiTap::where(
+            'id_chuong_trinh',
+            $dangKy->id_chuong_trinh
+        )
+            ->whereNotIn('id', $idNgayDaHoanThanh)
+            ->orderBy('id', 'asc')
+            ->limit(3)
+            ->get();
+
+        // 7. Trả kết quả
         return response()->json([
             'success' => true,
-            'message' => 'Bạn chưa đăng ký chương trình tập',
+            'message' => 'Lấy tiến độ thành công',
             'data' => [
-                'tong_ngay_da_hoan_thanh' => 0,
-                'tong_ngay_tap' => 0,
-                'huan_luyen_tiep_theo' => [],
+                'tong_ngay_da_hoan_thanh' => $tongNgayDaHoanThanh,
+                'tong_ngay_tap' => $ngayTap->count(),
+                'huan_luyen_tiep_theo' => $tiepTheo,
             ],
         ]);
     }
 
-    // 3. Lấy toàn bộ ngày tập của chương trình
-    $ngayTap = ChuongTrinhBaiTap::where(
-        'id_chuong_trinh',
-        $dangKy->id_chuong_trinh
-    )
-        ->orderBy('id', 'asc')
-        ->get();
 
-    // 4. Lấy ID những ngày đã hoàn thành
-    $idNgayDaHoanThanh = BuoiTap::where(
-        'id_hoi_vien',
-        $user->id
-    )
-        ->whereIn(
-            'id_chuong_trinh_bai_tap',
-            $ngayTap->pluck('id')->toArray()
-        )
-        ->where('tinh_trang', 2)
-        ->select('id_chuong_trinh_bai_tap')
-        ->distinct()
-        ->pluck('id_chuong_trinh_bai_tap')
-        ->toArray();
+    // check quyền tập
 
-    // 5. Đếm tổng ngày tập đã hoàn thành
-    $tongNgayDaHoanThanh = count($idNgayDaHoanThanh);
+    public function checkQuyenTap(Request $request)
+    {
+        // 1. Lấy hội viên đang đăng nhập
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn cần đăng nhập để thực hiện chức năng này ',
+            ], 401);
+        }
+        // 2. Validate dữ liệu
+        $request->validate([
+            'id_dang_ky_chuong_trinh' => 'required|integer',
+            'id_chuong_trinh_bai_tap' => 'required|integer',
+        ]);
 
-    // 6. Lấy 3 ngày chưa hoàn thành tiếp theo
-    $tiepTheo = ChuongTrinhBaiTap::where(
-        'id_chuong_trinh',
-        $dangKy->id_chuong_trinh
-    )
-        ->whereNotIn('id', $idNgayDaHoanThanh)
-        ->orderBy('id', 'asc')
-        ->limit(3)
-        ->get();
+        // 3. Lấy thông tin đăng ký chương trình
+        $dangKy = DB::table('dang_ky_chuong_trinh as dk')
+            ->join('chuong_trinh_tap as ct', 'dk.id_chuong_trinh', '=', 'ct.id')
+            ->where('dk.id', $request->id_dang_ky_chuong_trinh)
+            ->where('dk.id_hoi_vien', $user->id)
+            ->whereIn('dk.tinh_trang', [0, 1])
+            ->select(
+                'dk.id',
+                'dk.id_chuong_trinh',
+                'dk.ngay_bat_dau',
+                'dk.ngay_du_kien_ket_thuc',
+                'dk.tinh_trang',
+                'ct.so_ngay',
+                'ct.so_buoi_moi_tuan'
+            )
+            ->first();
 
-    // 7. Trả kết quả
-    return response()->json([
-        'success' => true,
-        'message' => 'Lấy tiến độ thành công',
-        'data' => [
-            'tong_ngay_da_hoan_thanh' => $tongNgayDaHoanThanh,
-            'tong_ngay_tap' => $ngayTap->count(),
-            'huan_luyen_tiep_theo' => $tiepTheo,
-        ],
-    ]);
-}
+        if (!$dangKy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy chương trình đăng ký hoặc chương trình không còn hoạt động',
+            ], 404);
+        }
 
+        // 4. Kiểm tra ngày bắt đầu chương trình
+        if (!$dangKy->ngay_bat_dau) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình chưa có ngày bắt đầu',
+            ], 400);
+        }
 
+        $ngayHienTai = now()->toDateString();
+        if ($ngayHienTai < $dangKy->ngay_bat_dau) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình chưa đến ngày bắt đầu',
+            ], 403);
+        }
+        if (
+            $dangKy->ngay_du_kien_ket_thuc &&
+            $ngayHienTai > $dangKy->ngay_du_kien_ket_thuc
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình đã quá ngày dự kiến kết thúc',
+            ], 403);
+        }
 
+        // 5. Kiểm tra ngày tập có thuộc chương trình đăng ký không
+        $chuongTrinhBaiTap = DB::table('chuong_trinh_bai_tap')
+            ->where('id', $request->id_chuong_trinh_bai_tap)
+            ->where('id_chuong_trinh', $dangKy->id_chuong_trinh)
+            ->first();
 
+        if (!$chuongTrinhBaiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ngày tập không thuộc chương trình này',
+            ], 404);
+        }
 
+        if ($chuongTrinhBaiTap->tinh_trang != 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ngày tập đã ngừng hoạt động hoặc bạn chưa hoàn thành ngày tập trên ',
+            ], 404);
+        }
 
+        // 6. Kiểm tra hội viên đã có gói tập hợp lệ chưa
+        $coGoiTap = DB::table('dang_ky_goi as dkg')
+            ->join( 'chi_tiet_dang_ky_goi as ct','dkg.id', '=','ct.id_dang_ky_goi')
+            ->where('dkg.id_hoi_vien', $user->id)
+            ->where('dkg.tinh_trang', 1)
+            ->where('dkg.is_thanh_toan', 1)
+            ->where('ct.tinh_trang', 1)
+            ->whereDate('ct.ngay_bat_dau', '<=', $ngayHienTai)
+            ->whereDate('ct.ngay_ket_thuc', '>=', $ngayHienTai)
+            ->exists();
 
+        // 7. Nếu có gói hợp lệ thì được tập tất cả các ngày
+        if ($coGoiTap) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn đã có gói tập, được phép tiếp tục',
+                'data' => [
+                    'duoc_phep_tap' => true,
+                    'mien_phi' => false,
+                    'so_buoi_mien_phi' => 3,
+                    'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
+                    'can_dang_ky_goi' => false,
+                ],
+            ]);
+        }
+
+        // 8. Đếm số buổi tập đã hoàn thành thuộc lần đăng ký chương trình
+        $soBuoiDaTap = DB::table('buoi_tap as bt')
+            ->join( 'chuong_trinh_bai_tap as ctb','bt.id_chuong_trinh_bai_tap', '=', 'ctb.id')
+            ->join( 'dang_ky_chuong_trinh as dk','ctb.id_chuong_trinh','=', 'dk.id_chuong_trinh')
+            ->where('bt.id_hoi_vien', $user->id)
+            ->where('dk.id', $dangKy->id)
+            ->whereNotNull('bt.thoi_gian_ket_thuc')
+            ->where('bt.phan_tram_hoan_thanh', '>=', 100)
+            ->whereDate('bt.ngay_tap', '>=', $dangKy->ngay_bat_dau)
+            ->whereDate('bt.ngay_tap', '<=', $dangKy->ngay_du_kien_ket_thuc)
+            ->distinct()
+            ->count('bt.id_chuong_trinh_bai_tap');
+
+        // 9. Kiểm tra quyền tập miễn phí theo ngày tập
+        $soBuoiMienPhi = 3;
+        // Ngày tập thứ 1, 2, 3 được miễn phí
+        // Từ ngày tập thứ 4 phải đăng ký gói
+        $duocPhepTap = $chuongTrinhBaiTap->ngay_thu <= $soBuoiMienPhi;
+        return response()->json([
+            'success' => true,
+            'message' => $duocPhepTap
+                ? 'Bạn đang được tập luyện miễn phí'
+                : 'Bạn đã hết 3 buổi tập miễn phí. Vui lòng đăng ký gói tập để tiếp tục',
+            'data' => [
+                'duoc_phep_tap' => $duocPhepTap,
+                'mien_phi' => $duocPhepTap,
+                'so_buoi_mien_phi' => $soBuoiMienPhi,
+                'so_buoi_da_su_dung' => $soBuoiDaTap,
+                'so_buoi_con_lai' => max(0, $soBuoiMienPhi - $soBuoiDaTap),
+                'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
+                'ngay_bat_dau' => $dangKy->ngay_bat_dau,
+                'ngay_du_kien_ket_thuc' => $dangKy->ngay_du_kien_ket_thuc,
+                'can_dang_ky_goi' => !$duocPhepTap,
+            ],
+        ]);
+    }
 }
