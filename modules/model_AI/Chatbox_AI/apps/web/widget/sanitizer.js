@@ -1,6 +1,6 @@
 /**
  * VisionFit Safe Message Formatter & Sanitizer
- * Định dạng Markdown an toàn (bold, italic, code, list, safe links)
+ * Định dạng Markdown an toàn (bold, italic, code, list, tables, safe links)
  * Tuyệt đối không dùng innerHTML trực tiếp với nội dung AI.
  * Chặn hoàn toàn script, HTML độc hại và link javascript:.
  */
@@ -43,7 +43,7 @@ export function renderSafeMessage(text) {
   // Bước 1: Thoát HTML trước tiên
   const escaped = escapeHTML(text);
 
-  // Phân tách từng dòng để xử lý danh sách và đoạn văn
+  // Phân tách từng dòng để xử lý danh sách, bảng và đoạn văn
   const lines = escaped.split(/\r?\n/);
   let currentList = null;
   let isOrderedList = false;
@@ -51,6 +51,49 @@ export function renderSafeMessage(text) {
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
     const trimmed = rawLine.trim();
+
+    // 0. Kiểm tra Markdown Table: bắt đầu/kết thúc bằng | và tiếp theo là separator | :--- |
+    const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
+    const isNextTableSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
+
+    if (isTableRow && isNextTableSep) {
+      currentList = null;
+      const wrap = document.createElement('div');
+      wrap.className = 'vif-table-wrapper';
+      const table = document.createElement('table');
+      table.className = 'vif-table';
+
+      const thead = document.createElement('thead');
+      const headerTr = document.createElement('tr');
+      const headers = trimmed.slice(1, -1).split('|').map(c => c.trim());
+      headers.forEach(h => {
+        const th = document.createElement('th');
+        th.innerHTML = formatInlineMarkdown(h);
+        headerTr.appendChild(th);
+      });
+      thead.appendChild(headerTr);
+      table.appendChild(thead);
+
+      // Bỏ qua dòng phân cách
+      i++;
+
+      const tbody = document.createElement('tbody');
+      while (i + 1 < lines.length && lines[i + 1].trim().startsWith('|') && lines[i + 1].trim().endsWith('|')) {
+        i++;
+        const rowCells = lines[i].trim().slice(1, -1).split('|').map(c => c.trim());
+        const tr = document.createElement('tr');
+        rowCells.forEach(cell => {
+          const td = document.createElement('td');
+          td.innerHTML = formatInlineMarkdown(cell);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      fragment.appendChild(wrap);
+      continue;
+    }
 
     // Kiểm tra dòng danh sách không thứ tự: "- " hoặc "* "
     const isUlItem = /^[-*]\s+(.*)$/.test(trimmed);

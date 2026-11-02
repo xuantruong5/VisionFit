@@ -116,7 +116,7 @@ export class MascotWidget {
         </div>
       </div>
 
-      <div class="vif-typing-indicator" id="widget-typing" hidden>
+      <div class="vif-typing-indicator" id="widget-typing" hidden style="display: none;">
         <span>VIF đang suy nghĩ</span>
         <div class="vif-typing-dots"><span></span><span></span><span></span></div>
       </div>
@@ -325,6 +325,7 @@ export class MascotWidget {
     input.value = '';
     sendBtn.disabled = true;
     typing.hidden = false;
+    typing.style.display = 'flex';
 
     // 1. Bật thinking state ngay lập tức!
     this.headerMascot.setState('thinking');
@@ -373,7 +374,7 @@ export class MascotWidget {
       }
     } catch (err) {
       // Giữ lại nội dung câu hỏi vào input để người dùng không bị mất
-      input.value = query;
+      input.value = '';
 
       // Linh vật biểu cảm bối rối nhẹ
       this.headerMascot.setState('error', 2500);
@@ -382,13 +383,14 @@ export class MascotWidget {
       const errorMsg = document.createElement('div');
       errorMsg.className = 'vif-msg-bubble vif-msg-assistant';
       errorMsg.style.borderColor = '#ff8c8c';
-      errorMsg.innerHTML = `<p style="color:#c92a2a">⚠️ ${err.message || 'Không thể kết nối tới trợ lý.'}</p><small style="color:#777">Nội dung câu hỏi đã được giữ lại để bạn thử lại.</small>`;
+      errorMsg.innerHTML = `<p style="color:#c92a2a">⚠️ ${err.message || 'Không thể kết nối tới trợ lý.'}</p>`;
       msgContainer.appendChild(errorMsg);
       msgContainer.scrollTop = msgContainer.scrollHeight;
     } finally {
       this.isBusy = false;
       sendBtn.disabled = false;
       typing.hidden = true;
+      typing.style.display = 'none';
       input.focus();
     }
   }

@@ -25,10 +25,14 @@ return new class extends Migration
             $table->decimal('can_nang_kg', 5, 2)->nullable();
             $table->string('dang_nguoi', 500)->nullable(); // kiểu như đưa hình cho người ta chọn 
             $table->string('muc_tieu_hien_tai', 50)->nullable();
+            $table->string('muc_tieu_hoat_dong')->default(0)->comment('1: Ít vận động, 2: Vận động nhẹ, 3: Vận động thường xuyên, 4: Vận động nhiều');
             $table->string('cap_do_hien_tai', 50)->nullable();
             $table->string('noi_tap_uu_tien', 30)->nullable();
             $table->string('trang_thai_ho_so', 30)->nullable();
+            $table->integer('ngan_sach_ban_dau')->nullable();
             $table->integer('tinh_trang')->default(0);
+            $table->text('note')->nullable();
+            $table->string('di_ung')->nullable(); 
             $table->string('hash_reset')->nullable(); // quên mật khẩu 
             $table->string('hash_active')->nullable(); // kích hoạt tài khoản 
             $table->integer('is_active')->default(0); // đã kích hoạt chưa 
