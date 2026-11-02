@@ -15,6 +15,8 @@ class MonAn extends Model
         'ten_mon_an',
         'danh_muc_slug',
         'danh_muc_ten',
+        'loai_bua',
+        'the_loai',
         'mo_ta',
         'anh_dai_dien',
         'khoi_luong_gram',

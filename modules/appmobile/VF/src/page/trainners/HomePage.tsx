@@ -222,10 +222,11 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 12.5,
     color: PASTEL.inkSoft,
+    fontWeight: '600',
   },
   name: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: PASTEL.ink,
     marginTop: 2,
   },
@@ -262,16 +263,17 @@ const styles = StyleSheet.create({
   todayLabel: {
     fontSize: 13,
     color: PASTEL.inkSoft,
+    fontWeight: '600',
   },
   todayValue: {
     fontSize: 34,
-    fontWeight: '300',
+    fontWeight: '800',
     color: PASTEL.ink,
     marginTop: 2,
   },
   todayUnit: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: '600',
     color: PASTEL.inkSoft,
   },
   progressTrack: {
@@ -292,12 +294,13 @@ const styles = StyleSheet.create({
   },
   todayCountValue: {
     fontSize: 30,
-    fontWeight: '300',
+    fontWeight: '800',
     color: PASTEL.ink,
   },
   todayCountTotal: {
     fontSize: 12,
     color: PASTEL.inkMuted,
+    fontWeight: '600',
   },
 
   // SECTION
@@ -307,11 +310,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
     color: PASTEL.ink,
     marginTop: 26,
     marginBottom: 12,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: PASTEL.ink,
   },
   card: {
@@ -363,10 +363,11 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12.5,
     color: PASTEL.inkSoft,
+    fontWeight: '600',
   },
   statValue: {
     fontSize: 26,
-    fontWeight: '300',
+    fontWeight: '800',
     color: PASTEL.ink,
     marginTop: 2,
   },
@@ -386,12 +387,12 @@ const styles = StyleSheet.create({
   },
   darkTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: PASTEL.surface,
   },
   darkTime: {
     fontSize: 28,
-    fontWeight: '300',
+    fontWeight: '800',
     color: PASTEL.surface,
   },
   nextRow: {
@@ -406,13 +407,14 @@ const styles = StyleSheet.create({
   },
   nextName: {
     fontSize: 15.5,
-    fontWeight: '500',
+    fontWeight: '600',
     color: PASTEL.surface,
   },
   nextSub: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
+    fontWeight: '600',
   },
   whiteCircle: {
     width: 40,
@@ -438,18 +440,19 @@ const styles = StyleSheet.create({
   sessionTime: {
     width: 48,
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: PASTEL.ink,
   },
   sessionName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: PASTEL.ink,
   },
   sessionType: {
     fontSize: 12,
     color: PASTEL.inkSoft,
     marginTop: 2,
+    fontWeight: '600',
   },
   mutedText: {
     color: PASTEL.inkMuted,
@@ -461,7 +464,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11.5,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   statusDone: {
     backgroundColor: PASTEL.mint,
@@ -491,13 +494,14 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: PASTEL.ink,
   },
   memberGoal: {
     fontSize: 12,
     color: PASTEL.inkSoft,
     marginTop: 2,
+    fontWeight: '600',
   },
   memberTrack: {
     height: 6,

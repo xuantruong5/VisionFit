@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 3,
+    fontWeight: '600',
   },
 
   // HEADER
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: 'rgba(255,255,255,0.75)',
   },
   headerTitle: {
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 11.5,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
@@ -343,6 +344,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textLight,
     marginTop: 2,
+    fontWeight: '600',
   },
   scheduleCard: {
     flex: 1,
@@ -399,6 +401,7 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: COLORS.textMuted,
+    fontWeight: '600',
   },
   statusBadge: {
     paddingHorizontal: 9,

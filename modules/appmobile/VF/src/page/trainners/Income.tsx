@@ -163,6 +163,7 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
 
   // HEADER
@@ -292,19 +293,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
   },
   unitText: {
     fontSize: 11.5,
     color: COLORS.textMuted,
     marginTop: 12,
+    fontWeight: '600',
   },
   seeAll: {
     fontSize: 13,
@@ -360,7 +359,7 @@ const styles = StyleSheet.create({
   },
   barMonth: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textMuted,
     marginTop: 8,
   },

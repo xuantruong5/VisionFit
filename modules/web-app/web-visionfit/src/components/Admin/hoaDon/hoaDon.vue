@@ -531,14 +531,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-create {
@@ -547,7 +547,7 @@ export default {
     border-radius: 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
 }
 
@@ -573,14 +573,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -620,7 +620,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .filter-bar select {
@@ -632,7 +632,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .invoice-table {
@@ -644,8 +644,8 @@ export default {
     padding: 11px 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9px;
-    font-weight: 750;
+    font-size: 12.5px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -654,7 +654,7 @@ export default {
     padding: 13px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #456a70;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .invoice-table tbody tr {
@@ -672,13 +672,13 @@ export default {
 
 .invoice-code strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .invoice-code span {
     margin-top: 3px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .user-cell {
@@ -697,7 +697,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -708,13 +708,13 @@ export default {
 
 .user-cell strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .user-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .package-type {
@@ -723,19 +723,19 @@ export default {
     border-radius: 999px;
     background: #e3f8fb;
     color: #0b7481;
-    font-size: 8px;
-    font-weight: 750;
+    font-size: 11.5px;
+    font-weight: 700;
 }
 
 .package-name {
     margin-top: 4px;
     color: #456a70;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .amount {
     color: #075e68;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .date-cell strong,
@@ -745,13 +745,13 @@ export default {
 
 .date-cell strong {
     color: #456a70;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .date-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .status {
@@ -760,7 +760,7 @@ export default {
     gap: 5px;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -803,7 +803,7 @@ export default {
     border-radius: 8px;
     background: white;
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -849,7 +849,7 @@ export default {
 
 .modal-header > div > span {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -857,13 +857,13 @@ export default {
 .modal-header h3 {
     margin: 3px 0 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 3px 0 0;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .btn-close {
@@ -873,7 +873,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .invoice-status-box {
@@ -894,18 +894,18 @@ export default {
 
 .invoice-status-box > div > span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .invoice-status-box > div > strong {
     margin-top: 4px;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .status.large {
     padding: 7px 10px;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .section {
@@ -917,7 +917,7 @@ export default {
 .section h4 {
     margin: 0 0 10px;
     color: #11343a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .customer-card {
@@ -941,13 +941,13 @@ export default {
 
 .customer-card strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .customer-card span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .info-grid {
@@ -965,14 +965,14 @@ export default {
 .info-grid span {
     display: block;
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .info-grid strong {
     display: block;
     margin-top: 4px;
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .payment-info {
@@ -995,12 +995,12 @@ export default {
 
 .info-row span {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .info-row strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
     text-align: right;
 }
 
@@ -1018,13 +1018,13 @@ export default {
 
 .total-box span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .total-box strong {
     margin-top: 4px;
     color: #075e68;
-    font-size: 22px;
+    font-size: 24px;
 }
 
 .modal-actions {
@@ -1039,7 +1039,7 @@ export default {
 .btn-paid {
     padding: 9px 14px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 

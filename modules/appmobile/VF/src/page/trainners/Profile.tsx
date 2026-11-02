@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
 
   // ẢNH BÌA
@@ -284,6 +285,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textMuted,
     marginTop: 3,
+    fontWeight: '600',
   },
   tagWrap: {
     flexDirection: 'row',
@@ -332,6 +334,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 1,
+    fontWeight: '600',
   },
   editBtnWrap: {
     alignSelf: 'stretch',
@@ -353,14 +356,11 @@ const styles = StyleSheet.create({
 
   // SECTION & CARD
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
   },
   card: {
     backgroundColor: COLORS.white,
@@ -440,5 +440,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textLight,
     marginTop: 14,
+    fontWeight: '600',
   },
 });

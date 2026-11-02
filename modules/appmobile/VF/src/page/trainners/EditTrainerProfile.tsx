@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   headerSpace: {
@@ -181,13 +181,11 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: COLORS.textMuted,
     marginTop: 8,
+    fontWeight: '600',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 24,
     marginBottom: 12,
@@ -197,7 +195,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textMuted,
     marginBottom: 6,
     marginLeft: 6,
@@ -216,6 +214,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14.5,
     color: COLORS.textPrimary,
+    fontWeight: '600',
   },
   bio: {
     minHeight: 96,
@@ -226,6 +225,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: COLORS.textPrimary,
     ...SOFT_SHADOW,
+    fontWeight: '600',
   },
   chipWrap: {
     flexDirection: 'row',
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
   },
   chipTextActive: {
@@ -268,13 +268,14 @@ const styles = StyleSheet.create({
   },
   certTitle: {
     fontSize: 14.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   certOrg: {
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
+    fontWeight: '600',
   },
   addCert: {
     flexDirection: 'row',
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
   },
   addCertText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.primaryDark,
   },
   footer: {

@@ -131,7 +131,7 @@ export default {
 .page-info > span {
     display: block;
     color: #0d7f8d;
-    font-size: 7.5px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: 1.4px;
 }
@@ -140,7 +140,7 @@ export default {
     display: block;
     margin-top: 2px;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .top-right {
@@ -155,7 +155,7 @@ export default {
     border-radius: 999px;
     background: #eaf8f2;
     color: #2c7c60;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -202,7 +202,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -218,18 +218,18 @@ export default {
 
 .admin-info strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .admin-info span {
     margin-top: 2px;
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .arrow {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
     transition: 0.2s ease;
 }
 
@@ -263,13 +263,13 @@ export default {
 
 .menu-profile strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .menu-profile span {
     margin-top: 3px;
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .menu-divider {
@@ -304,7 +304,7 @@ export default {
     border-radius: 9px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -315,13 +315,13 @@ export default {
 
 .menu-item strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .menu-item small {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 .menu-item.logout:hover {

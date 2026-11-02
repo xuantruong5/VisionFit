@@ -512,14 +512,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .header-actions {
@@ -535,7 +535,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-export {
@@ -545,7 +545,7 @@ export default {
     border-radius: 10px;
     background: #0d7f8d;
     color: white;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -571,20 +571,20 @@ export default {
 .mini-card > span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .mini-card small {
     display: block;
     margin-top: 5px;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .up {
@@ -625,13 +625,13 @@ export default {
 .card-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .card-header p {
     margin: 3px 0 0;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .card-header select {
@@ -642,7 +642,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .chart-badge {
@@ -650,7 +650,7 @@ export default {
     border-radius: 999px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -674,7 +674,7 @@ export default {
 .bar-value {
     margin-bottom: 6px;
     color: #51777d;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .bar-wrap {
@@ -701,7 +701,7 @@ export default {
 .bar-item > span {
     margin-top: 8px;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .donut-wrap {
@@ -750,7 +750,7 @@ export default {
 
 .donut-center span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .legend-list {
@@ -764,7 +764,7 @@ export default {
     align-items: center;
     gap: 6px;
     color: #597d82;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .legend-list strong {
@@ -821,18 +821,18 @@ export default {
     border-radius: 9px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
 .exercise-head strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .exercise-head > span {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .progress,
@@ -861,7 +861,7 @@ export default {
     display: block;
     margin-top: 4px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
     text-align: right;
 }
 
@@ -878,12 +878,12 @@ export default {
 
 .quality-item span {
     color: #597d82;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .quality-item strong {
     color: #075e68;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .quality-bar {
@@ -905,8 +905,8 @@ export default {
     padding: 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9px;
-    font-weight: 750;
+    font-size: 12.5px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -915,12 +915,12 @@ export default {
     padding: 12px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #456a70;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .report-table td strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .exercise-badge {
@@ -929,7 +929,7 @@ export default {
     border-radius: 999px;
     background: #e3f8fb;
     color: #0b7481;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -947,14 +947,14 @@ export default {
 
 .issue-percent span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .level {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -994,7 +994,7 @@ export default {
     display: block;
     margin-top: 4px;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .review-row {
@@ -1013,14 +1013,14 @@ export default {
 .review-row span {
     display: block;
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .review-row strong {
     display: block;
     margin-top: 4px;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .reason-list {
@@ -1040,12 +1040,12 @@ export default {
 
 .reason-list span {
     color: #597d82;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .reason-list strong {
     color: #075e68;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 @media (max-width: 1100px) {

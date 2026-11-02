@@ -407,7 +407,7 @@ export default {
         },
 
         viewTrainer(trainer) {
-            console.log('Trainer:', trainer);
+            this.$router.push('/admin/trainer/' + trainer.id);
         }
     }
 }
@@ -425,14 +425,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-add {
@@ -441,7 +441,7 @@ export default {
     border-radius: 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 700;
     transition: 0.18s ease;
 }
@@ -475,14 +475,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -522,7 +522,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .filter-bar select {
@@ -534,7 +534,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .trainer-table {
@@ -546,8 +546,8 @@ export default {
     padding: 11px 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9.5px;
-    font-weight: 750;
+    font-size: 13px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -556,7 +556,7 @@ export default {
     padding: 13px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #34585d;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .trainer-table tbody tr {
@@ -582,21 +582,21 @@ export default {
     border-radius: 11px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 800;
 }
 
 .user-cell strong {
     display: block;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .user-cell span {
     display: block;
     margin-top: 2px;
     color: #94b2b6;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .contact span,
@@ -615,7 +615,7 @@ export default {
     border-radius: 999px;
     background: #e3f8fb;
     color: #0b7481;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -629,13 +629,13 @@ export default {
 .gymmer-count strong,
 .review-count strong {
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .gymmer-count span,
 .review-count span {
     color: #8aa7ab;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .status {
@@ -644,7 +644,7 @@ export default {
     gap: 6px;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -671,7 +671,7 @@ export default {
     border-radius: 8px;
     background: white;
     color: #0d7f8d;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
     transition: 0.15s ease;
 }
@@ -718,13 +718,13 @@ export default {
 .modal-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-close {
@@ -734,7 +734,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .form-grid {
@@ -751,7 +751,7 @@ export default {
     display: block;
     margin-bottom: 6px;
     color: #51777d;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 
@@ -764,7 +764,7 @@ export default {
     border-radius: 10px;
     outline: none;
     color: #11343a;
-    font-size: 11.5px;
+    font-size: 15px;
 }
 
 .form-group input,
@@ -795,7 +795,7 @@ export default {
 .btn-save {
     padding: 9px 15px;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
 }
 

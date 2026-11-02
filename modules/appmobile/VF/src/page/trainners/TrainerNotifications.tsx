@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   chipScroll: {
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
   },
   chipTextActive: {
@@ -155,11 +155,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'serif',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginTop: 22,
     marginBottom: 12,
@@ -194,7 +191,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
   desc: {
@@ -202,11 +199,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: COLORS.textSecondary,
     marginTop: 2,
+    fontWeight: '600',
   },
   time: {
     fontSize: 11.5,
     color: COLORS.textLight,
     marginTop: 4,
+    fontWeight: '600',
   },
   unreadDot: {
     width: 9,

@@ -615,14 +615,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .header-actions {
@@ -638,7 +638,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .btn-export {
@@ -648,7 +648,7 @@ export default {
     border-radius: 10px;
     background: #0d7f8d;
     color: white;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -674,21 +674,21 @@ export default {
 .mini-card > span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .mini-card small {
     display: block;
     margin-top: 5px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .mini-card small.up {
@@ -725,13 +725,13 @@ export default {
 .card-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .card-header p {
     margin: 3px 0 0;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .chart-badge {
@@ -739,7 +739,7 @@ export default {
     border-radius: 999px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -763,7 +763,7 @@ export default {
 .bar-value {
     margin-bottom: 6px;
     color: #51777d;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .bar-wrap {
@@ -790,7 +790,7 @@ export default {
 .bar-item > span {
     margin-top: 8px;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .donut-wrap {
@@ -831,12 +831,12 @@ export default {
 .donut-center strong {
     display: block;
     color: #11343a;
-    font-size: 22px;
+    font-size: 24px;
 }
 
 .donut-center span {
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .legend-list {
@@ -850,7 +850,7 @@ export default {
     align-items: center;
     gap: 6px;
     color: #597d82;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .legend-list strong {
@@ -900,7 +900,7 @@ export default {
     border-radius: 9px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 800;
 }
 
@@ -911,19 +911,19 @@ export default {
 
 .package-head strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .package-head small {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .package-head > span {
     color: #075e68;
-    font-size: 10.5px;
-    font-weight: 750;
+    font-size: 14px;
+    font-weight: 700;
 }
 
 .progress {
@@ -964,7 +964,7 @@ export default {
     justify-content: center;
     flex-shrink: 0;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 800;
 }
 
@@ -995,13 +995,13 @@ export default {
 
 .money-row span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .money-row strong {
     margin-top: 3px;
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .content-card {
@@ -1022,7 +1022,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .table-actions input {
@@ -1039,8 +1039,8 @@ export default {
     padding: 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9px;
-    font-weight: 750;
+    font-size: 12.5px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -1049,7 +1049,7 @@ export default {
     padding: 12px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #456a70;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .revenue-table tbody tr:hover {
@@ -1063,13 +1063,13 @@ export default {
 
 .transaction-code strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .transaction-code span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .user-cell {
@@ -1088,7 +1088,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -1099,13 +1099,13 @@ export default {
 
 .user-cell strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .user-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .package-badge {
@@ -1114,21 +1114,21 @@ export default {
     border-radius: 999px;
     background: #e3f8fb;
     color: #0b7481;
-    font-size: 8px;
-    font-weight: 750;
+    font-size: 11.5px;
+    font-weight: 700;
 }
 
 .package-name {
     margin-top: 4px;
     color: #597d82;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .method-badge {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -1149,18 +1149,18 @@ export default {
 
 .date-cell strong {
     color: #456a70;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .date-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .amount {
     color: #2c7c60;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .empty-state {
@@ -1195,7 +1195,7 @@ export default {
 .performance-list > div > span,
 .summary-list span {
     color: #597d82;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .performance-list > div > div {
@@ -1210,13 +1210,13 @@ export default {
 .performance-list strong,
 .summary-list strong {
     color: #075e68;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .performance-list small {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 @media (max-width: 1100px) {
