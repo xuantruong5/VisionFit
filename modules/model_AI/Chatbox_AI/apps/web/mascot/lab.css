@@ -281,6 +281,14 @@ header.lab-header {
   border-color: #dc2626;
 }
 
+.lab-btn-danger[aria-pressed="true"],
+.lab-btn-danger.active {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #991b1b;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
 .lab-btn-sm {
   padding: 5px 10px;
   font-size: 12px;

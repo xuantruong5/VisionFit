@@ -114,6 +114,7 @@ export function createApp(c, { logger = console.info } = {}) {
         '/mascot/cat.js': ['mascot/cat.js','text/javascript'],
         '/mascot/renderer.js': ['mascot/renderer.js','text/javascript'],
         '/mascot/selector.js': ['mascot/selector.js','text/javascript'],
+        '/mascot/mascotImages.js': ['mascot/mascotImages.js','text/javascript'],
         '/widget-demo': ['widget/demo.html','text/html'],
         '/widget/demo.js': ['widget/demo.js','text/javascript'],
         '/widget/widget.css': ['widget/widget.css','text/css'],
@@ -121,11 +122,21 @@ export function createApp(c, { logger = console.info } = {}) {
         '/widget/adapter.js': ['widget/adapter.js','text/javascript'],
         '/widget/sanitizer.js': ['widget/sanitizer.js','text/javascript'],
         '/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript'],
-        '/packages/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript']
+        '/packages/contracts/assistant.js': ['../../packages/contracts/assistant.js','text/javascript'],
+        '/mascot/assets/bear_starter.png': ['mascot/assets/bear_starter.png','image/png'],
+        '/mascot/assets/bear_active.png': ['mascot/assets/bear_active.png','image/png'],
+        '/mascot/assets/bear_strong.png': ['mascot/assets/bear_strong.png','image/png'],
+        '/mascot/assets/bear_champion.png': ['mascot/assets/bear_champion.png','image/png'],
+        '/mascot/assets/cat_starter.png': ['mascot/assets/cat_starter.png','image/png'],
+        '/mascot/assets/cat_active.png': ['mascot/assets/cat_active.png','image/png'],
+        '/mascot/assets/cat_strong.png': ['mascot/assets/cat_strong.png','image/png'],
+        '/mascot/assets/cat_champion.png': ['mascot/assets/cat_champion.png','image/png']
       };
       if (!files[path]) throw new AppError(404, 'Không tìm thấy trang.');
       const [file, type] = files[path];
-      res.writeHead(200, { 'Content-Type': `${type}; charset=utf-8` }); res.end(await readFile(PUBLIC + file));
+      const isImg = type.startsWith('image/');
+      res.writeHead(200, { 'Content-Type': isImg ? type : `${type}; charset=utf-8` });
+      res.end(await readFile(PUBLIC + file));
     } catch(e) {
       const status = e instanceof AppError ? e.status : 500;
       if ([401,403].includes(status) && session && c.dataMode === 'live') { sessions.delete(sid); res.setHeader('Set-Cookie', cookie('', 0)); }

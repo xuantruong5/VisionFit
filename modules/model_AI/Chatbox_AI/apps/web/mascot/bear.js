@@ -1,12 +1,15 @@
 /**
  * VisionFit Mascot - Bear (Gấu VIF)
- * Thân thiện, khỏe khoắn, cơ thể liền khối mềm mại.
+ * Kawaii style: thân thiện, khỏe khoắn, mắt nhỏ dễ thương, headband mỏng trên trán.
  * Hệ thống phân cấp khớp động học với cẳng tay (forearm) gập khuỷu tự nhiên.
  * Màu lông nền phẳng đồng nhất, không chênh lệch gradient giữa các bộ phận.
  */
 
+import { MASCOT_IMAGES } from './mascotImages.js';
+
 export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
   const prefix = options.idPrefix || ('vif-b-' + Math.random().toString(36).slice(2, 8));
+  const imgSrc = (typeof MASCOT_IMAGES !== 'undefined' && MASCOT_IMAGES[`bear_${stage}`]) || `/mascot/assets/bear_${stage}.png`;
 
   // Bảng màu chuẩn theo yêu cầu thiết kế VisionFit
   const colors = {
@@ -18,6 +21,7 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
     nose: '#4A2E1B',       // Mũi nâu đậm tròn
     eyes: '#2A1810',       // Mắt hạt nhãn đen láy
     eyeHighlight: '#FFFFFF',
+    blush: '#FF758F',      // Má hồng phấn
     brandGreen: '#198D69', // Xanh thể thao VisionFit
     brandDark: '#0F6F52',
     brandLight: '#73DFAC',
@@ -48,6 +52,25 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
       <stop offset="0%" stop-color="${colors.goldLight}"/>
       <stop offset="100%" stop-color="${colors.gold}"/>
     </linearGradient>
+    <!-- Clip-paths tách các phần chi để cử động tay chân tự nhiên theo mẫu ảnh 3 -->
+    <clipPath id="${prefix}-clip-head">
+      <rect x="0" y="0" width="200" height="118"/>
+    </clipPath>
+    <clipPath id="${prefix}-clip-body">
+      <rect x="44" y="114" width="112" height="80"/>
+    </clipPath>
+    <clipPath id="${prefix}-clip-arm-l">
+      <rect x="0" y="114" width="68" height="92"/>
+    </clipPath>
+    <clipPath id="${prefix}-clip-arm-r">
+      <rect x="132" y="114" width="68" height="92"/>
+    </clipPath>
+    <clipPath id="${prefix}-clip-leg-l">
+      <rect x="16" y="188" width="84" height="52"/>
+    </clipPath>
+    <clipPath id="${prefix}-clip-leg-r">
+      <rect x="100" y="188" width="84" height="52"/>
+    </clipPath>
     <!-- Vải thể thao VisionFit -->
     <linearGradient id="${prefix}-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="${colors.brandLight}"/>
@@ -72,6 +95,7 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
         <ellipse cx="76" cy="214" rx="14" ry="9" fill="${colors.furMain}"/>
         <!-- Ngón chân nhỏ dễ thương -->
         <path d="M 72 216 L 72 219 M 76 216 L 76 220 M 80 216 L 80 219" stroke="${colors.furDark}" stroke-width="1.5" stroke-linecap="round"/>
+        <image class="mascot-part-leg-l" href="${imgSrc}" x="12" y="10" width="176" height="216" clip-path="url(#${prefix}-clip-leg-l)" preserveAspectRatio="xMidYMid meet"/>
       </g>
 
       <!-- Chân phải -->
@@ -81,13 +105,14 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
         <ellipse cx="124" cy="214" rx="14" ry="9" fill="${colors.furMain}"/>
         <!-- Ngón chân nhỏ -->
         <path d="M 120 216 L 120 219 M 124 216 L 124 220 M 128 216 L 128 219" stroke="${colors.furDark}" stroke-width="1.5" stroke-linecap="round"/>
+        <image class="mascot-part-leg-r" href="${imgSrc}" x="12" y="10" width="176" height="216" clip-path="url(#${prefix}-clip-leg-r)" preserveAspectRatio="xMidYMid meet"/>
       </g>
     </g>
 
     <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
     <g class="torso-rig">
 
-      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, đảm bảo gối sâu dưới cằm y=123 -->
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP -->
       <g class="layer-body">
         <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại -->
         <path class="body-torso" d="M ${64 - shoulderOffset} 126 C 72 108 128 108 ${136 + shoulderOffset} 126 C ${150 + torsoWidth} 165 ${146 + torsoWidth} 198 138 206 C 100 214 100 214 62 206 C 54 198 ${50 - torsoWidth} 165 ${64 - shoulderOffset} 126 Z" fill="${colors.furMain}"/>
@@ -128,6 +153,9 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
           <circle cx="100" cy="198" r="9.5" fill="url(#${prefix}-gold)"/>
           <text x="100" y="202" font-size="9" font-weight="900" fill="#2C1E18" text-anchor="middle">★</text>
         `}
+
+        <!-- Thân hình nguyên bản từ artwork chuẩn ảnh 3 -->
+        <image class="mascot-part-body" href="${imgSrc}" x="12" y="10" width="176" height="216" clip-path="url(#${prefix}-clip-body)" preserveAspectRatio="xMidYMid meet"/>
       </g>
 
       <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ, không lắc theo mặt -->
@@ -159,13 +187,20 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
               <rect x="39" y="167" width="13" height="6" rx="2" fill="${colors.brandGreen}" transform="rotate(-15 45 170)"/>
             ` : ''}
 
-            <!-- Tạ tay trái (Dumbbell): Được bàn tay nắm giữ chắc chắn -->
-            <g class="prop-dumbbell-left">
-              <rect x="25" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
-              <rect x="45" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
-              <rect x="29" y="176" width="19" height="3.5" fill="#A0AEC0"/>
-            </g>
+            <!-- Tạ tay trái (Dumbbell): Chỉ hiện từ Active trở lên -->
+            ${isActive || isStrong || isChampion ? `
+              <g class="prop-dumbbell-left">
+                <rect x="25" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+                <rect x="45" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+                <rect x="29" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+              </g>
+            ` : `
+              <g class="prop-dumbbell-left" style="display:none"></g>
+            `}
           </g>
+
+          <!-- Cánh tay trái nguyên bản từ artwork chuẩn ảnh 3 -->
+          <image class="mascot-part-arm-l" href="${imgSrc}" x="12" y="10" width="176" height="216" clip-path="url(#${prefix}-clip-arm-l)" preserveAspectRatio="xMidYMid meet"/>
         </g>
 
         <!-- Cánh tay phải: Pivot vai tại (136, 126) -->
@@ -186,13 +221,20 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
               <rect x="148" y="167" width="13" height="6" rx="2" fill="${colors.brandGreen}" transform="rotate(15 155 170)"/>
             ` : ''}
 
-            <!-- Tạ tay phải (Dumbbell) -->
-            <g class="prop-dumbbell-right">
-              <rect x="148" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
-              <rect x="168" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
-              <rect x="152" y="176" width="19" height="3.5" fill="#A0AEC0"/>
-            </g>
+            <!-- Tạ tay phải (Dumbbell): Chỉ hiện từ Active trở lên -->
+            ${isActive || isStrong || isChampion ? `
+              <g class="prop-dumbbell-right">
+                <rect x="148" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+                <rect x="168" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+                <rect x="152" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+              </g>
+            ` : `
+              <g class="prop-dumbbell-right" style="display:none"></g>
+            `}
           </g>
+
+          <!-- Cánh tay phải nguyên bản từ artwork chuẩn ảnh 3 -->
+          <image class="mascot-part-arm-r" href="${imgSrc}" x="12" y="10" width="176" height="216" clip-path="url(#${prefix}-clip-arm-r)" preserveAspectRatio="xMidYMid meet"/>
         </g>
       </g>
 
@@ -213,12 +255,18 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
         <!-- Khối đầu gấu tròn bo cong mềm mại, cùng màu lông nền -->
         <ellipse class="part-head" cx="100" cy="78" rx="52" ry="45" fill="${colors.furMain}"/>
 
-        <!-- Băng đô trán thể thao VisionFit -->
+        <!-- Băng đô trán thể thao VisionFit — mỏng, nằm trên trán KHÔNG chồng lên mắt -->
         <g class="head-headband">
-          <path d="M 49 64 C 74 54 126 54 151 64 L 150 75 C 126 66 74 66 50 75 Z" fill="${colors.brandGreen}"/>
-          <path d="M 51 69 C 75 61 125 61 149 69" stroke="${colors.brandLight}" stroke-width="1.8" fill="none"/>
-          <circle cx="100" cy="67" r="3.8" fill="#FFFFFF"/>
-          <circle cx="100" cy="67" r="1.8" fill="${colors.brandGreen}"/>
+          <path d="M 50 52 C 74 44 126 44 150 52 L 149 62 C 126 55 74 55 51 62 Z" fill="${colors.brandGreen}"/>
+          <!-- Đường chỉ trang trí trên headband -->
+          <path d="M 52 56 C 75 50 125 50 148 56" stroke="${colors.brandLight}" stroke-width="1.5" fill="none"/>
+          <!-- Nút tròn trung tâm -->
+          <circle cx="100" cy="55" r="3.5" fill="#FFFFFF"/>
+          <circle cx="100" cy="55" r="1.8" fill="${colors.brandGreen}"/>
+          ${isChampion ? `
+            <!-- Dải băng bay Champion -->
+            <path d="M 150 52 C 158 50 166 54 168 48 C 170 42 164 40 160 46 C 156 50 152 52 150 55" fill="${colors.brandGreen}" opacity="0.85"/>
+          ` : ''}
         </g>
 
         <!-- Mõm gấu kem mềm -->
@@ -228,25 +276,30 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
         <path class="part-nose" d="M 94 85 C 98 81 102 81 106 85 C 108 91 104 94 100 94 C 96 94 92 91 94 85 Z" fill="${colors.nose}"/>
         <ellipse cx="98" cy="86" rx="2" ry="1.2" fill="#FFFFFF" opacity="0.75"/>
 
-        <!-- Lông mày đặt ngoài cụm mắt (không bị đè/bẹp khi chớp mắt) -->
-        <path class="brow-left" d="M 72 63 C 76 60 84 60 88 64" stroke="${colors.furDark}" stroke-width="2.8" stroke-linecap="round" fill="none"/>
-        <path class="brow-right" d="M 112 64 C 116 60 124 60 128 63" stroke="${colors.furDark}" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <!-- Lông mày nhẹ — chỉ hiện cho Strong & Champion để thể hiện sự quyết tâm -->
+        ${isStrong || isChampion ? `
+          <path class="brow-left" d="M 74 66 C 77 64 83 64 86 66" stroke="${colors.furDark}" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path class="brow-right" d="M 114 66 C 117 64 123 64 126 66" stroke="${colors.furDark}" stroke-width="2" stroke-linecap="round" fill="none"/>
+        ` : `
+          <path class="brow-left" d="M 74 66 C 77 64 83 64 86 66" stroke="${colors.furDark}" stroke-width="0" fill="none"/>
+          <path class="brow-right" d="M 114 66 C 117 64 123 64 126 66" stroke="${colors.furDark}" stroke-width="0" fill="none"/>
+        `}
 
-        <!-- Mắt gấu: Cụm đồng bộ chớp quanh tâm chính xác -->
+        <!-- Mắt gấu: Nhỏ gọn kawaii, nằm DƯỚI headband với khoảng cách rõ -->
         <g class="layer-eyes">
           <g class="part-eye eye-left">
-            <ellipse class="eye-ball" cx="80" cy="74" rx="7.5" ry="9" fill="${colors.eyes}"/>
-            <circle class="eye-glint" cx="77.5" cy="71" r="2.8" fill="${colors.eyeHighlight}"/>
-            <circle class="eye-glint-small" cx="81.5" cy="76" r="1.4" fill="${colors.eyeHighlight}"/>
+            <ellipse class="eye-ball" cx="82" cy="78" rx="5" ry="6" fill="${colors.eyes}"/>
+            <circle class="eye-glint" cx="80" cy="76" r="2" fill="${colors.eyeHighlight}"/>
+            <circle class="eye-glint-small" cx="83.5" cy="80" r="1" fill="${colors.eyeHighlight}"/>
           </g>
           <g class="part-eye eye-right">
-            <ellipse class="eye-ball" cx="120" cy="74" rx="7.5" ry="9" fill="${colors.eyes}"/>
-            <circle class="eye-glint" cx="117.5" cy="71" r="2.8" fill="${colors.eyeHighlight}"/>
-            <circle class="eye-glint-small" cx="121.5" cy="76" r="1.4" fill="${colors.eyeHighlight}"/>
+            <ellipse class="eye-ball" cx="118" cy="78" rx="5" ry="6" fill="${colors.eyes}"/>
+            <circle class="eye-glint" cx="116" cy="76" r="2" fill="${colors.eyeHighlight}"/>
+            <circle class="eye-glint-small" cx="119.5" cy="80" r="1" fill="${colors.eyeHighlight}"/>
           </g>
-          <!-- Má hồng phấn thể thao -->
-          <ellipse cx="68" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
-          <ellipse cx="132" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+          <!-- Má hồng phấn thể thao — to & mềm -->
+          <ellipse cx="68" cy="88" rx="8" ry="4.5" fill="${colors.blush}" opacity="0.35"/>
+          <ellipse cx="132" cy="88" rx="8" ry="4.5" fill="${colors.blush}" opacity="0.35"/>
         </g>
 
         <!-- Miệng gấu -->
@@ -265,6 +318,9 @@ export function renderBearSVG(stage = 'starter', state = 'idle', options = {}) {
           <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="${colors.brandGreen}" stroke-width="1.5"/>
           <text x="172" y="21" font-size="9" font-weight="bold" fill="${colors.brandDark}" text-anchor="middle">···</text>
         </g>
+
+        <!-- Khối đầu nguyên bản từ artwork chuẩn ảnh 3 -->
+        <image class="mascot-part-head" href="${imgSrc}" x="12" y="10" width="176" height="216" clip-path="url(#${prefix}-clip-head)" preserveAspectRatio="xMidYMid meet"/>
       </g>
 
       <!-- SVG DEBUG JOINT MARKERS: Hiển thị thật khi bật chế độ debug-joints -->

@@ -18,6 +18,7 @@ let currentSpecies = 'bear';
 let currentStage = 'starter';
 let currentState = 'idle';
 let currentWorkout = 'idle'; // 'idle' | 'training' | 'paused' | 'completed'
+let activeScenario = null; // null | 'chat' | 'celebrate' | 'error'
 
 // Bộ quản lý timer kịch bản để hủy triệt để khi đổi trạng thái
 const activeTimers = new Set();
@@ -98,6 +99,17 @@ function updateButtonStates() {
     }
   }
 
+  // Cập nhật 4 nút tín hiệu buổi tập
+  setAttr('btn-workout-start', 'aria-pressed', String(currentWorkout === 'training'));
+  setAttr('btn-workout-pause', 'aria-pressed', String(currentWorkout === 'paused'));
+  setAttr('btn-workout-complete', 'aria-pressed', String(currentWorkout === 'completed'));
+  setAttr('btn-workout-stop', 'aria-pressed', String(currentWorkout === 'idle'));
+
+  // Cập nhật 4 nút kịch bản phản hồi API
+  setAttr('btn-scenario-chat', 'aria-pressed', String(activeScenario === 'chat'));
+  setAttr('btn-scenario-celebrate', 'aria-pressed', String(activeScenario === 'celebrate'));
+  setAttr('btn-scenario-error', 'aria-pressed', String(activeScenario === 'error'));
+
   // Cập nhật lưới so sánh 4 cấp
   const compareBoxes = document.querySelectorAll('.stage-compare-box');
   compareBoxes.forEach((box) => {
@@ -120,8 +132,11 @@ function setupStatesButtons() {
     btn.setAttribute('aria-pressed', String(state === currentState));
     btn.onclick = () => {
       clearAllLabTimers();
+      activeScenario = null;
       currentState = state;
       if (mainRenderer) mainRenderer.setState(state);
+      updateStatusLabels();
+      updateButtonStates();
     };
     statesGrid.appendChild(btn);
   }
@@ -167,6 +182,7 @@ bindClick('btn-species-bear', () => {
   if (currentSpecies === 'bear') return;
   currentSpecies = 'bear';
   clearAllLabTimers();
+  activeScenario = null;
   if (mainRenderer) mainRenderer.setSpecies('bear');
   renderStagesComparison();
   updateStatusLabels();
@@ -177,6 +193,7 @@ bindClick('btn-species-cat', () => {
   if (currentSpecies === 'cat') return;
   currentSpecies = 'cat';
   clearAllLabTimers();
+  activeScenario = null;
   if (mainRenderer) mainRenderer.setSpecies('cat');
   renderStagesComparison();
   updateStatusLabels();
@@ -188,6 +205,7 @@ for (const stage of EVOLUTION_STAGES) {
   bindClick(`btn-stage-${stage}`, () => {
     currentStage = stage;
     clearAllLabTimers();
+    activeScenario = null;
     if (mainRenderer) mainRenderer.setStage(stage);
     updateStatusLabels();
     updateButtonStates();
@@ -197,82 +215,119 @@ for (const stage of EVOLUTION_STAGES) {
 // Tín hiệu buổi tập (Host Workout Signal)
 bindClick('btn-workout-start', () => {
   clearAllLabTimers();
+  activeScenario = null;
   currentWorkout = 'training';
   if (mainRenderer) mainRenderer.setWorkoutActive(true);
   updateStatusLabels();
+  updateButtonStates();
 });
 
 bindClick('btn-workout-pause', () => {
   clearAllLabTimers();
+  activeScenario = null;
   currentWorkout = 'paused';
   if (mainRenderer) {
     mainRenderer.setWorkoutActive(false);
     mainRenderer.setState('idle');
   }
   updateStatusLabels();
+  updateButtonStates();
 });
 
 bindClick('btn-workout-complete', () => {
   clearAllLabTimers();
+  activeScenario = null;
   currentWorkout = 'completed';
   if (mainRenderer) {
     mainRenderer.setWorkoutActive(false);
     mainRenderer.setState('celebrating', 4000);
   }
   updateStatusLabels();
+  updateButtonStates();
+  scheduleLabTimer(() => {
+    if (currentWorkout === 'completed') {
+      currentWorkout = 'idle';
+      updateStatusLabels();
+      updateButtonStates();
+    }
+  }, 4000);
 });
 
 bindClick('btn-workout-stop', () => {
   clearAllLabTimers();
+  activeScenario = null;
   currentWorkout = 'idle';
   if (mainRenderer) {
     mainRenderer.setWorkoutActive(false);
     mainRenderer.setState('idle');
   }
   updateStatusLabels();
+  updateButtonStates();
 });
 
 // Kịch bản mô phỏng phản hồi API có hủy timer an toàn
 bindClick('btn-scenario-chat', () => {
   clearAllLabTimers();
+  activeScenario = 'chat';
   if (!mainRenderer) return;
 
   // Bước 1: Suy nghĩ
   mainRenderer.setState('thinking');
   updateStatusLabels();
+  updateButtonStates();
 
   // Bước 2: Trả lời sau 1.2s
   scheduleLabTimer(() => {
     if (!mainRenderer) return;
     mainRenderer.setState('speaking');
     updateStatusLabels();
+    updateButtonStates();
 
     // Bước 3: Hoàn tất sau 2.5s quay về baseline
     scheduleLabTimer(() => {
+      activeScenario = null;
       if (!mainRenderer) return;
       mainRenderer.setState(mainRenderer.baselineState);
       updateStatusLabels();
+      updateButtonStates();
     }, 2500);
   }, 1200);
 });
 
 bindClick('btn-scenario-celebrate', () => {
   clearAllLabTimers();
-  if (mainRenderer) mainRenderer.setState('celebrating', 3200);
+  activeScenario = 'celebrate';
+  if (mainRenderer) {
+    mainRenderer.setState('celebrating', 3200);
+    updateStatusLabels();
+    updateButtonStates();
+    scheduleLabTimer(() => {
+      activeScenario = null;
+      updateStatusLabels();
+      updateButtonStates();
+    }, 3200);
+  }
 });
 
 bindClick('btn-scenario-error', () => {
   clearAllLabTimers();
+  activeScenario = 'error';
   if (mainRenderer) {
     mainRenderer.setState('error');
+    updateStatusLabels();
+    updateButtonStates();
     scheduleLabTimer(() => {
+      activeScenario = null;
       if (mainRenderer) mainRenderer.setState(mainRenderer.baselineState);
+      updateStatusLabels();
+      updateButtonStates();
     }, 3000);
   }
 });
 
 bindClick('btn-reset-all', () => {
   clearAllLabTimers();
+  activeScenario = null;
   currentSpecies = 'bear';
   currentStage = 'starter';
   currentState = 'idle';

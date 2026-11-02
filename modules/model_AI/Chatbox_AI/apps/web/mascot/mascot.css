@@ -39,6 +39,66 @@
   display: none;
 }
 
+/* Các khối minh họa chi tiết nguyên bản từ ảnh 3 */
+.vif-mascot-svg .mascot-part-head,
+.vif-mascot-svg .mascot-part-body,
+.vif-mascot-svg .mascot-part-arm-l,
+.vif-mascot-svg .mascot-part-arm-r,
+.vif-mascot-svg .mascot-part-leg-l,
+.vif-mascot-svg .mascot-part-leg-r,
+.vif-mascot-svg .mascot-part-tail {
+  display: block;
+  pointer-events: none;
+}
+
+/* Khối thân torso giữ làm nền vững chắc cùng màu lông */
+.vif-mascot-svg .body-torso,
+.vif-mascot-svg .body-neck,
+.vif-mascot-svg .part-tail {
+  opacity: 1;
+}
+
+/* Ẩn các hình vector thô sơ để artwork chuẩn hiển thị */
+.vif-mascot-svg .part-head,
+.vif-mascot-svg .layer-ears,
+.vif-mascot-svg .head-headband,
+.vif-mascot-svg .part-snout,
+.vif-mascot-svg .part-nose,
+.vif-mascot-svg .layer-eyes,
+.vif-mascot-svg .layer-mouth,
+.vif-mascot-svg .head-stripes,
+.vif-mascot-svg .layer-whiskers,
+.vif-mascot-svg .head-cheek-stripes,
+.vif-mascot-svg .body-belly,
+.vif-mascot-svg .body-jersey,
+.vif-mascot-svg .body-pecs,
+.vif-mascot-svg .acc-medal,
+.vif-mascot-svg .upper-arm,
+.vif-mascot-svg .forearm-shape,
+.vif-mascot-svg .paw {
+  opacity: 0;
+}
+
+/* Khi bật Hiển Thị Khớp (Debug), hiện mờ khung xương vector */
+body.show-joints .vif-mascot-svg .upper-arm,
+body.show-joints .vif-mascot-svg .forearm-shape,
+body.show-joints .vif-mascot-svg .part-head,
+body.show-joints .vif-mascot-svg .layer-legs path {
+  opacity: 0.35;
+}
+
+/* Phụ kiện hiển thị động theo trạng thái */
+.vif-mascot-svg.state-thinking .acc-thinking-bubbles {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+.vif-mascot-svg.state-training .prop-dumbbell-left,
+.vif-mascot-svg.state-training .prop-dumbbell-right {
+  display: block !important;
+  opacity: 1 !important;
+}
+
 .vif-mascot-svg .mouth-line {
   display: block;
 }
@@ -82,6 +142,17 @@
 
 .vif-mascot-svg .forearm-right {
   transform-origin: 150px 152px; /* Khuỷu tay phải */
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Khớp hông chân (Hip Pivots) */
+.vif-mascot-svg .part-leg.leg-left {
+  transform-origin: 76px 196px; /* Hông trái */
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vif-mascot-svg .part-leg.leg-right {
+  transform-origin: 124px 196px; /* Hông phải */
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -141,31 +212,47 @@
 }
 
 /* Nâng vai phải ra ngoài và gập cẳng tay vẫy chào */
+.vif-mascot-svg.state-greeting .arm-left {
+  animation: vif-greet-arm-left 0.85s ease-out 1;
+}
+
 .vif-mascot-svg.state-greeting .arm-right {
-  animation: vif-greet-shoulder 0.45s ease-in-out 4 alternate;
+  animation: vif-greet-shoulder 0.45s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-greeting .forearm-right {
-  animation: vif-greet-wave 0.45s ease-in-out 4 alternate;
+  animation: vif-greet-wave 0.45s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-greeting .layer-head-group {
-  animation: vif-head-nod 0.45s ease-in-out 4 alternate;
+  animation: vif-head-nod 0.45s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-greeting .part-leg.leg-left {
+  animation: vif-greet-leg-left 0.85s ease-out 1;
+}
+
+.vif-mascot-svg.state-greeting .part-leg.leg-right {
+  animation: vif-greet-leg-right 0.85s ease-out 1;
 }
 
 /* ==========================================================================
    3. THINKING: Gập khuỷu đưa tay chạm má/cằm, nghiêng đầu tò mò
    ========================================================================== */
 .vif-mascot-svg.state-thinking .layer-head-group {
-  animation: vif-think-tilt 2.2s ease-in-out infinite alternate;
+  animation: vif-think-tilt 1.8s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-thinking .arm-left {
-  animation: vif-think-shoulder 2.2s ease-in-out infinite alternate;
+  animation: vif-chin-touch 1.8s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-thinking .forearm-left {
-  animation: vif-chin-touch 2.2s ease-in-out infinite alternate;
+  animation: vif-chin-touch 1.8s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-thinking .arm-right {
+  transform: rotate(8deg);
 }
 
 .vif-mascot-svg.state-thinking .acc-thinking-bubbles {
@@ -175,14 +262,14 @@
 }
 
 .vif-mascot-svg.state-thinking .part-eye {
-  animation: vif-look-up 2.2s ease-in-out infinite alternate;
+  animation: vif-look-up 1.8s ease-in-out infinite alternate;
 }
 
 /* ==========================================================================
    4. SPEAKING: Phản hồi nhịp nhàng, biểu cảm giao tiếp sinh động
    ========================================================================== */
 .vif-mascot-svg.state-speaking .layer-head-group {
-  animation: vif-speak-nod 0.6s ease-in-out infinite alternate;
+  animation: vif-speak-nod 0.55s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-speaking .mouth-open,
@@ -195,8 +282,16 @@
   display: none;
 }
 
+.vif-mascot-svg.state-speaking .arm-left {
+  animation: vif-gesture-left 0.75s ease-in-out infinite alternate;
+}
+
 .vif-mascot-svg.state-speaking .forearm-left {
-  animation: vif-gesture-left 0.8s ease-in-out infinite alternate;
+  animation: vif-gesture-left 0.75s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-speaking .arm-right {
+  animation: vif-gesture-right 0.75s ease-in-out infinite alternate;
 }
 
 /* ==========================================================================
@@ -208,29 +303,36 @@
 }
 
 .vif-mascot-svg.state-training .character-root {
-  animation: vif-train-bounce 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+  animation: vif-train-bounce 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
 .vif-mascot-svg.state-training .torso-rig {
-  animation: vif-train-torso 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+  animation: vif-train-torso 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
-/* Bắp tay giữ ổn định quanh vai */
+/* Bắp tay và cẳng tay cử tạ nhịp nhàng */
 .vif-mascot-svg.state-training .arm-left {
-  animation: vif-train-shoulder-left 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+  animation: vif-curl-left 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
 .vif-mascot-svg.state-training .arm-right {
-  animation: vif-train-shoulder-right 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+  animation: vif-curl-right 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
-/* Cẳng tay gập khuỷu tay đưa tạ nâng lên trước ngực */
 .vif-mascot-svg.state-training .forearm-left {
-  animation: vif-curl-left 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+  animation: vif-curl-left 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
 .vif-mascot-svg.state-training .forearm-right {
-  animation: vif-curl-right 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+  animation: vif-curl-right 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+}
+
+.vif-mascot-svg.state-training .part-leg.leg-left {
+  animation: vif-step-left 0.8s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-training .part-leg.leg-right {
+  animation: vif-step-right 0.8s ease-in-out infinite alternate;
 }
 
 /* ==========================================================================
@@ -252,16 +354,15 @@
   display: block;
 }
 
-/* Giơ bắp tay lên */
+/* Giơ bắp tay lên ăn mừng */
 .vif-mascot-svg.state-celebrating .arm-left {
-  animation: vif-arm-cheer-left 0.4s ease-in-out infinite alternate;
+  animation: vif-arm-cheer-left 0.5s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-celebrating .arm-right {
-  animation: vif-arm-cheer-right 0.4s ease-in-out infinite alternate;
+  animation: vif-arm-cheer-right 0.5s ease-in-out infinite alternate;
 }
 
-/* Cẳng tay mở ra */
 .vif-mascot-svg.state-celebrating .forearm-left {
   transform: rotate(-30deg);
 }
@@ -274,18 +375,38 @@
   animation: vif-head-joy 0.5s ease-in-out infinite alternate;
 }
 
+.vif-mascot-svg.state-celebrating .part-leg.leg-left {
+  animation: vif-kick-left 0.75s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-celebrating .part-leg.leg-right {
+  animation: vif-kick-right 0.75s ease-in-out infinite alternate;
+}
+
 /* ==========================================================================
-   7. ERROR: Biểu cảm bối rối nhẹ, ân cần
+   7. ERROR: Biểu cảm bối rối nhẹ, rung lắc
    ========================================================================== */
+.vif-mascot-svg.state-error .character-root {
+  animation: vif-error-shake 0.35s ease-in-out infinite alternate;
+}
+
 .vif-mascot-svg.state-error .layer-head-group {
-  animation: vif-pout 2s ease-in-out infinite alternate;
+  animation: vif-pout 1.5s ease-in-out infinite alternate;
 }
 
 .vif-mascot-svg.state-error .arm-left {
-  transform: rotate(6deg);
+  transform: rotate(18deg);
 }
 
 .vif-mascot-svg.state-error .arm-right {
+  transform: rotate(-18deg);
+}
+
+.vif-mascot-svg.state-error .part-leg.leg-left {
+  transform: rotate(6deg);
+}
+
+.vif-mascot-svg.state-error .part-leg.leg-right {
   transform: rotate(-6deg);
 }
 
@@ -450,6 +571,58 @@
 @keyframes vif-pout {
   0% { transform: rotate(-4deg) translateY(2px); }
   100% { transform: rotate(-1deg) translateY(3.5px); }
+}
+
+/* Cử động chân bước nhịp thể thao khi tập luyện */
+@keyframes vif-step-left {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes vif-step-right {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Đá chân ăn mừng chiến thắng */
+@keyframes vif-kick-left {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-18deg); }
+}
+
+@keyframes vif-kick-right {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(18deg); }
+}
+
+/* Rung bối rối khi gặp lỗi */
+@keyframes vif-error-shake {
+  0% { transform: translateX(-3px) rotate(-1.5deg); }
+  100% { transform: translateX(3px) rotate(1.5deg); }
+}
+
+/* Cử chỉ chào đón */
+@keyframes vif-greet-arm-left {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(10deg); }
+}
+
+@keyframes vif-greet-leg-left {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(-8deg); }
+}
+
+@keyframes vif-greet-leg-right {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(8deg); }
+}
+
+/* Cử chỉ tay phải khi nói */
+@keyframes vif-gesture-right {
+  0% { transform: rotate(-12deg); }
+  100% { transform: rotate(8deg); }
 }
 
 /* ==========================================================================
