@@ -14,7 +14,7 @@ use App\Http\Controllers\DangKyChuongTrinhController;
 use App\Http\Controllers\ChuongTrinhBaiTapController;
 use App\Http\Controllers\PhongGymController;
 use App\Http\Controllers\BuoiTapController;
-
+use App\Http\Controllers\GoiTapController;
 
 
 
@@ -143,6 +143,14 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/buoi-tap/phan-tram-hoan-thanh',[BuoiTapController::class, 'getLatestProgress']);
     Route::get( '/buoi-tap/phan-tram-hoan-thanh-tat-ca', [BuoiTapController::class, 'getProgressPercent']);
     Route::get('/huan-luyen-tiep-theo',[BuoiTapController::class, 'getHuanLuyenTiepTheo']);
+
+
+    // check đã đăng ký gói tập chưa để đăng ký 
+    Route::post('/check-quyen-tap', [ BuoiTapController::class, 'checkQuyenTap']);
+    // lấy gói tập 
+    Route::get('/goi-tap', [GoiTapController::class, 'getAll']);
+    
+    
 
 
 

@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('qua_trinh_dao_tao')->nullable();
             $table->string('chung_chi')->nullable();
             $table->string('thanh_tuu')->nullable();
+            $table->string('chuyen_mon')->nullable();
             $table->integer('tinh_trang') ->default(1)->comment('0: nghi, 1: dang_lam');
             $table->unsignedBigInteger('id_phong_tap')->nullable();
             $table->integer('is_active')->default(0);
