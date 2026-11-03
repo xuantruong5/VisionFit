@@ -58,11 +58,17 @@ const MascotDraggableCore: React.FC = () => {
     })
   ).current;
 
-  // Animation co giãn khi ấn hoặc vẫy chào
+  // Animation co giãn và lắc lư vẫy tay khi chào
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   const currentPos = useRef({
     x: Math.max(16, Dimensions.get('window').width - WIDGET_WIDTH - 20),
     y: Math.max(16, Dimensions.get('window').height - WIDGET_HEIGHT - 100),
+  });
+
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-14deg', '0deg', '14deg'],
   });
 
   // Lắng nghe thay đổi kích thước màn hình
@@ -85,14 +91,29 @@ const MascotDraggableCore: React.FC = () => {
   const triggerGreeting = (customText?: string) => {
     setGreetingText(customText || 'Chào bạn! Mình là VIF 👋');
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.18, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.2, duration: 160, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(rotateAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+        Animated.timing(rotateAnim, { toValue: -1, duration: 120, useNativeDriver: true }),
+        Animated.timing(rotateAnim, { toValue: 0.6, duration: 100, useNativeDriver: true }),
+        Animated.timing(rotateAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+      ]),
       Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
     ]).start();
 
     setTimeout(() => {
       setGreetingText(null);
-    }, 2800);
+    }, 3200);
   };
+
+  // Tự động bật trạng thái chào ngay khi vừa mở app
+  useEffect(() => {
+    const welcomeTimer = setTimeout(() => {
+      triggerGreeting('Chào bạn! Mình là VIF 👋');
+    }, 700);
+
+    return () => clearTimeout(welcomeTimer);
+  }, []);
 
   // Lắng nghe sự kiện tập luyện toàn cục (cả window nếu chạy web)
   useEffect(() => {
@@ -166,6 +187,7 @@ const MascotDraggableCore: React.FC = () => {
             { translateX: pan.x },
             { translateY: pan.y },
             { scale: scaleAnim },
+            { rotate: rotateInterpolate },
           ],
         },
       ]}
