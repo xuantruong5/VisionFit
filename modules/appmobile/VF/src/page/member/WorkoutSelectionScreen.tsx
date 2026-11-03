@@ -19,7 +19,7 @@ const COLORS = {
     soft: THEME.surfaceTeal,
     gold: THEME.accentGold,
 };
-const STORAGE_KEY = 'visionfit_selected_package';
+// const STORAGE_KEY = 'visionfit_selected_package';
 export interface TrainingPackage {
     id: number;
     ma_goi_tap: string;
@@ -62,31 +62,32 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
             setPackages(validPackages);
 
             // Kiểm tra gói đã lưu trước đó
-            const saved = await AsyncStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const savedPackage = JSON.parse(saved);
-                const exists = validPackages.some(
-                    item => String(item.id) === String(savedPackage.id)
-                );
-                if (exists) {
-                    setSelectedId(String(savedPackage.id));
-                    // Cập nhật thông tin mới nhất từ API
-                    const latestPackage = validPackages.find(
-                        item => String(item.id) === String(savedPackage.id)
-                    );
-                    if (latestPackage) {
-                        await AsyncStorage.setItem(
-                            STORAGE_KEY,
-                            JSON.stringify(latestPackage)
-                        );
-                    }
-                } else {
-                    setSelectedId(null);
-                    await AsyncStorage.removeItem(STORAGE_KEY);
-                }
-            } else {
-                setSelectedId(null);
-            }
+            // const saved = await AsyncStorage.getItem(STORAGE_KEY);
+            // if (saved) {
+            //     const savedPackage = JSON.parse(saved);
+            //     const exists = validPackages.some(
+            //         item => String(item.id) === String(savedPackage.id)
+            //     );
+            //     if (exists) {
+            //         setSelectedId(String(savedPackage.id));
+            //         // Cập nhật thông tin mới nhất từ API
+            //         const latestPackage = validPackages.find(
+            //             item => String(item.id) === String(savedPackage.id)
+            //         );
+            //         if (latestPackage) {
+            //             await AsyncStorage.setItem(
+            //                 STORAGE_KEY,
+            //                 JSON.stringify(latestPackage)
+            //             );
+            //         }
+            //     } else {
+            //         setSelectedId(null);
+            //         await AsyncStorage.removeItem(STORAGE_KEY);
+            //     }
+            // } else {
+            //     setSelectedId(null);
+            // }
+            setSelectedId(null);
 
         } catch (err: any) {
             console.log(
@@ -106,45 +107,32 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
     }, [loadPackages]);
 
     // Chọn gói tập
-    const handleSelect = async (item: TrainingPackage) => {
+   const handleSelect = (item: TrainingPackage) => {
         if (item.tinh_trang !== 1) {
-            return Alert.alert(
-                'Thông báo',
-                'Gói tập này hiện không khả dụng.'
-            );
+            return Alert.alert('Thông báo', 'Gói tập này hiện không khả dụng.');
         }
-        try {
-            await AsyncStorage.setItem(  STORAGE_KEY, JSON.stringify(item));
-            setSelectedId(String(item.id));
-        } catch {
-            Alert.alert('Lỗi','Không thể lưu lựa chọn. Vui lòng thử lại.' );
-        }
+
+        setSelectedId(String(item.id));
     };
 
     // Tiếp tục sang trang chọn PT
-    const handleContinue = async () => {
+    const handleContinue = () => {
         if (!selectedPackage) {
-            return Alert.alert(
-                'Thông báo',
-                'Vui lòng chọn một gói tập.'
-            );
+            return Alert.alert('Thông báo', 'Vui lòng chọn một gói tập.');
         }
+        const packageData = {
+            id: selectedPackage.id,
+            ten_goi_tap: selectedPackage.ten_goi_tap,
+            thoi_han_ngay: selectedPackage.thoi_han_ngay,
+            gia: selectedPackage.gia,
+            so_buoi: selectedPackage.so_buoi,
+            so_buoi_pt: selectedPackage.so_buoi_pt,
+        };
 
-        try {
-            await AsyncStorage.setItem(  STORAGE_KEY, JSON.stringify(selectedPackage) );
-            const routeNames = navigation.getState()?.routeNames || [];
-            const target = routeNames.includes('PTList')
-                ? 'PTList'
-                : routeNames.includes('PTListScreen')
-                    ? 'PTListScreen'
-                    : 'PTList';
-            navigation.navigate(target, { selectedPackage, packageId: selectedPackage.id, });
-        } catch {
-            Alert.alert(
-                'Lỗi',
-                'Không thể lưu lựa chọn gói tập.'
-            );
-        }
+        navigation.navigate('PTList', {
+            selectedPackage: packageData,
+            packageId: selectedPackage.id,
+        });
     };
 
     return (

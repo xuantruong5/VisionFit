@@ -23,11 +23,12 @@ return new class extends Migration
             $table->string('hinh_anh')->nullable();
             $table->string('chuc_danh')->nullable();
             $table->string('so_nam_kinh_nghiem')->nullable();
-            $table->string('kinh_nghiem_lam_viec')->nullable();
-            $table->string('qua_trinh_dao_tao')->nullable();
-            $table->string('chung_chi')->nullable();
-            $table->string('thanh_tuu')->nullable();
+            $table->text('kinh_nghiem_lam_viec')->nullable();
+            $table->text('qua_trinh_dao_tao')->nullable();
+            $table->text('chung_chi')->nullable();
+            $table->text('thanh_tuu')->nullable();
             $table->string('chuyen_mon')->nullable();
+            $table->integer('is_verified')->default(0);
             $table->integer('tinh_trang') ->default(1)->comment('0: nghi, 1: dang_lam');
             $table->unsignedBigInteger('id_phong_tap')->nullable();
             $table->integer('is_active')->default(0);

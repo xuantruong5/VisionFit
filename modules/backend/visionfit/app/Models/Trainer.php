@@ -27,6 +27,8 @@ class Trainer extends Authenticatable
         'qua_trinh_dao_tao',
         'chung_chi',
         'thanh_tuu',
+        'chuyen_mon',
+        'is_verified',
         'tinh_trang',
         'id_phong_tap',
         'is_active',

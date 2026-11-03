@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('chi_tiet_dang_ky_goi', function (Blueprint $table) {
             $table->id();
             $table->integer('id_dang_ky_goi');
+            $table->integer('id_noi_tap')->nullable();
             $table->integer('id_goi_tap');
             $table->integer('so_buoi')->default(0);
             $table->integer('so_buoi_pt')->default(0);

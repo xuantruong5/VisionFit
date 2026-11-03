@@ -149,6 +149,13 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/check-quyen-tap', [ BuoiTapController::class, 'checkQuyenTap']);
     // lấy gói tập 
     Route::get('/goi-tap', [GoiTapController::class, 'getAll']);
+    // lấy trainer 
+    Route::get('/trainers', [GoiTapController::class, 'getTrainer']);
+    Route::post('/search-trainer', [GoiTapController::class, 'searchTrainer']);
+    // thông tin gói tập 
+    Route::post('/registration-preview', [GoiTapController::class, 'getRegistrationPreview']);
+
+
     
     
 
