@@ -11,6 +11,14 @@ import { renderCatSVG } from './cat.js';
 
 export { MASCOT_STATES, MASCOT_SPECIES, EVOLUTION_STAGES, isMascotState };
 
+const LEGACY_STATE_MAP = {
+  talking: 'speaking',
+  confused: 'error',
+  motivating: 'training',
+  resting: 'idle',
+  listening: 'idle'
+};
+
 export class MascotRenderer {
   /**
    * @param {HTMLElement} container - Nơi mount linh vật
@@ -22,7 +30,8 @@ export class MascotRenderer {
     this.instanceId = options.instanceId || ('vif-m-' + Math.random().toString(36).slice(2, 8));
     this.species = MASCOT_SPECIES.includes(options.species) ? options.species : 'bear';
     this.stage = EVOLUTION_STAGES.includes(options.stage) ? options.stage : 'starter';
-    this.state = isMascotState(options.state) ? options.state : 'idle';
+    const normalizedInitialState = LEGACY_STATE_MAP[options.state] || options.state;
+    this.state = isMascotState(normalizedInitialState) ? normalizedInitialState : 'idle';
     this.isWorkoutActive = Boolean(options.workoutActive);
     this.baselineState = this.isWorkoutActive ? 'training' : 'idle';
 
@@ -132,11 +141,12 @@ export class MascotRenderer {
   /**
    * Thiết lập trạng thái animation
    * Không dựng lại SVG; chỉ cập nhật class và data attribute trên DOM hiện có
-   * @param {string} state - Một trong các giá trị MASCOT_STATES
+   * @param {string} rawState - Một trong các giá trị MASCOT_STATES (hoặc alias legacy)
    * @param {number} [durationMs=0] - Nếu > 0, sau thời gian này sẽ quay về baseline
    * @param {boolean} [forceReplay=false] - Buộc chạy lại animation nếu cùng state
    */
-  setState(state, durationMs = 0, forceReplay = false) {
+  setState(rawState, durationMs = 0, forceReplay = false) {
+    const state = LEGACY_STATE_MAP[rawState] || rawState;
     if (!isMascotState(state)) return;
     if (this.state === state && !forceReplay) return;
 
@@ -170,6 +180,16 @@ export class MascotRenderer {
         this.setState(this.baselineState);
       }, wait);
     }
+  }
+
+  /**
+   * Kích hoạt animation hữu hạn rồi tự động quay về baselineState
+   * (Hỗ trợ đầy đủ cho các kịch bản trong lab.js)
+   * @param {string} state
+   * @param {number} [durationMs=3000]
+   */
+  triggerFiniteAnimation(state, durationMs = 3000) {
+    this.setState(state, durationMs, true);
   }
 
   /**
