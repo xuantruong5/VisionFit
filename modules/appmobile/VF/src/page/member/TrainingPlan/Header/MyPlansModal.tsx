@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     },
     btnPrimary: {
         height: 52,
-        borderRadius: 16,
+        borderRadius: 999,
         overflow: "hidden",
         marginBottom: 10,
         ...SHADOWS.glow,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderWidth: 1.5,
         borderColor: COLORS.primary,
-        borderRadius: 16,
+        borderRadius: 999,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 20,

@@ -19,8 +19,8 @@ const MemberHome = ({ navigation }: any) => {
       title: 'Kế Hoạch Tập Luyện',
       desc: 'Lộ trình cá nhân hóa, bài tập & tiến độ',
       icon: 'barbell-outline',
-      color: '#0D7F8D',
-      bg: '#EAF9FB',
+      color: '#0F5468',
+      bg: '#E6F0F4',
       onPress: () => navigation.navigate('Kế Hoạch Tập'),
     },
     {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   heroGreeting: {
-    color: '#9EE7E5',
+    color: '#A9D0DE',
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.5,

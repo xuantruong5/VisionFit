@@ -52,7 +52,7 @@ const Profile = ({ navigation }: any) => {
         {/* 1. ẢNH BÌA */}
         <View style={styles.cover}>
           <Image source={{ uri: COVER }} style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={['rgba(13,127,141,0.55)', 'rgba(7,88,101,0.95)']} style={styles.coverOverlay}>
+          <LinearGradient colors={['rgba(15, 84, 104,0.55)', 'rgba(7,88,101,0.95)']} style={styles.coverOverlay}>
             <View style={styles.coverRow}>
               <Text style={styles.coverTitle}>Hồ sơ của tôi</Text>
               <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
@@ -110,7 +110,7 @@ const Profile = ({ navigation }: any) => {
 
         <View style={styles.body}>
           {/* MÃ GIỚI THIỆU CỦA TRAINER */}
-          <LinearGradient colors={['#11343A', '#0D7F8D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.referralCard}>
+          <LinearGradient colors={['#10303C', '#0F5468']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.referralCard}>
             <View style={styles.referralHeader}>
               <View style={styles.referralBadge}>
                 <Ionicons name="sparkles" size={13} color="#FBBF24" />
@@ -128,7 +128,7 @@ const Profile = ({ navigation }: any) => {
               <Text style={styles.referralCodeText}>{referralCode}</Text>
               <View style={styles.referralBtnRow}>
                 <TouchableOpacity style={styles.referralCopyBtn} onPress={handleCopyCode} activeOpacity={0.8}>
-                  <Ionicons name="copy-outline" size={15} color="#11343A" />
+                  <Ionicons name="copy-outline" size={15} color="#10303C" />
                   <Text style={styles.referralCopyText}>Sao chép</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.referralQrBtn} onPress={() => setShowQrModal(true)} activeOpacity={0.8}>
@@ -231,7 +231,7 @@ const Profile = ({ navigation }: any) => {
             <View style={styles.qrBox}>
               {/* Giả lập khung QR Code thương hiệu */}
               <View style={styles.qrFakeCanvas}>
-                <Ionicons name="qr-code-outline" size={170} color="#11343A" />
+                <Ionicons name="qr-code-outline" size={170} color="#10303C" />
                 <View style={styles.qrLogoBadge}>
                   <Text style={styles.qrLogoBadgeText}>VF</Text>
                 </View>
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   },
   editBtn: {
     height: 46,
-    borderRadius: 14,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   // LOGOUT
   logoutBtn: {
     height: 50,
-    borderRadius: 14,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.22)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 999,
     gap: 4,
   },
   referralStudents: {
@@ -606,13 +606,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 999,
     gap: 4,
   },
   referralCopyText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#11343A',
+    color: '#10303C',
   },
   referralQrBtn: {
     flexDirection: 'row',
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 9,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 999,
     gap: 4,
   },
   referralQrText: {
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
   qrCopyActionBtn: {
     flex: 1,
     height: 46,
-    borderRadius: 14,
+    borderRadius: 999,
     backgroundColor: COLORS.surfaceTeal,
     flexDirection: 'row',
     alignItems: 'center',
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
   qrDoneActionBtn: {
     flex: 1,
     height: 46,
-    borderRadius: 14,
+    borderRadius: 999,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',

@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 999,
   },
   timeText: {
     fontSize: 13,

@@ -1,29 +1,29 @@
 export const COLORS = {
-  primary: '#0D7F8D',
-  primaryDark: '#075865',
-  primaryLight: '#E6F5F6',
-  primarySoft: '#EBF6F7',
+  primary: '#0F5468',
+  primaryDark: '#0A3E4F',
+  primaryLight: '#E4EEF2',
+  primarySoft: '#EBF3F6',
   
   // Nền
-  background: '#F4FAFB',
+  background: '#F3F8FA',
   cardBg: '#FFFFFF',
-  surfaceTeal: '#EAF9FB',
+  surfaceTeal: '#E6F0F4',
   
   // Chữ
-  textPrimary: '#11343A',
-  textDark: '#11343A',
-  textSecondary: '#2E5057',
-  textMuted: '#71949A',
-  textLight: '#9BB8BD',
+  textPrimary: '#10303C',
+  textDark: '#10303C',
+  textSecondary: '#2D4F5C',
+  textMuted: '#6F8F9C',
+  textLight: '#9EB8C3',
   
   // Viền
-  border: '#DFEAEC',
-  borderLight: '#EDF5F6',
-  borderFocus: '#9ED9DF',
+  border: '#DDE8EC',
+  borderLight: '#EAF2F5',
+  borderFocus: '#8DB3C2',
   
   // Màu bổ trợ / Trạng thái
   accentOrange: '#FF6B4A',
-  accentGold: '#E6A94A',
+  accentGold: '#E3B04B',
   accentGreen: '#10B981',
   accentBlue: '#2A85D0',
   accentRed: '#EF4444',
@@ -42,14 +42,14 @@ export const SHADOWS = {
     elevation: 2,
   },
   card: {
-    shadowColor: '#075865',
+    shadowColor: '#0A3E4F',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.07,
     shadowRadius: 8,
     elevation: 3,
   },
   glow: {
-    shadowColor: '#0D7F8D',
+    shadowColor: '#0F5468',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -62,12 +62,12 @@ export const PASTEL = {
   background: '#F2F6F5',
   surface: '#FFFFFF',
   surfaceSoft: '#F7FAF9',
-  ink: '#1D3438',
+  ink: '#1B3540',
   inkSoft: '#5E7B80',
   inkMuted: '#94AAAE',
-  dark: '#0D7F8D',
-  teal: '#0D7F8D',
-  tealSoft: '#D9F0EF',
+  dark: '#0F5468',
+  teal: '#0F5468',
+  tealSoft: '#D6E6EC',
   mint: '#DDF2E6',
   mintInk: '#2E8A5E',
   peach: '#FCE6DA',
@@ -87,7 +87,7 @@ export const RADIUS = {
 };
 
 export const SOFT_SHADOW = {
-  shadowColor: '#1D3438',
+  shadowColor: '#1B3540',
   shadowOffset: { width: 0, height: 6 },
   shadowOpacity: 0.06,
   shadowRadius: 16,

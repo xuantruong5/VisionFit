@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 10,
+        borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 6,
     },
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
         gap: 6,
         paddingVertical: 7,
         paddingHorizontal: 12,
-        borderRadius: 12,
+        borderRadius: 999,
         backgroundColor: THEME.primarySoft,
     },
     detailText: {
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         height: 54,
-        borderRadius: 16,
+        borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         paddingVertical: 10,
         paddingHorizontal: 23,
-        borderRadius: 12,
+        borderRadius: 999,
     },
     retryText: {
         color: COLORS.white,

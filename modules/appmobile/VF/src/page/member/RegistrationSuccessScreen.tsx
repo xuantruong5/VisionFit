@@ -474,7 +474,7 @@ const s = StyleSheet.create({
     },
     homeButton: {
         height: 52,
-        borderRadius: 16,
+        borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -487,7 +487,7 @@ const s = StyleSheet.create({
     },
     secondaryButton: {
         height: 50,
-        borderRadius: 16,
+        borderRadius: 999,
         borderWidth: 1.5,
         borderColor: COLORS.primary,
         backgroundColor: COLORS.white,

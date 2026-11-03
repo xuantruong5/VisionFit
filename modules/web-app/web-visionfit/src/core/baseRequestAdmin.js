@@ -1,5 +1,9 @@
 import axios from "axios";
-const apiUrl = "http://172.29.192.1:8000/api/";
+// const apiUrl = "http://172.29.192.1:8000/api/";
+
+// của Ngọc
+const apiUrl = "http://192.168.1.116:8000/api/";
+
 
 export default {
     getHeader() {

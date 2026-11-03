@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   headerEyebrow: {
     fontSize: 11.5,
     fontWeight: '800',
-    color: '#9EE7E5',
+    color: '#A9D0DE',
     letterSpacing: 1,
   },
   headerTitle: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 40,
     paddingHorizontal: 12,
-    borderRadius: 13,
+    borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.22)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 40,
     paddingHorizontal: 14,
-    borderRadius: 13,
+    borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',

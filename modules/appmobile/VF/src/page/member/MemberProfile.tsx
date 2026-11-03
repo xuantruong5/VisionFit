@@ -452,7 +452,7 @@ const MemberProfile = ({ navigation }: any) => {
                                 onPress={() => navigation?.navigate('EnterTrainerCodeScreen')}
                                 activeOpacity={0.7}
                             >
-                                <View style={[styles.itemIconWrap, { backgroundColor: '#EAF9FB' }]}>
+                                <View style={[styles.itemIconWrap, { backgroundColor: '#E6F0F4' }]}>
                                     <Ionicons name="key-outline" size={18} color={COLORS.primary} />
                                 </View>
                                 <View style={styles.itemContent}>
@@ -515,7 +515,7 @@ const MemberProfile = ({ navigation }: any) => {
                                 </View>
                                 <Switch
                                     trackColor={{ false: COLORS.border, true: COLORS.primary }}
-                                    thumbColor={remindWorkout ? '#FFFFFF' : '#EAF9FB'}
+                                    thumbColor={remindWorkout ? '#FFFFFF' : '#E6F0F4'}
                                     ios_backgroundColor={COLORS.border}
                                     onValueChange={() => setRemindWorkout(!remindWorkout)}
                                     value={remindWorkout}
@@ -533,7 +533,7 @@ const MemberProfile = ({ navigation }: any) => {
                                 </View>
                                 <Switch
                                     trackColor={{ false: COLORS.border, true: COLORS.primary }}
-                                    thumbColor={syncHealthData ? '#FFFFFF' : '#EAF9FB'}
+                                    thumbColor={syncHealthData ? '#FFFFFF' : '#E6F0F4'}
                                     ios_backgroundColor={COLORS.border}
                                     onValueChange={() => setSyncHealthData(!syncHealthData)}
                                     value={syncHealthData}
@@ -551,7 +551,7 @@ const MemberProfile = ({ navigation }: any) => {
                                 </View>
                                 <Switch
                                     trackColor={{ false: COLORS.border, true: COLORS.primary }}
-                                    thumbColor={drinkWaterAlert ? '#FFFFFF' : '#EAF9FB'}
+                                    thumbColor={drinkWaterAlert ? '#FFFFFF' : '#E6F0F4'}
                                     ios_backgroundColor={COLORS.border}
                                     onValueChange={() => setDrinkWaterAlert(!drinkWaterAlert)}
                                     value={drinkWaterAlert}
@@ -1134,7 +1134,7 @@ const styles = StyleSheet.create({
 
     editProfileBtn: {
         height: 46,
-        borderRadius: 14,
+        borderRadius: 999,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -1351,7 +1351,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primarySoft,
         paddingHorizontal: 10,
         height: 32,
-        borderRadius: 10,
+        borderRadius: 999,
     },
 
     copyBtnText: {
@@ -1367,7 +1367,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         paddingHorizontal: 10,
         height: 32,
-        borderRadius: 10,
+        borderRadius: 999,
     },
 
     chatCoachBtnText: {
@@ -1418,7 +1418,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginTop: 24,
         height: 50,
-        borderRadius: 14,
+        borderRadius: 999,
         backgroundColor: '#FEF2F2',
         borderWidth: 1,
         borderColor: '#FECACA',
@@ -1531,7 +1531,7 @@ const styles = StyleSheet.create({
     cancelBtn: {
         flex: 1,
         height: 50,
-        borderRadius: 14,
+        borderRadius: 999,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -1551,7 +1551,7 @@ const styles = StyleSheet.create({
 
     saveBtn: {
         height: 50,
-        borderRadius: 14,
+        borderRadius: 999,
         flexDirection: 'row',
         gap: 6,
         justifyContent: 'center',
@@ -1701,7 +1701,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
         backgroundColor: COLORS.primarySoft,
         height: 48,
-        borderRadius: 14,
+        borderRadius: 999,
         marginTop: 16,
     },
 
@@ -1772,7 +1772,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         height: 50,
-        borderRadius: 14,
+        borderRadius: 999,
         borderWidth: 1.5,
         borderStyle: 'dashed',
         borderColor: COLORS.borderFocus,

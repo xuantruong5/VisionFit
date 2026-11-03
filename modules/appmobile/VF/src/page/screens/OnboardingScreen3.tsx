@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
         fontSize: 22,
         lineHeight: 30,
         fontWeight: "700",
-        color: "#11343A",
+        color: "#10303C",
         textAlign: "center",
     },
     description: {
@@ -104,17 +104,17 @@ const styles = StyleSheet.create({
         width: 24,
         height: 8,
         borderRadius: 4,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: "#0F5468",
     },
     button: {
         width: "100%",
         maxWidth: 320,
         height: 52,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: "#0F5468",
         borderRadius: 26,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#0D7F8D",
+        shadowColor: "#0F5468",
         shadowOffset: {
             width: 0,
             height: 4,
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
     },
     startButton: {
-        backgroundColor: "#0D7F8D",
+        backgroundColor: "#0F5468",
     },
     startText: {
         color: "#FFFFFF",

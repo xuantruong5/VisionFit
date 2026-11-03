@@ -271,7 +271,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                       styles.progressBarFill,
                       {
                         width: `${item.percent}%`,
-                        backgroundColor: item.color || '#0D7F8D',
+                        backgroundColor: item.color || '#0F5468',
                       },
                     ]}
                   />
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
   stepNum: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0D7F8D',
+    color: '#0F5468',
     marginRight: 8,
   },
   stepText: {
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: 999,
   },
   pillBtnActive: {
     backgroundColor: COLORS.textPrimary,
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingVertical: 8,
     paddingHorizontal: 8,
-    borderRadius: 14,
+    borderRadius: 999,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,

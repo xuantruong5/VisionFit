@@ -41,7 +41,7 @@ const Login = ({ navigation }: any) => {
                 {/* EMAIL */}
                 <TouchableOpacity onPress={() => navigation.navigate("AuthScreen")} activeOpacity={0.85}>
                     <LinearGradient
-                        colors={["#3CC3CE", "#0D7F8D"]}
+                        colors={["#3CC3CE", "#0F5468"]}
                         start={{ x: 0, y: 0.5 }}
                         end={{ x: 1, y: 0.5 }}
                         style={styles.primaryButton}
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     },
 
     primaryButton: {
-        shadowColor: "#0D7F8D",
+        shadowColor: "#0F5468",
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.45,
         shadowRadius: 16,

@@ -276,7 +276,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 
             <TouchableOpacity style={s.buttonWrap} activeOpacity={0.85} disabled={!canContinue} onPress={handleContinue}>
               <LinearGradient
-                colors={canContinue ? [COLORS.primary, COLORS.primaryDark] : ['#AECBD0', '#AECBD0']}
+                colors={canContinue ? [COLORS.primary, COLORS.primaryDark] : ['#AFC8D3', '#AFC8D3']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={s.button}
@@ -454,7 +454,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 999,
     backgroundColor: COLORS.primarySoft,
   },
   editText: {
@@ -553,7 +553,7 @@ const s = StyleSheet.create({
   emptyBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 999,
     backgroundColor: COLORS.primarySoft,
   },
   totalBox: {
@@ -641,7 +641,7 @@ const s = StyleSheet.create({
   },
   button: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: 999,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

@@ -73,7 +73,7 @@ const SessionReview = ({ navigation, route }: any) => {
           <View style={styles.infoRow}>
             {info.map((item) => (
               <View key={item.label} style={styles.infoBox}>
-                <Ionicons name={item.icon} size={16} color="#9EE7E5" />
+                <Ionicons name={item.icon} size={16} color="#A9D0DE" />
                 <Text style={styles.infoValue}>{item.value}</Text>
                 <Text style={styles.infoLabel}>{item.label}</Text>
               </View>
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   // LƯU
   saveBtn: {
     height: 54,
-    borderRadius: 16,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

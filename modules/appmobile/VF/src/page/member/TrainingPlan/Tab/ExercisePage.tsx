@@ -221,7 +221,7 @@ const ExercisePage = ({ navigation, route }: any) => {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  const progressColor = progressPercent <= 0 ? "#FF5262" : progressPercent <= 50 ? "#FFE08A" : "#18BEC3";
+  const progressColor = progressPercent <= 0 ? "#FF5262" : progressPercent <= 50 ? "#FFE08A" : "#3F8FA6";
 
   const [exerciseProgress, setExerciseProgress] = useState<
     { id_bai_tap: number; phan_tram_hoan_thanh: number; tinh_trang: number; }[]>([]);
@@ -805,7 +805,7 @@ const ExercisePage = ({ navigation, route }: any) => {
                     const progress = exerciseProgress.find((item) => Number(item.id_bai_tap) === Number(exercise.id_bai_tap));
                     const percent = Number(progress?.phan_tram_hoan_thanh ?? 0);
                     if (percent <= 0) return null;
-                    const exerciseColor = percent <= 50 ? "#E6A94A" : "#18BEC3";
+                    const exerciseColor = percent <= 50 ? "#E3B04B" : "#3F8FA6";
                     return (
                       <Text style={[styles.exercisePercent, { color: exerciseColor }]}>
                         {percent}%
@@ -979,7 +979,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
     height: 40,
     paddingHorizontal: 12,
-    borderRadius: 13,
+    borderRadius: 999,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.16)",
@@ -1238,8 +1238,8 @@ const styles = StyleSheet.create({
   },
 
   checkboxDone: {
-    backgroundColor: "#18BEC3",
-    borderColor: "#18BEC3",
+    backgroundColor: "#3F8FA6",
+    borderColor: "#3F8FA6",
   },
 
   exerciseImageWrapper: {
@@ -1311,7 +1311,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     backgroundColor: COLORS.primaryLight,
-    borderRadius: 8,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
@@ -1426,7 +1426,7 @@ const styles = StyleSheet.create({
   startButton: {
     width: "100%",
     height: 52,
-    borderRadius: 16,
+    borderRadius: 999,
     overflow: "hidden",
     ...SHADOWS.glow,
   },

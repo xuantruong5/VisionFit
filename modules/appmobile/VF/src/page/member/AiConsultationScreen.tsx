@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
   genderBtn: {
     flex: 1,
     height: 46,
-    borderRadius: 14,
+    borderRadius: 999,
     borderWidth: 1.5,
     borderColor: COLORS.border,
     flexDirection: 'row',
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.glow,
   },
   submitBtn: {
-    borderRadius: 16,
+    borderRadius: 999,
     height: 54,
     flexDirection: 'row',
     justifyContent: 'center',

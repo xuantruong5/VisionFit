@@ -7,6 +7,8 @@ import {
     StyleSheet,
     useWindowDimensions,
     TouchableOpacity,
+    Platform,
+    StatusBar,
 } from "react-native";
 
 const OnboardingScreen1 = ({ navigation }: any) => {
@@ -62,13 +64,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     header: {
+        marginTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 2 : 4,
         height: 52,
         alignItems: "flex-end",
         justifyContent: "center",
         paddingHorizontal: 6,
     },
     skip: {
-        color: "#71949A",
+        color: "#6F8F9C",
         fontSize: 16,
         fontWeight: "600",
     },
@@ -86,7 +89,7 @@ const styles = StyleSheet.create({
         fontSize: 22,
         lineHeight: 30,
         fontWeight: "700",
-        color: "#11343A",
+        color: "#10303C",
         textAlign: "center",
     },
     description: {
@@ -118,17 +121,17 @@ const styles = StyleSheet.create({
         width: 24,
         height: 8,
         borderRadius: 4,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: "#0F5468",
     },
     button: {
         width: "100%",
         maxWidth: 320,
         height: 52,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: "#0F5468",
         borderRadius: 26,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#0D7F8D",
+        shadowColor: "#0F5468",
         shadowOffset: {
             width: 0,
             height: 4,

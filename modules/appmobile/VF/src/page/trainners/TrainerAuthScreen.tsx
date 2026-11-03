@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         gap: 10,
         height: 54,
-        borderRadius: 27,
+        borderRadius: 999,
         marginBottom: 12,
     },
     appleButton: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     },
     registerButton: {
         height: 54,
-        borderRadius: 27,
+        borderRadius: 999,
         backgroundColor: C.primary,
         alignItems: "center",
         justifyContent: "center",

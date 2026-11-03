@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 10,
+    borderRadius: 999,
   },
   reviewPillText: {
     fontSize: 11.5,

@@ -782,7 +782,7 @@ const SportFeed = () => {
                             <Ionicons
                                 name="checkmark"
                                 size={19}
-                                color="#0D7F8D"
+                                color="#0F5468"
                             />
                         </TouchableOpacity>
 
@@ -948,7 +948,7 @@ const SportFeed = () => {
                                                         : 'people-outline'
                                                 }
                                                 size={12}
-                                                color="#71949A"
+                                                color="#6F8F9C"
                                             />
                                         </View>
                                     </View>
@@ -989,7 +989,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="create-outline"
                                                                 size={19}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.postMenuText}>
@@ -1024,7 +1024,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="flag-outline"
                                                                 size={19}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.postMenuText}>
@@ -1039,7 +1039,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="eye-off-outline"
                                                                 size={19}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.postMenuText}>
@@ -1305,7 +1305,7 @@ const SportFeed = () => {
                                 multiline
                                 style={styles.textArea}
                                 placeholder="Bạn muốn chia sẻ điều gì về buổi tập hôm nay?"
-                                placeholderTextColor="#8AA3A7"
+                                placeholderTextColor="#8CA4AF"
                             />
 
                             <TouchableOpacity
@@ -1318,7 +1318,7 @@ const SportFeed = () => {
                                             <Ionicons
                                                 name="videocam-outline"
                                                 size={32}
-                                                color="#075E68"
+                                                color="#0A3E4F"
                                             />
 
                                             <Text style={styles.addMediaText}>
@@ -1341,7 +1341,7 @@ const SportFeed = () => {
                                         <Ionicons
                                             name="image-outline"
                                             size={29}
-                                            color="#075E68"
+                                            color="#0A3E4F"
                                         />
 
                                         <Text style={styles.addMediaText}>
@@ -1364,7 +1364,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="barbell-outline"
                                         size={21}
-                                        color="#11343A"
+                                        color="#10303C"
                                     />
 
                                     <Text style={styles.optionText}>
@@ -1384,7 +1384,7 @@ const SportFeed = () => {
                                                 : 'chevron-down'
                                         }
                                         size={17}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -1417,7 +1417,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name="checkmark"
                                                     size={18}
-                                                    color="#0D7F8D"
+                                                    color="#0F5468"
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -1437,7 +1437,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="trophy-outline"
                                         size={21}
-                                        color="#11343A"
+                                        color="#10303C"
                                     />
 
                                     <Text style={styles.optionText}>
@@ -1462,7 +1462,7 @@ const SportFeed = () => {
                                                 : 'chevron-down'
                                         }
                                         size={17}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -1499,7 +1499,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name="checkmark"
                                                     size={18}
-                                                    color="#0D7F8D"
+                                                    color="#0F5468"
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -1530,7 +1530,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="earth-outline"
                                         size={21}
-                                        color="#11343A"
+                                        color="#10303C"
                                     />
 
                                     <Text style={styles.optionText}>
@@ -1550,7 +1550,7 @@ const SportFeed = () => {
                                                 : 'chevron-down'
                                         }
                                         size={17}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -1578,7 +1578,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name={item.icon}
                                                     size={19}
-                                                    color="#11343A"
+                                                    color="#10303C"
                                                 />
 
                                                 <Text style={styles.pickerLabel}>
@@ -1590,7 +1590,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name="checkmark"
                                                     size={18}
-                                                    color="#0D7F8D"
+                                                    color="#0F5468"
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -1647,7 +1647,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="chatbubbles-outline"
                                         size={42}
-                                        color="#9AB4B8"
+                                        color="#9DB5BF"
                                     />
 
                                     <Text style={styles.commentEmptyTitle}>
@@ -1751,7 +1751,7 @@ const SportFeed = () => {
                                                     <Ionicons
                                                         name="ellipsis-horizontal"
                                                         size={20}
-                                                        color="#71949A"
+                                                        color="#6F8F9C"
                                                     />
 
                                                 </TouchableOpacity>
@@ -1775,7 +1775,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="create-outline"
                                                                 size={18}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.commentMenuText}>
@@ -1828,7 +1828,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="close"
                                         size={18}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
 
                                 </TouchableOpacity>
@@ -1852,7 +1852,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="close"
                                         size={18}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
 
                                 </TouchableOpacity>
@@ -1938,7 +1938,7 @@ const SportFeed = () => {
                             <Ionicons
                                 name="bookmark-outline"
                                 size={55}
-                                color="#9AB4B8"
+                                color="#9DB5BF"
                             />
 
                             <Text style={styles.savedEmptyTitle}>
@@ -1978,7 +1978,7 @@ const SportFeed = () => {
                                             <Ionicons
                                                 name="bookmark"
                                                 size={24}
-                                                color="#0D7F8D"
+                                                color="#0F5468"
                                             />
 
                                         </TouchableOpacity>
@@ -2055,7 +2055,7 @@ const SportFeed = () => {
                             onChangeText={setEditCaption}
                             multiline
                             placeholder="Nội dung bài viết..."
-                            placeholderTextColor="#8AA3A7"
+                            placeholderTextColor="#8CA4AF"
                             style={styles.editPostInput}
                         />
 
@@ -2420,7 +2420,7 @@ const styles = StyleSheet.create({
     actionButton: {
         height: 36,
         paddingHorizontal: 12,
-        borderRadius: 18,
+        borderRadius: 999,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.borderLight,
@@ -2764,7 +2764,7 @@ const styles = StyleSheet.create({
         height: 42,
         marginHorizontal: 10,
         paddingHorizontal: 14,
-        borderRadius: 21,
+        borderRadius: 999,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -3011,7 +3011,7 @@ const styles = StyleSheet.create({
         paddingTop: 14,
         paddingBottom: 12,
         backgroundColor: COLORS.white,
-        borderRadius: 20,
+        borderRadius: 999,
         borderWidth: 1,
         borderColor: COLORS.border,
         ...SHADOWS.card,

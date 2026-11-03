@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 54,
-    borderRadius: 16,
+    borderRadius: 999,
     gap: 8,
   },
   addButtonText: {

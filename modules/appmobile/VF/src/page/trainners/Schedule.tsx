@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: 18,
     height: 42,
-    borderRadius: 14,
+    borderRadius: 999,
     marginTop: 16,
     ...SHADOWS.glow,
   },
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceTeal,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 999,
     gap: 3,
   },
   changeActionText: {
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
   dateOptionPill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 999,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 999,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
   submitBtn: {
     flex: 2,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 999,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',

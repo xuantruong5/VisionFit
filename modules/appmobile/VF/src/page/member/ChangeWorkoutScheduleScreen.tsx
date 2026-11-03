@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.22)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 999,
     gap: 6,
   },
   autoSyncPillText: {
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   subModeBtn: {
     flex: 1,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
   startDayPill: {
     flex: 1,
     height: 38,
-    borderRadius: 12,
+    borderRadius: 999,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
 
   // SAVE BUTTON
   saveBtn: {
-    borderRadius: 18,
+    borderRadius: 999,
     overflow: 'hidden',
     ...SHADOWS.glow,
   },
