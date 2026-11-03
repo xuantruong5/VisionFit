@@ -1,7 +1,7 @@
 /* ==========================================================================
    VisionFit Floating Mascot Widget Styles
    Trạng thái thu gọn (Launcher), Trạng thái mở (Panel Chat),
-   Bong bóng lời chào, Modal chọn thú, Responsive Mobile/Desktop.
+   Bong bóng lời chào, Modal chọn thú, Đổi màu theo linh vật (Bear/Cat).
    ========================================================================== */
 
 /* Nút bấm nổi thu gọn (Launcher) */
@@ -19,7 +19,7 @@
   cursor: pointer;
   outline: none;
   filter: drop-shadow(0 8px 24px rgba(18, 50, 36, 0.2));
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
 }
 
 .vif-widget-launcher:hover {
@@ -30,6 +30,11 @@
   transform: translateY(0) scale(0.98);
 }
 
+.vif-widget-launcher.vif-launcher-open {
+  transform: scale(0.96);
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.18));
+}
+
 .vif-launcher-mascot {
   width: 88px;
   height: 104px;
@@ -38,37 +43,38 @@
   justify-content: center;
 }
 
-/* Bong bóng lời chào bên cạnh launcher */
+/* Bong bóng lời chào - Đặt cách xa linh vật với khoảng đệm thoải mái, không dính sát đầu */
 .vif-greeting-bubble {
   position: absolute;
-  bottom: 96px;
-  right: 0;
-  max-width: 260px;
+  bottom: 124px;
+  right: 6px;
+  max-width: 270px;
   background: #ffffff;
   color: #123326;
-  padding: 12px 16px;
-  border-radius: 18px 18px 4px 18px;
-  box-shadow: 0 10px 30px rgba(18, 50, 36, 0.16);
-  border: 1px solid rgba(61, 214, 140, 0.35);
+  padding: 13px 18px;
+  border-radius: 20px 20px 6px 20px;
+  box-shadow: 0 12px 32px rgba(18, 50, 36, 0.16);
+  border: 1.5px solid rgba(61, 214, 140, 0.4);
   font-size: 13.5px;
-  line-height: 1.45;
+  line-height: 1.48;
   cursor: default;
   animation: vif-bubble-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  z-index: 9996;
 }
 
 .vif-greeting-bubble::after {
   content: "";
   position: absolute;
   bottom: -8px;
-  right: 24px;
+  right: 28px;
   width: 14px;
   height: 14px;
-  background: #ffffff;
-  border-right: 1px solid rgba(61, 214, 140, 0.35);
-  border-bottom: 1px solid rgba(61, 214, 140, 0.35);
+  background: inherit;
+  border-right: inherit;
+  border-bottom: inherit;
   transform: rotate(45deg);
 }
 
@@ -88,28 +94,29 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Khung trò chuyện mở (Floating Panel) */
+/* Khung trò chuyện mở (Floating Panel) - Đặt cách xa linh vật launcher, không dính liền */
 .vif-widget-panel {
   position: fixed;
-  bottom: 24px;
+  bottom: 140px; /* Cách xa linh vật (linh vật ở bottom: 24px, cao 104px -> 24 + 104 = 128px + 12px margin = 140px) */
   right: 24px;
   width: 390px;
   max-width: calc(100vw - 32px);
-  height: 620px;
-  max-height: calc(100vh - 48px);
+  height: 520px;
+  max-height: calc(100vh - 170px);
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 26px;
   box-shadow: 0 20px 50px rgba(12, 38, 27, 0.22);
-  border: 1px solid rgba(27, 138, 90, 0.18);
+  border: 1.5px solid rgba(27, 138, 90, 0.2);
   display: flex;
   flex-direction: column;
   z-index: 9995;
   overflow: hidden;
   animation: vif-panel-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 @keyframes vif-panel-in {
-  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -121,6 +128,7 @@
   padding: 14px 18px;
   background: linear-gradient(135deg, #142d25 0%, #1b8a5a 100%);
   color: #ffffff;
+  transition: background 0.3s ease;
 }
 
 .vif-header-left {
@@ -149,7 +157,7 @@
 .vif-header-info p {
   margin: 2px 0 0 0;
   font-size: 11.5px;
-  opacity: 0.85;
+  opacity: 0.88;
 }
 
 .vif-status-badge {
@@ -168,7 +176,7 @@
 }
 
 .vif-header-btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   border: none;
   color: #ffffff;
   padding: 6px 10px;
@@ -179,27 +187,29 @@
 }
 
 .vif-header-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.3);
 }
 
-/* Khu vực cuộn tin nhắn */
+/* Khu vực cuộn tin nhắn - Cách xa linh vật và thoáng đãng */
 .vif-panel-messages {
   flex: 1;
-  padding: 16px;
+  padding: 16px 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   background: #f7faf8;
+  transition: background 0.3s ease;
 }
 
 .vif-msg-bubble {
-  max-width: 82%;
-  padding: 11px 15px;
-  border-radius: 16px;
+  max-width: 84%;
+  padding: 11px 16px;
+  border-radius: 18px;
   font-size: 13.5px;
-  line-height: 1.48;
+  line-height: 1.5;
   word-break: break-word;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 .vif-msg-user {
@@ -213,9 +223,9 @@
   align-self: flex-start;
   background: #ffffff;
   color: #1a2b23;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
 .vif-msg-assistant p,
@@ -260,7 +270,7 @@
   align-self: flex-start;
   font-size: 12px;
   color: #666;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .vif-typing-indicator[hidden],
 .vif-widget-panel [hidden],
@@ -295,13 +305,14 @@
   overflow-x: auto;
   background: #ffffff;
   border-top: 1px solid #edf2ee;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .vif-suggest-btn {
   background: #f0f7f3;
   border: 1px solid #d4e8dc;
   color: #154e38;
-  padding: 6px 11px;
+  padding: 6px 12px;
   border-radius: 12px;
   font-size: 11.5px;
   white-space: nowrap;
@@ -321,11 +332,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .vif-composer-input {
   flex: 1;
-  border: 1px solid #cfe0d6;
+  border: 1.5px solid #cfe0d6;
   border-radius: 14px;
   padding: 10px 14px;
   font-size: 13.5px;
@@ -333,6 +345,7 @@
   resize: none;
   max-height: 80px;
   font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .vif-composer-input:focus {
@@ -363,6 +376,202 @@
 .vif-send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   THEME: GẤU VIF (BEAR THEME) - Tông ấm Nâu Hạt Dẻ, Caramel & Bụng Kem Sữa
+   Màu hộp thoại và nền tin nhắn đồng bộ chuẩn theo màu lông linh vật Gấu
+   ========================================================================== */
+.vif-theme-bear.vif-widget-panel {
+  background: #FFFDF9;
+  border: 2px solid #E2B68E;
+  box-shadow: 0 20px 50px rgba(74, 43, 24, 0.22);
+}
+
+.vif-theme-bear .vif-panel-header {
+  background: linear-gradient(135deg, #4A2B18 0%, #7D4825 50%, #B9855A 100%);
+  color: #FFFFFF;
+  border-bottom: 1px solid rgba(226, 182, 142, 0.35);
+}
+
+.vif-theme-bear .vif-status-badge {
+  background: #FBEAD2;
+  box-shadow: 0 0 8px #B9855A;
+}
+
+.vif-theme-bear .vif-panel-messages {
+  background: #FAF5EE;
+}
+
+.vif-theme-bear .vif-msg-user {
+  background: linear-gradient(135deg, #B9855A 0%, #9B6B43 100%);
+  color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(74, 43, 24, 0.16);
+}
+
+.vif-theme-bear .vif-msg-assistant {
+  background: #FBEAD2; /* Bụng kem sữa ấm của Gấu */
+  color: #4A2B18; /* Nâu sô-cô-la hạt dẻ đậm nét */
+  border: 1.5px solid #E5D0B5;
+  box-shadow: 0 2px 8px rgba(74, 43, 24, 0.06);
+}
+
+.vif-theme-bear .vif-msg-link {
+  color: #9B6B43;
+}
+
+.vif-theme-bear .vif-typing-indicator {
+  background: #FBEAD2;
+  border-color: #E5D0B5;
+  color: #4A2B18;
+}
+
+.vif-theme-bear .vif-typing-dots span {
+  background: #B9855A;
+}
+
+.vif-theme-bear .vif-suggestions {
+  background: #FFFDF9;
+  border-top: 1px solid #EEDBCA;
+}
+
+.vif-theme-bear .vif-suggest-btn {
+  background: #F8EFE4;
+  border: 1px solid #E2B68E;
+  color: #4A2B18;
+}
+
+.vif-theme-bear .vif-suggest-btn:hover {
+  background: #F0DFC8;
+}
+
+.vif-theme-bear .vif-composer {
+  background: #FFFDF9;
+  border-top: 1px solid #EEDBCA;
+}
+
+.vif-theme-bear .vif-composer-input {
+  border-color: #E2B68E;
+  background: #FFFFFF;
+  color: #4A2B18;
+}
+
+.vif-theme-bear .vif-composer-input:focus {
+  border-color: #B9855A;
+  box-shadow: 0 0 0 3px rgba(185, 133, 90, 0.22);
+}
+
+.vif-theme-bear .vif-send-btn {
+  background: linear-gradient(135deg, #B9855A 0%, #9B6B43 100%);
+}
+
+.vif-theme-bear .vif-send-btn:hover:not(:disabled) {
+  background: #7D4825;
+}
+
+.vif-theme-bear.vif-greeting-bubble {
+  background: #FFFDF9;
+  color: #4A2B18;
+  border: 2px solid #B9855A;
+  box-shadow: 0 12px 32px rgba(74, 43, 24, 0.2);
+}
+
+/* ==========================================================================
+   THEME: MÈO VIF (CAT THEME) - Tông ấm Nâu Cam, Cam Gừng & Bụng Kem Sáng
+   Màu hộp thoại và nền tin nhắn đồng bộ chuẩn theo màu lông linh vật Mèo
+   ========================================================================== */
+.vif-theme-cat.vif-widget-panel {
+  background: #FFFAF5;
+  border: 2px solid #F6B88F;
+  box-shadow: 0 20px 50px rgba(74, 37, 17, 0.22);
+}
+
+.vif-theme-cat .vif-panel-header {
+  background: linear-gradient(135deg, #4A2511 0%, #B84E1A 50%, #F48B3E 100%);
+  color: #FFFFFF;
+  border-bottom: 1px solid rgba(246, 184, 143, 0.35);
+}
+
+.vif-theme-cat .vif-status-badge {
+  background: #FFF3E0;
+  box-shadow: 0 0 8px #F48B3E;
+}
+
+.vif-theme-cat .vif-panel-messages {
+  background: #FFF7F0;
+}
+
+.vif-theme-cat .vif-msg-user {
+  background: linear-gradient(135deg, #F48B3E 0%, #D96E26 100%);
+  color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(74, 37, 17, 0.16);
+}
+
+.vif-theme-cat .vif-msg-assistant {
+  background: #FFF3E0; /* Bụng kem sáng của Mèo */
+  color: #4A2511; /* Nâu cam đậm */
+  border: 1.5px solid #F6D5B4;
+  box-shadow: 0 2px 8px rgba(74, 37, 17, 0.06);
+}
+
+.vif-theme-cat .vif-msg-link {
+  color: #D96E26;
+}
+
+.vif-theme-cat .vif-typing-indicator {
+  background: #FFF3E0;
+  border-color: #F6D5B4;
+  color: #4A2511;
+}
+
+.vif-theme-cat .vif-typing-dots span {
+  background: #F48B3E;
+}
+
+.vif-theme-cat .vif-suggestions {
+  background: #FFFAF5;
+  border-top: 1px solid #FFE4CD;
+}
+
+.vif-theme-cat .vif-suggest-btn {
+  background: #FFF0E0;
+  border: 1px solid #F6B88F;
+  color: #4A2511;
+}
+
+.vif-theme-cat .vif-suggest-btn:hover {
+  background: #FFE2C7;
+}
+
+.vif-theme-cat .vif-composer {
+  background: #FFFAF5;
+  border-top: 1px solid #FFE4CD;
+}
+
+.vif-theme-cat .vif-composer-input {
+  border-color: #F6B88F;
+  background: #FFFFFF;
+  color: #4A2511;
+}
+
+.vif-theme-cat .vif-composer-input:focus {
+  border-color: #F48B3E;
+  box-shadow: 0 0 0 3px rgba(244, 139, 62, 0.22);
+}
+
+.vif-theme-cat .vif-send-btn {
+  background: linear-gradient(135deg, #F48B3E 0%, #D96E26 100%);
+}
+
+.vif-theme-cat .vif-send-btn:hover:not(:disabled) {
+  background: #BD4B14;
+}
+
+.vif-theme-cat.vif-greeting-bubble {
+  background: #FFFAF5;
+  color: #4A2511;
+  border: 2px solid #F48B3E;
+  box-shadow: 0 12px 32px rgba(74, 37, 17, 0.2);
 }
 
 /* ==========================================================================
@@ -568,14 +777,19 @@
     width: 68px;
     height: 80px;
   }
+  .vif-greeting-bubble {
+    bottom: 104px;
+    right: 4px;
+    max-width: calc(100vw - 32px);
+  }
   .vif-widget-panel {
-    bottom: 0;
-    right: 0;
-    width: 100vw;
-    height: 100vh;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
+    bottom: 108px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    height: calc(100vh - 130px);
+    border-radius: 22px;
   }
   .vif-species-cards {
     grid-template-columns: 1fr;

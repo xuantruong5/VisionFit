@@ -146,6 +146,7 @@ function AnimatIcon({ name_icon, focused, color, size }: { name_icon: string; fo
 
 function MainTabs() {
   return (
+    <View style={{ flex: 1 }}>
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -198,6 +199,8 @@ function MainTabs() {
       <Tab.Screen name="Members" component={Members} options={{ tabBarLabel: "Học viên" }} />
       <Tab.Screen name="Profile" component={Profile} options={{ tabBarLabel: "Hồ sơ" }} />
     </Tab.Navigator>
+    <FloatingMascotWidget />
+    </View>
   );
 }
 
@@ -233,6 +236,7 @@ function SoTayStack() {
 
 function MemberTabs() {
   return (
+    <View style={{ flex: 1 }}>
     <Tab.Navigator screenOptions={({ route }) => ({
       headerShown: false,
       tabBarIcon: ({ focused, color, size }) => {
@@ -284,6 +288,8 @@ function MemberTabs() {
       <Tab.Screen name="Sổ Tay" component={SoTayStack} />
       <Tab.Screen name="Thêm" component={MemberProfile} />
     </Tab.Navigator>
+    <FloatingMascotWidget />
+    </View>
   );
 }
 
@@ -398,7 +404,6 @@ const App = () => {
         <Stack.Screen name="ChatRoom" component={ChatRoom} />
       </Stack.Navigator>
     </NavigationContainer>
-    <FloatingMascotWidget />
   </View>
   )
 }
