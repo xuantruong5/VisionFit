@@ -7,22 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
 import apiFitlife from '../../general/api';
 import { COLORS, SHADOWS } from '../../general/theme';
-
-
-const PACKAGE_KEY = 'visionfit_selected_package';
-const TRAINER_KEY = 'visionfit_selected_pt';
-
-interface TrainingPackage {
-    id: string | number;
-    ten_goi: string;
-    gia: number;
-    thoi_han: number;
-    loai?: string;
-    so_buoi_pt?: number;
-}
-
 interface Trainer {
-    id: number | string;
+    id: number;
     ho_ten: string;
     hinh_anh?: string | null;
     chuc_danh?: string;
@@ -32,218 +18,114 @@ interface Trainer {
     qua_trinh_dao_tao?: string;
     chung_chi?: string;
     thanh_tuu?: string;
+    chuyen_mon?: string;
     tinh_trang: number;
-    is_active: number;
-    is_block: number;
     id_phong_tap?: number;
-    chuyen_mon?: string[];
+    is_active?: number;
+    is_block?: number;
 }
-
-type FilterType = 'all' | 'strength' | 'weight' | 'yoga' | 'recovery';
-
-const FILTERS: { id: FilterType; label: string }[] = [
-    { id: 'all', label: 'Tất cả' },
-    { id: 'strength', label: 'Tăng cơ' },
-    { id: 'weight', label: 'Giảm cân' },
-    { id: 'yoga', label: 'Yoga' },
-    { id: 'recovery', label: 'Phục hồi' },
-];
-
-const MOCK_TRAINERS: Trainer[] = [
-    {
-        id: 1, ho_ten: 'Nguyễn Văn Hùng', chuc_danh: 'Personal Trainer',
-        mo_ta: 'Huấn luyện viên chuyên về tăng cơ và thể hình.',
-        so_nam_kinh_nghiem: '5', kinh_nghiem_lam_viec: '5 năm làm việc trong lĩnh vực thể hình.',
-        qua_trinh_dao_tao: 'Tốt nghiệp chuyên ngành Thể dục thể thao.',
-        chung_chi: 'Chứng chỉ Personal Trainer', thanh_tuu: 'Top Trainer VisionFit 2025',
-        chuyen_mon: ['strength'], tinh_trang: 1, is_active: 1, is_block: 0, id_phong_tap: 1,
-    },
-    {
-        id: 2, ho_ten: 'Trần Minh Tuấn', chuc_danh: 'Fitness Trainer',
-        mo_ta: 'Huấn luyện viên chuyên về giảm cân và cải thiện sức bền.',
-        so_nam_kinh_nghiem: '3', kinh_nghiem_lam_viec: '3 năm huấn luyện cá nhân.',
-        qua_trinh_dao_tao: 'Đào tạo chuyên sâu về Fitness.',
-        chung_chi: 'Fitness Trainer Certificate', thanh_tuu: 'Trainer xuất sắc 2025',
-        chuyen_mon: ['weight'], tinh_trang: 1, is_active: 1, is_block: 0, id_phong_tap: 1,
-    },
-    {
-        id: 3, ho_ten: 'Lê Quốc Bảo', chuc_danh: 'Strength Coach',
-        mo_ta: 'Huấn luyện viên chuyên về tăng cơ và sức mạnh.',
-        so_nam_kinh_nghiem: '7', kinh_nghiem_lam_viec: '7 năm trong lĩnh vực huấn luyện thể hình.',
-        qua_trinh_dao_tao: 'Đào tạo chuyên sâu về Strength Training.',
-        chung_chi: 'Strength Coach Certificate', thanh_tuu: 'Vô địch Fitness khu vực 2024',
-        chuyen_mon: ['strength'], tinh_trang: 1, is_active: 1, is_block: 0, id_phong_tap: 2,
-    },
-    {
-        id: 4, ho_ten: 'Phạm Hoàng Nam', chuc_danh: 'Senior Trainer',
-        mo_ta: 'Huấn luyện viên có nhiều kinh nghiệm về phục hồi thể chất.',
-        so_nam_kinh_nghiem: '10', kinh_nghiem_lam_viec: '10 năm huấn luyện và tư vấn thể hình.',
-        qua_trinh_dao_tao: 'Đào tạo chuyên sâu về thể thao và phục hồi.',
-        chung_chi: 'Senior Personal Trainer', thanh_tuu: 'Trainer tiêu biểu 2024',
-        chuyen_mon: ['recovery'], tinh_trang: 1, is_active: 1, is_block: 0, id_phong_tap: 2,
-    },
-    {
-        id: 5, ho_ten: 'Nguyễn Thị Lan', chuc_danh: 'Fitness & Yoga Trainer',
-        mo_ta: 'Huấn luyện viên chuyên về Fitness và Yoga.',
-        so_nam_kinh_nghiem: '4', kinh_nghiem_lam_viec: '4 năm huấn luyện Fitness và Yoga.',
-        qua_trinh_dao_tao: 'Đào tạo Yoga và Fitness chuyên nghiệp.',
-        chung_chi: 'Yoga Instructor Certificate', thanh_tuu: 'Trainer được yêu thích 2025',
-        chuyen_mon: ['yoga'], tinh_trang: 1, is_active: 1, is_block: 0, id_phong_tap: 1,
-    },
-    {
-        id: 6, ho_ten: 'Đỗ Minh Khôi', chuc_danh: 'CrossFit Coach',
-        mo_ta: 'Huấn luyện viên CrossFit và thể lực.',
-        so_nam_kinh_nghiem: '8', chuyen_mon: ['strength'],
-        tinh_trang: 0, is_active: 1, is_block: 0, id_phong_tap: 2,
-    },
-];
-
 const getInitials = (name: string) => name.trim().split(/\s+/).slice(-2).map(x => x.charAt(0)).join('').toUpperCase();
 const getExperience = (t: Trainer) => t.so_nam_kinh_nghiem ? `${t.so_nam_kinh_nghiem} năm kinh nghiệm` : 'Huấn luyện viên';
-
-const getSpecialties = (t: Trainer) => {
-    const map: Record<string, string> = { strength: 'Tăng cơ', weight: 'Giảm cân', yoga: 'Yoga', recovery: 'Phục hồi' };
-    return (t.chuyen_mon || []).map(x => map[x] || x).slice(0, 3);
-};
-
 const PTListScreen = ({ navigation, route }: any) => {
-    const [selectedPackage, setSelectedPackage] = useState<TrainingPackage | null>(null);
+    const selectedPackage = route?.params?.selectedPackage || null;
     const [trainers, setTrainers] = useState<Trainer[]>([]);
     const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
-    const [activeFilter, setActiveFilter] = useState<FilterType>('all');
     const [searchText, setSearchText] = useState('');
     const [detail, setDetail] = useState<Trainer | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [packageLoading, setPackageLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Khôi phục lựa chọn
-    useEffect(() => {
-        const restoreSelection = async () => {
-            try {
-                let pkg = route?.params?.selectedPackage || null;
-                if (!pkg) {
-                    const saved = await AsyncStorage.getItem(PACKAGE_KEY);
-                    pkg = saved ? JSON.parse(saved) : null;
-                }
-
-                setSelectedPackage(pkg);
-                setSelectedTrainerId(null);
-
-                const saved = await AsyncStorage.getItem(TRAINER_KEY);
-                if (saved && pkg) {
-                    const parsed = JSON.parse(saved);
-                    if (String(parsed.selected_for_package_id) === String(pkg.id)) {
-                        setSelectedTrainerId(String(parsed.id));
-                    } else {
-                        await AsyncStorage.removeItem(TRAINER_KEY);
-                    }
-                }
-            } catch {
-                setSelectedPackage(null);
-                setSelectedTrainerId(null);
-            } finally {
-                setPackageLoading(false);
-            }
-        };
-        restoreSelection();
-    }, [route?.params?.selectedPackage]);
-
-    // Tải danh sách PT từ Backend API
+    // API lấy danh sách PT
     const loadTrainers = useCallback(async (refresh = false) => {
         if (refresh) setRefreshing(true);
         else setLoading(true);
         setError(null);
-
         try {
-            const res = await apiFitlife.get('/trainers');
-            if (res.data?.status && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+            const res = await apiFitlife.get('/client/trainers');
+            if (res.data?.status && Array.isArray(res.data?.data)) {
                 setTrainers(res.data.data);
             } else {
-                setTrainers(MOCK_TRAINERS.filter(t =>
-                    Number(t.tinh_trang) === 1 && Number(t.is_active) === 1 && Number(t.is_block) === 0
-                ));
+                setTrainers([]);
             }
-        } catch (e) {
-            console.log('Lỗi tải danh sách PT:', e);
-            setTrainers(MOCK_TRAINERS.filter(t =>
-                Number(t.tinh_trang) === 1 && Number(t.is_active) === 1 && Number(t.is_block) === 0
-            ));
+        } catch (e: any) {
+            console.log('Lỗi tải PT:', e.response?.data || e.message);
+            setTrainers([]);
+            setError('Không thể tải danh sách huấn luyện viên.');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     }, []);
 
-    useEffect(() => { loadTrainers(); }, [loadTrainers]);
-
-    // Tìm kiếm và lọc PT
-    const filteredTrainers = useMemo(() => {
-        const keyword = searchText.trim().toLowerCase();
-        const terms: Record<string, string[]> = {
-            strength: ['tăng cơ', 'sức mạnh', 'strength', 'thể hình'],
-            weight: ['giảm cân', 'sức bền', 'weight loss'],
-            yoga: ['yoga'],
-            recovery: ['phục hồi', 'recovery'],
-        };
-
-        return trainers.filter(t => {
-            const content = [t.ho_ten, t.chuc_danh, t.mo_ta, t.chung_chi, ...(t.chuyen_mon || [])].filter(Boolean).join(' ').toLowerCase();
-            const matchesSearch = !keyword || content.includes(keyword);
-            const matchesFilter = activeFilter === 'all' || (t.chuyen_mon || []).includes(activeFilter) ||
-                (terms[activeFilter] || []).some(term => content.includes(term));
-            return matchesSearch && matchesFilter;
-        });
-    }, [trainers, activeFilter, searchText]);
-
-    const selectedTrainer = useMemo(
-        () => trainers.find(t => String(t.id) === selectedTrainerId) || null,
-        [trainers, selectedTrainerId]
-    );
-
-    const requiresPT = selectedPackage?.loai === 'pt' || Number(selectedPackage?.so_buoi_pt || 0) > 0;
-    const cannotContinue = !selectedPackage || loading || (requiresPT && !selectedTrainer);
-
-    // Chọn huấn luyện viên
-    const handleSelectTrainer = async (trainer: Trainer) => {
-        if (!selectedPackage) return Alert.alert('Chưa chọn gói tập', 'Vui lòng quay lại lựa chọn gói tập trước.');
+    // API tìm kiếm PT
+    const searchTrainers = async (keyword: string) => {
+        setSearchText(keyword);
+        if (!keyword.trim()) {
+            loadTrainers();
+            return;
+        }
+        setLoading(true);
+        setError(null);
         try {
-            await AsyncStorage.setItem(TRAINER_KEY, JSON.stringify({ ...trainer, selected_for_package_id: selectedPackage.id }));
-            setSelectedTrainerId(String(trainer.id));
-            setDetail(null);
-        } catch {
-            Alert.alert('Lỗi', 'Không thể lưu PT đã chọn.');
+            const res = await apiFitlife.post('/client/search-trainer', {
+                noi_dung_tim_kiem: keyword.trim(),
+            });
+            if (res.data?.status && Array.isArray(res.data?.data)) {
+                setTrainers(res.data.data);
+            } else {
+                setTrainers([]);
+            }
+        } catch (e: any) {
+            console.log('Lỗi tìm kiếm PT:', e.response?.data || e.message);
+            setTrainers([]);
+            setError('Không thể tìm kiếm huấn luyện viên.');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Chuyển sang xem lại đăng ký
-    const handleContinue = async () => {
-        if (!selectedPackage) return Alert.alert('Thông báo', 'Bạn cần chọn gói tập trước.');
-        if (requiresPT && !selectedTrainer) return Alert.alert('Chưa chọn PT', 'Gói tập này yêu cầu lựa chọn huấn luyện viên cá nhân.');
+    useEffect(() => {
+        loadTrainers();
+    }, [loadTrainers]);
 
-        try {
-            if (!selectedTrainer) await AsyncStorage.removeItem(TRAINER_KEY);
+    // PT đang được chọn
+    const selectedTrainer =trainers.find(t => String(t.id) === selectedTrainerId) || null;
 
-            const routeNames = navigation.getState()?.routeNames || [];
-            const target = routeNames.includes('RegistrationReview') ? 'RegistrationReview' : routeNames.includes('RegistrationReviewScreen') ? 'RegistrationReviewScreen' : 'RegistrationReview';
-            navigation.navigate(target, { selectedPackage, selectedTrainer: selectedTrainer || null });
-        } catch {
-            Alert.alert('Lỗi', 'Không thể lưu thông tin đăng ký.');
+    // Chọn PT
+    const handleSelectTrainer = (trainer: Trainer) => {
+        if (!selectedPackage) {
+            Alert.alert(
+                'Chưa chọn gói tập',
+                'Vui lòng quay lại lựa chọn gói tập trước.'
+            );
+            return;
         }
+
+        setSelectedTrainerId(String(trainer.id));
+        setDetail(null);
     };
 
-    // Ảnh PT
+    // Tiếp tục đăng ký
+    const handleContinue = () => {
+        if (!selectedPackage) {
+            Alert.alert('Thông báo', 'Bạn cần chọn gói tập trước.');
+            return;
+        }
+        navigation.navigate('RegistrationReview', {    selectedPackage: selectedPackage, selectedTrainer: selectedTrainer, });
+    };
+
+    // Avatar PT
     const renderAvatar = (trainer: Trainer, size = 70) => {
+        const avatarStyle = { width: size, height: size, borderRadius: size / 2, };
         const url = trainer.hinh_anh;
-        const avatarStyle = { width: size, height: size, borderRadius: size / 2 };
-
         return (
             <View style={[styles.avatar, avatarStyle]}>
                 {url && /^https?:\/\//.test(url) ? (
-                    <Image source={{ uri: url }} style={avatarStyle} resizeMode="cover" />
+                    <Image source={{ uri: url }} style={avatarStyle} resizeMode="cover"/>
                 ) : (
-                    <Text style={[styles.avatarText, { fontSize: size * 0.29 }]}>{getInitials(trainer.ho_ten)}</Text>
+                    <Text style={[styles.avatarText, { fontSize: size * 0.29 }]}>
+                        {getInitials(trainer.ho_ten)}
+                    </Text>
                 )}
             </View>
         );
@@ -253,37 +135,50 @@ const PTListScreen = ({ navigation, route }: any) => {
     const renderTrainer = ({ item }: { item: Trainer }) => {
         const selected = selectedTrainerId === String(item.id);
         return (
-            <TouchableOpacity activeOpacity={0.9} onPress={() => handleSelectTrainer(item)}
-                style={[styles.trainerCard, selected && styles.trainerCardSelected]}>
-
+            <TouchableOpacity activeOpacity={0.9}  onPress={() => handleSelectTrainer(item)}
+                style={[ styles.trainerCard, selected && styles.trainerCardSelected, ]} >
                 {selected && <View style={styles.selectedStripe} />}
                 <View style={styles.trainerTop}>
                     <View>
                         {renderAvatar(item, 64)}
                         <View style={styles.onlineDot} />
                     </View>
+
                     <View style={styles.trainerInfo}>
                         <View style={styles.nameRow}>
-                            <Text style={styles.trainerName} numberOfLines={1}>{item.ho_ten}</Text>
+                            <Text style={styles.trainerName} numberOfLines={1}>
+                                {item.ho_ten}
+                            </Text>
                             <Ionicons name="checkmark-circle" size={15} color={COLORS.accentBlue} />
                         </View>
-                        <Text style={styles.trainerRole}>{item.chuc_danh || 'Huấn luyện viên'}</Text>
+
+                        <Text style={styles.trainerRole}>
+                            {item.chuc_danh || 'Huấn luyện viên'}
+                        </Text>
+
                         <View style={styles.experienceRow}>
                             <Ionicons name="ribbon" size={13} color={COLORS.accentGold} />
-                            <Text style={styles.experienceText}>{getExperience(item)}</Text>
+                            <Text style={styles.experienceText}>
+                                {getExperience(item)}
+                            </Text>
                         </View>
                     </View>
-                    <View style={[styles.checkCircle, selected && styles.checkCircleActive]}>
-                        {selected && <Ionicons name="checkmark" size={15} color={COLORS.white} />}
+
+                    <View style={[ styles.checkCircle, selected && styles.checkCircleActive, ]} >
+                        {selected && (
+                            <Ionicons name="checkmark" size={15} color={COLORS.white} />
+                        )}
                     </View>
                 </View>
 
-                {getSpecialties(item).length > 0 && (
+                {item.chuyen_mon && (
                     <View style={styles.tagsRow}>
-                        {getSpecialties(item).map(tag => (
-                            <View key={tag} style={styles.tag}>
+                        {item.chuyen_mon.split(',').map((tag, index) => (
+                            <View key={index} style={styles.tag}>
                                 <Ionicons name="flash" size={11} color={COLORS.primary} />
-                                <Text style={styles.tagText}>{tag}</Text>
+                                <Text style={styles.tagText}>
+                                    {tag.trim()}
+                                </Text>
                             </View>
                         ))}
                     </View>
@@ -292,19 +187,18 @@ const PTListScreen = ({ navigation, route }: any) => {
                 <Text style={styles.trainerDescription} numberOfLines={2}>
                     {item.mo_ta || 'Đồng hành và hỗ trợ hội viên trong quá trình tập luyện.'}
                 </Text>
-
                 <View style={styles.cardDivider} />
                 <View style={styles.trainerBottom}>
-                    <TouchableOpacity style={styles.viewProfileButton} onPress={() => setDetail(item)}>
+                    <TouchableOpacity style={styles.viewProfileButton} onPress={() => setDetail(item)} >
                         <Ionicons name="document-text-outline" size={15} color={COLORS.primary} />
-                        <Text style={styles.viewProfileText}>Xem hồ sơ PT</Text>
+                        <Text style={styles.viewProfileText}>
+                            Xem hồ sơ PT
+                        </Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity style={[styles.selectButton, selected && styles.selectButtonActive]}
-                        onPress={() => handleSelectTrainer(item)}>
-                        <Ionicons name={selected ? 'checkmark-circle' : 'add-circle-outline'} size={16}
-                            color={selected ? COLORS.white : COLORS.primary} />
-                        <Text style={[styles.selectButtonText, selected && styles.selectButtonTextActive]}>
+                    <TouchableOpacity style={[ styles.selectButton, selected && styles.selectButtonActive, ]}
+                        onPress={() => handleSelectTrainer(item)} >
+                        <Ionicons name={selected ? 'checkmark-circle' : 'add-circle-outline'} size={16} color={selected ? COLORS.white : COLORS.primary} />
+                        <Text  style={[ styles.selectButtonText, selected && styles.selectButtonTextActive, ]} >
                             {selected ? 'Đã chọn' : 'Lựa chọn'}
                         </Text>
                     </TouchableOpacity>
@@ -313,7 +207,8 @@ const PTListScreen = ({ navigation, route }: any) => {
         );
     };
 
-    const renderDetailField = (icon: string, title: string, value?: string | null) => {
+    // Chi tiết PT
+    const renderDetailField = ( icon: string, title: string, value?: string | null ) => {
         if (!value) return null;
         return (
             <View style={styles.detailField}>
@@ -328,30 +223,17 @@ const PTListScreen = ({ navigation, route }: any) => {
         );
     };
 
-    if (packageLoading) return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.centerState}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.stateText}>Đang chuẩn bị lựa chọn PT...</Text>
-            </View>
-        </SafeAreaView>
-    );
-
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <StatusBar barStyle="dark-content" />
 
             {/* Header */}
-            <AppHeader
-                title="Chọn huấn luyện viên"
-                onBack={() => navigation.goBack()}
-                rightComponent={
+            <AppHeader title="Chọn huấn luyện viên" onBack={() => navigation.goBack()}  
+            rightComponent={
                     <View style={styles.headerIcon}>
                         <Ionicons name="people-outline" size={20} color={COLORS.primary} />
                     </View>
-                }
-            />
-
+                } />
             {/* Progress */}
             <View style={styles.progressContainer}>
                 <View style={styles.progressRow}>
@@ -363,14 +245,13 @@ const PTListScreen = ({ navigation, route }: any) => {
                 </View>
             </View>
 
-            <FlatList
-                data={filteredTrainers}
-                renderItem={renderTrainer}
-                keyExtractor={item => String(item.id)}
-                showsVerticalScrollIndicator={false}
+            <FlatList data={trainers} renderItem={renderTrainer} keyExtractor={item => String(item.id)} showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={styles.listContent}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadTrainers(true)} tintColor={COLORS.primary} />}
+                refreshControl={
+                    <RefreshControl  refreshing={refreshing} onRefresh={() => loadTrainers(true)} tintColor={COLORS.primary} />
+                }
+
                 ListHeaderComponent={
                     <>
                         {/* Banner */}
@@ -394,11 +275,36 @@ const PTListScreen = ({ navigation, route }: any) => {
                             <View style={styles.packageIcon}>
                                 <Ionicons name="barbell" size={22} color={COLORS.primary} />
                             </View>
+
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.packageLabel}>GÓI TẬP ĐÃ CHỌN</Text>
-                                <Text style={styles.packageName} numberOfLines={2}>{selectedPackage?.ten_goi || 'Chưa chọn gói tập'}</Text>
+
+                                <Text style={styles.packageName} numberOfLines={2}>
+                                    {selectedPackage?.ten_goi_tap || 'Chưa chọn gói tập'}
+                                </Text>
+
+                                <Text style={styles.packageInfo}>
+                                    Thời hạn: {selectedPackage?.thoi_han_ngay} ngày
+                                </Text>
+
+                                <Text style={styles.packageInfo}>
+                                    Giá: {Number(selectedPackage?.gia || 0).toLocaleString('vi-VN')}đ
+                                </Text>
+
+                                {/* <Text style={styles.packageInfo}>
+                                    Số buổi tập: {selectedPackage?.so_buoi}
+                                </Text>
+
+                                <Text style={styles.packageInfo}>
+                                    Số buổi PT: {selectedPackage?.so_buoi_pt}
+                                </Text> */}
                             </View>
-                            <Ionicons name="checkmark-circle" size={22} color={selectedPackage ? COLORS.accentGreen : COLORS.textLight} />
+
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={22}
+                                color={selectedPackage ? COLORS.accentGreen : COLORS.textLight}
+                            />
                         </View>
 
                         {!selectedPackage && (
@@ -422,29 +328,25 @@ const PTListScreen = ({ navigation, route }: any) => {
                         {/* Tìm kiếm */}
                         <View style={styles.searchBox}>
                             <Ionicons name="search-outline" size={19} color={COLORS.primary} />
-                            <TextInput style={styles.searchInput} value={searchText} onChangeText={setSearchText}
-                                placeholder="Tìm tên hoặc chuyên môn PT..." placeholderTextColor={COLORS.textLight}
-                                returnKeyType="search" onSubmitEditing={() => Keyboard.dismiss()} />
+
+                            <TextInput
+                                style={styles.searchInput}
+                                value={searchText}
+                                onChangeText={searchTrainers}
+                                placeholder="Tìm tên hoặc chuyên môn PT..."
+                                placeholderTextColor={COLORS.textLight}
+                                returnKeyType="search"
+                            />
+
                             {searchText.length > 0 && (
-                                <TouchableOpacity onPress={() => setSearchText('')}>
-                                    <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
+                                <TouchableOpacity onPress={() => {  setSearchText(''); loadTrainers(); }} >
+                                    <Ionicons name="close-circle" size={19} color={COLORS.textMuted}/>
                                 </TouchableOpacity>
                             )}
                         </View>
 
-                        {/* Bộ lọc */}
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled" contentContainerStyle={styles.filtersRow}>
-                            {FILTERS.map(filter => {
-                                const active = activeFilter === filter.id;
-                                return (
-                                    <TouchableOpacity key={filter.id} onPress={() => setActiveFilter(filter.id)}
-                                        style={[styles.filterChip, active && styles.filterChipActive]}>
-                                        <Text style={[styles.filterText, active && styles.filterTextActive]}>{filter.label}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
+
+
                     </>
                 }
                 ListEmptyComponent={
@@ -483,30 +385,43 @@ const PTListScreen = ({ navigation, route }: any) => {
                 {selectedTrainer ? (
                     <View style={styles.selectionSummary}>
                         {renderAvatar(selectedTrainer, 43)}
+
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.summaryLabel}>HUẤN LUYỆN VIÊN ĐÃ CHỌN</Text>
-                            <Text style={styles.summaryName} numberOfLines={1}>{selectedTrainer.ho_ten}</Text>
+                            <Text style={styles.summaryLabel}>
+                                HUẤN LUYỆN VIÊN ĐÃ CHỌN
+                            </Text>
+
+                            <Text style={styles.summaryName} numberOfLines={1}>
+                                {selectedTrainer.ho_ten}
+                            </Text>
                         </View>
+
                         <View style={styles.summaryCheck}>
                             <Ionicons name="checkmark" size={15} color={COLORS.white} />
                         </View>
                     </View>
                 ) : (
                     <Text style={styles.noSelectionText}>
-                        {requiresPT ? 'Vui lòng chọn huấn luyện viên để tiếp tục' : 'Bạn có thể chọn PT hoặc bỏ qua bước này'}
+                        Vui lòng chọn huấn luyện viên hoặc bỏ qua bước này.
                     </Text>
                 )}
 
-                <TouchableOpacity activeOpacity={0.85}
-                    disabled={!!cannotContinue} onPress={handleContinue}>
+                <TouchableOpacity activeOpacity={0.85} disabled={!selectedTrainer} onPress={handleContinue} >
                     <LinearGradient
-                        colors={cannotContinue ? ['#AFC8D3', '#AFC8D3'] : [COLORS.primary, COLORS.primaryDark]}
+                        colors={
+                            !selectedTrainer
+                                ? ['#AFC8D3', '#AFC8D3']
+                                : [COLORS.primary, COLORS.primaryDark]
+                        }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.continueButton}
                     >
-                        <Text style={styles.continueText}>{selectedTrainer ? 'Tiếp tục đăng ký' : 'Bỏ qua PT và tiếp tục'}</Text>
-                        <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
+                        <Text style={styles.continueText}>
+                            {selectedTrainer ? 'Tiếp tục đăng ký' : 'Vui lòng chọn PT'}
+                        </Text>
+
+                        <Ionicons name="arrow-forward"  size={20} color={COLORS.white} />
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
@@ -515,7 +430,6 @@ const PTListScreen = ({ navigation, route }: any) => {
             <Modal visible={detail !== null} animationType="slide" transparent onRequestClose={() => setDetail(null)}>
                 <View style={styles.modalContainer}>
                     <TouchableOpacity activeOpacity={1} style={styles.modalBackdrop} onPress={() => setDetail(null)} />
-
                     {detail && (
                         <SafeAreaView style={styles.modalSheet} edges={['bottom']}>
                             <View style={styles.modalHandle} />
@@ -538,11 +452,11 @@ const PTListScreen = ({ navigation, route }: any) => {
                                         <Ionicons name="ribbon" size={15} color={COLORS.accentGold} />
                                         <Text style={styles.profileExperienceText}>{getExperience(detail)}</Text>
                                     </View>
-                                    {getSpecialties(detail).length > 0 && (
+                                    {detail.chuyen_mon && (
                                         <View style={styles.profileTags}>
-                                            {getSpecialties(detail).map(tag => (
-                                                <View key={tag} style={styles.tag}>
-                                                    <Text style={styles.tagText}>{tag}</Text>
+                                            {detail.chuyen_mon.split(',').map((tag, index) => (
+                                                <View key={index} style={styles.tag}>
+                                                    <Text style={styles.tagText}>{tag.trim()}</Text>
                                                 </View>
                                             ))}
                                         </View>
@@ -562,12 +476,7 @@ const PTListScreen = ({ navigation, route }: any) => {
                             </ScrollView>
 
                             <TouchableOpacity activeOpacity={0.85} onPress={() => handleSelectTrainer(detail)}>
-                                <LinearGradient
-                                    colors={[COLORS.primary, COLORS.primaryDark]}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.modalChooseButton}
-                                >
+                                <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]}  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalChooseButton}>
                                     <Text style={styles.modalChooseText}>
                                         {selectedTrainerId === String(detail.id) ? 'Xác nhận lựa chọn' : 'Chọn huấn luyện viên này'}
                                     </Text>
@@ -1290,6 +1199,11 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: COLORS.white,
         fontWeight: '800',
+    },
+    packageInfo: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        marginTop: 4,
     },
 });
 

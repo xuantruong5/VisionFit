@@ -1,6 +1,6 @@
 
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -8,25 +8,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
-
-
-const PACKAGE_KEY = 'visionfit_selected_package';
-const TRAINER_KEY = 'visionfit_selected_pt';
-const DRAFT_KEY = 'visionfit_registration_draft';
-
-type Package = {
-  id: number | string; ten_goi: string; gia: number; thoi_han: number;
-  loai?: string; so_buoi_pt?: number; trang_thai?: string;
-};
-
-type Trainer = {
-  id: number | string; ho_ten: string;
-  chuc_danh?: string; so_nam_kinh_nghiem?: number | string;
-  selected_for_package_id?: number | string;
-};
+import apiFitlife from '../../general/api';
 
 const money = (n: number) => `${n.toLocaleString('vi-VN')}đ`;
-
 const InfoRow = ({ label, value, color }: { label: string; value: string; color?: string }) => (
   <View style={s.infoRow}>
     <Text style={s.infoLabel}>{label}</Text>
@@ -35,82 +19,80 @@ const InfoRow = ({ label, value, color }: { label: string; value: string; color?
 );
 
 const RegistrationReviewScreen = ({ navigation, route }: any) => {
-  const [pkg, setPkg] = useState<Package | null>(null);
-  const [pt, setPt] = useState<Trainer | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  // Đọc lại dữ liệu mỗi lần quay về từ trang chỉnh sửa.
-  useFocusEffect(useCallback(() => {
-    let active = true;
-
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [p, t] = await Promise.all([
-          AsyncStorage.getItem(PACKAGE_KEY),
-          AsyncStorage.getItem(TRAINER_KEY),
-        ]);
-
-        const selectedPackage = p ? JSON.parse(p) : route?.params?.selectedPackage || null;
-        const selectedTrainer = t ? JSON.parse(t) : route?.params?.selectedTrainer || null;
-        const samePackage = selectedTrainer?.selected_for_package_id == null ||
-          String(selectedTrainer.selected_for_package_id) === String(selectedPackage?.id);
-
-        if (active) {
-          setPkg(selectedPackage);
-          setPt(selectedPackage && samePackage ? selectedTrainer : null);
-        }
-      } catch {
-        if (active) Alert.alert('Lỗi', 'Không thể tải thông tin đăng ký.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    load();
-    return () => { active = false; };
-  }, [route?.params?.selectedPackage, route?.params?.selectedTrainer]));
-
+  const [previewData, setPreviewData] = useState<any>(null);
+  // Nhận dữ liệu từ trang Package và PT
+  const pkg = route?.params?.selectedPackage || null;
+  const pt = route?.params?.selectedTrainer || null;
   const price = Number(pkg?.gia || 0);
-  const validPackage = !!pkg?.id && Number.isFinite(price) && price >= 0 &&
-    Number(pkg?.thoi_han) > 0 && pkg?.trang_thai !== 'inactive';
   const requiresPT = pkg?.loai === 'pt' || Number(pkg?.so_buoi_pt || 0) > 0;
   const optionalPT = !!pt && !requiresPT;
-  const canContinue = validPackage && (!requiresPT || !!pt) && !saving;
+  const canContinue =!!pkg?.id && Number.isFinite(price) &&price >= 0 &&Number(pkg?.thoi_han_ngay) > 0 &&(!requiresPT || !!pt?.id);
+
+  // Lấy thông tin hội viên và chương trình tập từ API
+  const getRegistrationPreview = async () => {
+    try {
+      setLoading(true);
+      const response = await apiFitlife.post('/client/registration-preview', {
+        id_goi_tap: pkg?.id,
+        id_trainer: pt?.id || null,
+      });
+      if (response.data.success) {
+        setPreviewData(response.data.data);
+      } else {
+        Alert.alert('Thông báo', response.data.message);
+      }
+    } catch (error: any) {
+      console.log(
+        'Lỗi lấy thông tin đăng ký:',
+        error.response?.data || error.message
+      );
+
+      Alert.alert('Thông báo', 'Không thể lấy thông tin đăng ký.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getRegistrationPreview();
+  }, [pkg?.id, pt?.id]);
 
   const goTo = (screen: string) => {
     const names = navigation.getState()?.routeNames || [];
     const target = names.includes(screen) ? screen : names.includes(`${screen}Screen`) ? `${screen}Screen` : screen;
-    navigation.navigate(target, screen === 'PTList' ? { selectedPackage: pkg } : undefined);
+    navigation.navigate(target, {
+      selectedPackage: pkg,
+      selectedTrainer: pt,
+    });
   };
 
-  const handleContinue = async () => {
-    if (!canContinue || !pkg) return;
-    setSaving(true);
-
-    try {
-      // Chỉ lưu bản nháp FE. Backend sẽ xác thực giá và tạo mã đăng ký sau.
-      const draft = {
-        selectedPackage: pkg,
-        selectedTrainer: pt,
-        packagePrice: price,
-        estimatedTotal: price,
-        additionalPtFee: optionalPT ? null : 0,
-        status: 'draft',
-      };
-
-      await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-
-      const routeNames = navigation.getState()?.routeNames || [];
-      const target = routeNames.includes('Payment') ? 'Payment' : routeNames.includes('PaymentScreen') ? 'PaymentScreen' : 'Payment';
-      navigation.navigate(target, { draft });
-    } catch {
-      Alert.alert('Lỗi', 'Không thể lưu thông tin đăng ký.');
-    } finally {
-      setSaving(false);
+  const handleContinue = () => {
+    if (!canContinue) {
+      Alert.alert(
+        'Thông báo',
+        !pkg?.id
+          ? 'Vui lòng chọn gói tập.'
+          : 'Gói tập này yêu cầu chọn PT.'
+      );
+      return;
     }
+
+    const names = navigation.getState()?.routeNames || [];
+    const target = names.includes('Payment')
+      ? 'Payment'
+      : names.includes('PaymentScreen')
+        ? 'PaymentScreen'
+        : 'Payment';
+
+    navigation.navigate(target, {
+      selectedPackage: pkg,
+      selectedTrainer: pt,
+    });
   };
+
+
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
@@ -166,16 +148,22 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             <Text style={s.sectionTitle}>Thông tin hội viên</Text>
             <View style={s.card}>
               <View style={s.personRow}>
-                <View style={s.iconBox}><Ionicons name="person-outline" size={23} color={COLORS.primary} /></View>
+                {previewData?.hoi_vien?.anh_dai_dien ? (
+                  <Image source={{ uri: previewData.hoi_vien.anh_dai_dien }} style={s.memberAvatar}/>
+                ) : (
+                  <View style={s.iconBox}>
+                    <Ionicons name="person-outline" size={23} color={COLORS.primary} />
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
-                  <Text style={s.personName}>{route?.params?.member?.ho_ten || 'Hội viên VisionFit'}</Text>
-                  <Text style={s.subText}>{route?.params?.member?.email || 'Tài khoản đăng nhập'}</Text>
+                  <Text style={s.personName}>{previewData?.hoi_vien?.ho_ten || 'Hội viên VisionFit'}</Text>
+                  <Text style={s.subText}>{previewData?.hoi_vien?.email || 'Chưa có email'}</Text>
                 </View>
                 <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.primary} />
               </View>
               <View style={s.divider} />
-              <InfoRow label="Mã đăng ký" value="Chưa được cấp" />
-              <InfoRow label="Trạng thái" value="Chưa tạo đăng ký" color={COLORS.primary} />
+              <InfoRow label="Số điện thoại"  value={previewData?.hoi_vien?.so_dien_thoai || 'Chưa cập nhật'} />
+              <InfoRow label="Ngày sinh" value={previewData?.hoi_vien?.ngay_sinh || 'Chưa cập nhật'} />
             </View>
 
             <View style={s.sectionHeader}>
@@ -192,13 +180,15 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
                   <View style={s.personRow}>
                     <View style={s.iconBox}><Ionicons name="barbell" size={24} color={COLORS.primary} /></View>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.packageName}>{pkg.ten_goi}</Text>
+                      <Text style={s.packageName}>
+                        {pkg.ten_goi_tap || 'Chưa có tên gói'}
+                      </Text>
                       <Text style={s.subText}>Gói tập VisionFit</Text>
                     </View>
                     <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
                   </View>
                   <View style={s.divider} />
-                  <InfoRow label="Thời hạn" value={`${pkg.thoi_han} ngày`} />
+                  <InfoRow label="Thời hạn" value={`${pkg.thoi_han_ngay || 0} ngày`} />
                   <InfoRow label="Số buổi PT trong gói" value={`${pkg.so_buoi_pt || 0} buổi`} />
                   <InfoRow label="Giá gói tập" value={money(price)} color={COLORS.primary} />
                 </>
@@ -240,6 +230,43 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
                     <Text style={s.editText}>Chọn huấn luyện viên →</Text>
                   </TouchableOpacity>
                 </View>
+              )}
+            </View>
+           <Text style={s.sectionTitle}>Chương trình tập của bạn</Text>
+            <View style={s.card}>
+              {previewData?.chuong_trinh_tap ? (
+                <View style={s.programItem}>
+                  <View style={s.programRow}>
+                    {previewData.chuong_trinh_tap.anh_dai_dien ? (
+                      <Image source={{ uri: previewData.chuong_trinh_tap.anh_dai_dien, }} style={s.programImage} resizeMode="cover"/>
+                    ) : (
+                      <View style={[s.programImage, s.iconBox]}>
+                        <Ionicons name="barbell-outline" size={25} color={COLORS.primary} />
+                      </View>
+                    )}
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.packageName}>
+                        {previewData.chuong_trinh_tap.ten_chuong_trinh}
+                      </Text>
+                      <Text style={s.subText}>
+                        Số ngày: {previewData.chuong_trinh_tap.so_ngay}
+                      </Text>
+                      <Text style={s.subText}>
+                        Số buổi mỗi tuần: {previewData.chuong_trinh_tap.so_buoi_moi_tuan}
+                      </Text>
+                      <Text style={s.subText}>
+                        Cấp độ: {previewData.chuong_trinh_tap.ten_cap_do}
+                      </Text>
+                      <Text style={s.subText}>
+                        Nơi tập: {previewData.chuong_trinh_tap.ten_noi_tap}
+                      </Text>
+                    </View>
+                    <Ionicons name="checkmark-circle" size={22} color={COLORS.primary}/>
+                  </View>
+                </View>
+              ) : (
+                <Text style={s.warning}>Chưa có chương trình tập.</Text>
               )}
             </View>
 
@@ -651,6 +678,28 @@ const s = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: COLORS.white,
+  },
+  programItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  programRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  programImage: {
+    width: 76,
+    height: 76,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
+  },
+  memberAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
 });
 

@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('noi_tap_uu_tien', 30)->nullable();
             $table->string('trang_thai_ho_so', 30)->nullable();
             $table->integer('ngan_sach_ban_dau')->nullable();
+            $table->string('ma_gioi_thieu', 50)->nullable()->unique();
             $table->integer('tinh_trang')->default(0);
             $table->text('note')->nullable();
             $table->string('di_ung')->nullable(); 
