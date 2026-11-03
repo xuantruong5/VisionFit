@@ -445,7 +445,7 @@ const s = StyleSheet.create({
     linkBtn: {
         paddingHorizontal: 16,
         paddingVertical: 10,
-        borderRadius: 12,
+        borderRadius: 999,
         backgroundColor: COLORS.primarySoft,
     },
     linkText: {
@@ -736,7 +736,7 @@ const s = StyleSheet.create({
     },
     confirmButton: {
         height: 52,
-        borderRadius: 16,
+        borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

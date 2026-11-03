@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 999,
     backgroundColor: COLORS.primaryLight,
   },
   reloadBtnText: {

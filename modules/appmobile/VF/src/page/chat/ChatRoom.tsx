@@ -295,7 +295,7 @@ const ChatRoom = ({ navigation, route }: any) => {
             <KeyboardAvoidingView style={styles.chatBody} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 {isMessagesLoading ? (
                     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <ActivityIndicator size="large" color="#0D7F8D" />
+                        <ActivityIndicator size="large" color="#0F5468" />
                     </View>
                 ) : (
                     <FlatList
@@ -307,9 +307,9 @@ const ChatRoom = ({ navigation, route }: any) => {
                         onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
                         ListEmptyComponent={
                             <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>
-                                <Ionicons name="chatbubbles-outline" size={48} color="#71949A" style={{ marginBottom: 12 }} />
+                                <Ionicons name="chatbubbles-outline" size={48} color="#6F8F9C" style={{ marginBottom: 12 }} />
                                 <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.textPrimary }}>Chưa có tin nhắn nào</Text>
-                                <Text style={{ fontSize: 13, color: "#71949A", marginTop: 4 }}>Hãy gửi lời chào để bắt đầu cuộc trò chuyện!</Text>
+                                <Text style={{ fontSize: 13, color: "#6F8F9C", marginTop: 4 }}>Hãy gửi lời chào để bắt đầu cuộc trò chuyện!</Text>
                             </View>
                         }
                         renderItem={({ item }) => {
@@ -346,7 +346,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                         >
                                             {isRecalled ? (
                                                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                                    <Ionicons name="ban" size={16} color="#71949A" style={{ marginRight: 6 }} />
+                                                    <Ionicons name="ban" size={16} color="#6F8F9C" style={{ marginRight: 6 }} />
                                                     <Text style={styles.recalledText}>Tin nhắn đã được thu hồi</Text>
                                                 </View>
                                             ) : (
@@ -375,11 +375,11 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                                                             <View style={{ marginBottom: 10 }}>
                                                                 <View style={styles.workoutDetailRow}>
-                                                                    <Ionicons name="calendar-outline" size={14} color="#0D7F8D" />
+                                                                    <Ionicons name="calendar-outline" size={14} color="#0F5468" />
                                                                     <Text style={styles.workoutDetailText}>{item.workout.ngay_tap}</Text>
                                                                 </View>
                                                                 <View style={styles.workoutDetailRow}>
-                                                                    <Ionicons name="time-outline" size={14} color="#0D7F8D" />
+                                                                    <Ionicons name="time-outline" size={14} color="#0F5468" />
                                                                     <Text style={styles.workoutDetailText}>{item.workout.gio_tap}</Text>
                                                                 </View>
                                                                 <View style={styles.workoutDetailRow}>
@@ -429,7 +429,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                                 <Ionicons
                                                     name={item.da_xem ? "checkmark-done" : "checkmark"}
                                                     size={13}
-                                                    color={item.da_xem ? "#0D7F8D" : "#71949A"}
+                                                    color={item.da_xem ? "#0F5468" : "#6F8F9C"}
                                                     style={{ marginLeft: 4 }}
                                                 />
                                             )}
@@ -467,7 +467,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                 </Text>
                             </View>
                             <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                                <Ionicons name="close" size={18} color="#71949A" />
+                                <Ionicons name="close" size={18} color="#6F8F9C" />
                             </TouchableOpacity>
                         </View>
                     )}
@@ -488,7 +488,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                 }}
                             >
                                 <View style={[styles.attachIconWrap, { backgroundColor: "#DFF6F8" }]}>
-                                    <Ionicons name="barbell" size={20} color="#0D7F8D" />
+                                    <Ionicons name="barbell" size={20} color="#0F5468" />
                                 </View>
                                 <Text style={styles.attachLabel}>Gửi bài tập</Text>
                             </TouchableOpacity>
@@ -536,22 +536,22 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                     <View style={styles.toolbarInputRow}>
                         <TouchableOpacity style={styles.toolIconBtn} onPress={() => setShowAttachMenu(!showAttachMenu)}>
-                            <Ionicons name={showAttachMenu ? "close-circle" : "add-circle"} size={26} color="#0D7F8D" />
+                            <Ionicons name={showAttachMenu ? "close-circle" : "add-circle"} size={26} color="#0F5468" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.toolIconBtn} onPress={() => Alert.alert("Camera", "Chụp ảnh bài tập")}>
-                            <Ionicons name="camera" size={24} color="#0D7F8D" />
+                            <Ionicons name="camera" size={24} color="#0F5468" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.toolIconBtn} onPress={handlePickImage}>
-                            <Ionicons name="images" size={23} color="#0D7F8D" />
+                            <Ionicons name="images" size={23} color="#0F5468" />
                         </TouchableOpacity>
 
                         <View style={styles.inputBox}>
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhắn tin..."
-                                placeholderTextColor="#71949A"
+                                placeholderTextColor="#6F8F9C"
                                 value={inputText}
                                 onChangeText={setInputText}
                                 multiline
@@ -564,7 +564,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                         {/* Nút Like 👍 khi trống, nút Gửi ✈️ khi có chữ */}
                         {inputText.trim().length === 0 ? (
                             <TouchableOpacity style={styles.likeBtn} onPress={() => handleSend("👍")} activeOpacity={0.7}>
-                                <Ionicons name="thumbs-up" size={26} color="#0D7F8D" />
+                                <Ionicons name="thumbs-up" size={26} color="#0F5468" />
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity style={styles.sendBtn} onPress={() => handleSend(inputText)} activeOpacity={0.8}>
@@ -604,7 +604,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                     setSelectedMsgForReaction(null);
                                 }}
                             >
-                                <Ionicons name="arrow-undo-outline" size={20} color="#11343A" />
+                                <Ionicons name="arrow-undo-outline" size={20} color="#10303C" />
                                 <Text style={styles.msgActionText}>Trả lời tin nhắn</Text>
                             </TouchableOpacity>
 
@@ -615,7 +615,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                     setSelectedMsgForReaction(null);
                                 }}
                             >
-                                <Ionicons name="copy-outline" size={20} color="#11343A" />
+                                <Ionicons name="copy-outline" size={20} color="#10303C" />
                                 <Text style={styles.msgActionText}>Sao chép</Text>
                             </TouchableOpacity>
 
@@ -640,7 +640,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                         <View style={styles.dragHandle} />
                         <View style={styles.infoModalHeader}>
                             <TouchableOpacity onPress={() => setShowInfoModal(false)}>
-                                <Ionicons name="close" size={26} color="#11343A" />
+                                <Ionicons name="close" size={26} color="#10303C" />
                             </TouchableOpacity>
                             <Text style={styles.infoModalTitle}>Chi tiết đoạn chat</Text>
                             <View style={{ width: 26 }} />
@@ -656,28 +656,28 @@ const ChatRoom = ({ navigation, route }: any) => {
                             <View style={styles.quickActions}>
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Hồ sơ", `Xem hồ sơ của ${displayName}`)}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="person-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="person-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Trang cá nhân</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Thông báo", "Đã đổi trạng thái thông báo")}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="notifications-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="notifications-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Tắt thông báo</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Tìm kiếm", "Tìm kiếm tin nhắn trong chat")}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="search-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="search-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Tìm kiếm</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Chủ đề", "Đổi chủ đề màu sắc")}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="color-palette-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="color-palette-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Chủ đề</Text>
                                 </TouchableOpacity>
@@ -686,33 +686,33 @@ const ChatRoom = ({ navigation, route }: any) => {
                             <View style={styles.infoSection}>
                                 <Text style={styles.infoSectionTitle}>TÙY CHỈNH ĐOẠN CHAT</Text>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="pencil-outline" size={20} color="#11343A" />
+                                    <Ionicons name="pencil-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>Đổi tên đoạn chat</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="images-outline" size={20} color="#11343A" />
+                                    <Ionicons name="images-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>File phương tiện, file và liên kết</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="fitness-outline" size={20} color="#11343A" />
+                                    <Ionicons name="fitness-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>Lịch sử buổi tập & Phân tích AI</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                             </View>
 
                             <View style={styles.infoSection}>
                                 <Text style={styles.infoSectionTitle}>QUYỀN RIÊNG TƯ & HỖ TRỢ</Text>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="shield-checkmark-outline" size={20} color="#11343A" />
+                                    <Ionicons name="shield-checkmark-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>Xác minh bảo mật đầu cuối</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
                                     <Ionicons name="warning-outline" size={20} color={COLORS.accentRed} />
                                     <Text style={[styles.infoRowText, { color: COLORS.accentRed }]}>Báo cáo sự cố / PT</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                             </View>
                         </ScrollView>
@@ -1010,10 +1010,10 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 10,
         marginBottom: 4,
-        backgroundColor: "rgba(13, 127, 141, 0.12)",
+        backgroundColor: "rgba(15, 84, 104, 0.12)",
     },
     replyBoxSender: {
-        backgroundColor: "rgba(13, 127, 141, 0.15)",
+        backgroundColor: "rgba(15, 84, 104, 0.15)",
     },
     replyBoxReceiver: {
         backgroundColor: "rgba(113, 148, 154, 0.15)",

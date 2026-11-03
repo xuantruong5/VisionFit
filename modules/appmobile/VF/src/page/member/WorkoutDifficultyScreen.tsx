@@ -146,8 +146,8 @@ const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
                   <LinearGradient
                     colors={[
                       'rgba(7, 88, 101, 0.95)',
-                      'rgba(13, 127, 141, 0.85)',
-                      'rgba(13, 127, 141, 0.35)',
+                      'rgba(15, 84, 104, 0.85)',
+                      'rgba(15, 84, 104, 0.35)',
                     ]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}

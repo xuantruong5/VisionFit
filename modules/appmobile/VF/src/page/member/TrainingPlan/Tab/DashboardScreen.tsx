@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     backgroundColor: PASTEL.tealSoft,
     borderWidth: 1,
-    borderColor: "rgba(13, 127, 141, 0.2)",
+    borderColor: "rgba(15, 84, 104, 0.2)",
   },
   changeScheduleQuickText: {
     fontSize: 13,

@@ -328,7 +328,7 @@ const s = StyleSheet.create({
     marginTop: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 999,
     backgroundColor: COLORS.primarySoft,
   },
   linkText: {

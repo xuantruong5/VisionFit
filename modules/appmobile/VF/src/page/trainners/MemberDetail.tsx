@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   outlineBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
   solidBtn: {
     height: 48,
-    borderRadius: 14,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.16)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 26,
+    borderRadius: 999,
     marginTop: 22,
   },
   monthPillText: {

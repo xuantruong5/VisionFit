@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF1EC',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   foodCalories: {
     fontSize: 11.5,

@@ -109,7 +109,7 @@ const Onloading = ({ navigation }: any) => {
             {/* Tên ứng dụng và slogan */}
             <View style={{ position: "absolute", top: "50%", width: "100%", alignItems: "center", }} >
                 {/* Tên ứng dụng */}
-                <Text style={{ fontSize: 34, fontWeight: "bold", color: "#11343A", letterSpacing: 1, }} >
+                <Text style={{ fontSize: 34, fontWeight: "bold", color: "#10303C", letterSpacing: 1, }} >
                     VisionFit
                 </Text>
                 {/* Slogan */}

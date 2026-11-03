@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 48,
         backgroundColor: COLORS.background,
-        borderRadius: 14,
+        borderRadius: 999,
         borderWidth: 1,
         borderColor: COLORS.border,
         flexDirection: "row",
@@ -1372,7 +1372,7 @@ const styles = StyleSheet.create({
         gap: 6,
         paddingHorizontal: 14,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 999,
         backgroundColor: COLORS.primaryLight,
     },
 
@@ -1439,7 +1439,7 @@ const styles = StyleSheet.create({
         gap: 2,
         paddingHorizontal: 12,
         height: 32,
-        borderRadius: 16,
+        borderRadius: 999,
         backgroundColor: COLORS.primaryLight,
     },
 

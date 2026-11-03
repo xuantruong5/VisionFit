@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F3FF',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   tagText: {
     flexShrink: 1,

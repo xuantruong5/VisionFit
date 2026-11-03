@@ -1115,7 +1115,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primarySoft,
         borderWidth: 1,
         borderColor: COLORS.borderFocus,
-        borderRadius: 12,
+        borderRadius: 999,
         height: 42,
         alignItems: 'center',
         justifyContent: 'center',
@@ -1172,7 +1172,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         paddingVertical: 10,
         paddingHorizontal: 18,
-        borderRadius: 12,
+        borderRadius: 999,
     },
     emptyResetBtnText: {
         color: COLORS.white,
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         height: 54,
-        borderRadius: 16,
+        borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

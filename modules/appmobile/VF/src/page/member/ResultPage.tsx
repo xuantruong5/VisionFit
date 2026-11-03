@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     logoText: {
         fontSize: 12,
         fontWeight: "800",
-        color: "#9EE7E5",
+        color: "#A9D0DE",
         letterSpacing: 1.5,
         textTransform: "uppercase",
     },
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         paddingHorizontal: 12,
         paddingVertical: 5,
-        borderRadius: 14,
+        borderRadius: 999,
         backgroundColor: "rgba(255,255,255,0.16)",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.2)",
@@ -1013,7 +1013,7 @@ const styles = StyleSheet.create({
         ],
         width: wp("13%"),
         height: wp("13%"),
-        borderRadius: 14,
+        borderRadius: 999,
         borderWidth: 1.5,
         borderColor: COLORS.borderFocus,
         backgroundColor: COLORS.white,
@@ -1134,7 +1134,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: wp("5%"),
         paddingVertical: hp("1.5%"),
-        borderRadius: 16,
+        borderRadius: 999,
         backgroundColor: COLORS.white,
     },
     resetText: {
@@ -1295,7 +1295,7 @@ const styles = StyleSheet.create({
 
     shareReportButton: {
         height: 54,
-        borderRadius: 16,
+        borderRadius: 999,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
@@ -1311,7 +1311,7 @@ const styles = StyleSheet.create({
 
     deleteResultButton: {
         height: 52,
-        borderRadius: 16,
+        borderRadius: 999,
         backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: "#FECACA",

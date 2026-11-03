@@ -564,7 +564,7 @@ const s = StyleSheet.create({
     gap: 5,
     height: 38,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 999,
     backgroundColor: COLORS.primary,
     ...SHADOWS.glow,
   },
@@ -604,7 +604,7 @@ const s = StyleSheet.create({
   },
   addButton: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: 999,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
