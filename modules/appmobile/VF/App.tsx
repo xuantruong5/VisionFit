@@ -5,6 +5,7 @@ import { Alert, Animated, View, Text } from "react-native";
 import React, { useEffect, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { notificationEmitter } from "./src/general/notification";
+import FloatingMascotWidget from "./src/components/FloatingMascotWidget";
 import MemberHome from "./src/page/member/MemberHome";
 import WorkoutPlanScreen from "./src/page/member/WorkoutPlanScreen";
 import Homepage from "./src/page/trainners/HomePage";
@@ -298,7 +299,8 @@ const App = () => {
     };
   }, []);
   return (
-    <NavigationContainer
+    <View style={{ flex: 1 }}>
+      <NavigationContainer
       ref={navigationRef}
       onReady={() => {
         if (pendingRoute) {
@@ -386,6 +388,8 @@ const App = () => {
         <Stack.Screen name="ChatRoom" component={ChatRoom} />
       </Stack.Navigator>
     </NavigationContainer>
+    <FloatingMascotWidget />
+  </View>
   )
 }
 export default App;
