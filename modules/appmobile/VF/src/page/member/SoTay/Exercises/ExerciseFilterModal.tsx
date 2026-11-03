@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   btnReset: {
     flex: 1,
     height: 50,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1.5,
     borderColor: COLORS.border,
     justifyContent: 'center',
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   btnApply: {
     flex: 1.5,
     height: 50,
-    borderRadius: 16,
+    borderRadius: 999,
     overflow: 'hidden',
   },
   btnApplyGradient: {

@@ -1,254 +1,157 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, Modal, Pressable, ActivityIndicator, RefreshControl, Alert, StatusBar } from 'react-native';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, Modal, Pressable, ActivityIndicator, RefreshControl, Alert, StatusBar} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppHeader from '../../components/AppHeader';
+import apiFitlife from '../../general/api';
 import { COLORS as THEME, SHADOWS } from '../../general/theme';
-
 const COLORS = {
-    primary: THEME.primary, primaryDark: THEME.primaryDark, background: THEME.background,
-    white: THEME.white, text: THEME.textPrimary, muted: THEME.textMuted,
-    border: THEME.border, soft: THEME.surfaceTeal, gold: THEME.accentGold,
+    primary: THEME.primary,
+    primaryDark: THEME.primaryDark,
+    background: THEME.background,
+    white: THEME.white,
+    text: THEME.textPrimary,
+    muted: THEME.textMuted,
+    border: THEME.border,
+    soft: THEME.surfaceTeal,
+    gold: THEME.accentGold,
 };
-
 const STORAGE_KEY = 'visionfit_selected_package';
-
 export interface TrainingPackage {
-    id: number | string;
-    ten_goi: string;
-    loai: 'gym' | 'ai' | 'pt';
-    gia: number;
-    thoi_han: number;
-    co_ai: boolean;
-    co_trainer_review: boolean;
+    id: number;
+    ma_goi_tap: string;
+    id_phong_tap: number | null;
+    ten_goi_tap: string;
+    thoi_han_mua: number;
+    thoi_han_tang: number;
+    thoi_han_ngay: number;
+    gia: string | number;
+    hinh_anh: string | null;
+    so_buoi: number;
     so_buoi_pt: number;
-    noi_bat: boolean;
-    trang_thai: 'active' | 'inactive';
-    mo_ta?: string;
-    quyen_loi?: string[];
+    mo_ta: string[];
+    tinh_trang: number;
 }
-
-// Dữ liệu mẫu
-const MOCK_PACKAGES: TrainingPackage[] = [
-    {
-        id: 1, ten_goi: 'Gym Cơ bản 1 tháng', loai: 'gym',
-        gia: 500000, thoi_han: 30, co_ai: false, co_trainer_review: false,
-        so_buoi_pt: 0, noi_bat: false, trang_thai: 'active',
-        mo_ta: 'Khởi đầu hành trình rèn luyện sức khỏe.',
-        quyen_loi: ['Sử dụng khu vực tập Gym', 'Tiếp cận các thiết bị tập luyện', 'Tập luyện linh hoạt trong thời hạn gói'],
-    },
-    {
-        id: 2, ten_goi: 'Gym + AI 1 tháng', loai: 'ai',
-        gia: 850000, thoi_han: 30, co_ai: true, co_trainer_review: true,
-        so_buoi_pt: 0, noi_bat: true, trang_thai: 'active',
-        mo_ta: 'Tập luyện thông minh cùng công nghệ AI.',
-        quyen_loi: ['Sử dụng khu vực tập Gym', 'Phân tích và hỗ trợ tập luyện bằng AI', 'Huấn luyện viên đánh giá tiến độ', 'Theo dõi quá trình tập luyện'],
-    },
-    {
-        id: 3, ten_goi: 'Gym + AI 3 tháng', loai: 'ai',
-        gia: 2200000, thoi_han: 90, co_ai: true, co_trainer_review: true,
-        so_buoi_pt: 0, noi_bat: false, trang_thai: 'active',
-        mo_ta: 'Duy trì thói quen tập luyện dài hạn.',
-        quyen_loi: ['Sử dụng khu vực tập Gym trong 90 ngày', 'Phân tích và hỗ trợ tập luyện bằng AI', 'Huấn luyện viên đánh giá tiến độ', 'Theo dõi quá trình tập luyện'],
-    },
-    {
-        id: 4, ten_goi: 'Personal Trainer 12 buổi', loai: 'pt',
-        gia: 3600000, thoi_han: 60, co_ai: true, co_trainer_review: true,
-        so_buoi_pt: 12, noi_bat: false, trang_thai: 'active',
-        mo_ta: 'Đồng hành cùng huấn luyện viên cá nhân.',
-        quyen_loi: ['12 buổi tập với PT cá nhân', 'Hỗ trợ phân tích tập luyện bằng AI', 'Theo dõi và đánh giá tiến độ', 'Thời hạn sử dụng 60 ngày'],
-    },
-    {
-        id: 5, ten_goi: 'Personal Trainer 24 buổi', loai: 'pt',
-        gia: 6500000, thoi_han: 90, co_ai: true, co_trainer_review: true,
-        so_buoi_pt: 24, noi_bat: false, trang_thai: 'inactive',
-    },
-];
-
-type FilterType = 'all' | 'gym' | 'ai' | 'pt';
-
-const FILTERS: { id: FilterType; label: string }[] = [
-    { id: 'all', label: 'Tất cả' },
-    { id: 'gym', label: 'Gym' },
-    { id: 'ai', label: 'Gym + AI' },
-    { id: 'pt', label: 'Có PT' },
-];
-
-const money = (value: number) => `${Number(value).toLocaleString('vi-VN')}đ`;
-
-const getTypeLabel = (type: TrainingPackage['loai']) => {
-    if (type === 'pt') return 'PERSONAL TRAINER';
-    if (type === 'ai') return 'GYM + AI';
-    return 'GYM BASIC';
-};
-
-const getBenefits = (item: TrainingPackage): string[] => {
-    if (item.quyen_loi?.length) return item.quyen_loi;
-    return [
-        'Sử dụng khu vực tập Gym',
-        ...(item.co_ai ? ['Hỗ trợ tập luyện bằng AI'] : []),
-        ...(item.co_trainer_review ? ['Đánh giá tiến độ bởi huấn luyện viên'] : []),
-        ...(item.so_buoi_pt > 0 ? [`${item.so_buoi_pt} buổi tập cùng PT`] : []),
-        `Thời hạn sử dụng ${item.thoi_han} ngày`,
-    ];
-};
+const money = (value: number | string) =>`${Number(value).toLocaleString('vi-VN')}đ`;
 
 const WorkoutSelectionScreen = ({ navigation }: any) => {
     const [packages, setPackages] = useState<TrainingPackage[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [activeFilter, setActiveFilter] = useState<FilterType>('all');
     const [detail, setDetail] = useState<TrainingPackage | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Gói tập đang được chọn
+    const selectedPackage = packages.find( item => String(item.id) === selectedId);
 
-    // Tải danh sách gói tập
-    // Frontend demo: dùng danh sách gói tập mẫu, không gọi API.
+    // Lấy danh sách gói tập từ API
     const loadPackages = useCallback(async (refresh = false) => {
         if (refresh) setRefreshing(true);
         else setLoading(true);
         setError(null);
-
-        const validPackages = MOCK_PACKAGES.filter(item =>
-            item.trang_thai === 'active' && item.gia >= 0 && item.thoi_han > 0
-        );
-        setPackages(validPackages);
-
         try {
-            const saved = await AsyncStorage.getItem(STORAGE_KEY);
-            const savedId = saved ? String(JSON.parse(saved).id) : null;
-            const exists = validPackages.some(item => String(item.id) === savedId);
+            const response = await apiFitlife.get('/client/goi-tap');
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Không thể lấy danh sách gói tập');
+            }
+            const validPackages: TrainingPackage[] = (  response.data.data || [] ).filter(
+                (item: TrainingPackage) => item.tinh_trang === 1 && Number(item.gia) >= 0 );
+            setPackages(validPackages);
 
-            setSelectedId(exists ? savedId : null);
-            if (saved && !exists) await AsyncStorage.removeItem(STORAGE_KEY);
-        } catch {
-            setSelectedId(null);
-            setError('Không thể đọc lựa chọn đã lưu.');
+            // Kiểm tra gói đã lưu trước đó
+            const saved = await AsyncStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const savedPackage = JSON.parse(saved);
+                const exists = validPackages.some(
+                    item => String(item.id) === String(savedPackage.id)
+                );
+                if (exists) {
+                    setSelectedId(String(savedPackage.id));
+                    // Cập nhật thông tin mới nhất từ API
+                    const latestPackage = validPackages.find(
+                        item => String(item.id) === String(savedPackage.id)
+                    );
+                    if (latestPackage) {
+                        await AsyncStorage.setItem(
+                            STORAGE_KEY,
+                            JSON.stringify(latestPackage)
+                        );
+                    }
+                } else {
+                    setSelectedId(null);
+                    await AsyncStorage.removeItem(STORAGE_KEY);
+                }
+            } else {
+                setSelectedId(null);
+            }
+
+        } catch (err: any) {
+            console.log(
+                'Lỗi lấy danh sách gói tập:',
+                err.response?.data || err.message
+            );
+
+            setError('Không thể tải danh sách gói tập. Vui lòng thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     }, []);
 
-    useEffect(() => { loadPackages(); }, [loadPackages]);
-
-    const filteredPackages = useMemo(
-        () => activeFilter === 'all' ? packages : packages.filter(item => item.loai === activeFilter),
-        [packages, activeFilter]
-    );
-
-    const selectedPackage = useMemo(
-        () => packages.find(item => String(item.id) === selectedId),
-        [packages, selectedId]
-    );
+    useEffect(() => {
+        loadPackages();
+    }, [loadPackages]);
 
     // Chọn gói tập
     const handleSelect = async (item: TrainingPackage) => {
-        if (item.trang_thai !== 'active') return Alert.alert('Thông báo', 'Gói tập này hiện không khả dụng.');
-
+        if (item.tinh_trang !== 1) {
+            return Alert.alert(
+                'Thông báo',
+                'Gói tập này hiện không khả dụng.'
+            );
+        }
         try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(item));
+            await AsyncStorage.setItem(  STORAGE_KEY, JSON.stringify(item));
             setSelectedId(String(item.id));
         } catch {
-            Alert.alert('Lỗi', 'Không thể lưu lựa chọn. Vui lòng thử lại.');
+            Alert.alert('Lỗi','Không thể lưu lựa chọn. Vui lòng thử lại.' );
         }
     };
 
-    // Tiếp tục sang trang PT
+    // Tiếp tục sang trang chọn PT
     const handleContinue = async () => {
-        if (!selectedPackage) return Alert.alert('Thông báo', 'Vui lòng chọn một gói tập.');
+        if (!selectedPackage) {
+            return Alert.alert(
+                'Thông báo',
+                'Vui lòng chọn một gói tập.'
+            );
+        }
 
         try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(selectedPackage));
-
+            await AsyncStorage.setItem(  STORAGE_KEY, JSON.stringify(selectedPackage) );
             const routeNames = navigation.getState()?.routeNames || [];
-            const target = routeNames.includes('PTList') ? 'PTList' : routeNames.includes('PTListScreen') ? 'PTListScreen' : 'PTList';
-            navigation.navigate(target, { selectedPackage, packageId: selectedPackage.id });
+            const target = routeNames.includes('PTList')
+                ? 'PTList'
+                : routeNames.includes('PTListScreen')
+                    ? 'PTListScreen'
+                    : 'PTList';
+            navigation.navigate(target, { selectedPackage, packageId: selectedPackage.id, });
         } catch {
-            Alert.alert('Lỗi', 'Không thể lưu lựa chọn gói tập.');
+            Alert.alert(
+                'Lỗi',
+                'Không thể lưu lựa chọn gói tập.'
+            );
         }
-    };
-
-    // Card gói tập
-    const renderPackage = ({ item }: { item: TrainingPackage }) => {
-        const selected = selectedId === String(item.id);
-        const benefits = getBenefits(item);
-
-        return (
-            <TouchableOpacity activeOpacity={0.85} onPress={() => handleSelect(item)}
-                style={[styles.packageCard, selected && styles.selectedCard]}>
-
-                {item.noi_bat && (
-                    <View style={styles.popularRibbon}>
-                        <Ionicons name="sparkles" size={12} color="#8C5D15" />
-                        <Text style={styles.popularText}>PHỔ BIẾN NHẤT</Text>
-                    </View>
-                )}
-
-                <View style={styles.cardTop}>
-                    <View style={[styles.packageIcon, selected && styles.packageIconActive]}>
-                        <Ionicons name={item.loai === 'pt' ? 'people' : 'barbell'} size={22}
-                            color={selected ? COLORS.white : COLORS.primary} />
-                    </View>
-
-                    <View style={styles.typeInfo}>
-                        <Text style={styles.typeLabel}>{getTypeLabel(item.loai)}</Text>
-                        <Text style={styles.packageName}>{item.ten_goi}</Text>
-                    </View>
-
-                    <View style={[styles.checkBadge, selected && styles.checkBadgeActive]}>
-                        {selected && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
-                    </View>
-                </View>
-
-                <View style={styles.durationPill}>
-                    <Ionicons name="time-outline" size={15} color={COLORS.primary} />
-                    <Text style={styles.durationText}>Thời hạn {item.thoi_han} ngày</Text>
-                </View>
-
-                <View style={styles.priceRow}>
-                    <Text style={styles.price}>{money(item.gia)}</Text>
-                    <Text style={styles.priceDescription}>/ gói tập</Text>
-                </View>
-
-                <View style={styles.cardDivider} />
-
-                <View style={styles.benefitList}>
-                    {benefits.slice(0, 3).map((benefit, index) => (
-                        <View key={index} style={styles.benefitRow}>
-                            <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
-                            <Text style={styles.benefitText}>{benefit}</Text>
-                        </View>
-                    ))}
-                </View>
-
-                <View style={styles.cardBottom}>
-                    <TouchableOpacity style={styles.detailButton} onPress={() => setDetail(item)}>
-                        <Text style={styles.detailText}>Xem chi tiết</Text>
-                        <Ionicons name="arrow-forward" size={15} color={COLORS.primary} />
-                    </TouchableOpacity>
-
-                    {selected && (
-                        <View style={styles.chosenBadge}>
-                            <Ionicons name="checkmark-circle" size={14} color={COLORS.white} />
-                            <Text style={styles.chosenText}>Đã chọn</Text>
-                        </View>
-                    )}
-                </View>
-            </TouchableOpacity>
-        );
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <StatusBar barStyle="dark-content" />
-
             {/* Header */}
-            <AppHeader
-                title="Đăng ký gói tập"
-                onBack={() => navigation.goBack()}
+            <AppHeader title="Đăng ký gói tập"  onBack={() => navigation.goBack()}
                 rightComponent={
                     <View style={styles.headerIconTile}>
                         <Ionicons name="fitness-outline" size={20} color={COLORS.primary} />
@@ -262,86 +165,192 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                     <Text style={styles.progressLabel}>BƯỚC 01 / 04</Text>
                     <Text style={styles.progressRight}>Chọn gói tập</Text>
                 </View>
+
                 <View style={styles.progressTrack}>
                     <View style={styles.progressFill} />
                 </View>
             </View>
 
-            <FlatList
-                data={filteredPackages}
-                keyExtractor={item => String(item.id)}
-                renderItem={renderPackage}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={() => loadPackages(true)}
-                        tintColor={COLORS.primary} colors={[COLORS.primary]} />
-                }
+            <FlatList data={packages} keyExtractor={item => String(item.id)} showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={() => loadPackages(true)} tintColor={COLORS.primary} colors={[COLORS.primary]}/>}
+
+                // Hiển thị từng gói tập trực tiếp tại FlatList
+                renderItem={({ item }) => {
+                    const selected = selectedId === String(item.id);
+                    return (
+                        <TouchableOpacity activeOpacity={0.85} onPress={() => handleSelect(item)}
+                            style={[ styles.packageCard, selected && styles.selectedCard]} >
+                            {/* Tên gói */}
+                            <View style={styles.cardTop}>
+                                <View style={[ styles.packageIcon, selected && styles.packageIconActive ]} >
+                                    <Ionicons name="barbell" size={22} color={selected ? COLORS.white : COLORS.primary} />
+                                </View>
+
+                                <View style={styles.typeInfo}>
+                                    <Text style={styles.typeLabel}>
+                                        {item.ma_goi_tap.trim()}
+                                    </Text>
+                                    <Text style={styles.packageName}>
+                                        {item.ten_goi_tap}
+                                    </Text>
+                                </View>
+                                <View style={[ styles.checkBadge, selected && styles.checkBadgeActive ]} >
+                                    {selected && (
+                                        <Ionicons name="checkmark"  size={16} color={COLORS.white}/>
+                                    )}
+                                </View>
+                            </View>
+
+                            {/* Thời hạn */}
+                            <View style={styles.durationPill}>
+                                <Ionicons name="time-outline" size={15} color={COLORS.primary}/>
+                                <Text style={styles.durationText}>
+                                    {item.thoi_han_ngay} ngày sử dụng
+                                </Text>
+                            </View>
+
+                            {/* Giá */}
+                            <View style={styles.priceRow}>
+                                <Text style={styles.price}>
+                                    {money(item.gia)}
+                                </Text>
+
+                                <Text style={styles.priceDescription}>
+                                    / gói tập
+                                </Text>
+                            </View>
+
+                            <View style={styles.cardDivider} />
+                            {/* Quyền lợi */}
+                            <View style={styles.benefitList}>
+                                {item.mo_ta?.slice(0, 4).map((description, index) => (
+                                    <View key={index} style={styles.benefitRow}>
+                                        <Ionicons name="checkmark-circle" size={18} color={COLORS.primary}/>
+                                        <Text style={styles.benefitText}>
+                                            {description}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            {/* Nút chi tiết */}
+                            <View style={styles.cardBottom}>
+                                <TouchableOpacity style={styles.detailButton} onPress={() => setDetail(item)} >
+                                    <Text style={styles.detailText}>
+                                        Xem chi tiết
+                                    </Text>
+                                    <Ionicons  name="arrow-forward" size={15} color={COLORS.primary} />
+                                </TouchableOpacity>
+
+                                {selected && (
+                                    <View style={styles.chosenBadge}>
+                                        <Ionicons name="checkmark-circle" size={14} color={COLORS.white}/>
+                                        <Text style={styles.chosenText}>
+                                            Đã chọn
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    );
+                }}
                 ListHeaderComponent={
                     <>
                         {/* Banner */}
-                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }} style={styles.hero}>
+                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero} >
                             <View style={styles.heroCircleLg} />
                             <View style={styles.heroCircleSm} />
 
                             <View style={styles.heroBadge}>
-                                <Ionicons name="flash-outline" color="#E8FDFF" size={13} />
-                                <Text style={styles.heroBadgeText}>VISIONFIT MEMBERSHIP</Text>
+                                <Ionicons name="flash-outline" color="#E8FDFF" size={13}/>
+
+                                <Text style={styles.heroBadgeText}>
+                                    VISIONFIT MEMBERSHIP
+                                </Text>
                             </View>
 
-                            <Text style={styles.heroTitle}>Lựa chọn gói tập{'\n'}phù hợp với bạn</Text>
-                            <Text style={styles.heroSubtitle}>Khởi đầu hành trình khỏe mạnh theo cách của riêng bạn.</Text>
+                            <Text style={styles.heroTitle}>
+                                Lựa chọn gói tập{'\n'}phù hợp với bạn
+                            </Text>
+
+                            <Text style={styles.heroSubtitle}>
+                                Khởi đầu hành trình khỏe mạnh theo cách của riêng bạn.
+                            </Text>
 
                             <View style={styles.heroFooter}>
                                 <Ionicons name="shield-checkmark-outline" size={17} color="#BDF2F2" />
-                                <Text style={styles.heroFooterText}>Linh hoạt • Rõ ràng • Dễ dàng đăng ký</Text>
+
+                                <Text style={styles.heroFooterText}>
+                                    Linh hoạt • Rõ ràng • Dễ dàng đăng ký
+                                </Text>
                             </View>
                         </LinearGradient>
 
-                        {/* Danh sách gói */}
+                        {/* Banner nhập mã HLV */}
+                        <TouchableOpacity style={styles.referralEntryBanner} onPress={() => navigation.navigate('EnterTrainerCodeScreen')} activeOpacity={0.8} >
+                            <View style={styles.referralEntryLeft}>
+                                <View style={styles.referralIconCircle}>
+                                    <Ionicons name="key" size={16} color={COLORS.primary}/>
+                                </View>
+
+                                <View style={{ marginLeft: 10, flex: 1 }}>
+                                    <Text style={styles.referralEntryTitle}>
+                                        Bạn đã có mã Huấn Luyện Viên?
+                                    </Text>
+
+                                    <Text style={styles.referralEntrySub}>
+                                        Nhập mã HLV để được hỗ trợ giáo trình riêng
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <Ionicons name="chevron-forward" size={16} color={COLORS.primary}/>
+                        </TouchableOpacity>
+
+                        {/* Tiêu đề danh sách */}
                         <View style={styles.sectionTitleRow}>
                             <View>
-                                <Text style={styles.sectionTitle}>Khám phá gói tập</Text>
-                                <Text style={styles.sectionSubtitle}>Chọn gói phù hợp với mục tiêu của bạn</Text>
+                                <Text style={styles.sectionTitle}>
+                                    Khám phá gói tập
+                                </Text>
+
+                                <Text style={styles.sectionSubtitle}>
+                                    Chọn gói phù hợp với mục tiêu của bạn
+                                </Text>
                             </View>
                             <View style={styles.countBadge}>
-                                <Text style={styles.countText}>{packages.length} gói</Text>
+                                <Text style={styles.countText}>
+                                    {packages.length} gói
+                                </Text>
                             </View>
                         </View>
-
-                        {/* Bộ lọc */}
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-                            {FILTERS.map(filter => {
-                                const active = activeFilter === filter.id;
-                                return (
-                                    <TouchableOpacity key={filter.id} onPress={() => setActiveFilter(filter.id)}
-                                        style={[styles.filterChip, active && styles.filterChipActive]}>
-                                        <Text style={[styles.filterText, active && styles.filterTextActive]}>
-                                            {filter.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
                     </>
                 }
+
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         {loading ? (
                             <>
                                 <ActivityIndicator size="large" color={COLORS.primary} />
-                                <Text style={styles.emptyText}>Đang tải gói tập...</Text>
+                                <Text style={styles.emptyText}>
+                                    Đang tải gói tập...
+                                </Text>
                             </>
                         ) : (
                             <>
                                 <View style={styles.emptyIconTile}>
-                                    <Ionicons name={error ? 'cloud-offline-outline' : 'albums-outline'} size={30} color={COLORS.primary} />
+                                    <Ionicons name={error ? 'cloud-offline-outline' : 'albums-outline'}  size={30} color={COLORS.primary} />
                                 </View>
-                                <Text style={styles.emptyText}>{error || 'Không có gói tập phù hợp.'}</Text>
+
+                                <Text style={styles.emptyText}>
+                                    {error || 'Không có gói tập phù hợp.'}
+                                </Text>
+
                                 {error && (
-                                    <TouchableOpacity style={styles.retryButton} onPress={() => loadPackages()}>
-                                        <Text style={styles.retryText}>Thử lại</Text>
+                                    <TouchableOpacity style={styles.retryButton}  onPress={() => loadPackages()} >
+                                        <Text style={styles.retryText}>
+                                            Thử lại
+                                        </Text>
                                     </TouchableOpacity>
                                 )}
                             </>
@@ -355,80 +364,134 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
                 {selectedPackage ? (
                     <View style={styles.selectedSummary}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.summaryLabel}>GÓI ĐÃ CHỌN</Text>
-                            <Text style={styles.summaryName} numberOfLines={1}>{selectedPackage.ten_goi}</Text>
+                            <Text style={styles.summaryLabel}>
+                                GÓI ĐÃ CHỌN
+                            </Text>
+
+                            <Text style={styles.summaryName} numberOfLines={1} >
+                                {selectedPackage.ten_goi_tap}
+                            </Text>
                         </View>
-                        <Text style={styles.summaryPrice}>{money(selectedPackage.gia)}</Text>
+                        <Text style={styles.summaryPrice}>
+                            {money(selectedPackage.gia)}
+                        </Text>
                     </View>
                 ) : (
-                    <Text style={styles.noSelection}>Vui lòng chọn một gói tập để tiếp tục</Text>
+                    <Text style={styles.noSelection}>
+                        Vui lòng chọn một gói tập để tiếp tục
+                    </Text>
                 )}
 
-                <TouchableOpacity disabled={!selectedPackage || loading} onPress={handleContinue}
-                    activeOpacity={0.85} style={[styles.continueWrap, (!selectedPackage || loading) && styles.continueWrapDisabled]}>
+                <TouchableOpacity  disabled={!selectedPackage || loading} onPress={handleContinue} activeOpacity={0.85}
+                    style={[ styles.continueWrap, (!selectedPackage || loading) && styles.continueWrapDisabled]} >
                     <LinearGradient
-                        colors={(!selectedPackage || loading) ? ['#AFCBD0', '#AFCBD0'] : [COLORS.primary, COLORS.primaryDark]}
-                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                        style={styles.continueButton}>
-                        <Text style={styles.continueText}>Tiếp tục chọn PT</Text>
+                        colors={ (!selectedPackage || loading) ? ['#AFCBD0', '#AFCBD0'] : [COLORS.primary, COLORS.primaryDark] }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.continueButton}  >
+                        <Text style={styles.continueText}>
+                            Tiếp tục chọn PT
+                        </Text>
                         <Ionicons name="arrow-forward" size={21} color="#FFFFFF" />
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
 
             {/* Modal chi tiết gói tập */}
-            <Modal visible={detail !== null} transparent animationType="slide" onRequestClose={() => setDetail(null)}>
+            <Modal visible={detail !== null} transparent animationType="slide" onRequestClose={() => setDetail(null)} >
                 <View style={styles.modalContainer}>
-                    <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                        onPress={() => setDetail(null)} />
+                    <Pressable style={{  position: 'absolute', top: 0,  left: 0, right: 0,  bottom: 0}} onPress={() => setDetail(null)}/>
 
                     {detail && (
-                        <SafeAreaView style={styles.modalSheet} edges={['bottom']}>
+                        <SafeAreaView style={styles.modalSheet} edges={['bottom']} >
                             <View style={styles.modalHandle} />
-
                             <View style={styles.modalHeader}>
-                                <Text style={styles.modalHeading}>Chi tiết gói tập</Text>
+                                <Text style={styles.modalHeading}>
+                                    Chi tiết gói tập
+                                </Text>
                                 <TouchableOpacity onPress={() => setDetail(null)}>
-                                    <Ionicons name="close-circle" size={29} color={COLORS.muted} />
+                                    <Ionicons  name="close-circle" size={29} color={COLORS.muted} />
                                 </TouchableOpacity>
                             </View>
-
-                            <ScrollView contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false}>
+                            <ScrollView  contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false} >
                                 <View style={styles.modalIcon}>
                                     <Ionicons name="barbell" size={26} color={COLORS.primary} />
                                 </View>
 
-                                <Text style={styles.modalPackageName}>{detail.ten_goi}</Text>
-                                <Text style={styles.modalDescription}>
-                                    {detail.mo_ta || 'Gói tập dành cho hội viên VisionFit.'}
+                                <Text style={styles.modalPackageName}>
+                                    {detail.ten_goi_tap}
                                 </Text>
 
-                                <View style={styles.modalPriceBox}>
-                                    <Text style={styles.modalPriceLabel}>Giá gói tập</Text>
-                                    <Text style={styles.modalPrice}>{money(detail.gia)}</Text>
-                                    <Text style={styles.modalDuration}>Hiệu lực: {detail.thoi_han} ngày</Text>
-                                </View>
-
-                                <Text style={styles.benefitHeading}>Quyền lợi của bạn</Text>
-
-                                {getBenefits(detail).map((benefit, index) => (
-                                    <View key={index} style={styles.modalBenefitRow}>
-                                        <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />
-                                        <Text style={styles.modalBenefitText}>{benefit}</Text>
-                                    </View>
+                                {detail.mo_ta?.map((description, index) => (
+                                    <Text key={index} style={styles.modalDescription} >
+                                        {description}
+                                    </Text>
                                 ))}
 
+                                <View style={styles.modalPriceBox}>
+                                    <Text style={styles.modalPriceLabel}>
+                                        Giá gói tập
+                                    </Text>
+
+                                    <Text style={styles.modalPrice}>
+                                        {money(detail.gia)}
+                                    </Text>
+
+                                    <Text style={styles.modalDuration}>
+                                        Thời hạn mua: {detail.thoi_han_mua} ngày
+                                    </Text>
+
+                                    <Text style={styles.modalDuration}>
+                                        Thời hạn tặng: {detail.thoi_han_tang} ngày
+                                    </Text>
+
+                                    <Text style={styles.modalDuration}>
+                                        Tổng thời hạn: {detail.thoi_han_ngay} ngày
+                                    </Text>
+                                </View>
+
+                                <Text style={styles.benefitHeading}>
+                                    Quyền lợi của bạn
+                                </Text>
+
+                                <View style={styles.modalBenefitRow}>
+                                    <Ionicons name="checkmark-circle" size={21} color={COLORS.primary}/>
+
+                                    <Text style={styles.modalBenefitText}>
+                                        {detail.so_buoi} buổi tập
+                                    </Text>
+                                </View>
+
+                                {detail.so_buoi_pt > 0 && (
+                                    <View style={styles.modalBenefitRow}>
+                                        <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />
+
+                                        <Text style={styles.modalBenefitText}>
+                                            {detail.so_buoi_pt} buổi tập cùng PT
+                                        </Text>
+                                    </View>
+                                )}
+
                                 <View style={styles.activeStatus}>
-                                    <Ionicons name="checkmark-circle-outline" size={17} color={COLORS.primary} />
-                                    <Text style={styles.activeStatusText}>Gói tập đang hoạt động</Text>
+                                    <Ionicons  name="checkmark-circle-outline" size={17} color={COLORS.primary} />
+
+                                    <Text style={styles.activeStatusText}>
+                                        {detail.tinh_trang === 1
+                                            ? 'Gói tập đang hoạt động'
+                                            : 'Gói tập không khả dụng'}
+                                    </Text>
                                 </View>
                             </ScrollView>
 
                             <TouchableOpacity style={styles.modalChooseWrap}
-                                onPress={async () => { await handleSelect(detail); setDetail(null); }}>
-                                <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalChooseButton}>
-                                    <Text style={styles.modalChooseText}>Chọn gói tập này</Text>
+                                onPress={async () => { await handleSelect(detail); setDetail(null); }} >
+                                <LinearGradient  colors={[COLORS.primary, COLORS.primaryDark]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.modalChooseButton} >
+                                    <Text style={styles.modalChooseText}>
+                                        Chọn gói tập này
+                                    </Text>
                                     <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -439,6 +502,7 @@ const WorkoutSelectionScreen = ({ navigation }: any) => {
         </SafeAreaView>
     );
 };
+
 
 const styles = StyleSheet.create({
     container: {
@@ -586,6 +650,42 @@ const styles = StyleSheet.create({
         color: '#C8EAED',
         fontWeight: '500',
     },
+    referralEntryBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: COLORS.white,
+        borderRadius: 18,
+        padding: 14,
+        marginTop: 14,
+        marginBottom: 8,
+        borderWidth: 1.5,
+        borderColor: '#BEE7EB',
+        ...SHADOWS.small,
+    },
+    referralEntryLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    referralIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.soft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    referralEntryTitle: {
+        fontSize: 13.5,
+        fontWeight: '800',
+        color: COLORS.text,
+    },
+    referralEntrySub: {
+        fontSize: 11.5,
+        color: COLORS.muted,
+        marginTop: 2,
+    },
     sectionTitleRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -726,7 +826,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 10,
+        borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 6,
     },
@@ -781,7 +881,7 @@ const styles = StyleSheet.create({
         gap: 6,
         paddingVertical: 7,
         paddingHorizontal: 12,
-        borderRadius: 12,
+        borderRadius: 999,
         backgroundColor: THEME.primarySoft,
     },
     detailText: {
@@ -856,7 +956,7 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         height: 54,
-        borderRadius: 16,
+        borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -891,7 +991,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         paddingVertical: 10,
         paddingHorizontal: 23,
-        borderRadius: 12,
+        borderRadius: 999,
     },
     retryText: {
         color: COLORS.white,

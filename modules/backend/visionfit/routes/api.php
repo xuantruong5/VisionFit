@@ -14,7 +14,7 @@ use App\Http\Controllers\DangKyChuongTrinhController;
 use App\Http\Controllers\ChuongTrinhBaiTapController;
 use App\Http\Controllers\PhongGymController;
 use App\Http\Controllers\BuoiTapController;
-
+use App\Http\Controllers\GoiTapController;
 
 
 
@@ -145,6 +145,14 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/huan-luyen-tiep-theo',[BuoiTapController::class, 'getHuanLuyenTiepTheo']);
 
 
+    // check đã đăng ký gói tập chưa để đăng ký 
+    Route::post('/check-quyen-tap', [ BuoiTapController::class, 'checkQuyenTap']);
+    // lấy gói tập 
+    Route::get('/goi-tap', [GoiTapController::class, 'getAll']);
+    
+    
+
+
 
 
 
@@ -164,8 +172,9 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
 
 // admin
 Route::post('admin/login', [AdminController::class, 'loginAdmin']);
-Route::group(['prefix' => 'admin','middleware' => 'AdminMiddleware'], function () {
+Route::group(['prefix' => 'admin', 'middleware' => 'AdminMiddleware'], function () {
     Route::post('logout', [AdminController::class, 'logoutAdmin']);
+    Route::get('/check-token', [AdminController::class, 'checkTokenAdmin']);
 });
 
 

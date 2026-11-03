@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image, Alert, Modal, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -38,6 +38,12 @@ const MENU = [
 ];
 
 const Profile = ({ navigation }: any) => {
+  const [showQrModal, setShowQrModal] = useState(false);
+  const referralCode = 'PT-HOANGNAM-88';
+
+  const handleCopyCode = () => {
+    Alert.alert('Đã sao chép!', `Mã giới thiệu "${referralCode}" đã được lưu vào bộ nhớ tạm. Hãy gửi cho học viên của bạn.`);
+  };
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
@@ -46,7 +52,7 @@ const Profile = ({ navigation }: any) => {
         {/* 1. ẢNH BÌA */}
         <View style={styles.cover}>
           <Image source={{ uri: COVER }} style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={['rgba(13,127,141,0.55)', 'rgba(7,88,101,0.95)']} style={styles.coverOverlay}>
+          <LinearGradient colors={['rgba(15, 84, 104,0.55)', 'rgba(7,88,101,0.95)']} style={styles.coverOverlay}>
             <View style={styles.coverRow}>
               <Text style={styles.coverTitle}>Hồ sơ của tôi</Text>
               <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
@@ -103,6 +109,41 @@ const Profile = ({ navigation }: any) => {
         </View>
 
         <View style={styles.body}>
+          {/* MÃ GIỚI THIỆU CỦA TRAINER */}
+          <LinearGradient colors={['#10303C', '#0F5468']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.referralCard}>
+            <View style={styles.referralHeader}>
+              <View style={styles.referralBadge}>
+                <Ionicons name="sparkles" size={13} color="#FBBF24" />
+                <Text style={styles.referralBadgeText}>MÃ GIỚI THIỆU CỦA BẠN</Text>
+              </View>
+              <View style={styles.referralStudentCountPill}>
+                <Ionicons name="people" size={13} color="#A7F3D0" />
+                <Text style={styles.referralStudents}>15 học viên đã dùng</Text>
+              </View>
+            </View>
+
+            <Text style={styles.referralTitle}>Gửi mã cho học viên để liên kết trực tiếp</Text>
+
+            <View style={styles.referralCodeBox}>
+              <Text style={styles.referralCodeText}>{referralCode}</Text>
+              <View style={styles.referralBtnRow}>
+                <TouchableOpacity style={styles.referralCopyBtn} onPress={handleCopyCode} activeOpacity={0.8}>
+                  <Ionicons name="copy-outline" size={15} color="#10303C" />
+                  <Text style={styles.referralCopyText}>Sao chép</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.referralQrBtn} onPress={() => setShowQrModal(true)} activeOpacity={0.8}>
+                  <Ionicons name="qr-code-outline" size={15} color="#FFFFFF" />
+                  <Text style={styles.referralQrText}>Mã QR</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.referralCommissionRow}>
+              <Ionicons name="gift-outline" size={15} color="#FDE68A" />
+              <Text style={styles.referralCommissionText}>Tích lũy 10% hoa hồng cho mỗi gói tập học viên đăng ký</Text>
+            </View>
+          </LinearGradient>
+
           {/* 3. CHỨNG CHỈ */}
           <Text style={styles.sectionTitle}>Chứng chỉ</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.certList}>
@@ -168,6 +209,48 @@ const Profile = ({ navigation }: any) => {
           <Text style={styles.versionText}>VisionFit Trainer • Phiên bản 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* MODAL MÃ QR GIỚI THIỆU */}
+      {showQrModal && (
+        <View style={styles.qrModalOverlay}>
+          <View style={styles.qrModalCard}>
+            <View style={styles.qrModalHeader}>
+              <View style={styles.qrTitleGroup}>
+                <Ionicons name="qr-code" size={20} color={COLORS.primary} />
+                <Text style={styles.qrModalTitle}>Mã QR Huấn Luyện Viên</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowQrModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close-circle" size={24} color={COLORS.textLight} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.qrSubText}>
+              Đưa mã này cho học viên quét trên ứng dụng VisionFit để tự động liên kết với bạn
+            </Text>
+
+            <View style={styles.qrBox}>
+              {/* Giả lập khung QR Code thương hiệu */}
+              <View style={styles.qrFakeCanvas}>
+                <Ionicons name="qr-code-outline" size={170} color="#10303C" />
+                <View style={styles.qrLogoBadge}>
+                  <Text style={styles.qrLogoBadgeText}>VF</Text>
+                </View>
+              </View>
+              <Text style={styles.qrCodeLabel}>{referralCode}</Text>
+            </View>
+
+            <View style={styles.qrActionRow}>
+              <TouchableOpacity style={styles.qrCopyActionBtn} onPress={handleCopyCode} activeOpacity={0.8}>
+                <Ionicons name="copy-outline" size={16} color={COLORS.primary} />
+                <Text style={styles.qrCopyActionText}>Sao chép mã</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.qrDoneActionBtn} onPress={() => setShowQrModal(false)} activeOpacity={0.8}>
+                <Text style={styles.qrDoneActionText}>Xong</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -342,7 +425,7 @@ const styles = StyleSheet.create({
   },
   editBtn: {
     height: 46,
-    borderRadius: 14,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -420,7 +503,7 @@ const styles = StyleSheet.create({
   // LOGOUT
   logoutBtn: {
     height: 50,
-    borderRadius: 14,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -441,5 +524,243 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 14,
     fontWeight: '600',
+  },
+
+  // MÃ GIỚI THIỆU CARD
+  referralCard: {
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  referralHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  referralBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 5,
+  },
+  referralBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    color: '#FBBF24',
+  },
+  referralStudentCountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.22)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    gap: 4,
+  },
+  referralStudents: {
+    fontSize: 11,
+    color: '#A7F3D0',
+    fontWeight: '700',
+  },
+  referralTitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  referralCodeBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  referralCodeText: {
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: '#FFFFFF',
+  },
+  referralBtnRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  referralCopyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 4,
+  },
+  referralCopyText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#10303C',
+  },
+  referralQrBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 4,
+  },
+  referralQrText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  referralCommissionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  referralCommissionText: {
+    fontSize: 11.5,
+    color: '#FDE68A',
+    fontWeight: '600',
+  },
+
+  // QR MODAL
+  qrModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    zIndex: 9999,
+    elevation: 20,
+  },
+  qrModalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: 22,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+  },
+  qrModalHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  qrTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  qrModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  qrSubText: {
+    fontSize: 12.5,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  qrBox: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 20,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  qrFakeCanvas: {
+    width: 190,
+    height: 190,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  qrLogoBadge: {
+    position: 'absolute',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  qrLogoBadgeText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 13,
+  },
+  qrCodeLabel: {
+    marginTop: 10,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: COLORS.primary,
+  },
+  qrActionRow: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  qrCopyActionBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceTeal,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  qrCopyActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  qrDoneActionBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qrDoneActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

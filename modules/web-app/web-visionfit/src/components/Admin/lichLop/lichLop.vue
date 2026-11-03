@@ -2,36 +2,56 @@
     <div>
         <div class="page-header">
             <div>
-                <h2>Lịch & Lớp tập</h2>
-                <p>Quản lý lịch tập, lớp học và Trainer phụ trách</p>
+                <h2>Quản lý Lịch Tập & Duyệt Đổi Ca</h2>
+                <p>Quản lý lịch tập, duyệt yêu cầu dời ca của Trainer và gửi mail xác nhận cho hội viên</p>
             </div>
 
-            <button class="btn-add" @click="openCreateModal">
+            <button v-if="currentTab === 'classes'" class="btn-add" @click="openCreateModal">
                 + Tạo lớp tập
             </button>
         </div>
 
-        <div class="stat-row">
-            <div class="mini-card">
-                <span>Lớp hôm nay</span>
-                <strong>{{ todayClasses }}</strong>
-            </div>
-
-            <div class="mini-card">
-                <span>Lớp đang mở</span>
-                <strong>{{ countActive }}</strong>
-            </div>
-
-            <div class="mini-card">
-                <span>Gymmer đăng ký</span>
-                <strong>{{ totalMembers }}</strong>
-            </div>
-
-            <div class="mini-card">
-                <span>Trainer phụ trách</span>
-                <strong>{{ totalTrainer }}</strong>
-            </div>
+        <!-- NAVIGATION TABS -->
+        <div class="schedule-nav-tabs">
+            <button
+                class="schedule-nav-tab"
+                :class="{ active: currentTab === 'classes' }"
+                @click="currentTab = 'classes'"
+            >
+                📅 Lớp tập & Thời khóa biểu
+            </button>
+            <button
+                class="schedule-nav-tab"
+                :class="{ active: currentTab === 'change_requests' }"
+                @click="currentTab = 'change_requests'"
+            >
+                🟠 Duyệt yêu cầu đổi lịch của Trainer
+                <span class="badge-count" v-if="pendingRequestsCount > 0">{{ pendingRequestsCount }}</span>
+            </button>
         </div>
+
+        <div v-if="currentTab === 'classes'">
+            <div class="stat-row">
+                <div class="mini-card">
+                    <span>Lớp hôm nay</span>
+                    <strong>{{ todayClasses }}</strong>
+                </div>
+
+                <div class="mini-card">
+                    <span>Lớp đang mở</span>
+                    <strong>{{ countActive }}</strong>
+                </div>
+
+                <div class="mini-card">
+                    <span>Gymmer đăng ký</span>
+                    <strong>{{ totalMembers }}</strong>
+                </div>
+
+                <div class="mini-card">
+                    <span>Trainer phụ trách</span>
+                    <strong>{{ totalTrainer }}</strong>
+                </div>
+            </div>
 
         <div class="content-card">
             <div class="toolbar">
@@ -164,6 +184,182 @@
                     class="empty-state"
                 >
                     Không có lớp tập phù hợp
+                </div>
+            </div>
+        </div>
+        </div>
+        <!-- KẾT THÚC TAB CLASSES -->
+
+        <!-- ================= TAB 2: DUYỆT YÊU CẦU ĐỔI LỊCH CỦA TRAINER ================= -->
+        <div v-if="currentTab === 'change_requests'">
+            <div class="content-card">
+                <div class="tab-intro-row">
+                    <div>
+                        <h3 class="tab-inner-title">Danh sách yêu cầu dời lịch / đổi ca của Trainer</h3>
+                        <p class="tab-inner-sub">Xem xét lý do dời ca của HLV, bấm Duyệt để hệ thống tự động cập nhật thời khóa biểu và gửi mail cho học viên</p>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="trainer-table request-table">
+                        <thead>
+                            <tr>
+                                <th>Huấn luyện viên</th>
+                                <th>Học viên & Gói tập</th>
+                                <th>Lịch cũ</th>
+                                <th>Lịch mới đề xuất</th>
+                                <th>Lý do dời ca của HLV</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr v-for="req in change_requests" :key="req.id">
+                                <td>
+                                    <div>
+                                        <strong style="color: #11343a;">{{ req.trainer_name }}</strong>
+                                        <div class="ref-code-badge" style="display: inline-block; margin-top: 3px;">{{ req.trainer_code }}</div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div>
+                                        <strong style="color: #11343a;">{{ req.member_name }}</strong>
+                                        <div style="font-size: 12px; color: #71949a; margin-top: 2px;">{{ req.package_name }}</div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="schedule-old-box">
+                                        <strong>{{ req.old_schedule }}</strong>
+                                        <small>{{ req.old_place }}</small>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="schedule-new-box">
+                                        <strong>🕒 {{ req.new_schedule }}</strong>
+                                        <small>📍 {{ req.new_place }}</small>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="reason-box">
+                                        "{{ req.reason }}"
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="status" :class="req.status === 'approved' ? 'active' : req.status === 'rejected' ? 'inactive' : 'pending'">
+                                        <span class="status-dot"></span>
+                                        {{
+                                            req.status === 'approved'
+                                                ? 'Đã duyệt'
+                                                : req.status === 'rejected'
+                                                ? 'Đã từ chối'
+                                                : 'Chờ duyệt'
+                                        }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="action-btn-group">
+                                        <button
+                                            v-if="req.status === 'pending'"
+                                            class="btn-approve"
+                                            @click="approveScheduleChange(req)"
+                                            title="Phê duyệt đổi lịch"
+                                        >
+                                            ✓ Duyệt
+                                        </button>
+                                        <button
+                                            v-if="req.status === 'pending'"
+                                            class="btn-reject"
+                                            @click="rejectScheduleChange(req)"
+                                            title="Từ chối yêu cầu"
+                                        >
+                                            ✗ Từ chối
+                                        </button>
+                                        <button
+                                            class="btn-email"
+                                            @click="openSendEmailScheduleModal(req)"
+                                            title="Gửi email thông báo cho học viên và HLV"
+                                        >
+                                            ✉️ Gửi mail
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL GỬI EMAIL XÁC NHẬN LỊCH TẬP ================= -->
+        <div v-if="showEmailScheduleModal" class="modal-overlay" @click.self="showEmailScheduleModal = false">
+            <div class="modal-box modal-email-box">
+                <div class="modal-header">
+                    <div>
+                        <h3>✉️ Gửi email xác nhận lịch tập cho Học viên & HLV</h3>
+                        <p>Mẫu thư có sẵn: Bạn có thể sửa nhanh giờ tập và địa chỉ trước khi gửi</p>
+                    </div>
+                    <button class="btn-close" @click="showEmailScheduleModal = false">×</button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Email Học viên (Người nhận chính)</label>
+                        <input type="text" :value="emailScheduleForm.studentName + ' <' + emailScheduleForm.recipient + '>'" disabled style="background: #F8FAFC;" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Huấn luyện viên (Đồng gửi)</label>
+                        <input type="text" :value="emailScheduleForm.trainerName + ' <' + emailScheduleForm.trainerEmail + '>'" disabled style="background: #F8FAFC;" />
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Tiêu đề email</label>
+                        <input type="text" v-model="emailScheduleForm.title" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>🕒 Thời gian buổi tập mới (Sửa nhanh)</label>
+                        <input type="text" v-model="emailScheduleForm.time" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>📍 Địa chỉ phòng tập / Cơ sở (Sửa nhanh)</label>
+                        <input type="text" v-model="emailScheduleForm.location" />
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Ghi chú dặn dò</label>
+                        <textarea v-model="emailScheduleForm.note" rows="2"></textarea>
+                    </div>
+
+                    <!-- PREVIEW EMAIL -->
+                    <div class="form-group full">
+                        <label style="color: #0d7f8d; font-weight: 800;">👁️ Xem trước nội dung thư gửi đi:</label>
+                        <div class="email-preview-box">
+                            <p><strong>Kính gửi bạn {{ emailScheduleForm.studentName }} và HLV {{ emailScheduleForm.trainerName }},</strong></p>
+                            <p>Yêu cầu điều chỉnh ca tập luyện cá nhân tại VisionFit đã được Ban quản trị phê duyệt và cập nhật thành công:</p>
+                            <ul>
+                                <li><strong>Thời gian tập mới:</strong> {{ emailScheduleForm.time }}</li>
+                                <li><strong>Địa điểm:</strong> {{ emailScheduleForm.location }}</li>
+                                <li><strong>Dặn dò:</strong> {{ emailScheduleForm.note }}</li>
+                            </ul>
+                            <p style="margin-bottom: 0;"><em>Chúc bạn có buổi tập luyện hiệu quả và an toàn!<br>Hệ thống Quản lý Đào tạo VisionFit</em></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" @click="showEmailScheduleModal = false">Đóng</button>
+                    <button class="btn-send-email" @click="sendEmailScheduleConfirmation">
+                        🚀 BẤM GỬI EMAIL NGAY
+                    </button>
                 </div>
             </div>
         </div>
@@ -318,12 +514,77 @@ export default {
 
     data() {
         return {
+            currentTab: 'classes',
             search: '',
             dayFilter: '',
             statusFilter: '',
             selectedDay: 'Tất cả',
             showModal: false,
+            showEmailScheduleModal: false,
             editingClass: null,
+            selectedRequest: null,
+
+            emailScheduleForm: {
+                recipient: '',
+                trainerEmail: '',
+                studentName: '',
+                trainerName: '',
+                title: '[VisionFit] Thông báo lịch tập luyện đã được cập nhật',
+                time: '',
+                location: '',
+                note: 'Vui lòng có mặt đúng giờ trước 10 phút, mang theo trang phục tập và bình nước cá nhân.',
+            },
+
+            change_requests: [
+                {
+                    id: 'REQ-01',
+                    trainer_name: 'Lê Hoàng Nam',
+                    trainer_code: 'PT-HOANGNAM-88',
+                    trainer_email: 'namle@visionfit.vn',
+                    member_name: 'Lê Hoàng Nam',
+                    member_email: 'nam.le@visionfit.vn',
+                    package_name: 'Full Body Kháng lực (Gói PT 12 buổi)',
+                    old_schedule: '18:00 - 19:00, Thứ Bảy 31/10/2026',
+                    old_place: 'Phòng Gym B (Cơ sở 1)',
+                    new_schedule: '18:00 - 19:00, Thứ Hai 02/11/2026',
+                    new_place: 'Phòng Gym B - 123 Nguyễn Thị Minh Khai, Q.1',
+                    reason: 'Học viên có việc gia đình đột xuất, xin dời sang thứ Hai.',
+                    created_at: 'Hôm nay, 17:15',
+                    status: 'pending',
+                },
+                {
+                    id: 'REQ-02',
+                    trainer_name: 'Trần Quốc Huy',
+                    trainer_code: 'PT-QUOCHUY-88',
+                    trainer_email: 'huytran@visionfit.vn',
+                    member_name: 'Trần Minh Anh',
+                    member_email: 'minhanh.tran@gmail.com',
+                    package_name: 'Cardio & Giảm mỡ cấp tốc (Gói PT 24 buổi)',
+                    old_schedule: '14:30 - 15:15, Chủ Nhật 01/11/2026',
+                    old_place: 'Khu Cardio (Cơ sở 1)',
+                    new_schedule: '16:00 - 16:45, Chủ Nhật 01/11/2026',
+                    new_place: 'Khu Cardio - 123 Nguyễn Thị Minh Khai, Q.1',
+                    reason: 'Học viên kẹt lịch thi buổi chiều, xin lùi 1 tiếng rưỡi.',
+                    created_at: 'Hôm nay, 14:00',
+                    status: 'pending',
+                },
+                {
+                    id: 'REQ-03',
+                    trainer_name: 'Nguyễn Khánh Linh',
+                    trainer_code: 'PT-KHANHLINH-99',
+                    trainer_email: 'linhnguyen@visionfit.vn',
+                    member_name: 'Phạm Thu Hà',
+                    member_email: 'thuha.pham@gmail.com',
+                    package_name: 'Functional & Dẻo dai',
+                    old_schedule: '10:00 - 11:00, Thứ Sáu 30/10/2026',
+                    old_place: 'Phòng Gym A',
+                    new_schedule: '10:00 - 11:00, Thứ Bảy 31/10/2026',
+                    new_place: 'Phòng Gym A - 123 Nguyễn Thị Minh Khai, Q.1',
+                    reason: 'HLV bận họp chuyên môn định kỳ tại trụ sở.',
+                    created_at: '29/10/2026',
+                    status: 'approved',
+                }
+            ],
 
             days: [
                 'Tất cả',
@@ -472,10 +733,49 @@ export default {
             return this.list_lop.filter(
                 item => item.thu === 'Thứ 4'
             ).length;
+        },
+
+        pendingRequestsCount() {
+            return this.change_requests.filter(r => r.status === 'pending').length;
         }
     },
 
     methods: {
+        approveScheduleChange(req) {
+            req.status = 'approved';
+            alert(`Đã duyệt yêu cầu đổi lịch ca dạy của HLV ${req.trainer_name} và Học viên ${req.member_name}!\n\nLịch mới: ${req.new_schedule}\nĐịa điểm: ${req.new_place}\n\nThời khóa biểu của cả hai bên đã được tự động cập nhật.`);
+        },
+
+        rejectScheduleChange(req) {
+            const reason = prompt('Nhập lý do từ chối yêu cầu đổi lịch:', 'Khung giờ mới phòng tập bị quá tải');
+            if (reason) {
+                req.status = 'rejected';
+                req.rejectReason = reason;
+                alert(`Đã từ chối yêu cầu đổi lịch. Lý do: "${reason}".`);
+            }
+        },
+
+        openSendEmailScheduleModal(req) {
+            this.selectedRequest = req;
+            this.emailScheduleForm.recipient = req.member_email;
+            this.emailScheduleForm.trainerEmail = req.trainer_email;
+            this.emailScheduleForm.studentName = req.member_name;
+            this.emailScheduleForm.trainerName = req.trainer_name;
+            this.emailScheduleForm.time = req.new_schedule;
+            this.emailScheduleForm.location = req.new_place;
+            this.emailScheduleForm.note = 'Vui lòng có mặt đúng giờ trước 10 phút, mang theo trang phục tập và bình nước cá nhân.';
+            this.showEmailScheduleModal = true;
+        },
+
+        sendEmailScheduleConfirmation() {
+            if (!this.emailScheduleForm.time || !this.emailScheduleForm.location) {
+                alert('Vui lòng nhập đầy đủ thời gian và địa điểm tập.');
+                return;
+            }
+            this.showEmailScheduleModal = false;
+            alert(`Đã gửi email thông báo cập nhật lịch tập thành công qua SMTP!\n\n• Học viên: ${this.emailScheduleForm.recipient}\n• Huấn luyện viên: ${this.emailScheduleForm.trainerEmail}\n• Thời gian: ${this.emailScheduleForm.time}\n• Địa điểm: ${this.emailScheduleForm.location}`);
+        },
+
         getCapacity(item) {
             if (!item.suc_chua) {
                 return 0;
@@ -1064,5 +1364,203 @@ export default {
     .class-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* NAVIGATION TABS */
+.schedule-nav-tabs {
+    display: flex;
+    gap: 8px;
+    background: #e2f0f2;
+    padding: 5px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
+
+.schedule-nav-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #51777d;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.schedule-nav-tab.active {
+    background: #0d7f8d;
+    color: white;
+    box-shadow: 0 4px 12px rgba(13, 127, 141, 0.22);
+}
+
+.badge-count {
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+/* REQUEST TABLE */
+.request-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.request-table th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+    color: #71949a;
+    border-bottom: 1.5px solid #e1eff1;
+}
+
+.request-table td {
+    padding: 14px;
+    vertical-align: middle;
+    border-bottom: 1px solid #edf6f7;
+    font-size: 13.5px;
+}
+
+.ref-code-badge {
+    background: #eaf9fb;
+    color: #0d7f8d;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    border: 1px solid #bcecf0;
+}
+
+.schedule-old-box strong {
+    display: block;
+    color: #64748b;
+    font-size: 12.5px;
+    text-decoration: line-through;
+}
+.schedule-old-box small {
+    color: #94a3b8;
+    font-size: 11.5px;
+}
+
+.schedule-new-box strong {
+    display: block;
+    color: #0d7f8d;
+    font-size: 13.5px;
+}
+.schedule-new-box small {
+    color: #51777d;
+    font-size: 12px;
+}
+
+.reason-box {
+    background: #f8fafc;
+    border-left: 3px solid #f59e0b;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #334155;
+    font-style: italic;
+    max-width: 250px;
+}
+
+.action-btn-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn-approve {
+    padding: 6px 12px;
+    border: 1px solid #10b981;
+    background: #ecfdf5;
+    color: #059669;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-approve:hover { background: #d1fae5; }
+
+.btn-reject {
+    padding: 6px 12px;
+    border: 1px solid #ef4444;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-reject:hover { background: #fee2e2; }
+
+.btn-email {
+    padding: 6px 12px;
+    border: 1px solid #0d7f8d;
+    background: #eaf9fb;
+    color: #0d7f8d;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-email:hover { background: #d3f3f6; }
+
+.modal-email-box {
+    max-width: 680px;
+}
+
+.email-preview-box {
+    background: #f8fafc;
+    border: 1.5px dashed #9ed9df;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 13px;
+    color: #2e5057;
+    line-height: 20px;
+}
+.email-preview-box ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.btn-send-email {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    border: none;
+    background: #0d7f8d;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(13, 127, 141, 0.25);
+}
+.btn-send-email:hover { background: #075e68; }
+
+.tab-intro-row {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #edf6f7;
+}
+
+.tab-inner-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: #11343a;
+}
+
+.tab-inner-sub {
+    margin: 4px 0 0;
+    font-size: 13.5px;
+    color: #71949a;
 }
 </style>

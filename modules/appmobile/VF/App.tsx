@@ -71,6 +71,8 @@ import RegistrationSuccessScreen from "./src/page/member/RegistrationSuccessScre
 import MyPackagesScreen from "./src/page/member/MyPackagesScreen";
 import MyPackageDetailScreen from "./src/page/member/MyPackageDetailScreen";
 import WorkoutHistory from "./src/page/member/WorkoutHistory";
+import EnterTrainerCodeScreen from "./src/page/member/EnterTrainerCodeScreen";
+import ChangeWorkoutScheduleScreen from "./src/page/member/ChangeWorkoutScheduleScreen";
 import CreateSchedule from "./src/page/trainners/CreateSchedule";
 import TrainerNotifications from "./src/page/trainners/TrainerNotifications";
 import EditTrainerProfile from "./src/page/trainners/EditTrainerProfile";
@@ -113,6 +115,10 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
       <MemberWorkoutStack.Screen name="ResultPage" component={ResultPage}/>
       <MemberWorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
+      <MemberWorkoutStack.Screen name="EnterTrainerCodeScreen" component={EnterTrainerCodeScreen} />
+      <MemberWorkoutStack.Screen name="EnterTrainerCode" component={EnterTrainerCodeScreen} />
+      <MemberWorkoutStack.Screen name="ChangeWorkoutScheduleScreen" component={ChangeWorkoutScheduleScreen} />
+      <MemberWorkoutStack.Screen name="ChangeWorkoutSchedule" component={ChangeWorkoutScheduleScreen} />
 
 
 
@@ -310,7 +316,7 @@ const App = () => {
       }}
     >
       <Stack.Navigator
-        initialRouteName="MainTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
@@ -352,6 +358,10 @@ const App = () => {
         <Stack.Screen name="MyPackageDetailScreen" component={MyPackageDetailScreen} />
         <Stack.Screen name="MyPackageDetail" component={MyPackageDetailScreen} />
         <Stack.Screen name="WorkoutHistory" component={WorkoutHistory} />
+        <Stack.Screen name="EnterTrainerCodeScreen" component={EnterTrainerCodeScreen} />
+        <Stack.Screen name="EnterTrainerCode" component={EnterTrainerCodeScreen} />
+        <Stack.Screen name="ChangeWorkoutScheduleScreen" component={ChangeWorkoutScheduleScreen} />
+        <Stack.Screen name="ChangeWorkoutSchedule" component={ChangeWorkoutScheduleScreen} />
 
 
         {/* // gioi thieu */}

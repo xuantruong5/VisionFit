@@ -32,14 +32,24 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
             <Text style={styles.headerEyebrow}>VISIONFIT</Text>
             <Text style={styles.headerTitle}>Kế hoạch tập luyện</Text>
           </View>
-          <TouchableOpacity
-            style={styles.aiHeaderBtn}
-            onPress={() => navigation.navigate('AiConsultationScreen')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="sparkles" size={15} color={COLORS.white} />
-            <Text style={styles.aiHeaderBtnText}>AI</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActionBtns}>
+            <TouchableOpacity
+              style={styles.scheduleHeaderBtn}
+              onPress={() => navigation.navigate('ChangeWorkoutScheduleScreen')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="calendar-outline" size={15} color={COLORS.white} />
+              <Text style={styles.headerBtnText}>Đổi lịch</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.aiHeaderBtn}
+              onPress={() => navigation.navigate('AiConsultationScreen')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="sparkles" size={15} color={COLORS.white} />
+              <Text style={styles.aiHeaderBtnText}>AI</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
 
@@ -151,7 +161,7 @@ const styles = StyleSheet.create({
   headerEyebrow: {
     fontSize: 11.5,
     fontWeight: '800',
-    color: '#9EE7E5',
+    color: '#A9D0DE',
     letterSpacing: 1,
   },
   headerTitle: {
@@ -160,12 +170,33 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginTop: 4,
   },
+  headerActionBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  scheduleHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  headerBtnText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 12.5,
+    marginLeft: 5,
+  },
   aiHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 40,
     paddingHorizontal: 14,
-    borderRadius: 13,
+    borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',

@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             MucTieuDinhDuongSeeder::class,
             ChuongTrinhBaiTapChiTietSeeder::class,
             BaiTapPhanLoaiSeeder::class,
+            GoiTapSeeder::class,
        ]);
     }
 }

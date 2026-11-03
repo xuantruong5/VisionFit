@@ -399,17 +399,17 @@ const ChatList = ({ navigation }: any) => {
                                         </Text>
                                         <View style={styles.chatStatusIcons}>
                                             {item.da_tat_thong_bao && (
-                                                <Ionicons name="notifications-off" size={14} color="#71949A" style={{ marginRight: 5 }} />
+                                                <Ionicons name="notifications-off" size={14} color="#6F8F9C" style={{ marginRight: 5 }} />
                                             )}
                                             {item.ghim && (
-                                                <MaterialCommunityIcons name="pin" size={14} color="#0D7F8D" style={{ marginRight: 5 }} />
+                                                <MaterialCommunityIcons name="pin" size={14} color="#0F5468" style={{ marginRight: 5 }} />
                                             )}
                                             {isUnread ? (
                                                 <View style={styles.unreadCounter}>
                                                     <Text style={styles.unreadCounterText}>{item.so_tin_chua_doc}</Text>
                                                 </View>
                                             ) : (
-                                                item.da_xem && <Ionicons name="checkmark-done" size={16} color="#0D7F8D" />
+                                                item.da_xem && <Ionicons name="checkmark-done" size={16} color="#0F5468" />
                                             )}
                                         </View>
                                     </View>
@@ -420,7 +420,7 @@ const ChatList = ({ navigation }: any) => {
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
                             <View style={styles.emptyIconCircle}>
-                                <Ionicons name="chatbubbles-outline" size={38} color="#0D7F8D" />
+                                <Ionicons name="chatbubbles-outline" size={38} color="#0F5468" />
                             </View>
                             <Text style={styles.emptyTitle}>Chưa có cuộc trò chuyện nào</Text>
                             <Text style={styles.emptyText}>Nhấn vào nút bên dưới để bắt đầu cuộc trò chuyện mới!</Text>
@@ -468,7 +468,7 @@ const ChatList = ({ navigation }: any) => {
                             }}
                         >
                             <View style={styles.modalGroupIcon}>
-                                <Ionicons name="people" size={22} color="#0D7F8D" />
+                                <Ionicons name="people" size={22} color="#0F5468" />
                             </View>
                             <View>
                                 <Text style={styles.modalGroupTitle}>Tạo nhóm tập mới</Text>
@@ -518,7 +518,7 @@ const ChatList = ({ navigation }: any) => {
                             style={styles.sheetRow}
                             onPress={() => handleTogglePin(selectedConv)}
                         >
-                            <MaterialCommunityIcons name={selectedConv?.ghim ? "pin-off-outline" : "pin-outline"} size={22} color="#0D7F8D" />
+                            <MaterialCommunityIcons name={selectedConv?.ghim ? "pin-off-outline" : "pin-outline"} size={22} color="#0F5468" />
                             <Text style={styles.sheetRowText}>{selectedConv?.ghim ? "Bỏ ghim" : "Ghim lên đầu"}</Text>
                         </TouchableOpacity>
 
@@ -526,7 +526,7 @@ const ChatList = ({ navigation }: any) => {
                             style={styles.sheetRow}
                             onPress={() => handleToggleMute(selectedConv)}
                         >
-                            <Ionicons name={selectedConv?.da_tat_thong_bao ? "notifications-outline" : "notifications-off-outline"} size={22} color="#0D7F8D" />
+                            <Ionicons name={selectedConv?.da_tat_thong_bao ? "notifications-outline" : "notifications-off-outline"} size={22} color="#0F5468" />
                             <Text style={styles.sheetRowText}>{selectedConv?.da_tat_thong_bao ? "Bật thông báo" : "Tắt thông báo"}</Text>
                         </TouchableOpacity>
 

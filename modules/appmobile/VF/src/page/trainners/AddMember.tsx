@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 18,
+    borderRadius: 999,
   },
   codeText: {
     fontSize: 14,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     height: 54,
-    borderRadius: 27,
+    borderRadius: 999,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',

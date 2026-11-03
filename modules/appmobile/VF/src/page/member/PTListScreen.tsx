@@ -500,7 +500,7 @@ const PTListScreen = ({ navigation, route }: any) => {
                 <TouchableOpacity activeOpacity={0.85}
                     disabled={!!cannotContinue} onPress={handleContinue}>
                     <LinearGradient
-                        colors={cannotContinue ? ['#AECBD0', '#AECBD0'] : [COLORS.primary, COLORS.primaryDark]}
+                        colors={cannotContinue ? ['#AFC8D3', '#AFC8D3'] : [COLORS.primary, COLORS.primaryDark]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.continueButton}
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
         gap: 6,
         height: 38,
         paddingHorizontal: 12,
-        borderRadius: 12,
+        borderRadius: 999,
         backgroundColor: COLORS.primarySoft,
     },
     viewProfileText: {
@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
         paddingHorizontal: 14,
         height: 38,
-        borderRadius: 12,
+        borderRadius: 999,
         backgroundColor: COLORS.white,
     },
     selectButtonActive: {
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         height: 42,
         justifyContent: 'center',
-        borderRadius: 14,
+        borderRadius: 999,
         marginTop: 4,
     },
     retryText: {
@@ -1123,7 +1123,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     continueButton: {
-        borderRadius: 16,
+        borderRadius: 999,
         height: 52,
         flexDirection: 'row',
         gap: 10,

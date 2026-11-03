@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, StatusBar } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, StatusBar, Alert } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
@@ -16,6 +16,9 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const [progressByDay, setProgressByDay] = useState<Record<number, number>>({});
   const [tongNgayDaHoanThanh, setTongNgayDaHoanThanh] = useState(0);
   const [tongNgayTap, setTongNgayTap] = useState(0);
+
+  // check quyền đăng ký gói chưa 
+  const [checkingDayId, setCheckingDayId] = useState<number | null>(null);
 
   const getProgramExercises = async () => {
     setLoading(true);
@@ -112,6 +115,75 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
     }
   };
 
+  const handlePressDay = async (day: any) => {
+    // Chưa mở khóa thì không cho nhấn
+    if (Number(day.tinh_trang) !== 1) return;
+    const idDangKy = Number(day.id_dang_ky_chuong_trinh);
+    const idChuongTrinhBaiTap = Number(day.id_chuong_trinh_bai_tap);
+    if (!idDangKy || !idChuongTrinhBaiTap) {
+      Alert.alert("Thông báo", "Không tìm thấy thông tin đăng ký chương trình.");
+      return;
+    }
+    try {
+      setCheckingDayId(idChuongTrinhBaiTap);
+      // Gọi API kiểm tra quyền tập
+      const res = await apiFitlife.post("/client/check-quyen-tap", {
+        id_dang_ky_chuong_trinh: idDangKy,
+        id_chuong_trinh_bai_tap: idChuongTrinhBaiTap,
+      });
+      const data = res.data?.data;
+      // Backend không cho phép tập
+      if (!data?.duoc_phep_tap) {
+        Alert.alert(
+          "Yêu cầu đăng ký gói tập",
+          res.data?.message || "Bạn cần đăng ký gói tập để tiếp tục.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => {
+                // Đóng thông báo, ở lại màn hình hiện tại
+              },
+            },
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.navigate("WorkoutSelectionScreen" as never);
+              },
+            },
+          ],
+          { cancelable: true }
+        );
+        return;
+      }
+      // Được phép tập thì chuyển sang ExercisePage
+      const params = {
+        ngayThu: day.ngay_thu,
+        dayType: day.ten_ngay_tap,
+        thoi_gian_phut: day.thoi_gian_phut,
+        id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
+        id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
+        id_chuong_trinh: day.id_chuong_trinh,
+        id_lich_tap: day.id_lich_tap,
+      };
+
+      navigation.navigate("ExercisePage", params);
+
+    } catch (error: any) {
+      console.log(
+        "Lỗi kiểm tra quyền tập:",
+        error.response?.data ?? error.message
+      );
+
+      Alert.alert(
+        "Thông báo",
+        error.response?.data?.message || "Không thể kiểm tra quyền tập. Vui lòng thử lại."
+      );
+    } finally {
+      setCheckingDayId(null);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       getProgramExercises();
@@ -122,21 +194,11 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
         {/* Tóm tắt chương trình */}
         <View style={styles.summaryCard}>
-          <Image
-            source={{
-              uri:
-                program?.anh_dai_dien ||
-                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-            }}
-            style={styles.summaryImage}
-            resizeMode="cover"
-          />
+          <Image source={{ uri: program?.anh_dai_dien || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",}}
+            style={styles.summaryImage} resizeMode="cover"/>
           <View style={styles.flex}>
             <Text style={styles.summaryTitle} numberOfLines={2}>
               {program?.ten_chuong_trinh ?? "Chương trình tập"}
@@ -166,11 +228,7 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
         {/* Tiêu đề danh sách */}
         <View style={styles.listHeaderRow}>
           <Text style={styles.listHeaderTitle}>Ngày tập luyện</Text>
-          <TouchableOpacity
-            style={styles.sortButton}
-            onPress={() => setIsReversed((prev) => !prev)}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.sortButton} onPress={() => setIsReversed((prev) => !prev)} activeOpacity={0.7}>
             <Ionicons name="swap-vertical" size={15} color={PASTEL.ink} />
             <Text style={styles.sortButtonText}>{isReversed ? "Giảm dần" : "Tăng dần"}</Text>
           </TouchableOpacity>
@@ -198,24 +256,9 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                 : { bg: PASTEL.tealSoft, ink: PASTEL.teal };
 
             return (
-              <TouchableOpacity
-                key={day.id_chuong_trinh_bai_tap}
-                style={[styles.dayCard, !isUnlocked && styles.dayCardLocked]}
-                activeOpacity={isUnlocked ? 0.8 : 1}
-                  onPress={() => {
-                    if (!isUnlocked) return;
-                    const params = {
-                      ngayThu: day.ngay_thu,
-                      dayType: day.ten_ngay_tap,
-                      thoi_gian_phut: day.thoi_gian_phut,
-                      id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
-                      id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
-                      id_chuong_trinh: day.id_chuong_trinh,
-                      id_lich_tap: day.id_lich_tap,
-                    };
-                    navigation.navigate("ExercisePage", params);
-                  }}
-              >
+              <TouchableOpacity key={day.id_chuong_trinh_bai_tap}
+                style={[styles.dayCard, !isUnlocked && styles.dayCardLocked]} activeOpacity={isUnlocked ? 0.8 : 1} onPress={() => handlePressDay(day)}
+                disabled={!isUnlocked || checkingDayId !== null} >
                 {isUnlocked ? (
                   <View style={[styles.statusCircle, { backgroundColor: ring.bg }]}>
                     <Text style={[styles.statusText, { color: ring.ink }]}>{progress}%</Text>
