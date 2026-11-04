@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\GoiTap;
+use App\Models\GioiThieu;
+use App\Models\KhuyenMai;
+use App\Models\DangKyGoi;
 use App\Models\Trainer;
 use App\Models\DKChuongTrinh;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class GoiTapController extends Controller
 {
@@ -155,6 +159,172 @@ class GoiTapController extends Controller
     }
 
 
+    public function tinhKhuyenMai(Request $request)
+    {
+        $request->validate([
+            'id_goi_tap' => 'required|integer',
+            'ma_khuyen_mai' => 'nullable|string',
+        ]);
 
+        // 1. Lấy hội viên đang đăng nhập
+        $hoiVien = auth('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.'
+            ], 401);
+        }
 
+        // 2. Lấy thông tin gói tập
+        $goiTap = GoiTap::find($request->id_goi_tap);
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập.'
+            ], 404);
+        }
+
+        $giaGoc = (float) $goiTap->gia;
+
+        // 3. Đếm số lần đăng ký đã thanh toán thành công
+        $soLanDaDangKy = DangKyGoi::where('id_hoi_vien', $hoiVien->id)
+            ->where('is_thanh_toan', 1)
+            ->count();
+
+       // Lần đăng ký hiện tại
+        $lanDangKy = $soLanDaDangKy + 1;
+
+        $phanTramGiam = 0;
+        $tienGiamKhuyenMai = 0;
+        $tienGiamGioiThieu = 0;
+        $tenKhuyenMai = null;
+        $maKhuyenMai = $request->ma_khuyen_mai;
+
+        // 4. Xử lý khuyến mãi theo số lần đăng ký
+        if ($lanDangKy == 2) {
+            $phanTramGiam = 5;
+        } elseif ($lanDangKy >= 3) {
+            $phanTramGiam = 10;
+        }
+
+        // 5. Xử lý mã khuyến mãi
+        if ($maKhuyenMai) {
+
+            // Chỉ lần đăng ký đầu tiên mới được sử dụng mã
+            if ($lanDangKy > 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã khuyến mãi chỉ áp dụng cho lần đăng ký đầu tiên.',
+                ], 422);
+            }
+
+            $khuyenMai = KhuyenMai::where('ma_khuyen_mai', $maKhuyenMai)
+                ->where('tinh_trang', 1)
+                ->first();
+            if (!$khuyenMai) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã khuyến mãi không tồn tại hoặc đã ngừng hoạt động.',
+                ], 422);
+            }
+
+            // Kiểm tra thời gian
+            $homNay = Carbon::today();
+
+            if (
+                ($khuyenMai->ngay_bat_dau && $homNay->lt(Carbon::parse($khuyenMai->ngay_bat_dau)->startOfDay())) ||
+                ($khuyenMai->ngay_ket_thuc && $homNay->gt(Carbon::parse($khuyenMai->ngay_ket_thuc)->endOfDay()))
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã khuyến mãi chưa đến ngày áp dụng hoặc đã hết hạn.',
+                ], 422);
+            }
+
+            // Kiểm tra gói tập được áp dụng
+            if (
+                $khuyenMai->id_goi_tap &&
+                $khuyenMai->id_goi_tap != $goiTap->id
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã khuyến mãi không áp dụng cho gói tập này.',
+                ], 422);
+            }
+
+            // Kiểm tra số lần đăng ký được áp dụng
+            if (
+                ($khuyenMai->lan_dang_ky_tu !== null &&
+                    $lanDangKy < $khuyenMai->lan_dang_ky_tu) ||
+                ($khuyenMai->lan_dang_ky_den !== null &&
+                    $lanDangKy > $khuyenMai->lan_dang_ky_den)
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã khuyến mãi không áp dụng cho lần đăng ký này.',
+                ], 422);
+            }
+
+            // Tính tiền giảm theo loại khuyến mãi
+            if ($khuyenMai->loai_giam == 'phan_tram') {
+                $phanTramGiam = (float) $khuyenMai->gia_tri_giam;
+                $tienGiamKhuyenMai = $giaGoc * $phanTramGiam / 100;
+            } elseif ($khuyenMai->loai_giam == 'tien_mat') {
+                $tienGiamKhuyenMai = (float) $khuyenMai->gia_tri_giam;
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Loại giảm giá không hợp lệ.',
+                ], 422);
+            }
+
+            $tenKhuyenMai = $khuyenMai->ten_khuyen_mai;
+
+        } else {
+            // Không nhập mã: tính giảm theo số lần đăng ký
+            $tienGiamKhuyenMai = $giaGoc * $phanTramGiam / 100;
+        }
+
+       // 6. Kiểm tra ưu đãi giới thiệu
+        // Chỉ áp dụng từ lần đăng ký thứ 2 trở đi
+        if ($lanDangKy >= 2) {
+            $gioiThieu = GioiThieu::where('id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
+                ->where('tinh_trang', 0)
+                ->first();
+            if ($gioiThieu) {
+                // Số tiền B được giảm khi đăng ký
+                $tienGiamGioiThieu = (float) $gioiThieu->thuong_nguoi_duoc_gioi_thieu;
+            }
+        }
+
+        // 7. Tổng tiền giảm
+        $tongTienGiam = $tienGiamKhuyenMai + $tienGiamGioiThieu;
+
+        // Không cho giảm vượt quá giá gói tập
+        $tongTienGiam = min($giaGoc, $tongTienGiam);
+
+        // 8. Tổng tiền phải thanh toán
+        $tongTien = $giaGoc - $tongTienGiam;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tính khuyến mãi thành công.',
+            'data' => [
+                'id_hoi_vien' => $hoiVien->id,
+                'id_goi_tap' => $goiTap->id,
+                'lan_dang_ky' => $lanDangKy,
+
+                'gia_goc' => round($giaGoc),
+                'ten_khuyen_mai' => $tenKhuyenMai,
+                'ma_khuyen_mai' => $maKhuyenMai,
+
+                'phan_tram_giam' => $phanTramGiam,
+                'tien_giam_khuyen_mai' => round($tienGiamKhuyenMai),
+                'tien_giam_gioi_thieu' => round($tienGiamGioiThieu),
+
+                'tong_tien_giam' => round($tongTienGiam),
+                'tong_tien' => round($tongTien),
+            ],
+        ]);
+    }
 }
