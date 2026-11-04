@@ -33,9 +33,10 @@ interface MascotChatModalProps {
 }
 
 const QUICK_SUGGESTIONS = [
+  { label: '📊 Chỉ số dinh dưỡng', query: 'Cho tôi biết chỉ số thể trạng và dinh dưỡng calo của tôi' },
+  { label: '🥗 Thực đơn giảm mỡ', query: 'Gợi ý thực đơn ăn giảm mỡ Eat Clean' },
   { label: '📅 Lịch tập hôm nay', query: 'Lịch tập hôm nay của tôi' },
   { label: '💪 Gợi ý khởi động', query: 'Gợi ý bài tập khởi động chuẩn' },
-  { label: '🥗 Thực đơn giảm mỡ', query: 'Gợi ý thực đơn ăn giảm mỡ Eat Clean' },
   { label: '🎟 Gói tập của tôi', query: 'Gói tập của tôi còn bao nhiêu buổi?' },
 ];
 

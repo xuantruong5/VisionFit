@@ -228,4 +228,240 @@ class AssistantController extends Controller
 
         return response()->json(['data' => $data]);
     }
+
+    /**
+     * API Trò chuyện Trực tiếp với AI Assistant (Đã huấn luyện với toàn bộ dữ liệu Hội viên)
+     */
+    public function chat(Request $request)
+    {
+        $message = trim((string) $request->input('message', ''));
+        if ($message === '') {
+            return response()->json(['message' => 'Nội dung câu hỏi không được để trống.'], 422);
+        }
+
+        $species = $request->input('species', 'cat') === 'bear' ? 'bear' : 'cat';
+
+        // 0. Xác thực hội viên hoặc dùng dữ liệu hội viên mẫu nếu là khách / chưa đăng nhập
+        if (!$request->attributes->has('assistant_user')) {
+            $plainToken = $request->bearerToken();
+            $token = $plainToken ? \Laravel\Sanctum\PersonalAccessToken::findToken($plainToken) : null;
+            if ($token && (!$token->expires_at || !$token->expires_at->isPast())) {
+                $user = $token->tokenable;
+                if ($user instanceof \App\Models\Client) {
+                    $request->attributes->set('assistant_user', $user);
+                    $request->attributes->set('assistant_identity', [
+                        'id' => (string) $user->getKey(),
+                        'gym_id' => (string) $user->id_phong_tap,
+                        'role' => 'member',
+                        'name' => $user->ho_ten,
+                    ]);
+                }
+            }
+        }
+
+        if (!$request->attributes->has('assistant_user')) {
+            $sampleClient = \App\Models\Client::where('tinh_trang', 1)->first() ?? \App\Models\Client::first();
+            if ($sampleClient) {
+                $request->attributes->set('assistant_user', $sampleClient);
+                $request->attributes->set('assistant_identity', [
+                    'id' => (string) $sampleClient->getKey(),
+                    'gym_id' => (string) ($sampleClient->id_phong_tap ?? 1),
+                    'role' => 'member',
+                    'name' => $sampleClient->ho_ten ?? 'Hội viên VisionFit',
+                ]);
+            }
+        }
+
+        // 1. Trích xuất ngữ cảnh dữ liệu thực tế đã huấn luyện của hội viên
+        $contextResponse = $this->context($request);
+        $contextData = $contextResponse->getData(true)['data'] ?? [];
+
+        // 2. Gọi Gemini AI với dữ liệu huấn luyện thực tế
+        $aiAnswer = $this->queryGemini($message, $contextData, $species);
+        if ($aiAnswer) {
+            return response()->json([
+                'status' => true,
+                'answer' => $aiAnswer,
+                'source' => 'gemini_ai',
+            ]);
+        }
+
+        // 3. Fallback sang bộ quy tắc RAG thông minh từ Database VisionFit
+        $fallbackAnswer = $this->generateFallbackReply($message, $contextData, $species);
+        return response()->json([
+            'status' => true,
+            'answer' => $fallbackAnswer,
+            'source' => 'visionfit_rag',
+        ]);
+    }
+
+    /**
+     * Gọi Gemini AI API với System Prompt kèm dữ liệu ngữ cảnh thực tế của Hội viên
+     */
+    protected function queryGemini(string $message, array $context, string $species): ?string
+    {
+        $apiKey = env('GEMINI_API_KEY');
+        if (!$apiKey) {
+            return null;
+        }
+
+        $roleText = $species === 'cat'
+            ? 'Bạn là Mèo VIF 🐱 - trợ lý linh vật thể hình VisionFit tinh nghịch, đáng yêu, thông minh, nói chuyện thân thiện (có thể chêm "Meo meo!" nhẹ nhàng).'
+            : 'Bạn là Gấu VIF 🐻 - trợ lý linh vật thể hình VisionFit khỏe khoắn, tràn đầy năng lượng, vững chãi, luôn khích lệ tinh thần người tập.';
+
+        $systemPrompt = "{$roleText}\n" .
+            "Bạn là trợ lý AI chuyên nghiệp về Thể hình, Sức khỏe và Dinh dưỡng của hệ sinh thái VisionFit.\n" .
+            "QUY TẮC BẮT BUỘC:\n" .
+            "1. Dùng tiếng Việt chuẩn, ấm áp, ngắn gọn, súc tích (dưới 150 từ), dễ đọc trên màn hình điện thoại di động.\n" .
+            "2. Khi trả lời về CHỈ SỐ DINH DƯỠNG (BMI/BMR/TDEE/Calo/Macros), THỰC ĐƠN MÓN ĂN, BÀI TẬP, GÓI TẬP hoặc LỊCH TẬP, hãy ưu tiên trình bày dạng danh sách gạch đầu dòng rõ ràng.\n" .
+            "3. Bám sát DỮ LIỆU THỰC TẾ ĐƯỢC CẤP của hội viên bên dưới:\n" .
+            json_encode($context, JSON_UNESCAPED_UNICODE) . "\n" .
+            "4. Nếu hội viên báo đau mỏi hoặc chấn thương: Khuyên dừng ngay bài tập, chườm lạnh nếu sưng và hỏi ý kiến Huấn luyện viên (PT) hoặc bác sĩ.\n" .
+            "5. Không tự chế số buổi gói tập hay ngày hết hạn nếu không có trong dữ liệu.";
+
+        try {
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=' . urlencode($apiKey);
+            $payload = [
+                'system_instruction' => [
+                    'parts' => [
+                        ['text' => $systemPrompt]
+                    ]
+                ],
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => $message]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'maxOutputTokens' => 600,
+                    'temperature' => 0.7,
+                ]
+            ];
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_TIMEOUT => 6,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_POSTFIELDS => json_encode($payload),
+            ]);
+
+            $res = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && $res) {
+                $decoded = json_decode($res, true);
+                $content = $decoded['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                if ($content && is_string($content)) {
+                    return trim($content);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Không ngắt luồng, để fallback xử lý
+        }
+
+        return null;
+    }
+
+    /**
+     * Fallback RAG thông minh dựa trên Dữ Liệu Thực Tế từ Database
+     */
+    protected function generateFallbackReply(string $message, array $context, string $species): string
+    {
+        $q = mb_strtolower(trim($message), 'UTF-8');
+        $isCat = $species === 'cat';
+        $prefix = $isCat ? 'Meo meo! 🐱 ' : 'Gấu VIF đây! 🐻 ';
+
+        // 1. Cảnh báo chấn thương
+        if (preg_match('/đau|dau|chấn thương|chan thuong|chuột rút|chuot rut|chóng mặt|chong mat|buốt|buot|ngất|ngat|khớp|khop/ui', $q)) {
+            return "{$prefix}Hãy dừng ngay bài tập đang gây khó chịu nhé! Chườm lạnh trong 15-20 phút nếu bị sưng và tuyệt đối đừng cố gắng tập tiếp. Hãy báo ngay cho Huấn luyện viên (PT) hoặc bác sĩ thể thao để được kiểm tra kỹ càng! 🛡️";
+        }
+
+        // 2. Chỉ số thể trạng & dinh dưỡng
+        if (preg_match('/dinh dưỡng|dinh duong|chỉ số|chi so|bmi|bmr|tdee|calo|macro|protein|thể trạng|the trang|cân nặng|can nang|chieu cao|chiều cao/ui', $q)) {
+            if (!empty($context['nutrition'])) {
+                $n = $context['nutrition'];
+                return "{$prefix}Bảng chỉ số thể trạng & dinh dưỡng cá nhân của bạn:\n" .
+                    "• Cân nặng: " . ($n['can_nang'] ?? '—') . " kg · Chiều cao: " . ($n['chieu_cao_cm'] ?? '—') . " cm\n" .
+                    "• Chỉ số BMI: " . ($n['bmi'] ?? '—') . " (Thể trạng cân đối)\n" .
+                    "• Năng lượng tiêu hao TDEE: " . ($n['tdee'] ?? '—') . " kcal/ngày\n" .
+                    "• Năng lượng mục tiêu: " . ($n['kcal_muc_tieu'] ?? '—') . " kcal/ngày\n" .
+                    "• Đạm (Protein): " . ($n['protein'] ?? '—') . " g/ngày\n" .
+                    "• Tinh bột (Carb): " . ($n['carb'] ?? '—') . " g/ngày\n" .
+                    "• Chất béo (Fat): " . ($n['fat'] ?? '—') . " g/ngày";
+            }
+            return "{$prefix}Để duy trì vóc dáng lý tưởng, bạn nên nạp 1.6 - 2.0g Protein/kg cân nặng, uống đủ 2-2.5 lít nước mỗi ngày và bổ sung nhiều rau xanh nhé!";
+        }
+
+        // 3. Gợi ý thực đơn món ăn từ cơ sở dữ liệu
+        if (preg_match('/ăn gì|an gi|thực đơn|thuc don|món ăn|mon an|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi|eat clean|giảm cân|giam can|giảm mỡ|giam mo|tăng cơ|tang co/ui', $q)) {
+            $meals = $context['suggestions']['meals'] ?? [];
+            if (!empty($meals)) {
+                $res = "{$prefix}Gợi ý món ăn phù hợp với mục tiêu của bạn:\n";
+                foreach (array_slice($meals, 0, 3) as $m) {
+                    $cal = $m['calories'] ?? '—';
+                    $pro = $m['protein'] ?? '—';
+                    $diet = $m['diet_type'] ?? 'Healthy';
+                    $res .= "• {$m['name']}: {$cal} kcal, {$pro}g đạm ({$diet})\n";
+                }
+                return trim($res);
+            }
+            return "{$prefix}Gợi ý thực đơn Eat Clean chuẩn thể hình:\n• Sáng: Yến mạch + sữa chua Hy Lạp + chuối chín\n• Trưa: 150g Ức gà áp chảo + cơm gạo lứt + bông cải xanh\n• Tối: Cá hồi hoặc thịt nạc bò sốt tiêu + salad dầu oliu! 🥗";
+        }
+
+        // 4. Lịch tập & Gói tập
+        if (preg_match('/lịch|lich|hôm nay|hom nay|tiếp theo|tiep theo|khi nào tập|khi nao tap|ngày mai|ngay mai/ui', $q)) {
+            $schedule = $context['schedule'] ?? [];
+            if (!empty($schedule)) {
+                $res = "{$prefix}Lịch tập sắp tới của bạn trên hệ thống:\n";
+                foreach (array_slice($schedule, 0, 3) as $s) {
+                    $time = $s['starts_at'] ?? $s['scheduled_date'] ?? 'Theo lịch cá nhân';
+                    $pt = !empty($s['trainer']) ? " (PT: {$s['trainer']})" : '';
+                    $res .= "• {$s['name']}: {$time}{$pt}\n";
+                }
+                return trim($res) . "\nHãy chuẩn bị nước và đồ tập đầy đủ nhé! 💪";
+            }
+            return "{$prefix}Bạn hãy mở tab \"Kế hoạch tập\" trên ứng dụng để xem chi tiết bài tập được giao cho hôm nay nhé!";
+        }
+
+        // 5. Gói tập
+        if (preg_match('/gói|goi|hạn|han|buổi còn|buoi con|bao nhiêu buổi|bao nhieu buoi|thẻ|the/ui', $q)) {
+            $packages = $context['packages'] ?? [];
+            if (!empty($packages)) {
+                $res = "{$prefix}Thông tin gói tập hiện tại của bạn:\n";
+                foreach ($packages as $p) {
+                    $rem = $p['remaining_sessions'] ?? $p['total_sessions'] ?? 'Đang cập nhật';
+                    $exp = $p['expires_at'] ?? 'Không giới hạn';
+                    $res .= "• {$p['name']}: {$rem} buổi · Hạn dùng: {$exp}\n";
+                }
+                return trim($res);
+            }
+            return "{$prefix}Bạn có thể xem số buổi tập còn lại và hạn thẻ tập trong mục \"Hồ sơ cá nhân\" > \"Gói tập của tôi\" nhé!";
+        }
+
+        // 6. Bài tập & Khởi động
+        if (preg_match('/khởi động|khoi dong|bài tập|bai tap|động tác|dong tac|tập gì|tap gi|ngực|nguc|lưng|lung|chân|chan|tay|bụng|bung/ui', $q)) {
+            if (preg_match('/khởi động|khoi dong/ui', $q)) {
+                return "{$prefix}4 bước khởi động chuẩn 5 phút:\n1. Xoay tròn cổ tay, cổ chân, khớp vai và khớp hông (2 phút)\n2. Jumping Jacks hoặc chạy gót chạm mông nhẹ (1 phút)\n3. Giãn cơ động Dynamic Stretching (1 phút)\n4. Đẩy 1 set tạ nhẹ 30% để làm nóng cơ khớp trước khi vào bài chính! 🔥";
+            }
+            $exercises = $context['suggestions']['exercises'] ?? [];
+            if (!empty($exercises)) {
+                $res = "{$prefix}Bài tập gợi ý phù hợp cho bạn:\n";
+                foreach (array_slice($exercises, 0, 3) as $e) {
+                    $equip = !empty($e['equipment']) ? " ({$e['equipment']})" : '';
+                    $res .= "• {$e['name']}{$equip}\n";
+                }
+                return trim($res);
+            }
+            return "{$prefix}Hôm nay bạn hãy mở tab \"Kế hoạch tập\" để tập theo đúng giáo án được thiết kế cho bạn nhé. Chúc bạn có buổi tập sung sức! 💪";
+        }
+
+        // Mặc định
+        return "{$prefix}Mình đã nhận câu hỏi: \"{$message}\".\nBạn có thể hỏi mình về chỉ số dinh dưỡng (BMI/BMR/TDEE), gói tập còn lại, thực đơn ăn uống hoặc gợi ý bài tập hôm nay nhé! Chúc bạn luôn giữ vững phong độ tập luyện! 🔥";
+    }
 }

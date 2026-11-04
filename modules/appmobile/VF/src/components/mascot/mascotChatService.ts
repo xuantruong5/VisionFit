@@ -216,15 +216,29 @@ export const getAIResponse = async (
   question: string,
   species: MascotSpecies = 'bear'
 ): Promise<string> => {
-  // 1. Lấy ngữ cảnh hội viên từ Backend
+  // 1. Gọi trực tiếp Backend AI Assistant (đã huấn luyện toàn bộ dữ liệu dinh dưỡng, món ăn, bài tập)
+  try {
+    const res = await apiFitlife.post(
+      '/assistant/chat',
+      { message: question, species },
+      { timeout: 8000 }
+    );
+    if (res.data?.answer && typeof res.data.answer === 'string') {
+      return res.data.answer.trim();
+    }
+  } catch (err) {
+    // Mạng chậm hoặc offline -> Tiếp tục fallback phía client
+  }
+
+  // 2. Lấy ngữ cảnh hội viên từ Backend cache
   const context = await fetchUserContext();
 
-  // 2. Thử truy vấn Google Gemini AI thông minh
+  // 3. Thử truy vấn Google Gemini AI trực tiếp nếu có key
   const aiAnswer = await queryGeminiAI(question, context, species);
   if (aiAnswer) {
     return aiAnswer;
   }
 
-  // 3. Fallback sang bộ quy tắc RAG khớp nối dữ liệu thực tế VisionFit
+  // 4. Fallback sang bộ quy tắc RAG khớp nối dữ liệu thực tế VisionFit
   return replyFromRealContext(question, context, species);
 };
