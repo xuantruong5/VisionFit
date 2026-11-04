@@ -21,7 +21,9 @@ test('moved frontend modules and mascot lab are served with correct MIME', async
     ['/services/api.js', 'apps/web/services/api.js', 'text/javascript'],
     ['/mascot-lab', 'apps/web/mascot/lab.html', 'text/html'],
     ['/mascot/lab.js', 'apps/web/mascot/lab.js', 'text/javascript'],
+    ['/mascot/lab.css', 'apps/web/mascot/lab.css', 'text/css'],
     ['/mascot/mascot.css', 'apps/web/mascot/mascot.css', 'text/css'],
+    ['/widget-demo', 'apps/web/widget/demo.html', 'text/html'],
     ['/contracts/assistant.js', 'packages/contracts/assistant.js', 'text/javascript']
   ]) {
     const res = await fetch(base + url); assert.equal(res.status, 200, url);

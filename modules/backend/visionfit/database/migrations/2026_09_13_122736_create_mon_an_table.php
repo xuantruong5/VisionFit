@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('khoi_luong_gram', 8, 2)->nullable()->comment('Khối lượng món ăn tính bằng gram');
             $table->integer('thoi_gian_nau')->nullable()->comment('Thời gian nấu tính bằng phút');
             $table->string('loai_bua', 20)->nullable();
+            $table->string('the_loai', 100)->nullable();
             $table->decimal('calo', 8, 2)->nullable()->comment('kcal');
             $table->decimal('protein', 8, 2)->nullable()->comment('gram');
             $table->decimal('carb', 8, 2)->nullable()->comment('gram');

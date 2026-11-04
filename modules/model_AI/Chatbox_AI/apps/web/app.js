@@ -44,8 +44,30 @@ function formatSafeHTML(text) {
   const lines = escaped.split(/\r?\n/);
   const parts = [];
   let inUl = false, inOl = false;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
+    const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
+    const isNextTableSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
+
+    if (isTableRow && isNextTableSep) {
+      if (inUl) { parts.push('</ul>'); inUl = false; }
+      if (inOl) { parts.push('</ol>'); inOl = false; }
+      const headers = trimmed.slice(1, -1).split('|').map(c => c.trim());
+      parts.push('<div class="vif-table-wrapper"><table class="vif-table"><thead><tr>');
+      headers.forEach(h => parts.push(`<th>${formatInline(h)}</th>`));
+      parts.push('</tr></thead><tbody>');
+      i++;
+      while (i + 1 < lines.length && lines[i + 1].trim().startsWith('|') && lines[i + 1].trim().endsWith('|')) {
+        i++;
+        const rowCells = lines[i].trim().slice(1, -1).split('|').map(c => c.trim());
+        parts.push('<tr>');
+        rowCells.forEach(cell => parts.push(`<td>${formatInline(cell)}</td>`));
+        parts.push('</tr>');
+      }
+      parts.push('</tbody></table></div>');
+      continue;
+    }
     const isUl = /^[-*]\s+(.*)$/.test(trimmed);
     const isOl = /^(\d+)\.\s+(.*)$/.test(trimmed);
     if (isUl || isOl) {
@@ -123,14 +145,19 @@ function updateBusy() {
 async function send(message) {
   if (state.busy || !message.trim() || !state.user) return;
   const question = message.trim(), generation = state.generation;
-  state.busy = true; updateBusy(); $('chat-error').textContent = ''; $('typing').hidden = false;
+  state.busy = true; updateBusy(); $('chat-error').textContent = ''; $('typing').hidden = false; $('typing').style.display = 'block';
+  if ($('welcome')) $('welcome').hidden = true;
+  const userRow = document.createElement('div'); userRow.className = 'bubble-row user';
+  const userBubble = document.createElement('div'); userBubble.className = 'bubble';
+  userBubble.textContent = question; userRow.append(userBubble); $('messages').append(userRow);
+  $('message').value = ''; $('char-count').textContent = '0 / 2000'; $('message').rows = 1;
   $('chat-scroll').scrollTop = $('chat-scroll').scrollHeight;
   try {
     const r = await api('/api/chat', { method: 'POST', body: JSON.stringify({ message: question }) });
     if (generation !== state.generation) return;
-    renderMessages(r.messages); $('message').value = ''; $('char-count').textContent = '0 / 2000'; $('message').rows = 1;
-  } catch(e) { if (generation === state.generation) { $('message').value = question; $('chat-error').textContent = `${e.message} Nội dung được giữ lại để bạn gửi lại.`; } }
-  finally { if (generation === state.generation) { state.busy = false; $('typing').hidden = true; updateBusy(); $('message').focus(); } }
+    renderMessages(r.messages);
+  } catch(e) { if (generation === state.generation) { $('chat-error').textContent = e.message; } }
+  finally { if (generation === state.generation) { state.busy = false; $('typing').hidden = true; $('typing').style.display = 'none'; updateBusy(); $('message').focus(); } }
 }
 window.addEventListener('vif:session-expired', () => { if (state.user) showLogin('Phiên đã hết hạn. Vui lòng đăng nhập lại.'); });
 $('role').addEventListener('change', fillDemo);

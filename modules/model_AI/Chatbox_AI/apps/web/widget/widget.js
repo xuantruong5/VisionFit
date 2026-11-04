@@ -55,12 +55,33 @@ export class MascotWidget {
     this._createLauncher();
     this._createPanel();
     this._checkGreeting();
+    this._applyTheme();
     window.addEventListener('keydown', this._boundKeydown);
+  }
+
+  _applyTheme() {
+    const species = this.species === 'cat' ? 'cat' : 'bear';
+    const currentTheme = `vif-theme-${species}`;
+    const otherTheme = species === 'cat' ? 'vif-theme-bear' : 'vif-theme-cat';
+
+    if (this.launcherEl) {
+      this.launcherEl.classList.remove(otherTheme);
+      this.launcherEl.classList.add(currentTheme);
+    }
+    if (this.panelEl) {
+      this.panelEl.classList.remove(otherTheme);
+      this.panelEl.classList.add(currentTheme);
+    }
+    if (this.greetingBubble) {
+      this.greetingBubble.classList.remove(otherTheme);
+      this.greetingBubble.classList.add(currentTheme);
+    }
   }
 
   _createLauncher() {
     this.launcherEl = document.createElement('div');
-    this.launcherEl.className = 'vif-widget-launcher';
+    const themeClass = this.species === 'cat' ? 'vif-theme-cat' : 'vif-theme-bear';
+    this.launcherEl.className = `vif-widget-launcher ${themeClass}`;
     this.launcherEl.setAttribute('role', 'button');
     this.launcherEl.setAttribute('tabindex', '0');
     this.launcherEl.setAttribute('aria-label', `Trợ lý VIF (${this.species === 'bear' ? 'Gấu' : 'Mèo'}). Bấm để mở trò chuyện`);
@@ -89,7 +110,8 @@ export class MascotWidget {
 
   _createPanel() {
     this.panelEl = document.createElement('div');
-    this.panelEl.className = 'vif-widget-panel';
+    const themeClass = this.species === 'cat' ? 'vif-theme-cat' : 'vif-theme-bear';
+    this.panelEl.className = `vif-widget-panel ${themeClass}`;
     this.panelEl.setAttribute('role', 'dialog');
     this.panelEl.setAttribute('aria-label', 'Khung trò chuyện trợ lý VisionFit');
     this.panelEl.hidden = true;
@@ -116,7 +138,7 @@ export class MascotWidget {
         </div>
       </div>
 
-      <div class="vif-typing-indicator" id="widget-typing" hidden>
+      <div class="vif-typing-indicator" id="widget-typing" hidden style="display: none;">
         <span>VIF đang suy nghĩ</span>
         <div class="vif-typing-dots"><span></span><span></span><span></span></div>
       </div>
@@ -182,7 +204,8 @@ export class MascotWidget {
 
     if (!alreadyGreeted && !this.isOpen) {
       this.greetingBubble = document.createElement('div');
-      this.greetingBubble.className = 'vif-greeting-bubble';
+      const themeClass = this.species === 'cat' ? 'vif-theme-cat' : 'vif-theme-bear';
+      this.greetingBubble.className = `vif-greeting-bubble ${themeClass}`;
       const greetingName = this.userName ? `, ${this.userName}` : '';
       this.greetingBubble.innerHTML = `
         <button type="button" class="vif-bubble-close" aria-label="Đóng lời chào">✕</button>
@@ -223,7 +246,7 @@ export class MascotWidget {
   open() {
     this.isOpen = true;
     this.panelEl.hidden = false;
-    this.launcherEl.hidden = true;
+    this.launcherEl.classList.add('vif-launcher-open');
     this._dismissGreeting();
 
     // Focus vào ô nhập liệu
@@ -233,13 +256,14 @@ export class MascotWidget {
     }, 50);
 
     // Kích hoạt nhẹ linh vật
-    this.headerMascot.setState('speaking', 1200);
+    if (this.launcherMascot) this.launcherMascot.setState('speaking', 1200);
+    if (this.headerMascot) this.headerMascot.setState('speaking', 1200);
   }
 
   close() {
     this.isOpen = false;
     this.panelEl.hidden = true;
-    this.launcherEl.hidden = false;
+    this.launcherEl.classList.remove('vif-launcher-open');
     // Trả lại focus cho launcher
     this.launcherEl.focus();
   }
@@ -259,6 +283,7 @@ export class MascotWidget {
         this.species = newSpecies;
         this.launcherMascot.setSpecies(newSpecies);
         this.headerMascot.setSpecies(newSpecies);
+        this._applyTheme();
         const statusEl = this.panelEl.querySelector('#widget-mascot-status');
         if (statusEl) {
           statusEl.textContent = `${newSpecies === 'bear' ? 'Gấu VIF' : 'Mèo VIF'} · Cấp: ${this.stage}`;
@@ -274,6 +299,12 @@ export class MascotWidget {
     this.userName = sessionData.name || '';
     this.userRole = sessionData.role || 'member';
     this.userId = sessionData.id || 'guest';
+    if (sessionData.species) {
+      this.species = sessionData.species;
+      this.launcherMascot.setSpecies(this.species);
+      this.headerMascot.setSpecies(this.species);
+      this._applyTheme();
+    }
     // Đặt cấp độ từ backend xác thực
     if (sessionData.stage) {
       this.stage = sessionData.stage;
@@ -325,6 +356,7 @@ export class MascotWidget {
     input.value = '';
     sendBtn.disabled = true;
     typing.hidden = false;
+    typing.style.display = 'flex';
 
     // 1. Bật thinking state ngay lập tức!
     this.headerMascot.setState('thinking');
@@ -373,7 +405,7 @@ export class MascotWidget {
       }
     } catch (err) {
       // Giữ lại nội dung câu hỏi vào input để người dùng không bị mất
-      input.value = query;
+      input.value = '';
 
       // Linh vật biểu cảm bối rối nhẹ
       this.headerMascot.setState('error', 2500);
@@ -382,13 +414,14 @@ export class MascotWidget {
       const errorMsg = document.createElement('div');
       errorMsg.className = 'vif-msg-bubble vif-msg-assistant';
       errorMsg.style.borderColor = '#ff8c8c';
-      errorMsg.innerHTML = `<p style="color:#c92a2a">⚠️ ${err.message || 'Không thể kết nối tới trợ lý.'}</p><small style="color:#777">Nội dung câu hỏi đã được giữ lại để bạn thử lại.</small>`;
+      errorMsg.innerHTML = `<p style="color:#c92a2a">⚠️ ${err.message || 'Không thể kết nối tới trợ lý.'}</p>`;
       msgContainer.appendChild(errorMsg);
       msgContainer.scrollTop = msgContainer.scrollHeight;
     } finally {
       this.isBusy = false;
       sendBtn.disabled = false;
       typing.hidden = true;
+      typing.style.display = 'none';
       input.focus();
     }
   }

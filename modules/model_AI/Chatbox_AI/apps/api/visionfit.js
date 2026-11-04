@@ -31,7 +31,30 @@ export function sanitizeContext(raw, user) {
   if (!d || !d.subject || String(d.subject.id) !== user.id || String(d.subject.gym_id) !== user.gym_id || d.subject.role !== user.role) throw new AppError(403, 'Dữ liệu trả về không thuộc tài khoản hiện tại.');
   const records = (value, mapper) => Array.isArray(value) ? value.slice(0, 20).map(mapper) : [];
   return {
-    profile: { name: user.name, goal: text(d.profile?.goal), level: text(d.profile?.level) },
+    profile: {
+      name: user.name,
+      goal: text(d.profile?.goal),
+      level: text(d.profile?.level),
+      activity_level: text(d.profile?.activity_level),
+      allergy: text(d.profile?.allergy),
+      note: text(d.profile?.note),
+    },
+    nutrition: d.nutrition ? {
+      weight_kg: metric(d.nutrition?.can_nang),
+      height_cm: metric(d.nutrition?.chieu_cao_cm),
+      bmi: metric(d.nutrition?.bmi),
+      bmr: metric(d.nutrition?.bmr),
+      tdee: metric(d.nutrition?.tdee),
+      target_calories: metric(d.nutrition?.kcal_muc_tieu),
+      protein_g: metric(d.nutrition?.protein),
+      carb_g: metric(d.nutrition?.carb),
+      fat_g: metric(d.nutrition?.fat),
+    } : null,
+    suggestions: d.suggestions ? {
+      programs: records(d.suggestions?.programs, p => ({ name: text(p.name), goal: text(p.goal), sessions_per_week: metric(p.sessions_per_week) })),
+      exercises: records(d.suggestions?.exercises, e => ({ name: text(e.name), equipment: text(e.equipment) })),
+      meals: records(d.suggestions?.meals, m => ({ name: text(m.name), meal_type: text(m.meal_type), diet_type: text(m.diet_type), calories: metric(m.calories), protein: metric(m.protein) })),
+    } : null,
     packages: records(d.packages, p => ({ name: text(p.name), expires_at: text(p.expires_at, 40), remaining_sessions: metric(p.remaining_sessions), total_sessions: metric(p.total_sessions) })),
     schedule: records(d.schedule, s => ({ name: text(s.name), starts_at: text(s.starts_at, 40), scheduled_date: text(s.scheduled_date, 20), trainer: text(s.trainer) })),
     progress: { sessions_this_week: metric(d.progress?.sessions_this_week), completion_percent: metric(d.progress?.completion_percent) },
@@ -61,5 +84,17 @@ export function demoUser(role, email) {
   return { id: role === 'member' ? '101' : role === 'trainer' ? '201' : '301', gym_id: 'demo-gym', role, name: { member: 'Minh Anh', trainer: 'HLV Hoàng Nam', admin: 'Quản lý VisionFit' }[role] };
 }
 export function demoContext(user) {
-  return { profile: { name: user.name, goal: 'Duy trì thói quen tập luyện', level: 'Cơ bản' }, packages: [{ name: 'Gói trải nghiệm DEMO', expires_at: '2026-12-31', remaining_sessions: 12 }], schedule: [{ name: 'Toàn thân cơ bản (DEMO)', starts_at: '2026-11-02T18:00:00+07:00', trainer: 'HLV Demo' }], progress: { sessions_this_week: 2, completion_percent: 65 }, summary: user.role === 'member' ? null : { assigned_members: 8, expiring_members: user.role === 'admin' ? 3 : null } };
+  return {
+    profile: { name: user.name, goal: 'Tăng cơ giảm mỡ', level: 'Cơ bản', activity_level: '2', allergy: 'Không', note: 'Thể trạng bình thường' },
+    nutrition: { weight_kg: 70, height_cm: 175, bmi: 22.86, bmr: 1673.75, tdee: 2301.41, target_calories: 2601.41, protein_g: 195.11, carb_g: 292.66, fat_g: 72.26 },
+    suggestions: {
+      programs: [{ name: 'Tập luyện toàn thân nền tảng', goal: 'Tăng cơ', sessions_per_week: 3 }],
+      exercises: [{ name: 'Barbell Bench Press', equipment: 'Thanh tạ đòn, ghế tập' }, { name: 'Dumbbell Floor Press', equipment: 'Tạ đơn, thảm tập' }],
+      meals: [{ name: 'Cơm gạo lứt ức gà', meal_type: 'SANG', diet_type: 'Eat Clean', calories: 420, protein: 35 }, { name: 'Ức gà áp chảo ăn kèm rau củ hấp', meal_type: 'TOI', diet_type: 'Giảm tinh bột (Low-carb/Keto)', calories: 350, protein: 42 }]
+    },
+    packages: [{ name: 'Gói trải nghiệm DEMO', expires_at: '2026-12-31', remaining_sessions: 12 }],
+    schedule: [{ name: 'Toàn thân cơ bản (DEMO)', starts_at: '2026-11-02T18:00:00+07:00', trainer: 'HLV Demo' }],
+    progress: { sessions_this_week: 2, completion_percent: 65 },
+    summary: user.role === 'member' ? null : { assigned_members: 8, expiring_members: user.role === 'admin' ? 3 : null }
+  };
 }
