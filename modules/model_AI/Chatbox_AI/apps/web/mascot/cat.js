@@ -243,6 +243,15 @@ export function renderCatSVG(stageOrConfig = 'starter', stateArg = 'idle', optio
                 <rect x="121" y="161" width="7.5" height="17" rx="2.5" fill="#334155" stroke="${colors.outline}" stroke-width="2.4"/>
                 <rect x="151.5" y="161" width="7.5" height="17" rx="2.5" fill="#334155" stroke="${colors.outline}" stroke-width="2.4"/>
               </g>
+            <g class="prop-water-bottle">
+              <rect x="142" y="156" width="16" height="25" rx="4" fill="#38BDF8" stroke="${colors.outline}" stroke-width="2"/>
+              <rect x="144" y="164" width="12" height="15" rx="2" fill="#0284C7"/>
+              <line x1="145" y1="168" x2="148" y2="168" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="145" y1="172" x2="149" y2="172" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="145" y1="176" x2="148" y2="176" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <rect x="143" y="152" width="14" height="5" rx="1.5" fill="#1E293B" stroke="${colors.outline}" stroke-width="1.8"/>
+              <rect x="147" y="148" width="6" height="5" rx="1.2" fill="#168B67" stroke="${colors.outline}" stroke-width="1.5"/>
+            </g>
             </g>
           ` : isStrong ? `
             <!-- STRONG: Vai & Bắp tay phải mèo săn chắc phồng cơ bắp -->
@@ -259,6 +268,15 @@ export function renderCatSVG(stageOrConfig = 'starter', stateArg = 'idle', optio
                 <rect x="134" y="167" width="7.5" height="17" rx="2.5" fill="#334155" stroke="${colors.outline}" stroke-width="2.4"/>
                 <rect x="164.5" y="167" width="7.5" height="17" rx="2.5" fill="#334155" stroke="${colors.outline}" stroke-width="2.4"/>
               </g>
+            <g class="prop-water-bottle">
+              <rect x="142" y="156" width="16" height="25" rx="4" fill="#38BDF8" stroke="${colors.outline}" stroke-width="2"/>
+              <rect x="144" y="164" width="12" height="15" rx="2" fill="#0284C7"/>
+              <line x1="145" y1="168" x2="148" y2="168" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="145" y1="172" x2="149" y2="172" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="145" y1="176" x2="148" y2="176" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <rect x="143" y="152" width="14" height="5" rx="1.5" fill="#1E293B" stroke="${colors.outline}" stroke-width="1.8"/>
+              <rect x="147" y="148" width="6" height="5" rx="1.2" fill="#168B67" stroke="${colors.outline}" stroke-width="1.5"/>
+            </g>
             </g>
           ` : `
             <!-- STARTER & ACTIVE: Tay phải mèo thon gọn mượt mà -->
@@ -278,6 +296,15 @@ export function renderCatSVG(stageOrConfig = 'starter', stateArg = 'idle', optio
                 <rect x="133" y="167" width="7.5" height="17" rx="2.5" fill="#334155" stroke="${colors.outline}" stroke-width="2.4"/>
                 <rect x="163.5" y="167" width="7.5" height="17" rx="2.5" fill="#334155" stroke="${colors.outline}" stroke-width="2.4"/>
               </g>
+            <g class="prop-water-bottle">
+              <rect x="142" y="156" width="16" height="25" rx="4" fill="#38BDF8" stroke="${colors.outline}" stroke-width="2"/>
+              <rect x="144" y="164" width="12" height="15" rx="2" fill="#0284C7"/>
+              <line x1="145" y1="168" x2="148" y2="168" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="145" y1="172" x2="149" y2="172" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="145" y1="176" x2="148" y2="176" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <rect x="143" y="152" width="14" height="5" rx="1.5" fill="#1E293B" stroke="${colors.outline}" stroke-width="1.8"/>
+              <rect x="147" y="148" width="6" height="5" rx="1.2" fill="#168B67" stroke="${colors.outline}" stroke-width="1.5"/>
+            </g>
             </g>
           `}
         </g>
@@ -404,6 +431,14 @@ export function renderCatSVG(stageOrConfig = 'starter', stateArg = 'idle', optio
           <circle cx="158" cy="24" r="6.5" fill="#FFFFFF" stroke="${colors.outline}" stroke-width="2"/>
           <circle cx="174" cy="15" r="10.5" fill="#FFFFFF" stroke="${colors.outline}" stroke-width="2"/>
           <text x="174" y="18.5" font-size="10" font-weight="900" fill="${colors.brandGreen}" text-anchor="middle">...</text>
+        </g>
+
+        <!-- Bong bóng nhắc uống nước (Nằm gọn bên trong, không đè viền) -->
+        <g class="acc-water-bubble">
+          <path d="M 124 8 L 186 8 C 193 8 198 13 198 20 L 198 34 C 198 41 193 46 186 46 L 150 46 L 140 54 L 144 46 L 124 46 C 117 46 112 41 112 34 L 112 20 C 112 13 117 8 124 8 Z" fill="#FFFFFF" stroke="${colors.outline}" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M 127 27 C 127 30.5 124.5 33 121.5 33 C 118.5 33 116 30.5 116 27 C 116 23.5 121.5 16.5 121.5 16.5 C 121.5 16.5 127 23.5 127 27 Z" fill="#38BDF8" stroke="#0284C7" stroke-width="1.2"/>
+          <circle cx="120" cy="25" r="1.2" fill="#FFFFFF"/>
+          <text x="160" y="30.5" font-size="9" font-weight="900" fill="#0369A1" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle">Uống nước đi!</text>
         </g>
       </g>
 

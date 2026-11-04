@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LinearGradient from "react-native-linear-gradient";
@@ -9,8 +9,12 @@ import { PieChart } from "react-native-gifted-charts";
 
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
 import { COLORS, SHADOWS } from "../../general/theme";
+import { triggerWorkoutComplete } from "../../components/mascot/mascotEvents";
 
 const ResultPage = ({ navigation }: any) => {
+    useEffect(() => {
+        triggerWorkoutComplete();
+    }, []);
     // phóng to mô hình người và xoay 
     const [showBodyModal, setShowBodyModal] = useState(false);
     const currentDateStr = new Date().toLocaleDateString("vi-VN", {

@@ -16,7 +16,9 @@ const LEGACY_STATE_MAP = {
   confused: 'error',
   motivating: 'training',
   resting: 'idle',
-  listening: 'idle'
+  listening: 'idle',
+  warmup: 'stretching',
+  hydrating: 'drinking'
 };
 
 export class MascotRenderer {
@@ -33,7 +35,7 @@ export class MascotRenderer {
     const normalizedInitialState = LEGACY_STATE_MAP[options.state] || options.state;
     this.state = isMascotState(normalizedInitialState) ? normalizedInitialState : 'idle';
     this.isWorkoutActive = Boolean(options.workoutActive);
-    this.baselineState = this.isWorkoutActive ? 'training' : 'idle';
+    this.baselineState = this.isWorkoutActive ? 'training' : (options.baselineState || 'stretching');
 
     // Tách biệt tùy chọn người dùng với media query hệ điều hành
     this.userReducedMotion = typeof options.reducedMotion === 'boolean' ? options.reducedMotion : null;
@@ -197,9 +199,9 @@ export class MascotRenderer {
    */
   setWorkoutActive(active) {
     this.isWorkoutActive = Boolean(active);
-    this.baselineState = this.isWorkoutActive ? 'training' : 'idle';
+    this.baselineState = this.isWorkoutActive ? 'training' : (options.baselineState || 'stretching');
     // Nếu đang ở trạng thái nền cũ thì cập nhật ngay sang nền mới
-    if (this.state === 'idle' || this.state === 'training') {
+    if (this.state === 'idle' || this.state === 'stretching' || this.state === 'training') {
       this.setState(this.baselineState);
     }
   }

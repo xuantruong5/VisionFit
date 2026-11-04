@@ -16,9 +16,8 @@ const setAttr = (id, attr, val) => { const el = $(id); if (el) el.setAttribute(a
 // Trạng thái hiện tại của phòng thử
 let currentSpecies = 'bear';
 let currentStage = 'starter';
-let currentState = 'idle';
+let currentState = 'stretching';
 let currentWorkout = 'idle'; // 'idle' | 'training' | 'paused' | 'completed'
-let activeScenario = null; // null | 'chat' | 'celebrate' | 'error'
 
 // Bộ quản lý timer kịch bản để hủy triệt để khi đổi trạng thái
 const activeTimers = new Set();
@@ -30,6 +29,7 @@ function scheduleLabTimer(fn, delayMs) {
   activeTimers.add(tid);
   return tid;
 }
+
 function clearAllLabTimers() {
   for (const tid of activeTimers) {
     clearTimeout(tid);
@@ -47,6 +47,7 @@ function initMainRenderer() {
     mainRenderer.destroy();
     mainRenderer = null;
   }
+
   mainRenderer = new MascotRenderer(previewContainer, {
     instanceId: 'lab-main-mascot',
     species: currentSpecies,
@@ -99,17 +100,6 @@ function updateButtonStates() {
     }
   }
 
-  // Cập nhật 4 nút tín hiệu buổi tập
-  setAttr('btn-workout-start', 'aria-pressed', String(currentWorkout === 'training'));
-  setAttr('btn-workout-pause', 'aria-pressed', String(currentWorkout === 'paused'));
-  setAttr('btn-workout-complete', 'aria-pressed', String(currentWorkout === 'completed'));
-  setAttr('btn-workout-stop', 'aria-pressed', String(currentWorkout === 'idle'));
-
-  // Cập nhật 4 nút kịch bản phản hồi API
-  setAttr('btn-scenario-chat', 'aria-pressed', String(activeScenario === 'chat'));
-  setAttr('btn-scenario-celebrate', 'aria-pressed', String(activeScenario === 'celebrate'));
-  setAttr('btn-scenario-error', 'aria-pressed', String(activeScenario === 'error'));
-
   // Cập nhật lưới so sánh 4 cấp
   const compareBoxes = document.querySelectorAll('.stage-compare-box');
   compareBoxes.forEach((box) => {
@@ -123,18 +113,17 @@ function setupStatesButtons() {
   const statesGrid = $('states-grid');
   if (!statesGrid) return;
   statesGrid.innerHTML = '';
-  for (const state of MASCOT_STATES) {
+
+  for (const stateKey of MASCOT_STATES) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'lab-btn';
-    btn.textContent = state;
-    btn.setAttribute('data-state', state);
-    btn.setAttribute('aria-pressed', String(state === currentState));
+    btn.setAttribute('data-state', stateKey);
+    btn.textContent = stateKey;
     btn.onclick = () => {
       clearAllLabTimers();
-      activeScenario = null;
-      currentState = state;
-      if (mainRenderer) mainRenderer.setState(state);
+      currentState = stateKey;
+      if (mainRenderer) mainRenderer.setState(stateKey);
       updateStatusLabels();
       updateButtonStates();
     };
@@ -142,223 +131,167 @@ function setupStatesButtons() {
   }
 }
 
-// Dựng lưới so sánh 4 cấp độ tiến hóa dùng chung bộ generator
+// Hiển thị 4 cấp tiến hóa so sánh cùng lúc
 function renderStagesComparison() {
-  const grid = $('stages-comparison-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
+  const container = $('stages-comparison-grid');
+  if (!container) return;
+  container.innerHTML = '';
 
-  const renderFn = currentSpecies === 'cat' ? renderCatSVG : renderBearSVG;
-
-  for (const stg of EVOLUTION_STAGES) {
+  for (const stageKey of EVOLUTION_STAGES) {
     const box = document.createElement('div');
-    box.className = `stage-compare-box ${stg === currentStage ? 'active' : ''}`;
-    box.setAttribute('data-stage', stg);
+    box.className = `stage-compare-box ${stageKey === currentStage ? 'active' : ''}`;
+    box.setAttribute('data-stage', stageKey);
 
-    const previewDiv = document.createElement('div');
-    previewDiv.className = 'stage-compare-preview vif-mascot-container';
-    previewDiv.innerHTML = renderFn(stg, 'idle', { idPrefix: `comp-${currentSpecies}-${stg}` });
+    const title = document.createElement('div');
+    title.className = 'stage-title';
+    title.textContent = stageKey;
 
-    const lbl = document.createElement('div');
-    lbl.className = 'stage-compare-label';
-    lbl.textContent = stg;
+    const svgWrapper = document.createElement('div');
+    svgWrapper.className = 'stage-svg-wrap';
 
-    box.appendChild(previewDiv);
-    box.appendChild(lbl);
+    const renderFn = currentSpecies === 'bear' ? renderBearSVG : renderCatSVG;
+    svgWrapper.innerHTML = renderFn(stageKey, 'idle', {
+      idPrefix: `compare-${currentSpecies}-${stageKey}`
+    });
+
+    box.appendChild(title);
+    box.appendChild(svgWrapper);
 
     box.onclick = () => {
-      currentStage = stg;
-      if (mainRenderer) mainRenderer.setStage(stg);
+      clearAllLabTimers();
+      currentStage = stageKey;
+      if (mainRenderer) mainRenderer.setStage(stageKey);
       updateStatusLabels();
       updateButtonStates();
     };
 
-    grid.appendChild(box);
+    container.appendChild(box);
   }
 }
 
-// Bắt sự kiện chọn Loài
+// Xử lý chuyển Loài
 bindClick('btn-species-bear', () => {
-  if (currentSpecies === 'bear') return;
-  currentSpecies = 'bear';
   clearAllLabTimers();
-  activeScenario = null;
-  if (mainRenderer) mainRenderer.setSpecies('bear');
+  currentSpecies = 'bear';
+  initMainRenderer();
   renderStagesComparison();
   updateStatusLabels();
   updateButtonStates();
 });
 
 bindClick('btn-species-cat', () => {
-  if (currentSpecies === 'cat') return;
-  currentSpecies = 'cat';
   clearAllLabTimers();
-  activeScenario = null;
-  if (mainRenderer) mainRenderer.setSpecies('cat');
+  currentSpecies = 'cat';
+  initMainRenderer();
   renderStagesComparison();
   updateStatusLabels();
   updateButtonStates();
 });
 
-// Bắt sự kiện chọn Cấp
-for (const stage of EVOLUTION_STAGES) {
-  bindClick(`btn-stage-${stage}`, () => {
-    currentStage = stage;
+// Xử lý chuyển Cấp tiến hóa
+for (const stageKey of EVOLUTION_STAGES) {
+  bindClick(`btn-stage-${stageKey}`, () => {
     clearAllLabTimers();
-    activeScenario = null;
-    if (mainRenderer) mainRenderer.setStage(stage);
+    currentStage = stageKey;
+    if (mainRenderer) mainRenderer.setStage(stageKey);
     updateStatusLabels();
     updateButtonStates();
   });
 }
 
-// Tín hiệu buổi tập (Host Workout Signal)
+// Xử lý Buổi tập
 bindClick('btn-workout-start', () => {
   clearAllLabTimers();
-  activeScenario = null;
   currentWorkout = 'training';
   if (mainRenderer) mainRenderer.setWorkoutActive(true);
   updateStatusLabels();
-  updateButtonStates();
 });
 
 bindClick('btn-workout-pause', () => {
   clearAllLabTimers();
-  activeScenario = null;
   currentWorkout = 'paused';
-  if (mainRenderer) {
-    mainRenderer.setWorkoutActive(false);
-    mainRenderer.setState('idle');
-  }
+  if (mainRenderer) mainRenderer.setWorkoutActive(false);
+  updateStatusLabels();
+});
+
+bindClick('btn-drink-water', () => {
+  clearAllLabTimers();
+  if (mainRenderer) mainRenderer.triggerFiniteAnimation('drinking', 5000);
+  updateStatusLabels();
+  updateButtonStates();
+});
+
+bindClick('btn-scenario-stretch', () => {
+  clearAllLabTimers();
+  if (mainRenderer) mainRenderer.triggerFiniteAnimation('stretching', 4500);
   updateStatusLabels();
   updateButtonStates();
 });
 
 bindClick('btn-workout-complete', () => {
   clearAllLabTimers();
-  activeScenario = null;
   currentWorkout = 'completed';
-  if (mainRenderer) {
-    mainRenderer.setWorkoutActive(false);
-    mainRenderer.setState('celebrating', 4000);
-  }
+  if (mainRenderer) mainRenderer.setWorkoutActive(false);
+  if (mainRenderer) mainRenderer.triggerFiniteAnimation('celebrating', 3000);
   updateStatusLabels();
-  updateButtonStates();
-  scheduleLabTimer(() => {
-    if (currentWorkout === 'completed') {
-      currentWorkout = 'idle';
-      updateStatusLabels();
-      updateButtonStates();
-    }
-  }, 4000);
 });
 
 bindClick('btn-workout-stop', () => {
   clearAllLabTimers();
-  activeScenario = null;
   currentWorkout = 'idle';
-  if (mainRenderer) {
-    mainRenderer.setWorkoutActive(false);
-    mainRenderer.setState('idle');
-  }
+  if (mainRenderer) mainRenderer.setWorkoutActive(false);
+  if (mainRenderer) mainRenderer.setState('idle');
   updateStatusLabels();
-  updateButtonStates();
 });
 
-// Kịch bản mô phỏng phản hồi API có hủy timer an toàn
+// Kịch bản thử nghiệm API
 bindClick('btn-scenario-chat', () => {
   clearAllLabTimers();
-  activeScenario = 'chat';
-  if (!mainRenderer) return;
-
-  // Bước 1: Suy nghĩ
-  mainRenderer.setState('thinking');
+  if (mainRenderer) mainRenderer.setState('thinking');
   updateStatusLabels();
   updateButtonStates();
 
-  // Bước 2: Trả lời sau 1.2s
   scheduleLabTimer(() => {
-    if (!mainRenderer) return;
-    mainRenderer.setState('speaking');
+    if (mainRenderer) mainRenderer.triggerFiniteAnimation('speaking', 3500);
     updateStatusLabels();
     updateButtonStates();
-
-    // Bước 3: Hoàn tất sau 2.5s quay về baseline
-    scheduleLabTimer(() => {
-      activeScenario = null;
-      if (!mainRenderer) return;
-      mainRenderer.setState(mainRenderer.baselineState);
-      updateStatusLabels();
-      updateButtonStates();
-    }, 2500);
-  }, 1200);
+  }, 1500);
 });
 
 bindClick('btn-scenario-celebrate', () => {
   clearAllLabTimers();
-  activeScenario = 'celebrate';
-  if (mainRenderer) {
-    mainRenderer.setState('celebrating', 3200);
-    updateStatusLabels();
-    updateButtonStates();
-    scheduleLabTimer(() => {
-      activeScenario = null;
-      updateStatusLabels();
-      updateButtonStates();
-    }, 3200);
-  }
+  if (mainRenderer) mainRenderer.triggerFiniteAnimation('celebrating', 4000);
+  updateStatusLabels();
+  updateButtonStates();
 });
 
 bindClick('btn-scenario-error', () => {
   clearAllLabTimers();
-  activeScenario = 'error';
-  if (mainRenderer) {
-    mainRenderer.setState('error');
-    updateStatusLabels();
-    updateButtonStates();
-    scheduleLabTimer(() => {
-      activeScenario = null;
-      if (mainRenderer) mainRenderer.setState(mainRenderer.baselineState);
-      updateStatusLabels();
-      updateButtonStates();
-    }, 3000);
-  }
+  if (mainRenderer) mainRenderer.triggerFiniteAnimation('error', 3500);
+  updateStatusLabels();
+  updateButtonStates();
 });
 
 bindClick('btn-reset-all', () => {
   clearAllLabTimers();
-  activeScenario = null;
   currentSpecies = 'bear';
   currentStage = 'starter';
   currentState = 'idle';
   currentWorkout = 'idle';
-  document.body.className = 'lab-bg-light';
+
   const previewContainer = $('lab-mascot-preview');
   if (previewContainer) {
-    previewContainer.classList.remove('speed-slow', 'speed-paused', 'debug-joints');
+    previewContainer.className = 'lab-preview-box';
   }
-  setAttr('btn-bg-light', 'aria-pressed', 'true');
-  setAttr('btn-bg-dark', 'aria-pressed', 'false');
-  setAttr('btn-bg-grid', 'aria-pressed', 'false');
-  setAttr('btn-speed-normal', 'aria-pressed', 'true');
-  setAttr('btn-speed-slow', 'aria-pressed', 'false');
-  setAttr('btn-speed-pause', 'aria-pressed', 'false');
-  setAttr('btn-toggle-motion', 'aria-pressed', 'false');
-  setAttr('btn-toggle-joints', 'aria-pressed', 'false');
+  document.body.className = 'lab-bg-light';
 
-  if (mainRenderer) {
-    mainRenderer.setReducedMotion(false);
-    mainRenderer.setWorkoutActive(false);
-    mainRenderer.setSpecies('bear');
-    mainRenderer.setStage('starter');
-    mainRenderer.setState('idle');
-  }
+  initMainRenderer();
   renderStagesComparison();
   updateStatusLabels();
   updateButtonStates();
 });
 
-// Đổi màu nền xem trước
+// Điều khiển Giao diện Nền
 bindClick('btn-bg-light', () => {
   document.body.className = 'lab-bg-light';
   setAttr('btn-bg-light', 'aria-pressed', 'true');

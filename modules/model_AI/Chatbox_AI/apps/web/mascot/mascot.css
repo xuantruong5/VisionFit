@@ -36,7 +36,9 @@
 .vif-mascot-svg .mouth-tongue,
 .vif-mascot-svg .prop-dumbbell-left,
 .vif-mascot-svg .prop-dumbbell-right,
-.vif-mascot-svg .acc-thinking-bubbles {
+.vif-mascot-svg .prop-water-bottle,
+.vif-mascot-svg .acc-thinking-bubbles,
+.vif-mascot-svg .acc-water-bubble {
   display: none;
 }
 
@@ -133,26 +135,61 @@
 }
 
 /* ==========================================================================
-   1. IDLE: Thở nhẹ, mắt chớp tự nhiên, đuôi vẫy khẽ
+   1. IDLE & STRETCHING: GẮN CỨNG CHUYỂN ĐỘNG VƯƠN VAI KHỞI ĐỘNG LIÊN TỤC
+   Khi không làm gì (idle), nhân vật luôn luôn nhún nhảy, lắc lư và vươn vai khởi động thể thao,
+   hoàn toàn không đứng yên gây nhàm chán.
    ========================================================================== */
-.vif-mascot-svg.state-idle .torso-rig {
-  animation: vif-breathe 3.2s ease-in-out infinite;
+.vif-mascot-svg.state-idle .character-root,
+.vif-mascot-svg.state-stretching .character-root,
+.vif-mascot-svg.state-warmup .character-root {
+  animation: vif-stretch-body 1.8s ease-in-out infinite;
 }
 
-.vif-mascot-svg.state-idle .layer-head-group {
-  animation: vif-head-bob 3.2s ease-in-out infinite;
+.vif-mascot-svg.state-idle .torso-rig,
+.vif-mascot-svg.state-stretching .torso-rig,
+.vif-mascot-svg.state-warmup .torso-rig {
+  animation: vif-stretch-torso 1.8s ease-in-out infinite;
 }
 
-.vif-mascot-svg.state-idle .part-leg {
-  animation: vif-feet-settle 3.2s ease-in-out infinite;
+.vif-mascot-svg.state-idle .layer-head-group,
+.vif-mascot-svg.state-stretching .layer-head-group,
+.vif-mascot-svg.state-warmup .layer-head-group {
+  animation: vif-stretch-head 1.8s ease-in-out infinite;
 }
 
-.vif-mascot-svg.state-idle .part-eye {
-  animation: vif-blink 4.8s ease-in-out infinite;
+.vif-mascot-svg.state-idle .arm-left,
+.vif-mascot-svg.state-stretching .arm-left,
+.vif-mascot-svg.state-warmup .arm-left {
+  animation: vif-stretch-arm-left 1.8s ease-in-out infinite;
 }
 
-.vif-mascot-svg.state-idle .layer-tail {
-  animation: vif-tail-swish 2.8s ease-in-out infinite alternate;
+.vif-mascot-svg.state-idle .arm-right,
+.vif-mascot-svg.state-stretching .arm-right,
+.vif-mascot-svg.state-warmup .arm-right {
+  animation: vif-stretch-arm-right 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-idle .forearm-left,
+.vif-mascot-svg.state-stretching .forearm-left,
+.vif-mascot-svg.state-warmup .forearm-left {
+  animation: vif-stretch-forearm-left 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-idle .forearm-right,
+.vif-mascot-svg.state-stretching .forearm-right,
+.vif-mascot-svg.state-warmup .forearm-right {
+  animation: vif-stretch-forearm-right 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-idle .layer-tail,
+.vif-mascot-svg.state-stretching .layer-tail,
+.vif-mascot-svg.state-warmup .layer-tail {
+  animation: vif-tail-swish 1.2s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-idle .part-eye,
+.vif-mascot-svg.state-stretching .part-eye {
+  animation: vif-eye-blink 4.6s ease-in-out infinite;
 }
 
 /* ==========================================================================
@@ -310,11 +347,11 @@
 
 /* Cẳng tay duỗi thẳng theo hướng giơ cao */
 .vif-mascot-svg.state-celebrating .forearm-left {
-  transform: rotate(0deg);
+  transform: rotate(18deg);
 }
 
 .vif-mascot-svg.state-celebrating .forearm-right {
-  transform: rotate(0deg);
+  transform: rotate(-18deg);
 }
 
 .vif-mascot-svg.state-celebrating .layer-head-group {
@@ -338,6 +375,98 @@
 
 .vif-mascot-svg.state-error .arm-right {
   transform: rotate(-8deg);
+}
+
+
+/* ==========================================================================
+   8. STRETCHING (WARM-UP): Khởi động vươn vai, nhún nhảy linh hoạt chống nhàm chán
+   ========================================================================== */
+.vif-mascot-svg.state-stretching .character-root,
+.vif-mascot-svg.state-warmup .character-root {
+  animation: vif-stretch-body 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .torso-rig,
+.vif-mascot-svg.state-warmup .torso-rig {
+  animation: vif-stretch-torso 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .layer-head-group,
+.vif-mascot-svg.state-warmup .layer-head-group {
+  animation: vif-stretch-head 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .arm-left,
+.vif-mascot-svg.state-warmup .arm-left {
+  animation: vif-stretch-arm-left 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .arm-right,
+.vif-mascot-svg.state-warmup .arm-right {
+  animation: vif-stretch-arm-right 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .forearm-left,
+.vif-mascot-svg.state-warmup .forearm-left {
+  animation: vif-stretch-forearm-left 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .forearm-right,
+.vif-mascot-svg.state-warmup .forearm-right {
+  animation: vif-stretch-forearm-right 1.8s ease-in-out infinite;
+}
+
+.vif-mascot-svg.state-stretching .layer-tail,
+.vif-mascot-svg.state-warmup .layer-tail {
+  animation: vif-tail-swish 1.2s ease-in-out infinite alternate;
+}
+
+/* ==========================================================================
+   9. DRINKING (HYDRATING): Cầm bình nước thể thao giơ lên nhắc uống nước mỗi 2h
+   ========================================================================== */
+.vif-mascot-svg.state-drinking .prop-water-bottle,
+.vif-mascot-svg.state-hydrating .prop-water-bottle {
+  display: block;
+  transform-origin: 150px 168px;
+  animation: vif-drink-bottle-upright 2s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-drinking .acc-water-bubble,
+.vif-mascot-svg.state-hydrating .acc-water-bubble {
+  display: block;
+  animation: vif-water-float 1.8s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-drinking .mouth-line,
+.vif-mascot-svg.state-hydrating .mouth-line {
+  display: none;
+}
+
+.vif-mascot-svg.state-drinking .mouth-open,
+.vif-mascot-svg.state-drinking .mouth-tongue,
+.vif-mascot-svg.state-hydrating .mouth-open,
+.vif-mascot-svg.state-hydrating .mouth-tongue {
+  display: block;
+}
+
+.vif-mascot-svg.state-drinking .arm-right,
+.vif-mascot-svg.state-hydrating .arm-right {
+  animation: vif-drink-arm-right 2s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-drinking .forearm-right,
+.vif-mascot-svg.state-hydrating .forearm-right {
+  animation: vif-drink-forearm-right 2s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-drinking .arm-left,
+.vif-mascot-svg.state-hydrating .arm-left {
+  animation: vif-drink-arm-left 2s ease-in-out infinite alternate;
+}
+
+.vif-mascot-svg.state-drinking .layer-head-group,
+.vif-mascot-svg.state-hydrating .layer-head-group {
+  animation: vif-drink-head 2s ease-in-out infinite alternate;
 }
 
 /* ==========================================================================
@@ -388,15 +517,18 @@
 }
 
 /* Vẫy tay chào: vai nâng cao lên ngang đầu, cẳng tay vẫy chào mềm mại không gãy khúc */
-/* Nâng vai ổn định, vẫy bằng khuỷu tay */
 @keyframes vif-greet-shoulder {
-  0%, 100% { transform: rotate(-115deg); }
-  50%      { transform: rotate(-121deg); }
+  0% { transform: rotate(-96deg); }
+  100% { transform: rotate(-114deg); }
+}
+  100% { transform: rotate(-145deg); }
 }
 
 @keyframes vif-greet-wave {
-  0%, 100% { transform: rotate(-8deg); }
-  50%      { transform: rotate(-30deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+  100% { transform: rotate(15deg); }
 }
 
 @keyframes vif-think-tilt {
@@ -482,7 +614,9 @@
   100% { transform: scale(0.82); opacity: 0.5; }
 }
 
-/* Arm cheer: Hai cánh tay giơ cao mở rộng chữ V ăn mừng chiến thắng */
+/* Arm cheer: Hai cánh tay vươn cao mở rộng chữ V ăn mừng chiến thắng
+   (Nâng góc lên 108deg..120deg vươn qua vai thay vì dang ngang như khúc gỗ;
+    Cẳng tay gập nhẹ 18deg tự nhiên tạo thế chữ V chiến thắng) */
 @keyframes vif-arm-cheer-left {
   0% { transform: rotate(108deg); }
   100% { transform: rotate(120deg); }
@@ -505,65 +639,130 @@
   100% { transform: rotate(3deg) translateY(3px); }
 }
 
+
+
+/* Stretching & Warm-up Keyframes */
+@keyframes vif-stretch-body {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  25% { transform: translateY(2px) scale(1.02, 0.98); }
+  50% { transform: translateY(-3.5px) scale(0.99, 1.02); }
+  75% { transform: translateY(1.5px) scale(1.01, 0.99); }
+}
+
+@keyframes vif-stretch-torso {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes vif-stretch-head {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(4.5deg) translateY(-1px); }
+  75% { transform: rotate(-4.5deg) translateY(-1px); }
+}
+
+@keyframes vif-stretch-arm-left {
+  0%, 100% { transform: rotate(-12deg); }
+  50% { transform: rotate(36deg); }
+}
+
+@keyframes vif-stretch-arm-right {
+  0%, 100% { transform: rotate(12deg); }
+  50% { transform: rotate(-36deg); }
+}
+
+@keyframes vif-stretch-forearm-left {
+  0%, 100% { transform: rotate(-30deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes vif-stretch-forearm-right {
+  0%, 100% { transform: rotate(30deg); }
+  50% { transform: rotate(-8deg); }
+}
+
+/* Drinking / Hydration Reminder Keyframes (Cầm bình nước nâng lên kề miệng uống và mời nước) */
+@keyframes vif-drink-arm-right {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-8deg); }
+}
+
+@keyframes vif-drink-forearm-right {
+  0%, 100% { transform: rotate(72deg); }
+  50% { transform: rotate(100deg); }
+}
+
+@keyframes vif-drink-arm-left {
+  0%, 100% { transform: rotate(10deg); }
+  50% { transform: rotate(22deg); }
+}
+
+@keyframes vif-drink-head {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(4deg); }
+}
+
+@keyframes vif-water-float {
+  0% { transform: translateY(0px) scale(0.95); opacity: 0.85; }
+  100% { transform: translateY(-4.5px) scale(1.05); opacity: 1; }
+}
+
 /* ==========================================================================
    CHAMPION STAGE ANIMATION OVERRIDES
-   Xử lý tư thế chống hông đặc thù của cấp Champion khi ăn mừng và vẫy chào
+   Vì cấp Champion có bắp tay cơ bắp vẽ ở dáng chống nạnh (khuỷu gập góc),
+   khi chuyển sang Celebrating và Greeting cần bung cẳng tay (forearm) vươn lên
+   để không bị gập giấu ra sau đầu/cổ.
    ========================================================================== */
-@keyframes vif-champ-cheer-left {
-  0%, 100% { transform: rotate(92deg); }
-  50%      { transform: rotate(108deg); }
+.vif-mascot-svg.stage-champion.state-drinking .prop-water-bottle {
+  transform-origin: 140px 168px !important;
 }
 
-@keyframes vif-champ-cheer-right {
-  0%, 100% { transform: rotate(-92deg); }
-  50%      { transform: rotate(-108deg); }
-}
-
-@keyframes vif-champ-greet-right {
-  0%, 100% { transform: rotate(-92deg); }
-  50%      { transform: rotate(-108deg); }
-}
-
-@keyframes vif-champ-greet-wave {
-  0%, 100% { transform: rotate(-120deg); }
-  50%      { transform: rotate(-95deg); }
-}
-
-/* 1. Champion Celebrating: cánh tay giơ chữ V vươn lên thay vì gập sau gáy */
-.stage-champion.state-celebrating .arm-left,
 .vif-mascot-svg.stage-champion.state-celebrating .arm-left {
-  animation: vif-champ-cheer-left 1.3s ease-in-out infinite !important;
+  animation: vif-champ-cheer-left 0.4s ease-in-out infinite alternate !important;
 }
 
-.stage-champion.state-celebrating .arm-right,
 .vif-mascot-svg.stage-champion.state-celebrating .arm-right {
-  animation: vif-champ-cheer-right 1.3s ease-in-out infinite !important;
+  animation: vif-champ-cheer-right 0.4s ease-in-out infinite alternate !important;
 }
 
-.stage-champion.state-celebrating .forearm-left,
 .vif-mascot-svg.stage-champion.state-celebrating .forearm-left {
   transform-origin: 35px 151px !important;
   transform: rotate(115deg) !important;
 }
 
-.stage-champion.state-celebrating .forearm-right,
 .vif-mascot-svg.stage-champion.state-celebrating .forearm-right {
   transform-origin: 165px 151px !important;
   transform: rotate(-115deg) !important;
 }
 
-/* 2. Champion Greeting: cẳng tay phải bung ra vẫy chào tự nhiên */
-.stage-champion.state-greeting .arm-right,
-.vif-mascot-svg.stage-champion.state-greeting .arm-right {
-  animation: vif-champ-greet-right 1.2s ease-in-out infinite !important;
+@keyframes vif-champ-cheer-left {
+  0% { transform: rotate(92deg); }
+  100% { transform: rotate(108deg); }
 }
 
-.stage-champion.state-greeting .forearm-right,
+@keyframes vif-champ-cheer-right {
+  0% { transform: rotate(-92deg); }
+  100% { transform: rotate(-108deg); }
+}
+
+.vif-mascot-svg.stage-champion.state-greeting .arm-right {
+  animation: vif-champ-greet-right 0.42s ease-in-out infinite alternate !important;
+}
+
 .vif-mascot-svg.stage-champion.state-greeting .forearm-right {
   transform-origin: 165px 151px !important;
-  animation: vif-champ-greet-wave 0.6s ease-in-out infinite !important;
+  animation: vif-champ-greet-wave 0.42s ease-in-out infinite alternate !important;
 }
 
+@keyframes vif-champ-greet-right {
+  0% { transform: rotate(-92deg); }
+  100% { transform: rotate(-108deg); }
+}
+
+@keyframes vif-champ-greet-wave {
+  0% { transform: rotate(-120deg); }
+  100% { transform: rotate(-95deg); }
+}
 
 /* ==========================================================================
    DEBUG JOINTS (Hiển thị các điểm khớp thật bằng SVG circle)
@@ -615,93 +814,4 @@
 .tab-hidden .vif-mascot-svg,
 .tab-hidden .vif-mascot-svg * {
   animation-play-state: paused !important;
-}
-
-/* GREETING: thân đứng ổn định, một tay vẫy chào */
-.vif-mascot-svg.state-greeting .character-root,
-.vif-mascot-svg.state-greeting .layer-shadow ellipse {
-  animation: none;
-  transform: none;
-}
-
-.vif-mascot-svg.state-greeting .arm-right {
-  transition: none;
-  animation: vif-greet-shoulder 1.2s ease-in-out infinite;
-}
-
-.vif-mascot-svg.state-greeting .forearm-right {
-  transition: none;
-  animation: vif-greet-wave 0.6s ease-in-out infinite;
-}
-
-/* CELEBRATING: vai và thân cùng chu kỳ 1,3 giây */
-.vif-mascot-svg.state-celebrating .arm-left {
-  transition: none;
-  animation: vif-arm-cheer-left 1.3s ease-in-out infinite;
-}
-
-.vif-mascot-svg.state-celebrating .arm-right {
-  transition: none;
-  animation: vif-arm-cheer-right 1.3s ease-in-out infinite;
-}
-
-.vif-mascot-svg.state-celebrating .forearm-left {
-  transform: rotate(18deg);
-}
-
-.vif-mascot-svg.state-celebrating .forearm-right {
-  transform: rotate(-18deg);
-}
-
-/* ==========================================================================
-   CHAMPION STAGE ANIMATION OVERRIDES
-   Vì cấp Champion có bắp tay vẽ ở dáng gập chống nạnh,
-   khi chuyển sang Celebrating và Greeting cần bung cẳng tay (forearm) vươn lên
-   để không bị gập giấu ra sau đầu/cổ.
-   ========================================================================== */
-.vif-mascot-svg.stage-champion.state-celebrating .arm-left {
-  animation: vif-champ-cheer-left 0.4s ease-in-out infinite alternate !important;
-}
-
-.vif-mascot-svg.stage-champion.state-celebrating .arm-right {
-  animation: vif-champ-cheer-right 0.4s ease-in-out infinite alternate !important;
-}
-
-.vif-mascot-svg.stage-champion.state-celebrating .forearm-left {
-  transform-origin: 35px 151px !important;
-  transform: rotate(115deg) !important;
-}
-
-.vif-mascot-svg.stage-champion.state-celebrating .forearm-right {
-  transform-origin: 165px 151px !important;
-  transform: rotate(-115deg) !important;
-}
-
-@keyframes vif-champ-cheer-left {
-  0% { transform: rotate(92deg); }
-  100% { transform: rotate(108deg); }
-}
-
-@keyframes vif-champ-cheer-right {
-  0% { transform: rotate(-92deg); }
-  100% { transform: rotate(-108deg); }
-}
-
-.vif-mascot-svg.stage-champion.state-greeting .arm-right {
-  animation: vif-champ-greet-right 0.42s ease-in-out infinite alternate !important;
-}
-
-.vif-mascot-svg.stage-champion.state-greeting .forearm-right {
-  transform-origin: 165px 151px !important;
-  animation: vif-champ-greet-wave 0.42s ease-in-out infinite alternate !important;
-}
-
-@keyframes vif-champ-greet-right {
-  0% { transform: rotate(-92deg); }
-  100% { transform: rotate(-108deg); }
-}
-
-@keyframes vif-champ-greet-wave {
-  0% { transform: rotate(-120deg); }
-  100% { transform: rotate(-95deg); }
 }

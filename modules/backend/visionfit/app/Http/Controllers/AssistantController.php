@@ -46,7 +46,7 @@ class AssistantController extends Controller
                 $data['summary']['expiring_members'] = DB::table('clients as c')
                     ->join('dang_ky_goi as d', 'd.id_hoi_vien', '=', 'c.id')
                     ->join('chi_tiet_dang_ky_goi as ct', 'ct.id_dang_ky_goi', '=', 'd.id')
-                    ->join('goi_tap as g', 'g.id_goi_tap', '=', 'ct.id_goi_tap')
+                    ->join('goi_tap as g', 'g.id', '=', 'ct.id_goi_tap')
                     ->where('c.id_phong_tap', $gym)->where('g.id_phong_tap', $gym)
                     ->where('d.tinh_trang', 1)->whereIn('ct.tinh_trang', [0, 1])
                     ->whereBetween('ct.ngay_ket_thuc', [$now->toDateString(), $now->addDays(7)->toDateString()])
@@ -178,7 +178,7 @@ class AssistantController extends Controller
 
         $data['packages'] = DB::table('dang_ky_goi as d')
             ->join('chi_tiet_dang_ky_goi as ct', 'ct.id_dang_ky_goi', '=', 'd.id')
-            ->join('goi_tap as g', 'g.id_goi_tap', '=', 'ct.id_goi_tap')
+            ->join('goi_tap as g', 'g.id', '=', 'ct.id_goi_tap')
             ->where('d.id_hoi_vien', $user->getKey())->where('g.id_phong_tap', $gym)
             ->where('d.tinh_trang', 1)->whereIn('ct.tinh_trang', [0, 1])
             ->orderByDesc('ct.id')->limit(20)

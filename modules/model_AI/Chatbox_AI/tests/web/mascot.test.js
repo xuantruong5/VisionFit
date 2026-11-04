@@ -38,8 +38,9 @@ test('Bear SVG generator renders all stages and states with semantic layers and 
       const dumbbellLeftIdx = svg.indexOf('class="prop-dumbbell-left"');
       assert.ok(forearmLeftIdx !== -1 && dumbbellLeftIdx !== -1 && forearmLeftIdx < dumbbellLeftIdx, 'Dumbbell must belong to forearm group');
 
-      // Không dùng rx trên thẻ path
+      // Không dùng rx trên thẻ path và không có giá trị undefined
       assert.equal(/<path[^>]*\brx=/i.test(svg), false, 'SVG path must not contain invalid rx attribute');
+      assert.equal(svg.includes('undefined'), false, 'SVG must not contain undefined values');
     }
   }
 });
@@ -58,7 +59,7 @@ test('Bear Champion stage contains medal attached to torso-rig (not head group)'
   assert.equal(starterSvg.includes('acc-medal'), false, 'Starter stage should not have medal');
 });
 
-test('Cat SVG generator renders all stages with whiskers, tail and joint hierarchy', () => {
+test('Cat SVG generator renders all stages with whiskers, tail, valid colors and joint hierarchy', () => {
   for (const stage of EVOLUTION_STAGES) {
     for (const state of MASCOT_STATES) {
       const svg = renderCatSVG(stage, state);
@@ -70,6 +71,7 @@ test('Cat SVG generator renders all stages with whiskers, tail and joint hierarc
       assert.ok(svg.includes('layer-whiskers'), 'Cat must have whiskers layer');
       assert.ok(svg.includes('layer-tail'), 'Cat must have tail layer');
       assert.equal(/<path[^>]*\brx=/i.test(svg), false, 'Cat SVG path must not contain invalid rx attribute');
+      assert.equal(svg.includes('undefined'), false, 'Cat SVG must not contain undefined color values');
     }
   }
 });
