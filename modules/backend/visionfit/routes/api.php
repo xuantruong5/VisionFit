@@ -154,6 +154,8 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/search-trainer', [GoiTapController::class, 'searchTrainer']);
     // thông tin gói tập 
     Route::post('/registration-preview', [GoiTapController::class, 'getRegistrationPreview']);
+    // tính khuyến mãi 
+    Route::post('/tinh-khuyen-mai', [GoiTapController::class, 'tinhKhuyenMai']);
 
 
     
