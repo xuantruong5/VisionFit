@@ -22,6 +22,7 @@ class Client extends Authenticatable
         'anh_dai_dien',
         'ngay_sinh',
         'gioi_tinh',
+        'ma_gioi_thieu',
         'chieu_cao_cm',
         'can_nang_kg',
         'dang_nguoi',
