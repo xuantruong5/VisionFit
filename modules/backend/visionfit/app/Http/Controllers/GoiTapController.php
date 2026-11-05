@@ -304,14 +304,20 @@ class GoiTapController extends Controller
 
         // 6. Kiểm tra tiền thưởng giới thiệu của A kể cả đăng ký lần đầu 
         $tienGiamGioiThieu = 0;
+        $idGioiThieu = null;
 
         $gioiThieu = GioiThieu::where('id_nguoi_gioi_thieu', $hoiVien->id)
             ->where('tinh_trang', 1)
+            ->where('da_su_dung', 0)
             ->where('thuong_nguoi_gioi_thieu', '>', 0)
+            ->orderBy('id', 'asc')
             ->first();
 
         if ($gioiThieu) {
             $tienGiamGioiThieu = (float) $gioiThieu->thuong_nguoi_gioi_thieu;
+            $idGioiThieu = $gioiThieu->id;
+        } else {
+            $idGioiThieu = null;
         }
 
 
@@ -344,6 +350,7 @@ class GoiTapController extends Controller
                 'phan_tram_giam' => $phanTramGiam,
                 'tien_giam_khuyen_mai' => round($tienGiamKhuyenMai),
                 'tien_giam_gioi_thieu' => round($tienGiamGioiThieu),
+                'id_gioi_thieu' => $idGioiThieu,
 
                 'tong_tien_giam' => round($tongTienGiam),
                 'tong_tien' => round($tongTien),

@@ -70,7 +70,7 @@ Route::get('/tong-quan', [MembersController::class, 'tongQuan']);
 Route::get('/ke-hoach-an', [KeHoachAnController::class, 'keHoachAn']);
 
 // member
-Route::get('/ho-so', [MembersController::class, 'getProfile']);
+
 Route::post('/ho-so/cap-nhat', [MembersController::class, 'updateProfile']);
 Route::post('/ho-so/avatar', [MembersController::class, 'uploadAvatar']);
 
@@ -163,6 +163,23 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/thong-tin-gioi-thieu', [GoiTapController::class, 'thongTinGioiThieu']);
 
     Route::post('/dang-ky-goi', [ThanhToanController::class, 'store']);
+
+    Route::get('/auto-thanh-toan-goi/{id}', [ThanhToanController::class, 'autoThanhToanGoi']);
+
+
+    Route::post('/test-mail', [ThanhToanController::class, 'testGuiMail']);
+
+    // lấy danh sách đã đăng ký gói 
+    Route::get('/goi-tap-cua-toi', [ ThanhToanController::class, 'danhSachGoiTapCuaToi']);
+    Route::get('/goi-tap-cua-toi/{id}', [ ThanhToanController::class, 'chiTietGoiTapCuaToi']);
+
+
+    Route::get('/profile', [MembersController::class, 'getProfile']);
+
+
+    
+
+
 
 
 

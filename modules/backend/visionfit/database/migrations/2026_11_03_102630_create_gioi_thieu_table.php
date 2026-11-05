@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('thuong_nguoi_gioi_thieu', 12, 2)->default(0);
             // Ưu đãi cho B
             $table->decimal('thuong_nguoi_duoc_gioi_thieu', 12, 2)->default(0);
+            $table->boolean('da_su_dung')->default(false);
             $table->timestamps();
         });
     }
