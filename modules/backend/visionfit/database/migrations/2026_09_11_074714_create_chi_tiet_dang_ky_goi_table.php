@@ -16,10 +16,24 @@ return new class extends Migration
             $table->integer('id_dang_ky_goi');
             $table->integer('id_noi_tap')->nullable();
             $table->integer('id_goi_tap');
+            $table->unsignedBigInteger('id_chuong_trinh_tap')->nullable();
+            $table->unsignedBigInteger('id_trainer')->nullable();
             $table->integer('so_buoi')->default(0);
             $table->integer('so_buoi_pt')->default(0);
             $table->double('don_gia')->default(0);
+             // Chi tiết từng khoản giảm
+            $table->decimal('tien_giam_khuyen_mai', 12, 2)->default(0);
+            $table->decimal('tien_giam_gioi_thieu', 12, 2)->default(0);
+             // Tổng tiền giảm
             $table->double('giam_gia')->default(0);
+            // Thông tin ưu đãi tại thời điểm đăng ký
+            $table->string('ma_khuyen_mai')->nullable();
+            $table->string('ma_gioi_thieu')->nullable();
+            $table->string('ten_khuyen_mai')->nullable();
+            $table->integer('lan_dang_ky')->default(1);
+            $table->decimal('phan_tram_giam', 5, 2)->default(0);
+             // Tiền cuối cùng sau giảm
+            $table->decimal('thanh_tien', 12, 2)->default(0);
             $table->date('ngay_bat_dau')->nullable();
             $table->date('ngay_ket_thuc')->nullable();
             $table->integer('tinh_trang')->default(0)->comment('0: chua_bat_dau, 1: dang_tap, 2: hoan_thanh, 3: Hủy');

@@ -327,7 +327,7 @@ const App = () => {
         }}
       >
         <Stack.Navigator
-          initialRouteName="MemberTabs"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+          initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
           screenOptions={{ headerShown: false }}
         >
           <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />

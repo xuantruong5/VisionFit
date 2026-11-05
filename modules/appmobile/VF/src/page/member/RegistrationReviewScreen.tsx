@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -28,7 +28,14 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
   const price = Number(pkg?.gia || 0);
   const requiresPT = pkg?.loai === 'pt' || Number(pkg?.so_buoi_pt || 0) > 0;
   const optionalPT = !!pt && !requiresPT;
-  const canContinue =!!pkg?.id && Number.isFinite(price) &&price >= 0 &&Number(pkg?.thoi_han_ngay) > 0 &&(!requiresPT || !!pt?.id);
+  const canContinue = !!pkg?.id && Number.isFinite(price) && price >= 0 && Number(pkg?.thoi_han_ngay) > 0 && (!requiresPT || !!pt?.id);
+
+  const [promoCode, setPromoCode] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referrerName, setReferrerName] = useState('');
+  const [promotionData, setPromotionData] = useState<any>(null);
+  const [promotionLoading, setPromotionLoading] = useState(false);
 
   // Lấy thông tin hội viên và chương trình tập từ API
   const getRegistrationPreview = async () => {
@@ -55,9 +62,126 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
     }
   };
 
+  // Tính khuyến mãi
+  const tinhKhuyenMai = async (maKhuyenMai?: string) => {
+    if (!pkg?.id) return;
+    try {
+      setPromotionLoading(true);
+      const payload: any = {
+        id_goi_tap: Number(pkg.id),
+      };
+      if (maKhuyenMai?.trim()) {
+        payload.ma_khuyen_mai = maKhuyenMai.trim().toUpperCase();
+      }
+      const response = await apiFitlife.post( '/client/tinh-khuyen-mai', payload );
+
+      if (response.data.success) {
+        setPromotionData(response.data.data);
+        if (maKhuyenMai?.trim()) {
+          Alert.alert('Thông báo', response.data.message);
+        }
+      } else {
+        Alert.alert('Thông báo', response.data.message);
+      }
+    } catch (error: any) {
+      console.log(
+        'Lỗi tính khuyến mãi:',
+        error.response?.data || error.message
+      );
+      Alert.alert(
+        'Thông báo',
+        error.response?.data?.message || 'Không thể tính khuyến mãi.'
+      );
+    } finally {
+      setPromotionLoading(false);
+    }
+  };
+
+
+  // Lưu mã giới thiệu
+  const luuMaGioiThieu = async () => {
+    const maGioiThieu = referralCode.trim().toUpperCase();
+    if (!maGioiThieu) {
+      Alert.alert('Thông báo', 'Vui lòng nhập mã giới thiệu.');
+      return;
+    }
+
+    if (!pkg?.id) {
+      Alert.alert('Thông báo', 'Vui lòng chọn gói tập trước.');
+      return;
+    }
+
+    try {
+      setReferralLoading(true);
+
+      const response = await apiFitlife.post( '/client/luu-ma-gioi-thieu',
+        {
+          ma_gioi_thieu: maGioiThieu,
+          id_goi_tap: Number(pkg.id),
+        }
+      );
+
+      if (response.data.success) { setReferralCode(maGioiThieu);
+         setReferrerName(response.data.data?.ten_nguoi_gioi_thieu || '');
+
+
+        Alert.alert( 'Thông báo', response.data.message || 'Lưu mã giới thiệu thành công.');
+        // Tính lại khuyến mãi sau khi lưu mã
+        await tinhKhuyenMai();
+      } else {
+        Alert.alert('Thông báo', response.data.message);
+      }
+    } catch (error: any) {
+      console.log(
+        'Lỗi lưu mã giới thiệu:',
+        error.response?.data || error.message
+      );
+
+      Alert.alert(
+        'Thông báo',
+        error.response?.data?.message || 'Không thể lưu mã giới thiệu.'
+      );
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  // Lấy thông tin mã giới thiệu đang chờ thanh toán
+  const layThongTinGioiThieu = async () => {
+    try {
+      const response = await apiFitlife.get(
+        '/client/thong-tin-gioi-thieu'
+      );
+
+      if (response.data.success && response.data.data) {
+        setReferralCode(
+          response.data.data.ma_gioi_thieu || ''
+        );
+
+        setReferrerName(
+          response.data.data.ten_nguoi_gioi_thieu || ''
+        );
+      } else {
+        setReferralCode('');
+        setReferrerName('');
+      }
+    } catch (error: any) {
+      console.log(
+        'Lỗi lấy thông tin giới thiệu:',
+        error.response?.data || error.message
+      );
+    }
+  };
+
   useEffect(() => {
     getRegistrationPreview();
   }, [pkg?.id, pt?.id]);
+  useEffect(() => {
+    layThongTinGioiThieu();
+  }, []);
+  useEffect(() => {
+    tinhKhuyenMai();
+  }, [pkg?.id]);
 
   const goTo = (screen: string) => {
     const names = navigation.getState()?.routeNames || [];
@@ -68,7 +192,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
     });
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!canContinue) {
       Alert.alert(
         'Thông báo',
@@ -79,17 +203,123 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
       return;
     }
 
-    const names = navigation.getState()?.routeNames || [];
-    const target = names.includes('Payment')
-      ? 'Payment'
-      : names.includes('PaymentScreen')
-        ? 'PaymentScreen'
-        : 'Payment';
+    if (saving) return;
 
-    navigation.navigate(target, {
-      selectedPackage: pkg,
-      selectedTrainer: pt,
-    });
+    try {
+      setSaving(true);
+
+      // 1. Chuẩn bị dữ liệu đăng ký
+      const payload = {
+        id_goi_tap: Number(pkg.id),
+
+        id_chuong_trinh_tap:
+          previewData?.chuong_trinh_tap?.id || null,
+
+        id_noi_tap:
+          previewData?.chuong_trinh_tap?.id_noi_tap || null,
+
+        id_trainer: pt?.id || null,
+
+        ma_khuyen_mai:
+          promoCode.trim().toUpperCase() || null,
+
+        ma_gioi_thieu:
+          referralCode.trim().toUpperCase() || null,
+
+        tien_giam_khuyen_mai: Number(
+          promotionData?.tien_giam_khuyen_mai || 0
+        ),
+
+        tien_giam_gioi_thieu: Number(
+          promotionData?.tien_giam_gioi_thieu || 0
+        ),
+
+        lan_dang_ky: Number(
+          promotionData?.lan_dang_ky || 1
+        ),
+
+        phan_tram_giam: Number(
+          promotionData?.phan_tram_giam || 0
+        ),
+
+        phuong_thuc_thanh_toan: 'VietQR',
+      };
+
+      // 2. Gọi API tạo đăng ký gói
+      const response = await apiFitlife.post(
+        '/client/dang-ky-goi',
+        payload
+      );
+
+      if (!response.data.success) {
+        Alert.alert(
+          'Thông báo',
+          response.data.message || 'Không thể tạo đăng ký gói.'
+        );
+        return;
+      }
+
+      // 3. Lấy thông tin đăng ký từ Backend
+      const dangKy = response.data.data;
+
+      // 4. Chuyển sang màn hình thanh toán
+      const names = navigation.getState()?.routeNames || [];
+
+      const target = names.includes('Payment')
+        ? 'Payment'
+        : names.includes('PaymentScreen')
+          ? 'PaymentScreen'
+          : 'Payment';
+
+      navigation.navigate(target, {
+        draft: {
+          selectedPackage: pkg,
+          selectedTrainer: pt,
+
+          chuongTrinhTap:
+            previewData?.chuong_trinh_tap || null,
+
+          noiTap: {
+            id:
+              previewData?.chuong_trinh_tap?.id_noi_tap || null,
+            ten_noi_tap:
+              previewData?.chuong_trinh_tap?.ten_noi_tap || '',
+          },
+
+          hoiVien: previewData?.hoi_vien || null,
+
+          maKhuyenMai: promoCode.trim().toUpperCase(),
+          maGioiThieu: referralCode.trim().toUpperCase(),
+          tenNguoiGioiThieu: referrerName,
+
+          chiTietUuDai: promotionData,
+
+          // ID đăng ký vừa tạo trong database
+          idDangKyGoi: dangKy.id_dang_ky_goi,
+
+          idChiTietDangKy: dangKy.id_chi_tiet_dang_ky,
+
+          // Lấy tổng tiền chính thức từ Backend
+          tongTienTamTinh: Number(dangKy.tong_tien),
+
+          isThanhToan: dangKy.is_thanh_toan,
+        },
+      });
+
+    } catch (error: any) {
+      console.log(
+        'Lỗi tạo đăng ký gói:',
+        error.response?.data || error.message
+      );
+
+      Alert.alert(
+        'Thông báo',
+        error.response?.data?.message ||
+        'Không thể tạo đăng ký gói. Vui lòng thử lại.'
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
 
@@ -149,7 +379,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             <View style={s.card}>
               <View style={s.personRow}>
                 {previewData?.hoi_vien?.anh_dai_dien ? (
-                  <Image source={{ uri: previewData.hoi_vien.anh_dai_dien }} style={s.memberAvatar}/>
+                  <Image source={{ uri: previewData.hoi_vien.anh_dai_dien }} style={s.memberAvatar} />
                 ) : (
                   <View style={s.iconBox}>
                     <Ionicons name="person-outline" size={23} color={COLORS.primary} />
@@ -162,7 +392,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
                 <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.primary} />
               </View>
               <View style={s.divider} />
-              <InfoRow label="Số điện thoại"  value={previewData?.hoi_vien?.so_dien_thoai || 'Chưa cập nhật'} />
+              <InfoRow label="Số điện thoại" value={previewData?.hoi_vien?.so_dien_thoai || 'Chưa cập nhật'} />
               <InfoRow label="Ngày sinh" value={previewData?.hoi_vien?.ngay_sinh || 'Chưa cập nhật'} />
             </View>
 
@@ -232,13 +462,13 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
                 </View>
               )}
             </View>
-           <Text style={s.sectionTitle}>Chương trình tập của bạn</Text>
+            <Text style={s.sectionTitle}>Chương trình tập của bạn</Text>
             <View style={s.card}>
               {previewData?.chuong_trinh_tap ? (
                 <View style={s.programItem}>
                   <View style={s.programRow}>
                     {previewData.chuong_trinh_tap.anh_dai_dien ? (
-                      <Image source={{ uri: previewData.chuong_trinh_tap.anh_dai_dien, }} style={s.programImage} resizeMode="cover"/>
+                      <Image source={{ uri: previewData.chuong_trinh_tap.anh_dai_dien, }} style={s.programImage} resizeMode="cover" />
                     ) : (
                       <View style={[s.programImage, s.iconBox]}>
                         <Ionicons name="barbell-outline" size={25} color={COLORS.primary} />
@@ -262,7 +492,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
                         Nơi tập: {previewData.chuong_trinh_tap.ten_noi_tap}
                       </Text>
                     </View>
-                    <Ionicons name="checkmark-circle" size={22} color={COLORS.primary}/>
+                    <Ionicons name="checkmark-circle" size={22} color={COLORS.primary} />
                   </View>
                 </View>
               ) : (
@@ -271,21 +501,122 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             </View>
 
             <Text style={s.sectionTitle}>Chi tiết thanh toán</Text>
-            <View style={s.card}>
-              <InfoRow label="Chi phí gói tập" value={money(price)} />
-              <InfoRow label="Chi phí PT" value={optionalPT ? 'Chưa xác định' : requiresPT ? 'Theo quyền lợi gói' : '0đ'} />
-              <View style={s.dashedDivider} />
-              <View style={[s.between, s.totalBox]}>
-                <Text style={s.totalLabel}>Tổng tạm tính</Text>
-                <Text style={s.totalPrice}>{money(price)}</Text>
-              </View>
-              <Text style={s.priceNote}>* Tổng tiền cuối cùng sẽ được Backend xác minh trước thanh toán.</Text>
-              {optionalPT && <Text style={s.warning}>PT chọn thêm có thể phát sinh phí chưa tính trong tổng tạm tính.</Text>}
-            </View>
 
-            <View style={s.notice}>
-              <Ionicons name="information-circle" size={20} color={COLORS.primary} />
-              <Text style={s.noticeText}>Bạn có thể quay lại thay đổi gói tập hoặc PT. Bản nháp hiện chưa được gửi lên máy chủ.</Text>
+            <View style={s.paymentCard}>
+              {/* Chi phí gói tập */}
+              {/* <View style={s.paymentRow}>
+                <Text style={s.paymentLabel}>Chi phí gói tập</Text>
+                <Text style={s.paymentValue}>{money(price)}</Text>
+              </View> */}
+
+              {/* Mã ưu đãi */}
+              <View style={s.promoContainer}>
+                <Text style={s.promoTitle}>MÃ ƯU ĐÃI</Text>
+                <View style={s.promoInputRow}>
+                  <TextInput style={s.promoInput} placeholder="Nhập mã (VD: SALE5)" placeholderTextColor="#94A3B8" value={promoCode} onChangeText={setPromoCode} autoCapitalize="characters" />
+                  <TouchableOpacity style={s.applyButton} onPress={() => tinhKhuyenMai(promoCode)} disabled={promotionLoading}>
+                    {promotionLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={s.applyButtonText}>Áp dụng</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Mã giới thiệu */}
+                <Text style={[s.promoTitle, { marginTop: 10 }]}>
+                  MÃ GIỚI THIỆU (Nếu Có)
+                </Text>
+
+                <View style={s.promoInputRow}>
+                  <TextInput style={s.promoInput} placeholder="Nhập mã (VD: REF50)" placeholderTextColor="#94A3B8" value={referralCode}  onChangeText={setReferralCode} autoCapitalize="characters"editable={!referralLoading}  />
+                  <TouchableOpacity style={[s.applyButton,referralLoading && { opacity: 0.6 }]} onPress={luuMaGioiThieu} disabled={referralLoading}>
+                    {referralLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={s.applyButtonText}>Áp dụng</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+                {/* Lưu ý mã giới thiệu */}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 8 }}>
+                  <Ionicons name="information-circle-outline" size={16} color="#F59E0B" />
+                  <Text style={{ marginLeft: 5, fontSize: 12, color: '#64748B', flex: 1, lineHeight: 18, }}>
+                    Lưu ý: Nếu nhập sai mã giới thiệu, bạn có thể nhập lại mã khác cho đúng,Và người giới thiệu bạn chỉ được 1 lần áp dung mã giới thiệu 
+                  </Text>
+                </View>
+
+                {referrerName !== '' && (
+                    <Text style={{ marginTop: 8, fontSize: 13, color: '#0D7F8D' }}>
+                      Người giới thiệu: {referrerName}
+                    </Text>
+                  )}
+              </View>
+
+              <Text style={s.discountTitle}>Chi tiết ưu đãi</Text>
+              <View style={s.discountCard}>
+                <View style={s.discountRow}>
+                  <Text style={s.discountLabel}>Chi phí gói tập</Text>
+                  <Text style={s.discountValue}>{money(price)}</Text>
+                </View>
+                {Number(promotionData?.tien_giam_khuyen_mai || 0) > 0 && (
+                  <View style={s.discountRow}>
+                    <Text style={s.discountLabel}>
+                      {Number(promotionData?.lan_dang_ky || 1) >= 2
+                        ? `Ưu đãi đăng ký lần ${promotionData.lan_dang_ky} (${promotionData.phan_tram_giam || 0}%)`
+                        : promotionData?.ten_khuyen_mai || 'Ưu đãi khuyến mãi'}
+                    </Text>
+
+                    <Text style={s.discountValue2}>
+                      -{money(Number(promotionData.tien_giam_khuyen_mai))}
+                    </Text>
+                  </View>
+                )}
+               {Number(promotionData?.tien_giam_gioi_thieu || 0) > 0 && (
+                <View style={s.discountRow}>
+                  <Text style={s.discountLabel}>Ưu đãi giới thiệu</Text>
+
+                  <Text style={s.discountValue2}>
+                    -{money(Number(promotionData.tien_giam_gioi_thieu))}
+                  </Text>
+                </View>
+              )}
+
+                <View style={s.discountRow}>
+                  <Text style={s.discountTotalLabel}>Tổng giảm</Text>
+
+                  <Text style={s.discountAmount}>
+                    {money(Number(promotionData?.tong_tien_giam || 0))}
+                  </Text>
+                </View>
+
+                <View style={[s.paymentRow, { marginTop: 8 }]}>
+                  <Text style={s.paymentLabel}>Chi phí PT</Text>
+                  <Text style={s.ptPrice}>
+                    {optionalPT ? 'Chưa xác định' : requiresPT ? 'Theo quyền lợi gói' : '0đ'}
+                  </Text>
+                </View>
+
+                <View style={s.discountTotalRow}>
+                  <Text style={s.discountTotalLabel}>Tổng thanh toán</Text>
+                  <Text style={s.finalPrice}>
+                    {money(Number(promotionData?.tong_tien ?? price))}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={s.priceNote}>
+                * Tổng tiền cuối cùng sẽ được Backend xác minh trước thanh toán.
+              </Text>
+
+              {optionalPT && (
+                <View style={s.warningBox}>
+                  <Ionicons name="alert-circle-outline" size={15} color="#F97316" />
+                  <Text style={s.warningText}>
+                    PT chọn thêm có thể phát sinh phí chưa tính trong tổng tạm tính.
+                  </Text>
+                </View>
+              )}
             </View>
           </ScrollView>
 
@@ -293,7 +624,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
             <View style={s.between}>
               <View>
                 <Text style={s.subText}>TỔNG TẠM TÍNH</Text>
-                <Text style={s.footerPrice}>{money(price)}</Text>
+                <Text style={s.footerPrice}>{money(Number(promotionData?.tong_tien ?? price))}</Text>
               </View>
               <View style={s.secureBadge}>
                 <Ionicons name="lock-closed-outline" size={15} color={COLORS.primary} />
@@ -301,7 +632,7 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
               </View>
             </View>
 
-            <TouchableOpacity style={s.buttonWrap} activeOpacity={0.85} disabled={!canContinue} onPress={handleContinue}>
+            <TouchableOpacity style={s.buttonWrap} activeOpacity={0.85} disabled={!canContinue || saving} onPress={handleContinue}>
               <LinearGradient
                 colors={canContinue ? [COLORS.primary, COLORS.primaryDark] : ['#AFC8D3', '#AFC8D3']}
                 start={{ x: 0, y: 0 }}
@@ -700,6 +1031,179 @@ const s = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
+  },
+  paymentCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8EEF4',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 24,
+    ...SHADOWS.card,
+  },
+
+  paymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  paymentLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+
+  paymentValue: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+
+  paymentDivider: {
+    height: 1,
+    backgroundColor: '#EDF1F5',
+    marginBottom: 10,
+  },
+
+  promoContainer: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#EDF1F5',
+    borderRadius: 13,
+    padding: 10,
+  },
+
+  promoTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#475569',
+    marginBottom: 5,
+  },
+
+  promoInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  promoInput: {
+    flex: 1,
+    height: 34,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCE4ED',
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
+    fontSize: 12,
+    color: '#0F172A',
+  },
+
+  applyButton: {
+    height: 36,
+    paddingHorizontal: 12,
+    backgroundColor: '#172033',
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  applyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  ptPrice: {
+    fontSize: 14,
+    color: '#94A3B8',
+  },
+
+  discountCard: {
+    backgroundColor: '#FBFDFF',
+    borderWidth: 1,
+    borderColor: '#E8EEF4',
+    borderRadius: 13,
+    padding: 11,
+    marginTop: 10,
+  },
+
+  discountTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#334155',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+
+  discountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 9,
+  },
+
+  discountLabel: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+
+  discountValue: {
+    fontSize: 14,
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  discountValue2: {
+    fontSize: 14,
+    color: '#10B981',
+    fontWeight: '700',
+  },
+
+
+  discountTotalLabel: {
+    fontSize: 14,
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+
+  discountAmount: {
+    fontSize: 14,
+    color: '#10B981',
+    fontWeight: '700',
+  },
+
+  discountTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+
+  finalPrice: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#00A878',
+  },
+
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+    backgroundColor: '#FFF9F2',
+    borderWidth: 1,
+    borderColor: '#FDE7D0',
+    borderRadius: 11,
+    padding: 10,
+    marginTop: 10,
+  },
+
+  warningText: {
+    flex: 1,
+    fontSize: 10,
+    lineHeight: 16,
+    color: '#C2410C',
   },
 });
 
