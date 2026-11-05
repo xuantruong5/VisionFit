@@ -82,8 +82,7 @@ export const FloatingMascotWidget: React.FC<MascotProps> = ({
 const WIDGET_WIDTH = 100;
 const WIDGET_HEIGHT = 120;
 const MIN_BOTTOM_OFFSET = 75; // Luôn cách đáy tối thiểu 75px để KHÔNG BAO GIỜ đè lên Bottom Navigation Bar
-const EDGE_PEEK_THRESHOLD = 20; // Khoảng cách <= 20px tới mép viền sẽ kích hoạt chế độ Núp mép màn hình
-const BORDER_X = 26; // Trục mép viền điện thoại trong hệ tọa độ linh vật để bám mép chuẩn xác
+const EDGE_PEEK_THRESHOLD = 18; // Khoảng cách <= 18px tới mép viền sẽ kích hoạt chế độ Núp mép màn hình
 
 const MascotInner: React.FC<MascotProps> = ({
   species = 'cat',
@@ -297,8 +296,8 @@ const MascotInner: React.FC<MascotProps> = ({
     isPeekingRef.current = true;
     peekingSideRef.current = side;
 
-    // Vị trí mép viền: Trục BORDER_X = 26 tiếp xúc hoàn hảo với mép điện thoại
-    const targetX = side === 'left' ? -BORDER_X : screen.width - (WIDGET_WIDTH - BORDER_X);
+    // Nhô đúng nửa mặt và 2 bàn tay ra khỏi mép trái (-42%) hoặc mép phải (58%)
+    const targetX = side === 'left' ? -WIDGET_WIDTH * 0.42 : screen.width - WIDGET_WIDTH * 0.58;
 
     Animated.parallel([
       Animated.spring(panX, {
@@ -388,17 +387,17 @@ const MascotInner: React.FC<MascotProps> = ({
           }
         }
 
-        const minX = -BORDER_X;
-        const maxX = screen.width - (WIDGET_WIDTH - BORDER_X);
+        const minX = -WIDGET_WIDTH * 0.45;
+        const maxX = screen.width - WIDGET_WIDTH * 0.55;
         const maxTop = screen.height - WIDGET_HEIGHT - 30;
 
         let nextX = dragOffsetRef.current.startX + deltaX;
         // Nếu vẫn đang giữ núp và chỉ di chuyển dọc theo viền
         if (isPeekingRef.current) {
           if (peekingSideRef.current === 'left' && deltaX < 10) {
-            nextX = -BORDER_X;
+            nextX = -WIDGET_WIDTH * 0.42;
           } else if (peekingSideRef.current === 'right' && deltaX > -10) {
-            nextX = screen.width - (WIDGET_WIDTH - BORDER_X);
+            nextX = screen.width - WIDGET_WIDTH * 0.58;
           }
         } else {
           nextX = Math.max(minX, Math.min(maxX, nextX));
@@ -431,13 +430,12 @@ const MascotInner: React.FC<MascotProps> = ({
           return;
         }
 
-        // NẾU KÉO THẢ: KIỂM TRA KHOẢNG CÁCH TỚI MÉP VIỀN (<= 20PX) -> TỰ ĐỘNG HÚT VÀO MÉP
-        const distToLeft = currentXRef.current;
-        const distToRight = screen.width - (currentXRef.current + WIDGET_WIDTH);
+        // NẾU KÉO THẢ: KIỂM TRA KHOẢNG CÁCH TỚI MÉP VIỀN (<= 18PX) -> TỰ ĐỘNG HÚT VÀO MÉP
+        const newX = currentXRef.current;
 
-        if (distToLeft <= EDGE_PEEK_THRESHOLD) {
+        if (newX <= 18) {
           dockToEdge('left');
-        } else if (distToRight <= EDGE_PEEK_THRESHOLD) {
+        } else if (newX >= screen.width - WIDGET_WIDTH - 18) {
           dockToEdge('right');
         } else {
           // Thả ở giữa màn hình -> Giữ nguyên tư thế hoạt động bình thường
@@ -495,8 +493,6 @@ const MascotInner: React.FC<MascotProps> = ({
                 species={currentSpecies}
                 stage={currentStage}
                 side={peekingSide || 'left'}
-                earTwitchAnim={earTwitchAnim}
-                headTiltAnim={headTiltAnim}
                 width={WIDGET_WIDTH}
                 height={WIDGET_HEIGHT}
               />
@@ -532,308 +528,101 @@ const MascotInner: React.FC<MascotProps> = ({
 // COMPONENT TƯ THẾ NÚP LÓ ĐẦU BÁM MÉP VIỀN MÀN HÌNH (PEEKING RIG)
 // =====================================================================
 interface MascotPeekingRigProps {
-  species: MascotSpecies;
-  stage: MascotStage;
+  species?: MascotSpecies;
+  stage?: MascotStage;
   side: 'left' | 'right';
-  earTwitchAnim: Animated.Value;
-  headTiltAnim: Animated.Value;
   width: number;
   height: number;
 }
 
 const MascotPeekingRig: React.FC<MascotPeekingRigProps> = ({
-  species = 'cat',
-  stage = 'starter',
   side = 'left',
-  earTwitchAnim,
-  headTiltAnim,
   width,
   height,
 }) => {
-  const isCat = species === 'cat';
-  const colors = isCat
-    ? {
-        furMain: '#F48B3E',
-        furStripe: '#C85617',
-        furInner: '#F69A94',
-        snout: '#FFF3E0',
-        nose: '#F27878',
-        eyes: '#381C0E',
-        blush: '#F47C7C',
-        brandGreen: '#168B67',
-        outline: '#4A2511',
-        pawPad: '#F47C7C',
-      }
-    : {
-        furMain: '#B9855A',
-        furStripe: '#9B6B43',
-        furInner: '#E2B68E',
-        snout: '#FBEAD2',
-        nose: '#4A2B18',
-        eyes: '#3B2010',
-        blush: '#EA8B91',
-        brandGreen: '#168B67',
-        outline: '#4A2B18',
-        pawPad: '#E2B68E',
-      };
+  const breatheAnim = useRef(new Animated.Value(0)).current;
 
-  const earRotate = earTwitchAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: ['-10deg', '0deg', '12deg'],
+  useEffect(() => {
+    const breatheLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breatheAnim, {
+          toValue: 1,
+          duration: 2400,
+          useNativeDriver: false,
+        }),
+        Animated.timing(breatheAnim, {
+          toValue: 0,
+          duration: 2400,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    breatheLoop.start();
+    return () => breatheLoop.stop();
+  }, [breatheAnim]);
+
+  const translateY = breatheAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -4],
   });
 
-  const headRotate = headTiltAnim.interpolate({
+  const rotate = breatheAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['4deg', '11deg'],
-  });
-
-  const headBobX = headTiltAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 2],
+    outputRange: ['0deg', '1.5deg'],
   });
 
   return (
-    <View
+    <Animated.View
       style={[
         peekingStyles.container,
         {
           width,
           height,
-          transform: side === 'right' ? [{ scaleX: -1 }] : [],
+          transform: [
+            { translateY },
+            { rotate },
+            ...(side === 'right' ? [{ scaleX: -1 }] : []),
+          ],
         },
       ]}
     >
-      {/* LỚP 1: THÂN & ĐẦU & TAI CỬ ĐỘNG TÒ MÒ LÓ RA TỪ MÉP VIỀN */}
-      <Animated.View
-        style={[
-          peekingStyles.headWrapper,
-          {
-            transform: [
-              { rotate: headRotate },
-              { translateX: headBobX },
-            ],
-          },
-        ]}
-      >
-        <Svg width={width} height={height} viewBox="0 0 100 120">
-          <Defs>
-            <LinearGradient id="peekingFurGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor={colors.furMain} />
-              <Stop offset="100%" stopColor={colors.furStripe} />
-            </LinearGradient>
-          </Defs>
-
-          {/* Đường chiều sâu bóng mép viền điện thoại */}
-          <Line x1="26" y1="15" x2="26" y2="115" stroke="rgba(0,0,0,0.06)" strokeWidth="1.5" />
-
-          {/* Thân sau viền (giấu nửa thân, bụng và chân ra ngoài màn hình) */}
-          <Path
-            d="M 14 74 C 18 68, 22 66, 30 72 C 36 76, 38 88, 36 102 C 34 108, 24 112, 14 110 Z"
-            fill={colors.furMain}
-            stroke={colors.outline}
-            strokeWidth="2.2"
-            strokeLinejoin="round"
-          />
-          {/* Mảng lông bụng kem hé lộ một phần nhỏ */}
-          <Path
-            d="M 26 80 C 30 80, 34 86, 33 98 C 29 104, 26 104, 26 104 Z"
-            fill={colors.snout}
-            opacity={0.85}
-          />
-
-          {/* Tai sau (Back Ear - mép ngoài gần viền) */}
-          {isCat ? (
-            <Path
-              d="M 26 24 L 32 6 Q 40 10 40 20 Z"
-              fill={colors.furMain}
-              stroke={colors.outline}
-              strokeWidth="2.2"
-              strokeLinejoin="round"
-            />
-          ) : (
-            <Circle
-              cx="32"
-              cy="18"
-              r="10"
-              fill={colors.furMain}
-              stroke={colors.outline}
-              strokeWidth="2.2"
-            />
-          )}
-
-          {/* Khối đầu tròn trĩnh kawaii ló ra từ mép viền (x: 24 -> 90) */}
-          <Path
-            d="M 24 40 C 24 22, 42 16, 56 16 C 74 16, 90 28, 90 48 C 90 66, 76 76, 56 76 C 40 76, 26 68, 24 50 Z"
-            fill="url(#peekingFurGrad)"
-            stroke={colors.outline}
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Sọc vằn trên đầu cho mèo */}
-          {isCat && (
-            <>
-              <Path d="M 52 17 L 52 24" stroke={colors.furStripe} strokeWidth="2.2" strokeLinecap="round" />
-              <Path d="M 45 19 L 47 25" stroke={colors.furStripe} strokeWidth="1.8" strokeLinecap="round" />
-              <Path d="M 59 19 L 57 25" stroke={colors.furStripe} strokeWidth="1.8" strokeLinecap="round" />
-              <Path d="M 87 46 L 80 48" stroke={colors.furStripe} strokeWidth="2" strokeLinecap="round" />
-              <Path d="M 88 53 L 81 54" stroke={colors.furStripe} strokeWidth="1.8" strokeLinecap="round" />
-            </>
-          )}
-
-          {/* Đốm lông mày đặc trưng cho chó Shiba */}
-          {!isCat && (
-            <>
-              <Circle cx="44" cy="38" r="3.5" fill={colors.snout} />
-              <Circle cx="66" cy="40" r="3.5" fill={colors.snout} />
-            </>
-          )}
-
-          {/* Đai đầu thể thao VisionFit màu xanh lá thương hiệu */}
-          <Path
-            d="M 28 32 C 44 26, 68 28, 85 38"
-            stroke={colors.brandGreen}
-            strokeWidth="5.5"
-            strokeLinecap="round"
-            fill="none"
-          />
-          {/* Huy hiệu VisionFit chính giữa đai */}
-          <Circle cx="56" cy="31" r="3.2" fill="#FFFFFF" />
-          <Circle cx="56" cy="31" r="1.6" fill={colors.brandGreen} />
-
-          {/* Mõm kem sáng */}
-          <Ellipse
-            cx="56"
-            cy="58"
-            rx="10.5"
-            ry="8.5"
-            fill={colors.snout}
-            stroke={colors.outline}
-            strokeWidth="1.6"
-          />
-
-          {/* Mũi nhỏ xinh */}
-          <Polygon
-            points="56,56 52.5,52 59.5,52"
-            fill={colors.nose}
-            stroke={colors.outline}
-            strokeWidth="1"
-          />
-
-          {/* Miệng mèo / chó cười chúm chím */}
-          <Path
-            d="M 52 59 Q 56 63 56 59 Q 56 63 60 59"
-            stroke={colors.outline}
-            strokeWidth="1.6"
-            fill="none"
-            strokeLinecap="round"
-          />
-
-          {/* Má hồng đào thẹn thùng */}
-          <Ellipse cx="38" cy="56" rx="4" ry="2.6" fill={colors.blush} opacity={0.65} />
-          <Ellipse cx="74" cy="58" rx="4.5" ry="2.8" fill={colors.blush} opacity={0.65} />
-
-          {/* Ria mép mèo */}
-          {isCat && (
-            <>
-              <Line x1="66" y1="58" x2="84" y2="55" stroke={colors.outline} strokeWidth="1.4" strokeLinecap="round" />
-              <Line x1="67" y1="61" x2="86" y2="62" stroke={colors.outline} strokeWidth="1.4" strokeLinecap="round" />
-              <Line x1="66" y1="64" x2="83" y2="69" stroke={colors.outline} strokeWidth="1.4" strokeLinecap="round" />
-              <Line x1="36" y1="56" x2="28" y2="54" stroke={colors.outline} strokeWidth="1.2" strokeLinecap="round" />
-              <Line x1="35" y1="60" x2="28" y2="61" stroke={colors.outline} strokeWidth="1.2" strokeLinecap="round" />
-            </>
-          )}
-
-          {/* HAI MẮT TO TRÒN LONG LANH NHÌN LÉN VÀO MÀN HÌNH (100% VISIBLE, KHÔNG BỊ ĐÈ) */}
-          {/* Mắt trái (trong) */}
-          <Ellipse cx="44" cy="48" rx="6.5" ry="8" fill={colors.eyes} />
-          <Circle cx="43" cy="45" r="2.6" fill="#FFFFFF" />
-          <Circle cx="46.5" cy="50" r="1.3" fill="#FFFFFF" />
-
-          {/* Mắt phải (ngoài - to tròn nhìn lén) */}
-          <Ellipse cx="68" cy="50" rx="7.5" ry="9" fill={colors.eyes} />
-          <Circle cx="66" cy="47" r="3" fill="#FFFFFF" />
-          <Circle cx="71" cy="52" r="1.5" fill="#FFFFFF" />
-        </Svg>
-
-        {/* TAI TRƯỚC: GẮN TRONG ANIMATED VIEW ĐỂ KHẼ NHÚC NHÍCH TÒ MÒ */}
-        <Animated.View
-          style={[
-            peekingStyles.twitchEarWrapper,
-            {
-              transform: [{ rotate: earRotate }],
-            },
-          ]}
-        >
-          <Svg width={36} height={36} viewBox="0 0 36 36">
-            {isCat ? (
-              <>
-                <Path
-                  d="M 6 28 L 20 4 Q 30 14 26 32 Z"
-                  fill={colors.furMain}
-                  stroke={colors.outline}
-                  strokeWidth="2.2"
-                  strokeLinejoin="round"
-                />
-                <Path
-                  d="M 10 26 L 19 10 Q 25 16 23 28 Z"
-                  fill={colors.furInner}
-                />
-                <Path d="M 20 18 L 24 21" stroke={colors.furStripe} strokeWidth="1.5" strokeLinecap="round" />
-              </>
-            ) : (
-              <>
-                <Circle cx="18" cy="18" r="11" fill={colors.furMain} stroke={colors.outline} strokeWidth="2.2" />
-                <Circle cx="18" cy="18" r="6" fill={colors.furInner} />
-              </>
-            )}
-          </Svg>
-        </Animated.View>
-      </Animated.View>
-
-      {/* LỚP 2: HAI BÀN TAY BÁM MÉP VIỀN MÀN HÌNH (PAWS ON EDGE - TỰA BÁM NGAY DƯỚI ĐẦU TẠI X = 26) */}
-      <View style={peekingStyles.pawsOverlay} pointerEvents="none">
-        <Svg width={width} height={height} viewBox="0 0 100 120">
-          {/* BÀN TAY TRÊN (UPPER PAW) BÁM MÉP VIỀN */}
-          <G transform="translate(0, 0)">
-            {/* Cổ tay nhô từ sau viền x = 26 */}
-            <Path
-              d="M 14 76 C 18 75, 22 75, 26 76 L 26 88 C 22 89, 18 89, 14 88 Z"
-              fill={colors.furMain}
-              stroke={colors.outline}
-              strokeWidth="1.8"
-            />
-            {/* 3 ngón tay tròn trĩnh bám tràn qua mép viền (x >= 26) */}
-            <Circle cx="29" cy="78" r="3.2" fill={colors.snout} stroke={colors.outline} strokeWidth="1.5" />
-            <Circle cx="33.5" cy="82.5" r="3.6" fill={colors.snout} stroke={colors.outline} strokeWidth="1.5" />
-            <Circle cx="29" cy="87" r="3.2" fill={colors.snout} stroke={colors.outline} strokeWidth="1.5" />
-            {/* Đệm thịt móng tay hồng đào cực xinh */}
-            <Circle cx="29" cy="78" r="1.4" fill={colors.pawPad} />
-            <Circle cx="34" cy="82.5" r="1.6" fill={colors.pawPad} />
-            <Circle cx="29" cy="87" r="1.4" fill={colors.pawPad} />
+      <Svg width={width} height={height} viewBox="0 0 200 240">
+        <G>
+          {/* Đầu mèo */}
+          <G>
+            <Path d="M 52 42 L 67 18 L 84 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth={3.2} />
+            <Path d="M 148 42 L 133 18 L 116 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth={3.2} />
+            <Ellipse cx="100" cy="74" rx="46" ry="38" fill="#F97316" stroke="#1E293B" strokeWidth={3.2} />
+            {/* Mắt to tròn long lanh nhìn vào màn hình */}
+            <Ellipse cx="80" cy="74" rx="6" ry="7.5" fill="#1E293B" />
+            <Circle cx="78" cy="71" r="2.2" fill="#FFFFFF" />
+            <Ellipse cx="120" cy="74" rx="6" ry="7.5" fill="#1E293B" />
+            <Circle cx="118" cy="71" r="2.2" fill="#FFFFFF" />
+            {/* Mũi & miệng cười mỉm */}
+            <Polygon points="100,82 96,78 104,78" fill="#FB7185" />
+            <Path d="M 95 86 Q 100 90 105 86" fill="none" stroke="#1E293B" strokeWidth={2.4} strokeLinecap="round" />
+            {/* Băng đô trán */}
+            <Path d="M 56 64 C 74 54 126 54 144 64 L 144 72 C 126 62 74 62 56 72 Z" fill="#168B67" stroke="#1E293B" strokeWidth={2.8} />
+            <Circle cx="100" cy="63" r="3.2" fill="#FFFFFF" stroke="#1E293B" strokeWidth={1.2} />
           </G>
 
-          {/* BÀN TAY DƯỚI (LOWER PAW) BÁM MÉP VIỀN */}
-          <G transform="translate(0, 0)">
-            {/* Cổ tay nhô từ sau viền x = 26 */}
-            <Path
-              d="M 14 92 C 18 91, 22 91, 26 92 L 26 104 C 22 105, 18 105, 14 104 Z"
-              fill={colors.furMain}
-              stroke={colors.outline}
-              strokeWidth="1.8"
-            />
-            {/* 3 ngón tay bám qua mép viền */}
-            <Circle cx="29" cy="94" r="3.2" fill={colors.snout} stroke={colors.outline} strokeWidth="1.5" />
-            <Circle cx="33.5" cy="98.5" r="3.6" fill={colors.snout} stroke={colors.outline} strokeWidth="1.5" />
-            <Circle cx="29" cy="103" r="3.2" fill={colors.snout} stroke={colors.outline} strokeWidth="1.5" />
-            {/* Đệm thịt móng tay */}
-            <Circle cx="29" cy="94" r="1.4" fill={colors.pawPad} />
-            <Circle cx="34" cy="98.5" r="1.6" fill={colors.pawPad} />
-            <Circle cx="29" cy="103" r="1.4" fill={colors.pawPad} />
+          {/* Hai bàn tay bám mép đặt ngang đối xứng ngay dưới cằm */}
+          <G>
+            {/* Tay trái gác mép */}
+            <Ellipse cx="72" cy="104" rx="10" ry="7.5" fill="#F97316" stroke="#1E293B" strokeWidth={2.8} />
+            <Circle cx="66" cy="104" r="2" fill="#FEF3C7" />
+            <Circle cx="72" cy="102" r="2.2" fill="#FEF3C7" />
+            <Circle cx="78" cy="104" r="2" fill="#FEF3C7" />
+
+            {/* Tay phải gác mép */}
+            <Ellipse cx="128" cy="104" rx="10" ry="7.5" fill="#F97316" stroke="#1E293B" strokeWidth={2.8} />
+            <Circle cx="122" cy="104" r="2" fill="#FEF3C7" />
+            <Circle cx="128" cy="102" r="2.2" fill="#FEF3C7" />
+            <Circle cx="134" cy="104" r="2" fill="#FEF3C7" />
           </G>
-        </Svg>
-      </View>
-    </View>
+        </G>
+      </Svg>
+    </Animated.View>
   );
 };
 
@@ -843,28 +632,6 @@ const peekingStyles = StyleSheet.create({
     height: WIDGET_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headWrapper: {
-    width: WIDGET_WIDTH,
-    height: WIDGET_HEIGHT,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  twitchEarWrapper: {
-    position: 'absolute',
-    top: 4,
-    left: 60,
-    width: 36,
-    height: 36,
-  },
-  pawsOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
   },
 });
 
