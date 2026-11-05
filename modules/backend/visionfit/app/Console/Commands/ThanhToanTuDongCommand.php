@@ -134,7 +134,7 @@ class ThanhToanTuDongCommand extends Command
             }
 
             // Chờ 5 giây rồi kiểm tra lại
-            sleep(3);
+            sleep(5);
         }
         return Command::SUCCESS;
     }

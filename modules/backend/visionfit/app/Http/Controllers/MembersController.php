@@ -297,6 +297,7 @@ class MembersController extends Controller
             ->whereDate('chi_tiet_dang_ky_goi.ngay_ket_thuc', '>=', Carbon::today())
             ->orderByDesc('chi_tiet_dang_ky_goi.ngay_ket_thuc')
             ->select(
+                'dang_ky_goi.id as id_dang_ky_goi',
                 'goi_tap.ten_goi_tap',
                 'chi_tiet_dang_ky_goi.ngay_bat_dau',
                 'chi_tiet_dang_ky_goi.ngay_ket_thuc',
@@ -330,7 +331,8 @@ class MembersController extends Controller
                 'dang_nguoi' => $hoiVien->dang_nguoi,
 
                 'id' => $hoiVien->id,
-                'ma_thanh_vien' => 'VF-' . str_pad($hoiVien->id, 6, '0', STR_PAD_LEFT),
+                'ma_thanh_vien' => $chiTietGoi ? 'VF-' . str_pad($chiTietGoi->id_dang_ky_goi, 6, '0', STR_PAD_LEFT): null,
+                'ma_gioi_thieu' => $hoiVien->ma_gioi_thieu,
 
                 'muc_tieu_hien_tai' => $hoiVien->muc_tieu_hien_tai,
                 'cap_do_hien_tai' => $hoiVien->cap_do_hien_tai,
