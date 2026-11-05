@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\GoiTap;
 use App\Models\GioiThieu;
+use App\Models\Client;
 use App\Models\KhuyenMai;
 use App\Models\DangKyGoi;
 use App\Models\Trainer;
@@ -285,17 +286,39 @@ class GoiTapController extends Controller
             $tienGiamKhuyenMai = $giaGoc * $phanTramGiam / 100;
         }
 
-       // 6. Kiểm tra ưu đãi giới thiệu
+
+
+
+        // 6. Kiểm tra ưu đãi giới thiệu
         // Chỉ áp dụng từ lần đăng ký thứ 2 trở đi
-        if ($lanDangKy >= 2) {
-            $gioiThieu = GioiThieu::where('id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
-                ->where('tinh_trang', 0)
-                ->first();
-            if ($gioiThieu) {
-                // Số tiền B được giảm khi đăng ký
-                $tienGiamGioiThieu = (float) $gioiThieu->thuong_nguoi_duoc_gioi_thieu;
-            }
+        // if ($lanDangKy >= 2) {
+        //     $gioiThieu = GioiThieu::where('id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
+        //         ->where('tinh_trang', 1)
+        //         ->first();
+        //     if ($gioiThieu) {
+        //         // Số tiền B được giảm khi đăng ký
+        //         $tienGiamGioiThieu = (float) $gioiThieu->thuong_nguoi_duoc_gioi_thieu;
+        //     }
+        // }
+
+
+        // 6. Kiểm tra tiền thưởng giới thiệu của A kể cả đăng ký lần đầu 
+        $tienGiamGioiThieu = 0;
+
+        $gioiThieu = GioiThieu::where('id_nguoi_gioi_thieu', $hoiVien->id)
+            ->where('tinh_trang', 1)
+            ->where('thuong_nguoi_gioi_thieu', '>', 0)
+            ->first();
+
+        if ($gioiThieu) {
+            $tienGiamGioiThieu = (float) $gioiThieu->thuong_nguoi_gioi_thieu;
         }
+
+
+
+
+
+
 
         // 7. Tổng tiền giảm
         $tongTienGiam = $tienGiamKhuyenMai + $tienGiamGioiThieu;
@@ -327,4 +350,154 @@ class GoiTapController extends Controller
             ],
         ]);
     }
+
+
+    public function luuMaGioiThieu(Request $request)
+    {
+        $request->validate([
+            'ma_gioi_thieu' => 'required|string',
+            'id_goi_tap' => 'required|integer',
+        ]);
+
+        // 1. Lấy hội viên B đang đăng nhập
+        $hoiVien = auth('sanctum')->user();
+
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.'
+            ], 401);
+        }
+
+        // 2. Chuẩn hóa mã giới thiệu
+        $maGioiThieu = strtoupper(trim($request->ma_gioi_thieu));
+
+        // 3. Tìm gói tập
+        $goiTap = GoiTap::find($request->id_goi_tap);
+
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập.'
+            ], 404);
+        }
+
+        // 4. Tìm người giới thiệu
+        $nguoiGioiThieu = Client::where(
+            'ma_gioi_thieu',
+            $maGioiThieu
+        )->first();
+
+        if (!$nguoiGioiThieu) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mã giới thiệu không tồn tại.'
+            ], 422);
+        }
+
+        // 5. Không cho tự nhập mã của mình
+        if ($nguoiGioiThieu->id == $hoiVien->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không thể nhập mã giới thiệu của chính mình.'
+            ], 422);
+        }
+
+        // 6. Tìm bản ghi giới thiệu cũ
+        $gioiThieuCu = GioiThieu::where(
+            'id_hoi_vien_duoc_gioi_thieu',
+            $hoiVien->id
+        )->first();
+
+        // 7. Nếu đã thanh toán thành công thì không cho đổi
+        if ($gioiThieuCu && $gioiThieuCu->tinh_trang == 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn đã thanh toán thành công, không thể thay đổi mã giới thiệu.'
+            ], 422);
+        }
+
+        // 8. Tính tiền thưởng theo gói tập
+        $tienThuong = match ((int) $goiTap->id) {
+            1 => 10000,
+            2 => 15000,
+            3 => 30000,
+            4 => 50000,
+            default => 0,
+        };
+
+        // 9. Nếu đã có bản ghi thì cập nhật
+        if ($gioiThieuCu) {
+
+            $gioiThieuCu->update([
+                'id_nguoi_gioi_thieu' => $nguoiGioiThieu->id,
+                'ma_gioi_thieu' => $maGioiThieu,
+                'tinh_trang' => 0,
+                'thuong_nguoi_gioi_thieu' => $tienThuong,
+                'thuong_nguoi_duoc_gioi_thieu' => 0,
+            ]);
+
+            $gioiThieu = $gioiThieuCu->fresh();
+
+        } else {
+
+            // Chưa có thì tạo mới
+            $gioiThieu = GioiThieu::create([
+                'id_nguoi_gioi_thieu' => $nguoiGioiThieu->id,
+                'id_hoi_vien_duoc_gioi_thieu' => $hoiVien->id,
+                'ma_gioi_thieu' => $maGioiThieu,
+                'tinh_trang' => 0,
+                'thuong_nguoi_gioi_thieu' => $tienThuong,
+                'thuong_nguoi_duoc_gioi_thieu' => 0,
+            ]);
+        }
+
+        // 10. Trả kết quả
+        return response()->json([
+            'success' => true,
+            'message' => 'Lưu mã giới thiệu thành công. Đang chờ thanh toán.',
+            'data' => [
+                'id_gioi_thieu' => $gioiThieu->id,
+                'id_goi_tap' => $goiTap->id,
+                'ten_goi_tap' => $goiTap->ten_goi_tap,
+                'ma_gioi_thieu' => $maGioiThieu,
+                'thuong_nguoi_gioi_thieu' => $tienThuong,
+                'thuong_nguoi_duoc_gioi_thieu' => 0,
+                'tinh_trang' => $gioiThieu->tinh_trang,
+                'ten_nguoi_gioi_thieu' => $nguoiGioiThieu->ho_ten,
+            ],
+        ]);
+    }
+
+    public function thongTinGioiThieu()
+    {
+        $hoiVien = auth('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.'
+            ], 401);
+        }
+        $gioiThieu = GioiThieu::where( 'id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
+            ->where('tinh_trang', 0)
+            ->latest('id')
+            ->first();
+        if (!$gioiThieu) {
+            return response()->json([
+                'success' => true,
+                'data' => null,
+            ]);
+        }
+        $nguoiGioiThieu = Client::find($gioiThieu->id_nguoi_gioi_thieu);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'ma_gioi_thieu' => $gioiThieu->ma_gioi_thieu,
+                'ten_nguoi_gioi_thieu' => $nguoiGioiThieu->ho_ten ?? '',
+            ],
+        ]);
+    }
+
+
+
 }

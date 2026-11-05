@@ -15,6 +15,9 @@ use App\Http\Controllers\ChuongTrinhBaiTapController;
 use App\Http\Controllers\PhongGymController;
 use App\Http\Controllers\BuoiTapController;
 use App\Http\Controllers\GoiTapController;
+use App\Http\Controllers\ThanhToanController;
+
+
 
 
 
@@ -156,6 +159,11 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/registration-preview', [GoiTapController::class, 'getRegistrationPreview']);
     // tính khuyến mãi 
     Route::post('/tinh-khuyen-mai', [GoiTapController::class, 'tinhKhuyenMai']);
+    Route::post('/luu-ma-gioi-thieu', [GoiTapController::class, 'luuMaGioiThieu']);
+    Route::get('/thong-tin-gioi-thieu', [GoiTapController::class, 'thongTinGioiThieu']);
+
+    Route::post('/dang-ky-goi', [ThanhToanController::class, 'store']);
+
 
 
     

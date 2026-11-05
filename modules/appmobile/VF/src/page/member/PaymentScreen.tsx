@@ -1,63 +1,81 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 
-const DRAFT_KEY = 'visionfit_registration_draft';
+
 
 type PaymentMethod = 'bank' | 'wallet' | 'counter';
 
 type PaymentDraft = {
     selectedPackage: {
         id: number | string;
-        ten_goi: string;
+        ten_goi_tap?: string;
+        ten_goi?: string;
         gia: number;
-        thoi_han: number;
+        thoi_han_ngay?: number;
+        thoi_han?: number;
         loai?: string;
         so_buoi_pt?: number;
+        [key: string]: any;
     };
+
     selectedTrainer?: {
         id: number | string;
         ho_ten: string;
         chuc_danh?: string;
+        [key: string]: any;
     } | null;
-    estimatedTotal?: number;
-    additionalPtFee?: number | null;
-    status?: string;
+
+    chuongTrinhTap?: any;
+    noiTap?: any;
+    hoiVien?: any;
+
+    maKhuyenMai?: string;
+    maGioiThieu?: string;
+    tenNguoiGioiThieu?: string;
+
+    chiTietUuDai?: {
+        lan_dang_ky?: number;
+        phan_tram_giam?: number;
+        tien_giam_khuyen_mai?: number;
+        tien_giam_gioi_thieu?: number;
+        tong_tien_giam?: number;
+        tong_tien?: number;
+        ten_khuyen_mai?: string;
+        [key: string]: any;
+    };
+
+    tongTienTamTinh?: number;
     paymentMethod?: PaymentMethod;
 };
 
-const paymentMethods: {
-    id: PaymentMethod;
-    title: string;
-    description: string;
-    icon: string;
-}[] = [
-        {
-            id: 'bank',
-            title: 'Chuyển khoản ngân hàng',
-            description: 'Thanh toán qua tài khoản ngân hàng',
-            icon: 'card-outline',
-        },
-        {
-            id: 'wallet',
-            title: 'Ví điện tử',
-            description: 'Thanh toán bằng ví điện tử',
-            icon: 'wallet-outline',
-        },
-        {
-            id: 'counter',
-            title: 'Thanh toán tại quầy',
-            description: 'Thanh toán trực tiếp tại phòng tập',
-            icon: 'business-outline',
-        },
-    ];
+const paymentMethods: { id: PaymentMethod; title: string; description: string; icon: string; }[] = [
+    {
+        id: 'bank',
+        title: 'Chuyển khoản ngân hàng',
+        description: 'Thanh toán qua tài khoản ngân hàng',
+        icon: 'card-outline',
+    },
+    {
+        id: 'wallet',
+        title: 'Ví điện tử',
+        description: 'Thanh toán bằng ví điện tử',
+        icon: 'wallet-outline',
+    },
+    {
+        id: 'counter',
+        title: 'Thanh toán tại quầy',
+        description: 'Thanh toán trực tiếp tại phòng tập',
+        icon: 'business-outline',
+    },
+];
 
 const money = (value: number) => `${value.toLocaleString('vi-VN')}đ`;
 
@@ -68,64 +86,67 @@ const PaymentScreen = ({ navigation, route }: any) => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const saved = await AsyncStorage.getItem(DRAFT_KEY);
-                const data = route?.params?.draft || (saved ? JSON.parse(saved) : null);
+        const data = route?.params?.draft;
 
-                setDraft(data);
-                if (data?.paymentMethod) setMethod(data.paymentMethod);
-            } catch {
-                Alert.alert('Lỗi', 'Không thể tải thông tin thanh toán.');
-            } finally {
-                setLoading(false);
+        if (data) {
+            setDraft(data);
+
+            if (data.paymentMethod) {
+                setMethod(data.paymentMethod);
             }
-        };
+        } else {
+            setDraft(null);
+        }
 
-        loadData();
+        setLoading(false);
     }, [route?.params?.draft]);
 
-    const total = Number(draft?.estimatedTotal ?? draft?.selectedPackage?.gia ?? 0);
+
     const pkg = draft?.selectedPackage;
     const pt = draft?.selectedTrainer;
+    const total = Number(draft?.tongTienTamTinh ?? draft?.chiTietUuDai?.tong_tien ?? pkg?.gia ?? 0);
+
     const extraPT = !!pt && pkg?.loai !== 'pt' && Number(pkg?.so_buoi_pt || 0) === 0;
 
 
 
     const handleConfirm = async () => {
         if (!draft || saving) return;
-
         setSaving(true);
-
         try {
-            const saved = await AsyncStorage.getItem('visionfit_demo_registrations');
-            const list = saved ? JSON.parse(saved) : [];
-
-            const registration = {
-                ...draft,
-                id: `VF-${Date.now()}`,
-                createdAt: new Date().toISOString(),
-                paymentMethod: method,
-                status: 'pending',
-            };
-
-            await AsyncStorage.setItem(
-                'visionfit_demo_registrations',
-                JSON.stringify([registration, ...(Array.isArray(list) ? list : [])])
-            );
-
-            await AsyncStorage.setItem(
-                DRAFT_KEY,
-                JSON.stringify({ ...draft, paymentMethod: method, status: 'draft' })
-            );
+            // TODO: Gọi API Backend để tạo đăng ký và lưu phương thức thanh toán.
+            // Ví dụ:
+            // const response = await apiFitlife.post('/client/dang-ky-goi', {
+            //     id_goi_tap: draft.selectedPackage.id,
+            //     id_trainer: draft.selectedTrainer?.id || null,
+            //     phuong_thuc_thanh_toan: method,
+            // });
 
             const routeNames = navigation.getState()?.routeNames || [];
-            const target = routeNames.includes('RegistrationSuccess') ? 'RegistrationSuccess' : routeNames.includes('RegistrationSuccessScreen') ? 'RegistrationSuccessScreen' : 'RegistrationSuccess';
+
+            const target = routeNames.includes('RegistrationSuccess')
+                ? 'RegistrationSuccess'
+                : routeNames.includes('RegistrationSuccessScreen')
+                    ? 'RegistrationSuccessScreen'
+                    : 'RegistrationSuccess';
+
             navigation.replace(target, {
-                draft: registration,
+                draft: {
+                    ...draft,
+                    paymentMethod: method,
+                },
             });
-        } catch {
-            Alert.alert('Lỗi', 'Không thể lưu đăng ký Demo.');
+
+        } catch (error: any) {
+            console.log(
+                'Lỗi xác nhận đăng ký:',
+                error.response?.data || error.message
+            );
+
+            Alert.alert(
+                'Lỗi',
+                error.response?.data?.message || 'Không thể xác nhận đăng ký.'
+            );
         } finally {
             setSaving(false);
         }
@@ -212,7 +233,7 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                     <Ionicons name="barbell" size={22} color={COLORS.primary} />
                                 </View>
                                 <View style={s.flex}>
-                                    <Text style={s.packageName}>{pkg.ten_goi}</Text>
+                                    <Text style={s.packageName}>{pkg.ten_goi_tap || pkg.ten_goi || 'Chưa có tên gói'}</Text>
                                     <Text style={s.subtitle}>Gói tập VisionFit</Text>
                                 </View>
                                 <Ionicons name="checkmark-circle" size={23} color={COLORS.primary} />
@@ -222,7 +243,7 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                             <View style={s.rowBetween}>
                                 <Text style={s.infoLabel}>Thời hạn</Text>
-                                <Text style={s.infoValue}>{pkg.thoi_han} ngày</Text>
+                                <Text style={s.infoValue}>{pkg.thoi_han_ngay || pkg.thoi_han || 0} ngày ngày</Text>
                             </View>
 
                             <View style={s.infoSpacing} />
@@ -246,20 +267,10 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                         {paymentMethods.map(item => {
                             const selected = method === item.id;
-
                             return (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    activeOpacity={0.85}
-                                    onPress={() => setMethod(item.id)}
-                                    style={[s.methodCard, selected && s.methodSelected]}
-                                >
+                                <TouchableOpacity key={item.id} activeOpacity={0.85} onPress={() => setMethod(item.id)} style={[s.methodCard, selected && s.methodSelected]} >
                                     <View style={[s.methodIcon, selected && s.methodIconActive]}>
-                                        <Ionicons
-                                            name={item.icon}
-                                            size={22}
-                                            color={selected ? COLORS.white : COLORS.primary}
-                                        />
+                                        <Ionicons name={item.icon} size={22} color={selected ? COLORS.white : COLORS.primary} />
                                     </View>
 
                                     <View style={s.flex}>
@@ -275,16 +286,79 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                 </TouchableOpacity>
                             );
                         })}
+                        {/* Mã QR chuyển khoản */}
+                        {method === 'bank' && (
+                            <View style={s.qrCard}>
+                                <Text style={s.qrTitle}>Quét mã QR để thanh toán</Text>
+                                <Image
+                                    source={{
+                                        uri: `https://img.vietqr.io/image/MB-0813559551-compact.png?amount=${Math.round(total)}&addInfo=${encodeURIComponent(draft?.orderCode || 'THANH TOAN VISIONFIT')}&accountName=TRAN%20XUAN%20TRUONG`,
+                                    }}
+                                    resizeMode="contain"
+                                    style={s.qrImage}
+                                />
+
+                                <Text style={s.qrText}>
+                                    Sử dụng ứng dụng ngân hàng để quét mã QR
+                                </Text>
+
+                                <View style={s.qrAmountRow}>
+                                    <Text style={s.infoLabel}>Số tiền cần chuyển</Text>
+                                    <Text style={s.qrAmount}>{money(total)}</Text>
+                                </View>
+
+                                <Text style={s.qrNotice}>
+                                    Vui lòng chuyển đúng số tiền và kiểm tra nội dung chuyển khoản trước khi xác nhận.
+                                </Text>
+                            </View>
+                        )}
+
+
 
                         {/* Chi tiết chi phí */}
                         <Text style={s.sectionTitle}>Chi tiết thanh toán</Text>
-
                         <View style={s.card}>
+                            {/* Giá gói tập */}
                             <View style={s.rowBetween}>
                                 <Text style={s.infoLabel}>Giá gói tập</Text>
                                 <Text style={s.infoValue}>{money(Number(pkg.gia))}</Text>
                             </View>
 
+                            {/* Ưu đãi khuyến mãi */}
+                            {Number(draft?.chiTietUuDai?.tien_giam_khuyen_mai || 0) > 0 && (
+                                <>
+                                    <View style={s.infoSpacing} />
+
+                                    <View style={s.rowBetween}>
+                                        <Text style={s.infoLabel}>
+                                            {Number(draft?.chiTietUuDai?.lan_dang_ky || 1) >= 2
+                                                ? `Ưu đãi đăng ký lần ${draft?.chiTietUuDai?.lan_dang_ky} (${draft?.chiTietUuDai?.phan_tram_giam || 0}%)`
+                                                : draft?.chiTietUuDai?.ten_khuyen_mai || 'Khuyến mãi hội viên mới'}
+                                        </Text>
+
+                                        <Text style={{ color: COLORS.accentGreen }}>
+                                            -{money(Number(draft?.chiTietUuDai?.tien_giam_khuyen_mai))}
+                                        </Text>
+                                    </View>
+                                </>
+                            )}
+                            {/* Ưu đãi giới thiệu */}
+                            {Number(draft?.chiTietUuDai?.tien_giam_gioi_thieu || 0) > 0 && (
+                                <>
+                                    <View style={s.infoSpacing} />
+
+                                    <View style={s.rowBetween}>
+                                        <Text style={s.infoLabel}>Ưu đãi giới thiệu</Text>
+
+                                        <Text style={{ color: COLORS.accentGreen, fontWeight: '600' }}>
+                                            -{money(Number(draft?.chiTietUuDai?.tien_giam_gioi_thieu))}
+                                        </Text>
+                                    </View>
+                                </>
+                            )}
+
+
+                            {/* Chi phí PT */}
                             <View style={s.infoSpacing} />
 
                             <View style={s.rowBetween}>
@@ -296,8 +370,23 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                             <View style={s.dashedDivider} />
 
+                            {/* Tổng tiền giảm */}
+                            {Number(draft?.chiTietUuDai?.tong_tien_giam || 0) > 0 && (
+                                <>
+                                    <View style={s.rowBetween}>
+                                        <Text style={s.infoLabel}>Tổng tiền ưu đãi</Text>
+                                        <Text style={{ color: COLORS.accentGreen, fontWeight: '700' }}>
+                                            -{money(Number(draft?.chiTietUuDai?.tong_tien_giam))}
+                                        </Text>
+                                    </View>
+
+                                    <View style={s.infoSpacing} />
+                                </>
+                            )}
+
+                            {/* Tổng thanh toán */}
                             <View style={[s.rowBetween, s.totalBox]}>
-                                <Text style={s.totalLabel}>Tổng tạm tính</Text>
+                                <Text style={s.totalLabel}>Tổng Tiền</Text>
                                 <Text style={s.totalValue}>{money(total)}</Text>
                             </View>
 
@@ -310,9 +399,9 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                         {/* Lưu ý */}
                         <View style={s.notice}>
-                            <Ionicons name="information-circle" size={20} color={COLORS.primary} />
+                            <Ionicons name="shield-checkmark" size={20} color={COLORS.primary} />
                             <Text style={s.noticeText}>
-                                Đây là giao diện thanh toán thử nghiệm. Chưa tích hợp ngân hàng, ví điện tử hoặc tạo giao dịch thực tế.
+                                Thông tin đăng ký và chi phí sẽ được hệ thống kiểm tra trước khi xác nhận.Vui lòng kiểm tra kỹ gói tập, ưu đãi và số tiền thanh toán trước thanh toán .
                             </Text>
                         </View>
 
@@ -322,7 +411,7 @@ const PaymentScreen = ({ navigation, route }: any) => {
                     <View style={s.footer}>
                         <View style={s.rowBetween}>
                             <View>
-                                <Text style={s.footerLabel}>TỔNG TẠM TÍNH</Text>
+                                <Text style={s.footerLabel}>TỔNG TIỀN </Text>
                                 <Text style={s.footerPrice}>{money(total)}</Text>
                             </View>
 
@@ -749,6 +838,60 @@ const s = StyleSheet.create({
         color: COLORS.white,
         fontSize: 15,
         fontWeight: '800',
+    },
+    qrCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
+        padding: 16,
+        marginTop: 16,
+        marginBottom: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#DCEEEF',
+    },
+
+    qrTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.textDark,
+        marginBottom: 12,
+    },
+
+    qrImage: {
+        width: 240,
+        height: 240,
+    },
+
+    qrText: {
+        fontSize: 13,
+        color: '#64748B',
+        textAlign: 'center',
+        marginTop: 8,
+    },
+
+    qrAmountRow: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#E2E8F0',
+        marginTop: 16,
+        paddingTop: 14,
+    },
+
+    qrAmount: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: COLORS.primary,
+    },
+
+    qrNotice: {
+        fontSize: 12,
+        color: '#64748B',
+        textAlign: 'center',
+        marginTop: 12,
+        lineHeight: 19,
     },
 });
 
