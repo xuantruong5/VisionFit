@@ -82,10 +82,10 @@ export const FloatingMascotWidget: React.FC<MascotProps> = ({
   );
 };
 
-const WIDGET_WIDTH = 100;
-const WIDGET_HEIGHT = 120;
+const WIDGET_WIDTH = 75;
+const WIDGET_HEIGHT = 90;
 const MIN_BOTTOM_OFFSET = 75; // Luôn cách đáy tối thiểu 75px để KHÔNG BAO GIỜ đè lên Bottom Navigation Bar
-const EDGE_PEEK_THRESHOLD = 18; // Khoảng cách <= 18px tới mép viền sẽ kích hoạt chế độ Núp mép màn hình
+const EDGE_PEEK_THRESHOLD = 20; // Khoảng cách <= 20px tới mép viền sẽ kích hoạt chế độ Núp mép màn hình
 
 const MascotInner: React.FC<MascotProps> = ({
   species,
@@ -533,6 +533,12 @@ const MascotPeekingRig: React.FC<MascotPeekingRigProps> = ({
   const shouldFlip = isCat ? side === 'left' : side === 'right';
   const imageSource = getMascotPeekingImage(species);
 
+  // Tỷ lệ thực tế của ảnh gốc để tràn sát viền 100% không bị khe hở
+  // Bear: 369 / 500 = 0.738 -> width = height * 0.738
+  // Cat: 384 / 545 = 0.7045 -> width = height * 0.7045
+  const aspectRatio = isCat ? 384 / 545 : 369 / 500;
+  const imgWidth = Math.round(height * aspectRatio);
+
   return (
     <View
       style={[
@@ -546,14 +552,11 @@ const MascotPeekingRig: React.FC<MascotPeekingRigProps> = ({
     >
       <Image
         source={imageSource}
-        style={[
-          peekingStyles.image,
-          {
-            width,
-            height,
-            transform: shouldFlip ? [{ scaleX: -1 }] : undefined,
-          },
-        ]}
+        style={{
+          width: imgWidth,
+          height: height,
+          transform: shouldFlip ? [{ scaleX: -1 }] : undefined,
+        }}
         resizeMode="contain"
       />
     </View>
@@ -565,10 +568,6 @@ const peekingStyles = StyleSheet.create({
     width: WIDGET_WIDTH,
     height: WIDGET_HEIGHT,
     justifyContent: 'center',
-  },
-  image: {
-    width: WIDGET_WIDTH,
-    height: WIDGET_HEIGHT,
   },
 });
 

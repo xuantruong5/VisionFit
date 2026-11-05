@@ -294,9 +294,20 @@ function MemberTabs() {
 }
 
 
+const HIDDEN_MASCOT_ROUTES = [
+  'Onloading',
+  'Login',
+  'AuthScreen',
+  'TrainerAuthScreen',
+  'OnboardingScreen',
+  'OnboardingScreen1',
+  'OnboardingScreen2',
+  'OnboardingScreen3',
+];
+
 const App = () => {
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
-  const [currentRoute, setCurrentRoute] = useState<string>("MemberTabs");
+  const [currentRoute, setCurrentRoute] = useState<string>("Onloading");
   useEffect(() => {
     const sub = (payload: any) => {
       const { type, message } = payload;
@@ -320,6 +331,8 @@ const App = () => {
           if (r) setCurrentRoute(r);
         }}
         onReady={() => {
+          const r = (navigationRef.getCurrentRoute() as any)?.name;
+          if (r) setCurrentRoute(r);
           if (pendingRoute) {
             navigationRef.navigate(pendingRoute as never);
             setPendingRoute(null);
@@ -409,9 +422,14 @@ const App = () => {
           <Stack.Screen name="ChatRoom" component={ChatRoom} />
         </Stack.Navigator>
       </NavigationContainer>
-      {currentRoute !== 'Login' && currentRoute !== 'AuthScreen' && currentRoute !== 'TrainerAuthScreen' && (
-        <FloatingMascotWidget stage="starter" />
- )}
+      {currentRoute &&
+        !HIDDEN_MASCOT_ROUTES.includes(currentRoute) &&
+        !currentRoute.toLowerCase().includes('onloading') &&
+        !currentRoute.toLowerCase().includes('login') &&
+        !currentRoute.toLowerCase().includes('auth') &&
+        !currentRoute.toLowerCase().includes('onboarding') && (
+          <FloatingMascotWidget stage="starter" />
+      )}
  </View>
  );
 };

@@ -62,8 +62,8 @@ const MascotCore: React.FC<FloatingMascotProps> = ({
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const WIDGET_W = 100;
-  const WIDGET_H = 120;
+  const WIDGET_W = 75;
+  const WIDGET_H = 90;
 
   // 1. Tự động tránh bàn phím ảo trên điện thoại (Visual Viewport)
   useEffect(() => {
