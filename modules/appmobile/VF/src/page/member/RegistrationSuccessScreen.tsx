@@ -8,7 +8,7 @@ import { COLORS, SHADOWS } from '../../general/theme';
 
 const RegistrationSuccessScreen = ({ navigation, route }: any) => {
     const draft = route?.params?.draft;
-    const pkg = draft?.selectedPackage;
+    const pkg = draft?.selectedPackage || {};
     const pt = draft?.selectedTrainer;
     const method = draft?.paymentMethod;
     const total = Number(draft?.tongTienTamTinh ?? pkg?.gia ?? 0);
@@ -89,7 +89,7 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
                         </View>
 
                         <View style={s.flex}>
-                            <Text style={s.packageName}>{pkg?.ten_goi || 'Gói tập VisionFit'}</Text>
+                            <Text style={s.packageName}>{pkg?.ten_goi_tap || pkg?.ten_goi || 'Gói tập VisionFit'}</Text>
                             <Text style={s.subText}>Gói tập đã chọn</Text>
                         </View>
 
@@ -103,7 +103,7 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
                             <Ionicons name="calendar-outline" size={15} color={COLORS.textMuted} />
                             <Text style={s.infoLabel}>Thời hạn</Text>
                         </View>
-                        <Text style={s.infoValue}>{pkg?.thoi_han || 0} ngày</Text>
+                        <Text style={s.infoValue}>{pkg?.thoi_han_ngay ?? pkg?.thoi_han ?? 0} ngày</Text>
                     </View>
 
                     <View style={s.infoRow}>
