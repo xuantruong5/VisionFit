@@ -8,7 +8,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   DeviceEventEmitter,
+  LogBox,
 } from 'react-native';
+
+LogBox.ignoreLogs([
+  "Style property 'bottom' is not supported",
+  "Style property 'left' is not supported",
+  "Attempting to run JS driven animation",
+]);
 import Svg, {
   G,
   Path,
@@ -153,21 +160,21 @@ const MascotInner: React.FC<MascotProps> = ({
     const earTwitchLoop = Animated.loop(
       Animated.sequence([
         Animated.delay(1200),
-        Animated.timing(earTwitchAnim, { toValue: 1, duration: 110, useNativeDriver: true }),
-        Animated.timing(earTwitchAnim, { toValue: -1, duration: 120, useNativeDriver: true }),
-        Animated.timing(earTwitchAnim, { toValue: 1, duration: 110, useNativeDriver: true }),
-        Animated.timing(earTwitchAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
+        Animated.timing(earTwitchAnim, { toValue: 1, duration: 110, useNativeDriver: false }),
+        Animated.timing(earTwitchAnim, { toValue: -1, duration: 120, useNativeDriver: false }),
+        Animated.timing(earTwitchAnim, { toValue: 1, duration: 110, useNativeDriver: false }),
+        Animated.timing(earTwitchAnim, { toValue: 0, duration: 120, useNativeDriver: false }),
         Animated.delay(2200),
-        Animated.timing(earTwitchAnim, { toValue: -1, duration: 90, useNativeDriver: true }),
-        Animated.timing(earTwitchAnim, { toValue: 0, duration: 90, useNativeDriver: true }),
+        Animated.timing(earTwitchAnim, { toValue: -1, duration: 90, useNativeDriver: false }),
+        Animated.timing(earTwitchAnim, { toValue: 0, duration: 90, useNativeDriver: false }),
       ])
     );
 
     // 2. Đầu hơi nghiêng và nhô nhẹ nhìn lén vào trong màn hình
     const headTiltLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(headTiltAnim, { toValue: 1, duration: 1800, useNativeDriver: true }),
-        Animated.timing(headTiltAnim, { toValue: 0, duration: 1800, useNativeDriver: true }),
+        Animated.timing(headTiltAnim, { toValue: 1, duration: 1800, useNativeDriver: false }),
+        Animated.timing(headTiltAnim, { toValue: 0, duration: 1800, useNativeDriver: false }),
       ])
     );
 
@@ -190,13 +197,13 @@ const MascotInner: React.FC<MascotProps> = ({
 
       if (newState === 'drinking') {
         bubbleScale.setValue(0.3);
-        Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
+        Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
       }
 
       if (durationMs && durationMs > 0) {
         revertTimer = setTimeout(() => {
           if (newState === 'drinking') {
-            Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+            Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => {
               setCurrentState('idle');
             });
           } else {
@@ -251,10 +258,10 @@ const MascotInner: React.FC<MascotProps> = ({
   const triggerDrink = () => {
     setCurrentState('drinking');
     bubbleScale.setValue(0.3);
-    Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
+    Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
 
     setTimeout(() => {
-      Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+      Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => {
         setCurrentState('idle');
       });
     }, 6000);
@@ -300,8 +307,8 @@ const MascotInner: React.FC<MascotProps> = ({
         useNativeDriver: false,
       }),
       Animated.sequence([
-        Animated.timing(dockSnapAnim, { toValue: 1.15, duration: 120, useNativeDriver: true }),
-        Animated.spring(dockSnapAnim, { toValue: 1, friction: 5, tension: 100, useNativeDriver: true }),
+        Animated.timing(dockSnapAnim, { toValue: 1.15, duration: 120, useNativeDriver: false }),
+        Animated.spring(dockSnapAnim, { toValue: 1, friction: 5, tension: 100, useNativeDriver: false }),
       ]),
     ]).start();
   };
@@ -324,8 +331,8 @@ const MascotInner: React.FC<MascotProps> = ({
         useNativeDriver: false,
       }),
       Animated.sequence([
-        Animated.timing(dockSnapAnim, { toValue: 1.1, duration: 100, useNativeDriver: true }),
-        Animated.spring(dockSnapAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
+        Animated.timing(dockSnapAnim, { toValue: 1.1, duration: 100, useNativeDriver: false }),
+        Animated.spring(dockSnapAnim, { toValue: 1, friction: 6, useNativeDriver: false }),
       ]),
     ]).start();
   };
