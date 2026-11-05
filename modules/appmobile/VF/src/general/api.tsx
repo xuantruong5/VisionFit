@@ -3,13 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
 
-export const BASE_URL = "http://172.29.192.1:8000";
+//export const BASE_URL = "http://172.29.192.1:8000";
 
 // cái ni của Ngọc đừng xóa :)) comment nó lại giùm đi. 
 //export const BASE_URL = "http://192.168.1.116:8000"; 
 
 // Cái này của Hùng xóa là t chém.
-// export const BASE_URL = "http://localhost:8000";
+export const BASE_URL = "http://localhost:8000";
 
 export const API_URL = `${BASE_URL}/api`;
 var is_auth_alert_shown = false;

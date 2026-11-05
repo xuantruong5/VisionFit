@@ -2,17 +2,38 @@ import React, { Component, useState, useEffect, useRef, ReactNode, ErrorInfo } f
 import {
   View,
   Text,
+  Image,
   Animated,
   PanResponder,
   Dimensions,
   StyleSheet,
   TouchableOpacity,
   DeviceEventEmitter,
+  LogBox,
 } from 'react-native';
+
+LogBox.ignoreLogs([
+  "Style property 'bottom' is not supported",
+  "Style property 'left' is not supported",
+  "Attempting to run JS driven animation",
+]);
+import Svg, {
+  G,
+  Path,
+  Circle,
+  Ellipse,
+  Polygon,
+  Line,
+  Defs,
+  LinearGradient,
+  Stop,
+} from 'react-native-svg';
 import { MascotSpecies, MascotStage, MascotState } from './types';
 import { MascotVectorRig } from './MascotVectorRig';
 import { MascotChatModal } from './MascotChatModal';
 import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
+import { getMascotPeekingImage } from './mascotImages';
+import { getStoredSpecies, subscribeSpeciesChange } from './mascotStorage';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {
@@ -51,7 +72,7 @@ export interface MascotProps {
 }
 
 export const FloatingMascotWidget: React.FC<MascotProps> = ({
-  species = 'cat',
+  species,
   stage = 'starter',
 }) => {
   return (
@@ -61,21 +82,28 @@ export const FloatingMascotWidget: React.FC<MascotProps> = ({
   );
 };
 
-const WIDGET_WIDTH = 100;
-const WIDGET_HEIGHT = 120;
+const WIDGET_WIDTH = 75;
+const WIDGET_HEIGHT = 90;
 const MIN_BOTTOM_OFFSET = 75; // Luôn cách đáy tối thiểu 75px để KHÔNG BAO GIỜ đè lên Bottom Navigation Bar
+const EDGE_PEEK_THRESHOLD = 20; // Khoảng cách <= 20px tới mép viền sẽ kích hoạt chế độ Núp mép màn hình
 
 const MascotInner: React.FC<MascotProps> = ({
-  species = 'cat',
+  species,
   stage = 'starter',
 }) => {
   const [screen, setScreen] = useState(Dimensions.get('window'));
-  const [currentSpecies, setCurrentSpecies] = useState<MascotSpecies>(species);
+  const [currentSpecies, setCurrentSpecies] = useState<MascotSpecies>(species || 'bear');
   const [currentStage, setCurrentStage] = useState<MascotStage>(stage);
 
   // Trạng thái hoạt cảnh: Mặc định luôn ở trạng thái 'idle' nhún nhảy thể thao tại chỗ
   const [currentState, setCurrentState] = useState<MascotState>('idle');
   const [isChatVisible, setIsChatVisible] = useState(false);
+
+  // CHẾ ĐỘ NÚP MÉP MÀN HÌNH (EDGE PEEKING / DOCKED MODE)
+  const [isPeeking, setIsPeeking] = useState(false);
+  const [peekingSide, setPeekingSide] = useState<'left' | 'right' | null>(null);
+  const isPeekingRef = useRef(false);
+  const peekingSideRef = useRef<'left' | 'right' | null>(null);
 
   // Tọa độ vị trí bám ngón tay 1:1, khởi đầu ngay ngắn trên thanh Bottom Nav (85px)
   const panX = useRef(new Animated.Value(50)).current;
@@ -86,8 +114,16 @@ const MascotInner: React.FC<MascotProps> = ({
   const dragLiftAnim = useRef(new Animated.Value(1)).current; // Nhấc nhẹ khi kéo
   const bubbleScale = useRef(new Animated.Value(0)).current;  // Bong bóng uống nước
 
-  const lastTapRef = useRef<number>(0);
-  const dragOffsetRef = useRef({ touchX: 0, touchY: 0, startX: 50, startY: 85 });
+  const dockSnapAnim = useRef(new Animated.Value(1)).current;
+
+  const dragOffsetRef = useRef({
+    touchX: 0,
+    touchY: 0,
+    startX: 50,
+    startY: 85,
+    wasPeeking: false,
+    peekingSide: null as 'left' | 'right' | null,
+  });
 
   // Theo dõi giá trị panX, panY liên tục không gây re-render
   useEffect(() => {
@@ -103,9 +139,34 @@ const MascotInner: React.FC<MascotProps> = ({
     };
   }, [panX, panY]);
 
+  // Nạp species từ AsyncStorage và lắng nghe thay đổi tự động
+  useEffect(() => {
+    let isMounted = true;
+    if (!species) {
+      getStoredSpecies().then((stored) => {
+        if (isMounted && stored) {
+          setCurrentSpecies(stored);
+        }
+      });
+    }
+
+    const unsubSpecies = subscribeSpeciesChange((newSpecies) => {
+      if (isMounted) {
+        setCurrentSpecies(newSpecies);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubSpecies();
+    };
+  }, [species]);
+
   // Cập nhật khi props thay đổi
   useEffect(() => {
-    setCurrentSpecies(species);
+    if (species) {
+      setCurrentSpecies(species);
+    }
   }, [species]);
 
   useEffect(() => {
@@ -122,13 +183,13 @@ const MascotInner: React.FC<MascotProps> = ({
 
       if (newState === 'drinking') {
         bubbleScale.setValue(0.3);
-        Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
+        Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
       }
 
       if (durationMs && durationMs > 0) {
         revertTimer = setTimeout(() => {
           if (newState === 'drinking') {
-            Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+            Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => {
               setCurrentState('idle');
             });
           } else {
@@ -183,10 +244,10 @@ const MascotInner: React.FC<MascotProps> = ({
   const triggerDrink = () => {
     setCurrentState('drinking');
     bubbleScale.setValue(0.3);
-    Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
+    Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
 
     setTimeout(() => {
-      Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+      Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => {
         setCurrentState('idle');
       });
     }, 6000);
@@ -214,7 +275,55 @@ const MascotInner: React.FC<MascotProps> = ({
     };
   }, []);
 
-  // CƠ CHẾ KÉO THẢ & CHẠM MỞ CHATBOX (ĐẢM BẢO CHẠM LÀ MỞ NGAY LẬP TỨC 100%)
+  // HÀM HÚT VÀO MÉP VIỀN (EDGE SNAPPING -> DOCKED PEEKING)
+  const dockToEdge = (side: 'left' | 'right') => {
+    setIsPeeking(true);
+    setPeekingSide(side);
+    isPeekingRef.current = true;
+    peekingSideRef.current = side;
+
+    // Khi núp mép, linh vật dính sát vào mép trái (0) hoặc mép phải (screen.width - WIDGET_WIDTH)
+    const targetX = side === 'left' ? 0 : screen.width - WIDGET_WIDTH;
+
+    Animated.parallel([
+      Animated.spring(panX, {
+        toValue: targetX,
+        friction: 6.5,
+        tension: 85,
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.timing(dockSnapAnim, { toValue: 1.15, duration: 120, useNativeDriver: false }),
+        Animated.spring(dockSnapAnim, { toValue: 1, friction: 5, tension: 100, useNativeDriver: false }),
+      ]),
+    ]).start();
+  };
+
+  // HÀM THOÁT CHẾ ĐỘ NÚP (UNDOCK -> BUNG TOÀN BỘ CƠ THỂ RA)
+  const undockToNormal = (preferredSide?: 'left' | 'right') => {
+    const side = preferredSide || peekingSideRef.current || 'left';
+    setIsPeeking(false);
+    setPeekingSide(null);
+    isPeekingRef.current = false;
+    peekingSideRef.current = null;
+
+    const targetX = side === 'left' ? 24 : screen.width - WIDGET_WIDTH - 24;
+
+    Animated.parallel([
+      Animated.spring(panX, {
+        toValue: targetX,
+        friction: 6,
+        tension: 75,
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.timing(dockSnapAnim, { toValue: 1.1, duration: 100, useNativeDriver: false }),
+        Animated.spring(dockSnapAnim, { toValue: 1, friction: 6, useNativeDriver: false }),
+      ]),
+    ]).start();
+  };
+
+  // CƠ CHẾ KÉO THẢ & CHẠM MỞ CHATBOX
   const isDraggingRef = useRef(false);
   const touchStartTimeRef = useRef(0);
 
@@ -227,8 +336,8 @@ const MascotInner: React.FC<MascotProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6,
-      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 5 || Math.abs(g.dy) > 5,
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 5 || Math.abs(g.dy) > 5,
       onPanResponderGrant: (evt) => {
         touchStartTimeRef.current = Date.now();
         isDraggingRef.current = false;
@@ -237,19 +346,49 @@ const MascotInner: React.FC<MascotProps> = ({
           touchY: evt.nativeEvent.pageY,
           startX: currentXRef.current,
           startY: currentYRef.current,
+          wasPeeking: isPeekingRef.current,
+          peekingSide: peekingSideRef.current,
         };
         Animated.spring(dragLiftAnim, { toValue: 1.08, friction: 6, useNativeDriver: false }).start();
       },
       onPanResponderMove: (evt, gestureState) => {
-        if (Math.abs(gestureState.dx) > 6 || Math.abs(gestureState.dy) > 6) {
-          isDraggingRef.current = true;
-        }
         const deltaX = evt.nativeEvent.pageX - dragOffsetRef.current.touchX;
         const deltaY = dragOffsetRef.current.touchY - evt.nativeEvent.pageY;
-        const maxRight = screen.width - WIDGET_WIDTH - 8;
+
+        if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+          isDraggingRef.current = true;
+        }
+
+        // THOÁT CHẾ ĐỘ NÚP: KHI KÉO RA NGOÀI >= 10PX VỀ PHÍA GIỮA MÀN HÌNH -> BUNG TOÀN BỘ CƠ THỂ
+        if (isPeekingRef.current) {
+          const pulledAway =
+            (peekingSideRef.current === 'left' && deltaX >= 10) ||
+            (peekingSideRef.current === 'right' && deltaX <= -10);
+
+          if (pulledAway) {
+            setIsPeeking(false);
+            setPeekingSide(null);
+            isPeekingRef.current = false;
+            peekingSideRef.current = null;
+          }
+        }
+
+        const minX = 0;
+        const maxX = screen.width - WIDGET_WIDTH;
         const maxTop = screen.height - WIDGET_HEIGHT - 30;
 
-        const nextX = Math.max(8, Math.min(maxRight, dragOffsetRef.current.startX + deltaX));
+        let nextX = dragOffsetRef.current.startX + deltaX;
+        // Nếu vẫn đang giữ núp và chỉ di chuyển dọc theo viền
+        if (isPeekingRef.current) {
+          if (peekingSideRef.current === 'left' && deltaX < 10) {
+            nextX = 0;
+          } else if (peekingSideRef.current === 'right' && deltaX > -10) {
+            nextX = screen.width - WIDGET_WIDTH;
+          }
+        } else {
+          nextX = Math.max(minX, Math.min(maxX, nextX));
+        }
+
         // LUÔN GIỮ KHOẢNG CÁCH TỐI THIỂU 75PX ĐỂ KHÔNG ĐÈ LÊN THANH NAVIGATION
         const nextY = Math.max(MIN_BOTTOM_OFFSET, Math.min(maxTop, dragOffsetRef.current.startY + deltaY));
 
@@ -261,9 +400,37 @@ const MascotInner: React.FC<MascotProps> = ({
       onPanResponderRelease: (_, gestureState) => {
         Animated.spring(dragLiftAnim, { toValue: 1, friction: 6, useNativeDriver: false }).start();
         const touchDuration = Date.now() - touchStartTimeRef.current;
-        // Bấm nhẹ (không kéo hoặc di chuyển < 8px hoặc thời gian < 500ms) -> MỞ NGAY CHATBOX
-        if (!isDraggingRef.current || (Math.abs(gestureState.dx) < 8 && Math.abs(gestureState.dy) < 8)) {
-          handleMascotPress();
+        const isTap = !isDraggingRef.current || (Math.abs(gestureState.dx) < 7 && Math.abs(gestureState.dy) < 7);
+
+        // NẾU BẤM NHẸ (TAP):
+        if (isTap) {
+          if (isPeekingRef.current) {
+            // Đang núp mà người dùng bấm vào -> Tự động bung toàn bộ cơ thể ra và mở chatbox
+            undockToNormal();
+            setTimeout(() => {
+              handleMascotPress();
+            }, 260);
+          } else {
+            handleMascotPress();
+          }
+          return;
+        }
+
+        // NẾU KÉO THẢ: KIỂM TRA KHOẢNG CÁCH TỚI MÉP VIỀN (<= 18PX) -> TỰ ĐỘNG HÚT VÀO MÉP
+        const newX = currentXRef.current;
+
+        if (newX <= 18) {
+          dockToEdge('left');
+        } else if (newX >= screen.width - WIDGET_WIDTH - 18) {
+          dockToEdge('right');
+        } else {
+          // Thả ở giữa màn hình -> Giữ nguyên tư thế hoạt động bình thường
+          if (isPeekingRef.current) {
+            setIsPeeking(false);
+            setPeekingSide(null);
+            isPeekingRef.current = false;
+            peekingSideRef.current = null;
+          }
         }
       },
       onPanResponderTerminate: () => {
@@ -281,12 +448,15 @@ const MascotInner: React.FC<MascotProps> = ({
           {
             left: panX,
             bottom: panY,
+            transform: [
+              { scale: Animated.multiply(dragLiftAnim, dockSnapAnim) },
+            ],
           },
         ]}
         {...panResponder.panHandlers}
       >
         {/* BONG BÓNG UỐNG NƯỚC ĐI (STATE-DRINKING) */}
-        {currentState === 'drinking' && (
+        {currentState === 'drinking' && !isPeeking && (
           <Animated.View
             style={[
               styles.waterBubble,
@@ -301,30 +471,29 @@ const MascotInner: React.FC<MascotProps> = ({
         )}
 
         {/* NÚT BẤM VÀO MASCOT ĐỂ MỞ NGAY KHUNG CHATBOX */}
-        <View
-          style={styles.mascotPressable}
-        >
-          <Animated.View
-            style={[
-              styles.mascotRig,
-              {
-                transform: [
-                  { scale: dragLiftAnim }, // Nhấc bổng nhẹ khi đang kéo
-                ],
-              },
-            ]}
-            pointerEvents="none"
-          >
-            {/* LINH VẬT Ở TRẠNG THÁI NHÚN NHẢY THỂ THAO TẠI CHỖ (BOUNCING) */}
-            <MascotVectorRig
-              species={currentSpecies}
-              stage={currentStage}
-              state={currentState}
-              mode="bouncing"
-              width={WIDGET_WIDTH}
-              height={WIDGET_HEIGHT}
-            />
-          </Animated.View>
+        <View style={styles.mascotPressable}>
+          <View style={styles.mascotRig} pointerEvents="none">
+            {isPeeking ? (
+              /* TƯ THẾ NÚP LÓ ĐẦU BÁM MÉP VIỀN (PEEKING / DOCKED MODE) */
+              <MascotPeekingRig
+                species={currentSpecies}
+                stage={currentStage}
+                side={peekingSide || 'left'}
+                width={WIDGET_WIDTH}
+                height={WIDGET_HEIGHT}
+              />
+            ) : (
+              /* LINH VẬT Ở TRẠNG THÁI NHÚN NHẢY THỂ THAO BÌNH THƯỜNG (BOUNCING) */
+              <MascotVectorRig
+                species={currentSpecies}
+                stage={currentStage}
+                state={currentState}
+                mode="bouncing"
+                width={WIDGET_WIDTH}
+                height={WIDGET_HEIGHT}
+              />
+            )}
+          </View>
         </View>
       </Animated.View>
 
@@ -340,6 +509,67 @@ const MascotInner: React.FC<MascotProps> = ({
     </>
   );
 };
+
+// =====================================================================
+// COMPONENT TƯ THẾ NÚP LÓ ĐẦU BÁM MÉP VIỀN MÀN HÌNH (STATIC IMAGE TỪ HÌNH THẬT)
+// =====================================================================
+interface MascotPeekingRigProps {
+  species?: MascotSpecies;
+  stage?: MascotStage;
+  side: 'left' | 'right';
+  width: number;
+  height: number;
+}
+
+const MascotPeekingRig: React.FC<MascotPeekingRigProps> = ({
+  species = 'bear',
+  side = 'left',
+  width,
+  height,
+}) => {
+  const isCat = species === 'cat';
+  // Cat vẽ gốc peeking từ mép phải -> peeking mép trái lật scaleX: -1
+  // Bear vẽ gốc peeking từ mép trái -> peeking mép phải lật scaleX: -1
+  const shouldFlip = isCat ? side === 'left' : side === 'right';
+  const imageSource = getMascotPeekingImage(species);
+
+  // Tỷ lệ thực tế của ảnh gốc để tràn sát viền 100% không bị khe hở
+  // Bear: 369 / 500 = 0.738 -> width = height * 0.738
+  // Cat: 384 / 545 = 0.7045 -> width = height * 0.7045
+  const aspectRatio = isCat ? 384 / 545 : 369 / 500;
+  const imgWidth = Math.round(height * aspectRatio);
+
+  return (
+    <View
+      style={[
+        peekingStyles.container,
+        {
+          width,
+          height,
+          alignItems: side === 'left' ? 'flex-start' : 'flex-end',
+        },
+      ]}
+    >
+      <Image
+        source={imageSource}
+        style={{
+          width: imgWidth,
+          height: height,
+          transform: shouldFlip ? [{ scaleX: -1 }] : undefined,
+        }}
+        resizeMode="contain"
+      />
+    </View>
+  );
+};
+
+const peekingStyles = StyleSheet.create({
+  container: {
+    width: WIDGET_WIDTH,
+    height: WIDGET_HEIGHT,
+    justifyContent: 'center',
+  },
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -197,11 +197,11 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                   accessibilityLabel="Chọn linh vật và xem 4 cấp độ"
                 >
                   <Image
-                    source={require('../../assets/mascot/bear_starter.png')}
+                    source={currentSpecies === 'cat' ? require('../../assets/mascot/cat_starter.png') : require('../../assets/mascot/bear_starter.png')}
                     style={styles.bearBtnImg}
                     resizeMode="contain"
                   />
-                  <Text style={styles.bearBtnText}>Cấp độ</Text>
+                  <Text style={styles.bearBtnText}>Đổi Mascot</Text>
                 </TouchableOpacity>
 
                 {/* NÚT ĐÓNG */}
