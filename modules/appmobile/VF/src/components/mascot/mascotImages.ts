@@ -39,3 +39,10 @@ export const getMascotImage = (
   }
 };
 
+export const getMascotPeekingImage = (species: MascotSpecies = 'cat') => {
+  if (species === 'cat') {
+    return require('../../assets/mascot/cat_peeking.png');
+  }
+  return require('../../assets/mascot/bear_peeking.png');
+};
+

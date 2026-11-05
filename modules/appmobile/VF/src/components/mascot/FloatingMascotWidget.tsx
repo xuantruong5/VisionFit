@@ -2,6 +2,7 @@ import React, { Component, useState, useEffect, useRef, ReactNode, ErrorInfo } f
 import {
   View,
   Text,
+  Image,
   Animated,
   PanResponder,
   Dimensions,
@@ -31,6 +32,7 @@ import { MascotSpecies, MascotStage, MascotState } from './types';
 import { MascotVectorRig } from './MascotVectorRig';
 import { MascotChatModal } from './MascotChatModal';
 import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
+import { getMascotPeekingImage } from './mascotImages';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {
@@ -111,9 +113,6 @@ const MascotInner: React.FC<MascotProps> = ({
   const dragLiftAnim = useRef(new Animated.Value(1)).current; // Nhấc nhẹ khi kéo
   const bubbleScale = useRef(new Animated.Value(0)).current;  // Bong bóng uống nước
 
-  // Animation cho chế độ núp ló đầu (Tai khẽ động đậy & đầu nhún tò mò)
-  const earTwitchAnim = useRef(new Animated.Value(0)).current;
-  const headTiltAnim = useRef(new Animated.Value(0)).current;
   const dockSnapAnim = useRef(new Animated.Value(1)).current;
 
   const dragOffsetRef = useRef({
@@ -147,45 +146,6 @@ const MascotInner: React.FC<MascotProps> = ({
   useEffect(() => {
     setCurrentStage(stage);
   }, [stage]);
-
-  // VÒNG LẶP HOẠT ẢNH CHO CHẾ ĐỘ NÚP LÓ ĐẦU (TAI KHẼ ĐỘNG ĐẬY TÒ MÒ & ĐẦU NGHIÊNG)
-  useEffect(() => {
-    if (!isPeeking) {
-      earTwitchAnim.setValue(0);
-      headTiltAnim.setValue(0);
-      return;
-    }
-
-    // 1. Tai khẽ nhúc nhích tò mò theo chu kỳ
-    const earTwitchLoop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(1200),
-        Animated.timing(earTwitchAnim, { toValue: 1, duration: 110, useNativeDriver: false }),
-        Animated.timing(earTwitchAnim, { toValue: -1, duration: 120, useNativeDriver: false }),
-        Animated.timing(earTwitchAnim, { toValue: 1, duration: 110, useNativeDriver: false }),
-        Animated.timing(earTwitchAnim, { toValue: 0, duration: 120, useNativeDriver: false }),
-        Animated.delay(2200),
-        Animated.timing(earTwitchAnim, { toValue: -1, duration: 90, useNativeDriver: false }),
-        Animated.timing(earTwitchAnim, { toValue: 0, duration: 90, useNativeDriver: false }),
-      ])
-    );
-
-    // 2. Đầu hơi nghiêng và nhô nhẹ nhìn lén vào trong màn hình
-    const headTiltLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(headTiltAnim, { toValue: 1, duration: 1800, useNativeDriver: false }),
-        Animated.timing(headTiltAnim, { toValue: 0, duration: 1800, useNativeDriver: false }),
-      ])
-    );
-
-    earTwitchLoop.start();
-    headTiltLoop.start();
-
-    return () => {
-      earTwitchLoop.stop();
-      headTiltLoop.stop();
-    };
-  }, [isPeeking, earTwitchAnim, headTiltAnim]);
 
   // LẮNG NGHE SỰ KIỆN TỪ TOÀN BỘ ỨNG DỤNG
   useEffect(() => {
@@ -296,8 +256,8 @@ const MascotInner: React.FC<MascotProps> = ({
     isPeekingRef.current = true;
     peekingSideRef.current = side;
 
-    // Nhô đúng nửa mặt và 2 bàn tay ra khỏi mép trái (-42%) hoặc mép phải (58%)
-    const targetX = side === 'left' ? -WIDGET_WIDTH * 0.42 : screen.width - WIDGET_WIDTH * 0.58;
+    // Khi núp mép, linh vật dính sát vào mép trái (0) hoặc mép phải (screen.width - WIDGET_WIDTH)
+    const targetX = side === 'left' ? 0 : screen.width - WIDGET_WIDTH;
 
     Animated.parallel([
       Animated.spring(panX, {
@@ -387,17 +347,17 @@ const MascotInner: React.FC<MascotProps> = ({
           }
         }
 
-        const minX = -WIDGET_WIDTH * 0.45;
-        const maxX = screen.width - WIDGET_WIDTH * 0.55;
+        const minX = 0;
+        const maxX = screen.width - WIDGET_WIDTH;
         const maxTop = screen.height - WIDGET_HEIGHT - 30;
 
         let nextX = dragOffsetRef.current.startX + deltaX;
         // Nếu vẫn đang giữ núp và chỉ di chuyển dọc theo viền
         if (isPeekingRef.current) {
           if (peekingSideRef.current === 'left' && deltaX < 10) {
-            nextX = -WIDGET_WIDTH * 0.42;
+            nextX = 0;
           } else if (peekingSideRef.current === 'right' && deltaX > -10) {
-            nextX = screen.width - WIDGET_WIDTH * 0.58;
+            nextX = screen.width - WIDGET_WIDTH;
           }
         } else {
           nextX = Math.max(minX, Math.min(maxX, nextX));
@@ -525,7 +485,7 @@ const MascotInner: React.FC<MascotProps> = ({
 };
 
 // =====================================================================
-// COMPONENT TƯ THẾ NÚP LÓ ĐẦU BÁM MÉP VIỀN MÀN HÌNH (PEEKING RIG)
+// COMPONENT TƯ THẾ NÚP LÓ ĐẦU BÁM MÉP VIỀN MÀN HÌNH (STATIC IMAGE TỪ HÌNH THẬT)
 // =====================================================================
 interface MascotPeekingRigProps {
   species?: MascotSpecies;
@@ -536,93 +496,41 @@ interface MascotPeekingRigProps {
 }
 
 const MascotPeekingRig: React.FC<MascotPeekingRigProps> = ({
+  species = 'cat',
   side = 'left',
   width,
   height,
 }) => {
-  const breatheAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const breatheLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breatheAnim, {
-          toValue: 1,
-          duration: 2400,
-          useNativeDriver: false,
-        }),
-        Animated.timing(breatheAnim, {
-          toValue: 0,
-          duration: 2400,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    breatheLoop.start();
-    return () => breatheLoop.stop();
-  }, [breatheAnim]);
-
-  const translateY = breatheAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -4],
-  });
-
-  const rotate = breatheAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '1.5deg'],
-  });
+  const isCat = species === 'cat';
+  // Cat vẽ gốc peeking từ mép phải -> peeking mép trái lật scaleX: -1
+  // Bear vẽ gốc peeking từ mép trái -> peeking mép phải lật scaleX: -1
+  const shouldFlip = isCat ? side === 'left' : side === 'right';
+  const imageSource = getMascotPeekingImage(species);
 
   return (
-    <Animated.View
+    <View
       style={[
         peekingStyles.container,
         {
           width,
           height,
-          transform: [
-            { translateY },
-            { rotate },
-            ...(side === 'right' ? [{ scaleX: -1 }] : []),
-          ],
+          alignItems: side === 'left' ? 'flex-start' : 'flex-end',
         },
       ]}
     >
-      <Svg width={width} height={height} viewBox="0 0 200 240">
-        <G>
-          {/* Đầu mèo */}
-          <G>
-            <Path d="M 52 42 L 67 18 L 84 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth={3.2} />
-            <Path d="M 148 42 L 133 18 L 116 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth={3.2} />
-            <Ellipse cx="100" cy="74" rx="46" ry="38" fill="#F97316" stroke="#1E293B" strokeWidth={3.2} />
-            {/* Mắt to tròn long lanh nhìn vào màn hình */}
-            <Ellipse cx="80" cy="74" rx="6" ry="7.5" fill="#1E293B" />
-            <Circle cx="78" cy="71" r="2.2" fill="#FFFFFF" />
-            <Ellipse cx="120" cy="74" rx="6" ry="7.5" fill="#1E293B" />
-            <Circle cx="118" cy="71" r="2.2" fill="#FFFFFF" />
-            {/* Mũi & miệng cười mỉm */}
-            <Polygon points="100,82 96,78 104,78" fill="#FB7185" />
-            <Path d="M 95 86 Q 100 90 105 86" fill="none" stroke="#1E293B" strokeWidth={2.4} strokeLinecap="round" />
-            {/* Băng đô trán */}
-            <Path d="M 56 64 C 74 54 126 54 144 64 L 144 72 C 126 62 74 62 56 72 Z" fill="#168B67" stroke="#1E293B" strokeWidth={2.8} />
-            <Circle cx="100" cy="63" r="3.2" fill="#FFFFFF" stroke="#1E293B" strokeWidth={1.2} />
-          </G>
-
-          {/* Hai bàn tay bám mép đặt ngang đối xứng ngay dưới cằm */}
-          <G>
-            {/* Tay trái gác mép */}
-            <Ellipse cx="72" cy="104" rx="10" ry="7.5" fill="#F97316" stroke="#1E293B" strokeWidth={2.8} />
-            <Circle cx="66" cy="104" r="2" fill="#FEF3C7" />
-            <Circle cx="72" cy="102" r="2.2" fill="#FEF3C7" />
-            <Circle cx="78" cy="104" r="2" fill="#FEF3C7" />
-
-            {/* Tay phải gác mép */}
-            <Ellipse cx="128" cy="104" rx="10" ry="7.5" fill="#F97316" stroke="#1E293B" strokeWidth={2.8} />
-            <Circle cx="122" cy="104" r="2" fill="#FEF3C7" />
-            <Circle cx="128" cy="102" r="2.2" fill="#FEF3C7" />
-            <Circle cx="134" cy="104" r="2" fill="#FEF3C7" />
-          </G>
-        </G>
-      </Svg>
-    </Animated.View>
+      <Image
+        source={imageSource}
+        style={[
+          peekingStyles.image,
+          {
+            width,
+            height,
+            transform: shouldFlip ? [{ scaleX: -1 }] : undefined,
+          },
+        ]}
+        resizeMode="contain"
+      />
+    </View>
   );
 };
 
@@ -630,8 +538,11 @@ const peekingStyles = StyleSheet.create({
   container: {
     width: WIDGET_WIDTH,
     height: WIDGET_HEIGHT,
-    alignItems: 'center',
     justifyContent: 'center',
+  },
+  image: {
+    width: WIDGET_WIDTH,
+    height: WIDGET_HEIGHT,
   },
 });
 

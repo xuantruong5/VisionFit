@@ -168,11 +168,11 @@ const MascotCore: React.FC<FloatingMascotProps> = ({
     if (newX <= 18) {
       setPeekSide('left');
       setDirection(1);
-      setPosX(-WIDGET_W * 0.42); // Nhô đúng nửa mặt và 2 bàn tay ra khỏi mép trái
+      setPosX(0); // Dính sát mép trái
     } else if (newX >= screenW - WIDGET_W - 18) {
       setPeekSide('right');
       setDirection(-1);
-      setPosX(screenW - WIDGET_W * 0.58); // Nhô đúng nửa mặt và 2 bàn tay ra khỏi mép phải
+      setPosX(screenW - WIDGET_W); // Dính sát mép phải
     } else {
       setPeekSide(null);
       setPosX(newX);
@@ -279,199 +279,156 @@ const MascotCore: React.FC<FloatingMascotProps> = ({
           touchAction: 'none',
           userSelect: 'none',
           cursor: isDragging ? 'grabbing' : 'grab',
-          transform: `scaleX(${direction})`,
+          transform: peekSide ? 'none' : `scaleX(${direction})`,
           transition: isDragging ? 'none' : 'transform 0.25s ease-out',
           filter: isDragging
             ? 'drop-shadow(0 14px 20px rgba(0,0,0,0.25)) scale(1.08)'
             : 'drop-shadow(0 4px 10px rgba(0,0,0,0.12))'
         }}
       >
-        <svg
-          viewBox="0 0 200 240"
-          width="100%"
-          height="100%"
-          className={`vif-mascot-svg species-${species} stage-${stage} mode-${motionMode} ${isWalking ? 'is-walking' : ''} ${peekSide ? 'is-peeking' : ''}`}
-        >
-          <defs>
-            <style>{`
-              .vif-mascot-svg { overflow: visible; }
-              .part-leg.leg-left { transform-origin: 76px 190px; }
-              .part-leg.leg-right { transform-origin: 124px 190px; }
-              .arm-left { transform-origin: 64px 126px; }
-              .arm-right { transform-origin: 136px 126px; }
+        {peekSide ? (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: peekSide === 'left' ? 'flex-start' : 'flex-end',
+            }}
+          >
+            <img
+              src={species === 'cat' ? require('../../assets/mascot/cat_peeking.png') : require('../../assets/mascot/bear_peeking.png')}
+              alt="Mascot Peeking"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                transform: (species === 'cat' ? peekSide === 'left' : peekSide === 'right') ? 'scaleX(-1)' : 'none',
+              }}
+            />
+          </div>
+        ) : (
+          <svg
+            viewBox="0 0 200 240"
+            width="100%"
+            height="100%"
+            className={`vif-mascot-svg species-${species} stage-${stage} mode-${motionMode} ${isWalking ? 'is-walking' : ''}`}
+          >
+            <defs>
+              <style>{`
+                .vif-mascot-svg { overflow: visible; }
+                .part-leg.leg-left { transform-origin: 76px 190px; }
+                .part-leg.leg-right { transform-origin: 124px 190px; }
+                .arm-left { transform-origin: 64px 126px; }
+                .arm-right { transform-origin: 136px 126px; }
 
-              /* Chế độ nhún nhảy tại chỗ (Bouncing) */
-              .mode-bouncing .character-root {
-                animation: vif-subtle-bounce 1.6s ease-in-out infinite;
-              }
-              .mode-bouncing .arm-left {
-                animation: vif-arm-sway-l 1.6s ease-in-out infinite;
-              }
-              .mode-bouncing .arm-right {
-                animation: vif-arm-sway-r 1.6s ease-in-out infinite;
-              }
+                /* Chế độ nhún nhảy tại chỗ (Bouncing) */
+                .mode-bouncing .character-root {
+                  animation: vif-subtle-bounce 1.6s ease-in-out infinite;
+                }
+                .mode-bouncing .arm-left {
+                  animation: vif-arm-sway-l 1.6s ease-in-out infinite;
+                }
+                .mode-bouncing .arm-right {
+                  animation: vif-arm-sway-r 1.6s ease-in-out infinite;
+                }
 
-              /* Chế độ đi bước nhẹ nhàng, thân thẳng đứng không bị xiêu vẹo */
-              .is-walking .character-root {
-                animation: vif-walk-bob 0.4s ease-in-out infinite alternate;
-              }
-              .is-walking .part-leg.leg-left {
-                animation: vif-leg-swing-l 0.5s ease-in-out infinite alternate;
-              }
-              .is-walking .part-leg.leg-right {
-                animation: vif-leg-swing-r 0.5s ease-in-out infinite alternate;
-              }
-              .is-walking .arm-left {
-                animation: vif-arm-swing-l 0.5s ease-in-out infinite alternate;
-              }
-              .is-walking .arm-right {
-                animation: vif-arm-swing-r 0.5s ease-in-out infinite alternate;
-              }
+                /* Chế độ đi bước nhẹ nhàng, thân thẳng đứng không bị xiêu vẹo */
+                .is-walking .character-root {
+                  animation: vif-walk-bob 0.4s ease-in-out infinite alternate;
+                }
+                .is-walking .part-leg.leg-left {
+                  animation: vif-leg-swing-l 0.5s ease-in-out infinite alternate;
+                }
+                .is-walking .part-leg.leg-right {
+                  animation: vif-leg-swing-r 0.5s ease-in-out infinite alternate;
+                }
+                .is-walking .arm-left {
+                  animation: vif-arm-swing-l 0.5s ease-in-out infinite alternate;
+                }
+                .is-walking .arm-right {
+                  animation: vif-arm-swing-r 0.5s ease-in-out infinite alternate;
+                }
 
-              @keyframes vif-subtle-bounce {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-4px); }
-              }
-              @keyframes vif-arm-sway-l {
-                0%, 100% { transform: rotate(0deg); }
-                50% { transform: rotate(-8deg); }
-              }
-              @keyframes vif-arm-sway-r {
-                0%, 100% { transform: rotate(0deg); }
-                50% { transform: rotate(8deg); }
-              }
-              @keyframes vif-walk-bob {
-                0% { transform: translateY(0); }
-                100% { transform: translateY(-3px); }
-              }
-              @keyframes vif-leg-swing-l {
-                0% { transform: rotate(-14deg); }
-                100% { transform: rotate(14deg); }
-              }
-              @keyframes vif-leg-swing-r {
-                0% { transform: rotate(14deg); }
-                100% { transform: rotate(-14deg); }
-              }
-              @keyframes vif-arm-swing-l {
-                0% { transform: rotate(12deg); }
-                100% { transform: rotate(-12deg); }
-              }
-              @keyframes vif-arm-swing-r {
-                0% { transform: rotate(-12deg); }
-                100% { transform: rotate(12deg); }
-              }
+                @keyframes vif-subtle-bounce {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-4px); }
+                }
+                @keyframes vif-arm-sway-l {
+                  0%, 100% { transform: rotate(0deg); }
+                  50% { transform: rotate(-8deg); }
+                }
+                @keyframes vif-arm-sway-r {
+                  0%, 100% { transform: rotate(0deg); }
+                  50% { transform: rotate(8deg); }
+                }
+                @keyframes vif-walk-bob {
+                  0% { transform: translateY(0); }
+                  100% { transform: translateY(-3px); }
+                }
+                @keyframes vif-leg-swing-l {
+                  0% { transform: rotate(-14deg); }
+                  100% { transform: rotate(14deg); }
+                }
+                @keyframes vif-leg-swing-r {
+                  0% { transform: rotate(14deg); }
+                  100% { transform: rotate(-14deg); }
+                }
+                @keyframes vif-arm-swing-l {
+                  0% { transform: rotate(12deg); }
+                  100% { transform: rotate(-12deg); }
+                }
+                @keyframes vif-arm-swing-r {
+                  0% { transform: rotate(-12deg); }
+                  100% { transform: rotate(12deg); }
+                }
+              `}</style>
+            </defs>
 
-              /* SỬA LỖI NÚP MÉP: Đồng bộ cả đầu và tay vào 1 trục khớp */
-              .is-peeking .layer-legs,
-              .is-peeking .layer-tail,
-              .is-peeking .torso-body-shape,
-              .is-peeking .torso-rig,
-              .is-peeking .body-belly,
-              .is-peeking .arm-left,
-              .is-peeking .arm-right,
-              .is-peeking .normal-head {
-                display: none !important;
-              }
-
-              /* Khối núp mép thở nhịp nhàng cả đầu lẫn tay cùng lúc */
-              .is-peeking .peeking-rig {
-                display: block !important;
-                animation: vif-peek-breathe 2.4s ease-in-out infinite alternate;
-                transform-origin: 100px 100px;
-              }
-
-              @keyframes vif-peek-breathe {
-                0% { transform: translateY(0px) rotate(0deg); }
-                100% { transform: translateY(-4px) rotate(1.5deg); }
-              }
-            `}</style>
-          </defs>
-
-          <g className="character-root">
-            {!peekSide && (
-              <>
-                {/* Chân */}
-                <g className="layer-legs">
-                  <g className="part-leg leg-left">
-                    <path d="M 68 186 C 67 198 66 208 65 214 C 63 220 69 223 78 223 C 88 223 91 220 90 214 C 89 208 89 198 88 186 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  </g>
-                  <g className="part-leg leg-right">
-                    <path d="M 112 186 C 111 198 111 208 110 214 C 109 220 112 223 122 223 C 131 223 137 220 135 214 C 134 208 133 198 132 186 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  </g>
+            <g className="character-root">
+              {/* Chân */}
+              <g className="layer-legs">
+                <g className="part-leg leg-left">
+                  <path d="M 68 186 C 67 198 66 208 65 214 C 63 220 69 223 78 223 C 88 223 91 220 90 214 C 89 208 89 198 88 186 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
                 </g>
-
-                {/* Đuôi */}
-                <path d="M 130 194 C 156 196 174 176 174 150 C 174 134 162 132 161 144 C 160 162 148 182 128 184 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-
-                {/* Thân */}
-                <g className="torso-rig">
-                  <path d="M 66 123 C 75 113 125 113 134 123 C 143 148 141 186 132 197 C 116 205 84 205 68 197 C 59 186 57 148 66 123 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  <ellipse cx="100" cy="165" rx="23" ry="27" fill="#FEF3C7"/>
-                  <path d="M 73 121 C 86 128 114 128 127 121 L 129 127 C 114 135 86 135 71 127 Z" fill="#10B981" stroke="#1E293B" strokeWidth="2.8"/>
-
-                  {/* Tay trái */}
-                  <g className="arm-left">
-                    <path d="M 67 122 C 52 125 45 138 44.5 152 A 6.8 6.8 0 0 0 58 152 C 58 142 61 134 69 128 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  </g>
-
-                  {/* Tay phải */}
-                  <g className="arm-right">
-                    <path d="M 133 122 C 148 125 155 138 155.5 152 A 6.8 6.8 0 0 1 142 152 C 142 142 139 134 131 128 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  </g>
-                </g>
-
-                {/* Đầu thường */}
-                <g className="layer-head-group normal-head">
-                  <path d="M 52 42 L 67 18 L 84 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  <path d="M 148 42 L 133 18 L 116 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  <ellipse cx="100" cy="74" rx="46" ry="38" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  <ellipse cx="80" cy="74" rx="5" ry="6" fill="#1E293B"/>
-                  <ellipse cx="120" cy="74" rx="5" ry="6" fill="#1E293B"/>
-                  <polygon points="100,82 96,78 104,78" fill="#FB7185"/>
-                  <path d="M 96 86 Q 100 89 104 86" fill="none" stroke="#1E293B" strokeWidth="2.4" strokeLinecap="round"/>
-                </g>
-              </>
-            )}
-
-            {/* CỤM NÚP MÉP LIỀN KHỐI (Chỉ hiện khi isPeeking !== null) */}
-            {peekSide && (
-              <g className="peeking-rig">
-                {/* Đầu mèo */}
-                <g className="layer-head-group">
-                  <path d="M 52 42 L 67 18 L 84 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  <path d="M 148 42 L 133 18 L 116 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  <ellipse cx="100" cy="74" rx="46" ry="38" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
-                  {/* Mắt to tròn long lanh nhìn vào màn hình */}
-                  <ellipse cx="80" cy="74" rx="6" ry="7.5" fill="#1E293B"/>
-                  <circle cx="78" cy="71" r="2.2" fill="#FFFFFF"/>
-                  <ellipse cx="120" cy="74" rx="6" ry="7.5" fill="#1E293B"/>
-                  <circle cx="118" cy="71" r="2.2" fill="#FFFFFF"/>
-                  {/* Mũi & miệng cười mỉm */}
-                  <polygon points="100,82 96,78 104,78" fill="#FB7185"/>
-                  <path d="M 95 86 Q 100 90 105 86" fill="none" stroke="#1E293B" strokeWidth="2.4" strokeLinecap="round"/>
-                  {/* Băng đô trán */}
-                  <path d="M 56 64 C 74 54 126 54 144 64 L 144 72 C 126 62 74 62 56 72 Z" fill="#168B67" stroke="#1E293B" strokeWidth="2.8"/>
-                  <circle cx="100" cy="63" r="3.2" fill="#FFFFFF" stroke="#1E293B" strokeWidth="1.2"/>
-                </g>
-
-                {/* Hai bàn tay bám mép đặt ngang đối xứng ngay dưới cằm */}
-                <g className="peeking-paws">
-                  {/* Tay trái gác mép */}
-                  <ellipse cx="72" cy="104" rx="10" ry="7.5" fill="#F97316" stroke="#1E293B" strokeWidth="2.8"/>
-                  <circle cx="66" cy="104" r="2" fill="#FEF3C7"/>
-                  <circle cx="72" cy="102" r="2.2" fill="#FEF3C7"/>
-                  <circle cx="78" cy="104" r="2" fill="#FEF3C7"/>
-
-                  {/* Tay phải gác mép */}
-                  <ellipse cx="128" cy="104" rx="10" ry="7.5" fill="#F97316" stroke="#1E293B" strokeWidth="2.8"/>
-                  <circle cx="122" cy="104" r="2" fill="#FEF3C7"/>
-                  <circle cx="128" cy="102" r="2.2" fill="#FEF3C7"/>
-                  <circle cx="134" cy="104" r="2" fill="#FEF3C7"/>
+                <g className="part-leg leg-right">
+                  <path d="M 112 186 C 111 198 111 208 110 214 C 109 220 112 223 122 223 C 131 223 137 220 135 214 C 134 208 133 198 132 186 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
                 </g>
               </g>
-            )}
-          </g>
-        </svg>
+
+              {/* Đuôi */}
+              <path d="M 130 194 C 156 196 174 176 174 150 C 174 134 162 132 161 144 C 160 162 148 182 128 184 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+
+              {/* Thân */}
+              <g className="torso-rig">
+                <path d="M 66 123 C 75 113 125 113 134 123 C 143 148 141 186 132 197 C 116 205 84 205 68 197 C 59 186 57 148 66 123 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+                <ellipse cx="100" cy="165" rx="23" ry="27" fill="#FEF3C7"/>
+                <path d="M 73 121 C 86 128 114 128 127 121 L 129 127 C 114 135 86 135 71 127 Z" fill="#10B981" stroke="#1E293B" strokeWidth="2.8"/>
+
+                {/* Tay trái */}
+                <g className="arm-left">
+                  <path d="M 67 122 C 52 125 45 138 44.5 152 A 6.8 6.8 0 0 0 58 152 C 58 142 61 134 69 128 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+                </g>
+
+                {/* Tay phải */}
+                <g className="arm-right">
+                  <path d="M 133 122 C 148 125 155 138 155.5 152 A 6.8 6.8 0 0 1 142 152 C 142 142 139 134 131 128 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+                </g>
+              </g>
+
+              {/* Đầu thường */}
+              <g className="layer-head-group normal-head">
+                <path d="M 52 42 L 67 18 L 84 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+                <path d="M 148 42 L 133 18 L 116 32 Z" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+                <ellipse cx="100" cy="74" rx="46" ry="38" fill="#F97316" stroke="#1E293B" strokeWidth="3.2"/>
+                <ellipse cx="80" cy="74" rx="5" ry="6" fill="#1E293B"/>
+                <ellipse cx="120" cy="74" rx="5" ry="6" fill="#1E293B"/>
+                <polygon points="100,82 96,78 104,78" fill="#FB7185"/>
+                <path d="M 96 86 Q 100 89 104 86" fill="none" stroke="#1E293B" strokeWidth="2.4" strokeLinecap="round"/>
+              </g>
+            </g>
+          </svg>
+        )}
       </div>
     </>
   );
