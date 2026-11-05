@@ -33,6 +33,7 @@ import { MascotVectorRig } from './MascotVectorRig';
 import { MascotChatModal } from './MascotChatModal';
 import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
 import { getMascotPeekingImage } from './mascotImages';
+import { getStoredSpecies, subscribeSpeciesChange } from './mascotStorage';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {
@@ -71,7 +72,7 @@ export interface MascotProps {
 }
 
 export const FloatingMascotWidget: React.FC<MascotProps> = ({
-  species = 'cat',
+  species,
   stage = 'starter',
 }) => {
   return (
@@ -87,11 +88,11 @@ const MIN_BOTTOM_OFFSET = 75; // Luôn cách đáy tối thiểu 75px để KHÔ
 const EDGE_PEEK_THRESHOLD = 18; // Khoảng cách <= 18px tới mép viền sẽ kích hoạt chế độ Núp mép màn hình
 
 const MascotInner: React.FC<MascotProps> = ({
-  species = 'cat',
+  species,
   stage = 'starter',
 }) => {
   const [screen, setScreen] = useState(Dimensions.get('window'));
-  const [currentSpecies, setCurrentSpecies] = useState<MascotSpecies>(species);
+  const [currentSpecies, setCurrentSpecies] = useState<MascotSpecies>(species || 'bear');
   const [currentStage, setCurrentStage] = useState<MascotStage>(stage);
 
   // Trạng thái hoạt cảnh: Mặc định luôn ở trạng thái 'idle' nhún nhảy thể thao tại chỗ
@@ -138,9 +139,34 @@ const MascotInner: React.FC<MascotProps> = ({
     };
   }, [panX, panY]);
 
+  // Nạp species từ AsyncStorage và lắng nghe thay đổi tự động
+  useEffect(() => {
+    let isMounted = true;
+    if (!species) {
+      getStoredSpecies().then((stored) => {
+        if (isMounted && stored) {
+          setCurrentSpecies(stored);
+        }
+      });
+    }
+
+    const unsubSpecies = subscribeSpeciesChange((newSpecies) => {
+      if (isMounted) {
+        setCurrentSpecies(newSpecies);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubSpecies();
+    };
+  }, [species]);
+
   // Cập nhật khi props thay đổi
   useEffect(() => {
-    setCurrentSpecies(species);
+    if (species) {
+      setCurrentSpecies(species);
+    }
   }, [species]);
 
   useEffect(() => {
@@ -496,7 +522,7 @@ interface MascotPeekingRigProps {
 }
 
 const MascotPeekingRig: React.FC<MascotPeekingRigProps> = ({
-  species = 'cat',
+  species = 'bear',
   side = 'left',
   width,
   height,

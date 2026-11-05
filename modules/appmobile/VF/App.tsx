@@ -410,7 +410,7 @@ const App = () => {
         </Stack.Navigator>
       </NavigationContainer>
       {currentRoute !== 'Login' && currentRoute !== 'AuthScreen' && currentRoute !== 'TrainerAuthScreen' && (
-        <FloatingMascotWidget species="cat" stage="starter" />
+        <FloatingMascotWidget stage="starter" />
  )}
  </View>
  );

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { MascotSpecies, MascotStage, MascotState, ALL_MASCOT_STATES } from './types';
-import { setStoredSpecies } from './mascotStorage';
+import { getStoredSpecies, setStoredSpecies } from './mascotStorage';
 import {
   getProgressionData,
   recordWorkoutSession,
@@ -54,8 +54,14 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
   });
 
   const loadData = async () => {
-    const data = await getProgressionData();
+    const [data, storedSpecies] = await Promise.all([
+      getProgressionData(),
+      getStoredSpecies(),
+    ]);
     setProgression(data);
+    if (storedSpecies) {
+      setSelected(storedSpecies);
+    }
     if (onStageChange) onStageChange(data.currentStage);
   };
 
@@ -68,6 +74,7 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
 
   const handleConfirm = async () => {
     await setStoredSpecies(selected);
+    mascotEmitter.emit(MASCOT_EVENTS.SET_SPECIES, selected);
     onSelect(selected);
     onClose();
   };

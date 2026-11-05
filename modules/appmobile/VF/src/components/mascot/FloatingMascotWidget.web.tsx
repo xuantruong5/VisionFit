@@ -26,10 +26,24 @@ export const FloatingMascotWidget: React.FC<FloatingMascotProps> = (props) => {
 };
 
 const MascotCore: React.FC<FloatingMascotProps> = ({
-  species = 'cat',
+  species,
   stage = 'starter',
   showChatboxSettings = true
 }) => {
+  const [currentSpecies, setCurrentSpecies] = useState<'cat' | 'bear'>(() => {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('vif_mascot_species');
+      if (stored === 'cat' || stored === 'bear') return stored;
+    }
+    return species || 'bear';
+  });
+
+  useEffect(() => {
+    if (species) {
+      setCurrentSpecies(species);
+    }
+  }, [species]);
+
   // Chế độ chuyển động lấy từ localStorage: 'roaming' (đi lại) | 'bouncing' (nhún nhảy) | 'static' (đứng yên)
   const [motionMode, setMotionMode] = useState<MascotMotionMode>(() => {
     if (typeof localStorage !== 'undefined') {
@@ -297,13 +311,13 @@ const MascotCore: React.FC<FloatingMascotProps> = ({
             }}
           >
             <img
-              src={species === 'cat' ? require('../../assets/mascot/cat_peeking.png') : require('../../assets/mascot/bear_peeking.png')}
+              src={currentSpecies === 'cat' ? require('../../assets/mascot/cat_peeking.png') : require('../../assets/mascot/bear_peeking.png')}
               alt="Mascot Peeking"
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'contain',
-                transform: (species === 'cat' ? peekSide === 'left' : peekSide === 'right') ? 'scaleX(-1)' : 'none',
+                transform: (currentSpecies === 'cat' ? peekSide === 'left' : peekSide === 'right') ? 'scaleX(-1)' : 'none',
               }}
             />
           </div>
@@ -312,7 +326,7 @@ const MascotCore: React.FC<FloatingMascotProps> = ({
             viewBox="0 0 200 240"
             width="100%"
             height="100%"
-            className={`vif-mascot-svg species-${species} stage-${stage} mode-${motionMode} ${isWalking ? 'is-walking' : ''}`}
+            className={`vif-mascot-svg species-${currentSpecies} stage-${stage} mode-${motionMode} ${isWalking ? 'is-walking' : ''}`}
           >
             <defs>
               <style>{`
