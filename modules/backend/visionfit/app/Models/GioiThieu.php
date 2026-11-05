@@ -14,5 +14,6 @@ class GioiThieu extends Model
         'tinh_trang',
         'thuong_nguoi_gioi_thieu',
         'thuong_nguoi_duoc_gioi_thieu',
+        'da_su_dung',
     ];
 }

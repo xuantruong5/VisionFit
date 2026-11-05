@@ -119,13 +119,10 @@ function MemberWorkoutNavigator() {
       <MemberWorkoutStack.Screen name="EnterTrainerCode" component={EnterTrainerCodeScreen} />
       <MemberWorkoutStack.Screen name="ChangeWorkoutScheduleScreen" component={ChangeWorkoutScheduleScreen} />
       <MemberWorkoutStack.Screen name="ChangeWorkoutSchedule" component={ChangeWorkoutScheduleScreen} />
-
-
-
-
     </MemberWorkoutStack.Navigator>
   );
 }
+
 
 
 
@@ -246,7 +243,7 @@ function MemberTabs() {
           else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
           else if (route.name === "Sổ Tay") name_icon = focused ? "book-sharp" : "book-outline";
           else if (route.name === "Thêm") name_icon = focused ? "ellipsis-horizontal-circle-sharp" : "ellipsis-horizontal-outline";
-          // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
+         
           return (
             <AnimatIcon
               name_icon={name_icon}
@@ -287,6 +284,7 @@ function MemberTabs() {
         <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
         <Tab.Screen name="Sổ Tay" component={SoTayStack} />
         <Tab.Screen name="Thêm" component={MemberProfile} />
+        
       </Tab.Navigator>
 
     </View>

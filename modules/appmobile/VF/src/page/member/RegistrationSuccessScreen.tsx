@@ -11,7 +11,9 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
     const pkg = draft?.selectedPackage;
     const pt = draft?.selectedTrainer;
     const method = draft?.paymentMethod;
-    const total = Number(draft?.estimatedTotal ?? pkg?.gia ?? 0);
+    const total = Number(draft?.tongTienTamTinh ?? pkg?.gia ?? 0);
+
+    const isPaid = Number(draft?.isThanhToan) === 1;
 
     const methodName = method === 'bank'
         ? 'Chuyển khoản ngân hàng'
@@ -49,8 +51,10 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
 
                     <Text style={s.successTitle}>Đăng ký thành công!</Text>
                     <View style={s.demoBadge}>
-                        <Ionicons name="flask-outline" size={12} color={COLORS.primary} />
-                        <Text style={s.demoBadgeText}>CHẾ ĐỘ DEMO</Text>
+                        <Ionicons name="checkmark-circle" size={12} color={COLORS.accentGreen} />
+                        <Text style={[s.demoBadgeText, { color: COLORS.accentGreen }]}>
+                            THANH TOÁN THÀNH CÔNG
+                        </Text>
                     </View>
                     <Text style={s.successDesc}>
                         Bạn đã hoàn tất các bước đăng ký gói tập trên ứng dụng VisionFit.
@@ -60,18 +64,24 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
                 {/* Trạng thái */}
                 <View style={s.statusBox}>
                     <View style={s.statusIcon}>
-                        <Ionicons name="time-outline" size={22} color={COLORS.accentGold} />
+                        <Ionicons name="checkmark-circle" size={22} color={COLORS.accentGreen} />
                     </View>
+
                     <View style={s.flex}>
-                        <Text style={s.statusTitle}>Chờ thanh toán</Text>
-                        <Text style={s.subText}>Chưa phát sinh giao dịch thực tế</Text>
+                        <Text style={s.statusTitle}>
+                            {isPaid ? 'Đã thanh toán' : 'Chờ thanh toán'}
+                        </Text>
+
+                        <Text style={s.subText}>
+                            {isPaid
+                                ? 'Giao dịch đã được hệ thống xác nhận thành công'
+                                : 'Đang chờ xác nhận thanh toán'}
+                        </Text>
                     </View>
                     <View style={s.statusDot} />
                 </View>
-
                 {/* Thông tin đăng ký */}
                 <Text style={s.sectionTitle}>Thông tin đăng ký</Text>
-
                 <View style={s.card}>
                     <View style={s.packageRow}>
                         <View style={s.packageIcon}>
@@ -151,7 +161,9 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
                     <Ionicons name="information-circle" size={20} color={COLORS.primary} />
 
                     <Text style={s.noticeText}>
-                        Đây là bản đăng ký mô phỏng. Thông tin chỉ được lưu trên thiết bị, chưa gửi lên hệ thống và chưa thanh toán.
+                        Gói tập của bạn đã được thanh toán thành công.
+                        Bạn có thể xem thông tin và thời hạn sử dụng
+                        trong mục Gói tập của tôi.
                     </Text>
                 </View>
 
@@ -178,11 +190,26 @@ const RegistrationSuccessScreen = ({ navigation, route }: any) => {
                     </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={s.secondaryButton}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('MemberTabs')}
-                >
+                <TouchableOpacity style={s.secondaryButton} activeOpacity={0.8}
+                    onPress={() => {
+                        const routeNames = navigation.getState()?.routeNames || [];
+                        navigation.reset({
+                            index: 0,
+                            routes: [
+                                {
+                                    name: 'MemberTabs',
+                                    params: {
+                                        screen: 'Kế Hoạch Tập',
+                                        params: {
+                                            screen: routeNames.includes('HeaderPage')
+                                                ? 'HeaderPage'
+                                                : 'headerPage',
+                                        },
+                                    },
+                                },
+                            ],
+                        });
+                    }} >
                     <Ionicons name="home-outline" size={18} color={COLORS.primary} />
                     <Text style={s.secondaryText}>Về trang chủ</Text>
                 </TouchableOpacity>

@@ -1,29 +1,70 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
+import apiFitlife from '../../general/api';
 
 
 const MyPackageDetailScreen = ({ navigation, route }: any) => {
-  const registration = route?.params?.registration;
-  const pkg = registration?.selectedPackage;
-  const pt = registration?.selectedTrainer;
-  const total = Number(registration?.estimatedTotal ?? pkg?.gia ?? 0);
-  const benefits: string[] = pkg?.quyen_loi || [];
+  const id = route?.params?.id;
+  const [registration, setRegistration] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const method = registration?.paymentMethod === 'bank'
-    ? 'Chuyển khoản ngân hàng'
-    : registration?.paymentMethod === 'wallet'
-      ? 'Ví điện tử'
-      : registration?.paymentMethod === 'counter'
-        ? 'Thanh toán tại quầy'
-        : 'Chưa chọn';
+  useEffect(() => {
+    let active = true;
+    const loadData = async () => {
+      try {
+        const response = await apiFitlife.get(`/client/goi-tap-cua-toi/${id}`);
 
-  const extraPT = !!pt && pkg?.loai !== 'pt' && Number(pkg?.so_buoi_pt || 0) === 0;
+        if (active) {
+          setRegistration(response.data.data);
+        }
+      } catch (error: any) {
+        if (active) {
+          Alert.alert(
+            'Lỗi',
+            error.response?.data?.message || 'Không thể tải chi tiết gói tập.'
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    if (id) {
+      loadData();
+    } else {
+      setLoading(false);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+  const pkg = registration;
+  const pt = registration;
+  const total = Number(registration?.tong_tien || 0);
+  const method = registration?.phuong_thuc_thanh_toan || 'Chưa chọn';
+  const isPaid = Number(registration?.is_thanh_toan) === 1;
+  const benefits: string[] = registration?.mo_ta ? registration.mo_ta .split(/[,.]/) .map((item: string) => item.trim()) .filter((item: string) => item.length > 0)
+    : [];
+  if (loading) {
+    return (
+      <SafeAreaView style={s.container}>
+        <AppHeader title="Chi tiết gói tập" onBack={() => navigation.goBack()} />
+
+        <View style={s.empty}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={s.subText}>Đang tải thông tin gói tập...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
@@ -86,18 +127,22 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
             {/* Trạng thái */}
             <View style={s.statusBox}>
               <View style={s.statusIcon}>
-                <Ionicons name="time-outline" size={20} color={COLORS.accentGold} />
+                  <Ionicons  name={isPaid ? 'checkmark-circle-outline' : 'time-outline'} size={20} color={isPaid ? COLORS.accentGreen : COLORS.accentGold} />
               </View>
-
               <View style={s.flex}>
-                <Text style={s.statusTitle}>Chờ thanh toán</Text>
-                <Text style={s.subText}>Đăng ký Demo chưa kích hoạt</Text>
+                  <Text style={s.statusTitle}>
+                      {isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  </Text>
+                  <Text style={s.subText}>
+                      {isPaid ? 'Giao dịch đã được thanh toán' : 'Đang chờ thanh toán'}
+                  </Text>
               </View>
-
               <View style={s.statusBadge}>
-                <Text style={s.statusBadgeText}>DEMO</Text>
+                  <Text style={s.statusBadgeText}>
+                      {isPaid ? 'PAID' : 'PENDING'}
+                  </Text>
               </View>
-            </View>
+          </View>
 
             {/* Thông tin gói */}
             <Text style={s.sectionTitle}>Thông tin gói tập</Text>
@@ -182,89 +227,74 @@ const MyPackageDetailScreen = ({ navigation, route }: any) => {
 
             {/* Thông tin đăng ký */}
             <Text style={s.sectionTitle}>Thông tin đăng ký</Text>
-
             <View style={[s.card, s.cardList]}>
-              <View style={s.infoRow}>
-                <Text style={s.infoLabel}>Mã đăng ký Demo</Text>
-                <Text style={s.infoValue}>{registration.id || '—'}</Text>
-              </View>
-
-              <View style={s.infoRow}>
-                <Text style={s.infoLabel}>Ngày đăng ký</Text>
-                <Text style={s.infoValue}>
-                  {registration.createdAt
-                    ? new Date(registration.createdAt).toLocaleDateString('vi-VN')
-                    : '—'}
-                </Text>
-              </View>
-
-              <View style={s.infoRow}>
-                <Text style={s.infoLabel}>Phương thức</Text>
-                <Text style={s.infoValue}>{method}</Text>
-              </View>
-
-              <View style={s.infoRow}>
-                <Text style={s.infoLabel}>Trạng thái</Text>
-                <View style={s.pendingBadge}>
-                  <Text style={s.pendingText}>Chờ thanh toán</Text>
+                <View style={s.infoRow}>
+                    <Text style={s.infoLabel}>Mã đăng ký</Text>
+                    <Text style={s.infoValue}>
+                        VF-{String(registration.id).padStart(5, '0')}
+                    </Text>
                 </View>
-              </View>
+                <View style={s.infoRow}>
+                    <Text style={s.infoLabel}>Ngày đăng ký</Text>
+                    <Text style={s.infoValue}>
+                        {registration.ngay_dang_ky ? new Date(registration.ngay_dang_ky).toLocaleDateString('vi-VN') : '—'}
+                    </Text>
+                </View>
+                <View style={s.infoRow}>
+                    <Text style={s.infoLabel}>Phương thức</Text>
+                    <Text style={s.infoValue}>{method}</Text>
+                </View>
+                <View style={s.infoRow}>
+                    <Text style={s.infoLabel}>Trạng thái</Text>
+                    <Text style={s.infoValue}>
+                        {isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                    </Text>
+                </View>
             </View>
 
             {/* Thanh toán */}
-            <Text style={s.sectionTitle}>Chi tiết chi phí</Text>
-
-            <View style={[s.card, s.cardList]}>
+           <Text style={s.sectionTitle}>Chi tiết chi phí</Text>
+          <View style={[s.card, s.cardList]}>
               <View style={s.infoRow}>
-                <Text style={s.infoLabel}>Giá gói tập</Text>
-                <Text style={s.infoValue}>
-                  {Number(pkg.gia || 0).toLocaleString('vi-VN')}đ
-                </Text>
+                  <Text style={s.infoLabel}>Giá gói tập</Text>
+                  <Text style={s.infoValue}>
+                      {Number(registration.don_gia || 0).toLocaleString('vi-VN')}đ
+                  </Text>
               </View>
-
               <View style={s.infoRow}>
-                <Text style={s.infoLabel}>Phí PT chọn thêm</Text>
-                <Text style={s.infoValue}>
-                  {extraPT ? 'Chưa xác định' : 'Không tính thêm'}
-                </Text>
+                  <Text style={s.infoLabel}>Giảm giá khuyến mãi</Text>
+                  <Text style={s.infoValue}>
+                      -{Number(registration.tien_giam_khuyen_mai || 0).toLocaleString('vi-VN')}đ
+                  </Text>
               </View>
-
+              <View style={s.infoRow}>
+                  <Text style={s.infoLabel}>Giảm giá giới thiệu</Text>
+                  <Text style={s.infoValue}>
+                      -{Number(registration.tien_giam_gioi_thieu || 0).toLocaleString('vi-VN')}đ
+                  </Text>
+              </View>
               <View style={s.dashedDivider} />
-
               <View style={s.totalRow}>
-                <Text style={s.totalLabel}>Tổng tạm tính</Text>
-                <Text style={s.totalValue}>
-                  {total.toLocaleString('vi-VN')}đ
-                </Text>
+                  <Text style={s.totalLabel}>Tổng thanh toán</Text>
+                  <Text style={s.totalValue}>
+                      {total.toLocaleString('vi-VN')}đ
+                  </Text>
               </View>
-
-              {extraPT && (
-                <Text style={s.priceNote}>
-                  Phí PT chọn thêm chưa được tính vào tổng tạm tính.
-                </Text>
-              )}
-            </View>
+          </View>
 
             {/* Thông báo */}
             <View style={s.notice}>
               <Ionicons name="information-circle" size={20} color={COLORS.primary} />
               <Text style={s.noticeText}>
-                Đây là thông tin đăng ký mô phỏng được lưu trên thiết bị.
-                Gói tập chưa được kích hoạt và chưa phát sinh thanh toán thực tế.
+                Thông tin đăng ký và chi phí được lấy trực tiếp từ hệ thống VisionFit.
               </Text>
             </View>
           </ScrollView>
 
           {/* Footer */}
           <View style={s.footer}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => {
-                const routeNames = navigation.getState()?.routeNames || [];
-                const target = routeNames.includes('MyPackages') ? 'MyPackages' : routeNames.includes('MyPackagesScreen') ? 'MyPackagesScreen' : 'MyPackages';
-                navigation.navigate(target);
-              }}
-            >
+            <TouchableOpacity activeOpacity={0.85}
+              onPress={() => { const routeNames = navigation.getState()?.routeNames || [];  const target = routeNames.includes('MyPackages') ? 'MyPackages' : routeNames.includes('MyPackagesScreen') ? 'MyPackagesScreen' : 'MyPackages'; navigation.navigate(target); }} >
               <LinearGradient
                 colors={[COLORS.primary, COLORS.primaryDark]}
                 start={{ x: 0, y: 0 }}

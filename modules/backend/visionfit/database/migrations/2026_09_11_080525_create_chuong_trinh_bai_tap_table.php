@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_chuong_trinh');
             $table->unsignedBigInteger('id_bai_tap')->nullable();
+            $table->unsignedBigInteger('id_dang_ky_chuong_trinh')->nullable();
             $table->integer('ngay_thu'); // ngày thứ mấy trong chương trình
             $table->string('ten_ngay_tap', 255)->nullable(); // toàn thân hay gì đó 
             // $table->integer('thu_tu'); // thứ tự bài tập trong ngày 

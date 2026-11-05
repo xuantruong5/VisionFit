@@ -1,17 +1,5 @@
 import React, { useState } from 'react';
-import {
-    StyleSheet,
-    Text,
-    View,
-    TouchableOpacity,
-    ScrollView,
-    Image,
-    Modal,
-    TextInput,
-    Alert,
-    StatusBar,
-    Switch,
-} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert, StatusBar, Switch,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -28,7 +16,7 @@ const INITIAL_MEMBER = {
     chieu_cao_cm: '175',
     can_nang_kg: '68',
     dang_nguoi: 'Cân đối',
-    muc_tieu_hien_tai: 'Tăng cơ & Giảm mỡ',
+    muc_tieu_hien_tai: 'Tăng cơ & Giảm mỡ', 
     cap_do_hien_tai: 'Trung cấp (Intermediate)',
     noi_tap_uu_tien: 'Phòng gym VisionFit',
     hang_thanh_vien: 'Hội viên VIP Premium',

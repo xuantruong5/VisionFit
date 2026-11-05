@@ -1,79 +1,80 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
+import apiFitlife from '../../general/api';
 
 
-const STORAGE_KEY = 'visionfit_demo_registrations';
+
 
 type Registration = {
-  id: string;
-  createdAt?: string;
-  selectedPackage: {
-    id: number | string;
-    ten_goi: string;
-    gia: number;
-    thoi_han: number;
-    so_buoi_pt?: number;
-  };
-  selectedTrainer?: {
-    id: number | string;
-    ho_ten: string;
-  } | null;
-  estimatedTotal?: number;
-  paymentMethod?: string;
-  status?: string;
+  id: number;
+  ngay_dang_ky: string;
+  tinh_trang: number;
+  is_thanh_toan: number;
+  phuong_thuc_thanh_toan: string | null;
+  tong_tien: number | string;
+  id_goi_tap: number | null;
+  ten_goi: string | null;
+  gia: number | string | null;
+  thoi_han: number | null;
+  so_buoi: number | null;
+  so_buoi_pt: number | null;
+  id_trainer: number | null;
+  ho_ten: string | null;
 };
 
 const MyPackagesScreen = ({ navigation }: any) => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Tải danh sách đăng ký đã lưu trên thiết bị
-  useFocusEffect(useCallback(() => {
+  useEffect(() => {
     let active = true;
-
     const loadData = async () => {
       setLoading(true);
-
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        const data = saved ? JSON.parse(saved) : [];
-
+        const response = await apiFitlife.get('/client/goi-tap-cua-toi');
         if (active) {
-          setRegistrations(Array.isArray(data) ? data.filter(item => item?.selectedPackage) : []);
+          setRegistrations(response.data.data || []);
         }
-      } catch {
-        if (active) Alert.alert('Lỗi', 'Không thể tải danh sách gói tập.');
+      } catch (error: any) {
+        if (active) {
+          Alert.alert(
+            'Lỗi',
+            error.response?.data?.message ||
+            'Không thể tải danh sách gói tập.'
+          );
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     loadData();
-    return () => { active = false; };
-  }, []));
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
-
       {/* Header */}
-      <AppHeader
-        title="Gói tập của tôi"
-        onBack={() => navigation.goBack()}
+      <AppHeader title="Gói tập của tôi" onBack={() => navigation.goBack()}
         rightComponent={
           <View style={s.headerIcon}>
             <Ionicons name="barbell-outline" size={20} color={COLORS.primary} />
           </View>
-        }
-      />
+        } />
 
       {loading ? (
         <View style={s.center}>
@@ -83,7 +84,6 @@ const MyPackagesScreen = ({ navigation }: any) => {
       ) : (
         <>
           <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-
             {/* Banner */}
             <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
               <View style={s.heroDecor} />
@@ -98,7 +98,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
 
               <View style={s.heroBadge}>
                 <Ionicons name="information-circle-outline" size={15} color={COLORS.white} />
-                <Text style={s.heroBadgeText}>Dữ liệu đăng ký Demo</Text>
+                <Text style={s.heroBadgeText}>Dữ liệu đăng ký hệ thống</Text>
               </View>
             </LinearGradient>
 
@@ -109,7 +109,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
               </View>
 
               <View style={s.flex}>
-                <Text style={s.summaryLabel}>Tổng số đăng ký Demo</Text>
+                <Text style={s.summaryLabel}>Tổng số đăng ký </Text>
                 <Text style={s.summaryValue}>{registrations.length} gói tập</Text>
               </View>
 
@@ -141,30 +141,26 @@ const MyPackagesScreen = ({ navigation }: any) => {
               </View>
             ) : (
               registrations.map(item => {
-                const pkg = item.selectedPackage;
-                const pt = item.selectedTrainer;
-                const total = Number(item.estimatedTotal ?? pkg.gia ?? 0);
-
-                const methodName = item.paymentMethod === 'bank'
-                  ? 'Chuyển khoản ngân hàng'
-                  : item.paymentMethod === 'wallet'
-                    ? 'Ví điện tử'
-                    : item.paymentMethod === 'counter'
-                      ? 'Thanh toán tại quầy'
-                      : 'Chưa chọn';
-
+                const total = Number(item.tong_tien || 0);
+                const methodName = item.phuong_thuc_thanh_toan || 'Chưa chọn';
+                const isPaid = Number(item.is_thanh_toan) === 1;
                 return (
                   <View key={item.id} style={s.packageCard}>
-
                     {/* Mã đăng ký và trạng thái */}
                     <View style={s.cardHeader}>
-                      <Text style={s.registrationCode}>#{item.id}</Text>
+                      <View>
+                          <Text style={s.registrationCode}>
+                              VF-{String(item.id).padStart(5, '0')}
+                          </Text>
+                      </View>
 
                       <View style={s.pendingBadge}>
-                        <Ionicons name="time-outline" size={13} color={COLORS.accentGold} />
-                        <Text style={s.pendingText}>Chờ thanh toán</Text>
+                          <Ionicons name={isPaid ? 'checkmark-circle-outline' : 'time-outline'} size={13} color={isPaid ? COLORS.accentGreen : COLORS.accentGold} />
+                          <Text style={s.pendingText}>
+                              {isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                          </Text>
                       </View>
-                    </View>
+                  </View>
 
                     <View style={s.divider} />
 
@@ -175,8 +171,13 @@ const MyPackagesScreen = ({ navigation }: any) => {
                       </View>
 
                       <View style={s.flex}>
-                        <Text style={s.packageName}>{pkg.ten_goi}</Text>
-                        <Text style={s.subText}>Gói tập VisionFit</Text>
+                        <Text style={s.packageName}>
+                          {item.ten_goi || 'Gói tập'}
+                        </Text>
+
+                        <Text style={s.subText}>
+                          Gói tập VisionFit
+                        </Text>
                       </View>
                     </View>
 
@@ -184,50 +185,79 @@ const MyPackagesScreen = ({ navigation }: any) => {
                     <View style={s.details}>
                       <View style={s.infoRow}>
                         <Text style={s.infoLabel}>Thời hạn</Text>
-                        <Text style={s.infoValue}>{pkg.thoi_han} ngày</Text>
+                        <Text style={s.infoValue}>
+                          {item.thoi_han || 0} ngày
+                        </Text>
+                      </View>
+                      <View style={s.infoRow}>
+                        <Text style={s.infoLabel}>Số buổi tập</Text>
+                        <Text style={s.infoValue}>
+                          {item.so_buoi || 0} buổi
+                        </Text>
                       </View>
 
                       <View style={s.infoRow}>
                         <Text style={s.infoLabel}>Huấn luyện viên</Text>
-                        <Text style={s.infoValue}>{pt?.ho_ten || 'Không chọn PT'}</Text>
+                        <Text style={s.infoValue}>
+                          {item.ho_ten || 'Không chọn PT'}
+                        </Text>
                       </View>
 
                       <View style={s.infoRow}>
                         <Text style={s.infoLabel}>Số buổi PT</Text>
-                        <Text style={s.infoValue}>{pkg.so_buoi_pt || 0} buổi</Text>
+                        <Text style={s.infoValue}>
+                          {item.so_buoi_pt || 0} buổi
+                        </Text>
                       </View>
 
                       <View style={s.infoRow}>
                         <Text style={s.infoLabel}>Thanh toán</Text>
-                        <Text style={s.infoValue}>{methodName}</Text>
+                        <Text style={s.infoValue}>
+                          {methodName}
+                        </Text>
                       </View>
 
                       <View style={s.infoRow}>
-                        <Text style={s.infoLabel}>Ngày đăng ký Demo</Text>
+                        <Text style={s.infoLabel}>Ngày đăng ký</Text>
                         <Text style={s.infoValue}>
-                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : '—'}
+                          {item.ngay_dang_ky ? new Date(item.ngay_dang_ky).toLocaleDateString('vi-VN') : '—'}
                         </Text>
                       </View>
+
                     </View>
 
                     <View style={s.dashedDivider} />
-
                     {/* Tổng tiền */}
                     <View style={s.priceRow}>
                       <View>
-                        <Text style={s.priceLabel}>TỔNG TẠM TÍNH</Text>
-                        <Text style={s.priceValue}>{total.toLocaleString('vi-VN')}đ</Text>
+                        <Text style={s.priceLabel}>
+                          TỔNG THANH TOÁN
+                        </Text>
+
+                        <Text style={s.priceValue}>
+                          {total.toLocaleString('vi-VN')}đ
+                        </Text>
                       </View>
 
                       <TouchableOpacity
                         style={s.detailButton}
                         onPress={() => {
                           const routeNames = navigation.getState()?.routeNames || [];
-                          const target = routeNames.includes('MyPackageDetail') ? 'MyPackageDetail' : routeNames.includes('MyPackageDetailScreen') ? 'MyPackageDetailScreen' : 'MyPackageDetail';
-                          navigation.navigate(target, { registration: item });
+
+                          const target = routeNames.includes('MyPackageDetail')
+                            ? 'MyPackageDetail'
+                            : routeNames.includes('MyPackageDetailScreen')
+                              ? 'MyPackageDetailScreen'
+                              : 'MyPackageDetail';
+
+                          navigation.navigate(target, {
+                            id: item.id,
+                          });
                         }}
                       >
-                        <Text style={s.detailText}>Xem chi tiết</Text>
+                        <Text style={s.detailText}>
+                          Xem chi tiết
+                        </Text>
                         <Ionicons name="arrow-forward" size={15} color={COLORS.white} />
                       </TouchableOpacity>
                     </View>
@@ -240,7 +270,7 @@ const MyPackagesScreen = ({ navigation }: any) => {
             <View style={s.notice}>
               <Ionicons name="information-circle" size={20} color={COLORS.primary} />
               <Text style={s.noticeText}>
-                Danh sách này chỉ gồm các đăng ký mô phỏng lưu trên thiết bị. Các gói chưa được kích hoạt hoặc thanh toán thực tế.
+                Thông tin gói tập được lấy trực tiếp từ hệ thống VisionFit.
               </Text>
             </View>
           </ScrollView>
