@@ -142,6 +142,13 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/buoi-tap/{id}/ket-thuc',[BuoiTapController::class, 'ketThuc']);
 
 
+    Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'luuLichSuHiep']);
+    Route::get('/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'getLichSuHiep']);
+
+    // báo cáo 
+    Route::get('/bao-cao/{id}', [BuoiTapController::class, 'baoCaoBuoiTap']);
+
+
     // lấy dữ liệu 
     Route::get('/buoi-tap/phan-tram-hoan-thanh',[BuoiTapController::class, 'getLatestProgress']);
     Route::get( '/buoi-tap/phan-tram-hoan-thanh-tat-ca', [BuoiTapController::class, 'getProgressPercent']);
