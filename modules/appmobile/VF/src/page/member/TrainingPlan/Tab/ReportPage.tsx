@@ -15,8 +15,8 @@ const ReportPage = ({ navigation, route }: any) => {
     const [setCount, setSetCount] = useState(0);
     const exercise = route?.params?.exercise;
     const idLichTap = route?.params?.id_lich_tap;
-    const idChuongTrinhBaiTap =route?.params?.id_chuong_trinh_bai_tap;
-  
+    const idChuongTrinhBaiTap = route?.params?.id_chuong_trinh_bai_tap;
+
     const [showWeight, setShowWeight] = useState(false);
     const [showRep, setShowRep] = useState(false);
     const [showSeconds, setShowSeconds] = useState(false);
@@ -25,6 +25,10 @@ const ReportPage = ({ navigation, route }: any) => {
     // ghi chú cho hiệp 
     const [showSetNote, setShowSetNote] = useState(false);
     const [setNote, setSetNote] = useState("");
+
+    // lấy lịch sử từng bài tập 
+    const [historyList, setHistoryList] = useState<any[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
 
 
 
@@ -109,10 +113,9 @@ const ReportPage = ({ navigation, route }: any) => {
     };
 
 
-    
-    
-    const kiemTraTatCaBaiHoanThanh = async () => 
-    {
+
+
+    const kiemTraTatCaBaiHoanThanh = async () => {
         try {
             // Không kiểm tra tiến độ ở chế độ xem trước.
             if (route?.params?.isPreview === true) {
@@ -140,8 +143,7 @@ const ReportPage = ({ navigation, route }: any) => {
                 return false;
             }
 
-            const res = await apiFitlife.get(
-                "/client/buoi-tap/phan-tram-hoan-thanh",
+            const res = await apiFitlife.get("/client/buoi-tap/phan-tram-hoan-thanh",
                 {
                     params: {
                         id_lich_tap: idLichTap,
@@ -185,6 +187,74 @@ const ReportPage = ({ navigation, route }: any) => {
             return false;
         }
     };
+
+    // Lấy lịch sử bài tập từ API
+    const fetchHistory = async () => {
+        if (!idTienDo || route?.params?.isPreview === true) {
+            setHistoryList([]);
+            return;
+        }
+        try {
+            setLoadingHistory(true);
+            const res = await apiFitlife.get(`/client/tien-do/${idTienDo}/lich-su-hiep`);
+            if (res.data?.success) {
+                setHistoryList(
+                    Array.isArray(res.data.data) ? res.data.data : []
+                );
+            }
+        } catch (error: any) {
+            console.log(
+                "LỖI LẤY LỊCH SỬ:",
+                error?.response?.data || error.message
+            );
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
+    // Tự lấy lịch sử khi mở bài tập
+    useEffect(() => {
+        fetchHistory();
+    }, [idTienDo]);
+
+
+    const getHistoryValue = (item: any) => {
+        if (item.loai_ghi_nhan === "phut") {
+            return `${item.so_phut_thuc_te ?? 0} phút`;
+        }
+        if (item.loai_ghi_nhan === "giay") {
+            return `${item.thoi_gian_thuc_te_giay ?? 0} giây`;
+        }
+        const rep = `${item.so_rep_thuc_te ?? 0} rep`;
+        if (
+            item.trong_luong_ta_thuc_te !== null &&
+            item.trong_luong_ta_thuc_te !== undefined &&
+            Number(item.trong_luong_ta_thuc_te) > 0
+        ) {
+            return `${rep} · ${Number(item.trong_luong_ta_thuc_te)} kg`;
+        }
+        return rep;
+    };
+    // Gom lịch sử theo ngày tập
+    const groupedHistory = historyList.reduce(
+        (groups: any[], item: any) => {
+            const date = item.ngay_tap;
+            let group = groups.find(
+                (g) => g.ngay_tap === date
+            );
+            if (!group) {
+                group = {
+                    ngay_tap: date,
+                    thu_tap: item.thu_tap,
+                    ngay_thang_nam: item.ngay_thang_nam,
+                    items: [],
+                };
+                groups.push(group);
+            }
+            group.items.push(item);
+            return groups;
+        },
+        []
+    );
 
 
 
@@ -253,57 +323,66 @@ const ReportPage = ({ navigation, route }: any) => {
                     : 0,
             trong_luong_ta_thuc_te: Number(weightValue || 0),
         };
+        // Xác định loại ghi nhận
+        const loaiGhiNhan = showMinutes ? "phut" : hasSeconds ? "giay" : "rep";
+
+        // Dữ liệu lưu từng lần bấm dấu +
+        const historyPayload: any = {
+            loai_ghi_nhan: loaiGhiNhan,
+            ghi_chu: setNote.trim() || null,
+        };
+        if (loaiGhiNhan === "phut") {
+            historyPayload.so_phut_thuc_te = minutesToAdd;
+        }
+
+        if (loaiGhiNhan === "giay") {
+            historyPayload.thoi_gian_thuc_te_giay =
+                Number(secondsValue || 0);
+        }
+        if (loaiGhiNhan === "rep") {
+            historyPayload.so_rep_thuc_te = Number(repValue || 0);
+            historyPayload.trong_luong_ta_thuc_te = hasWeight && weightValue !== "" ? Number(weightValue) : null;
+        }
 
         try {
             setSavingProgress(true);
-
-            // Bước 1: Lưu tiến độ
-            const res = await apiFitlife.post(
-                `/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}`,
-                payload
-            );
-
+            // Bước 1: Lưu tiến độ tổng hợp
+            const res = await apiFitlife.post(`/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}`, payload);
             if (!res.data?.success) {
                 throw new Error(
                     res.data?.message ?? "Không cập nhật được tiến độ."
                 );
             }
-
+            // Bước 2: Lưu lịch sử từng hiệp
+            const historyRes = await apiFitlife.post(`/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}/lich-su-hiep`, historyPayload);
+            if (!historyRes.data?.success) {
+                throw new Error(
+                    historyRes.data?.message ?? "Không lưu được lịch sử hiệp."
+                );
+            }
+            // Bước 3: Tải lại lịch sử từ database
+            await fetchHistory();
             // Cập nhật giao diện sau khi API lưu thành công
             if (hasSet) {
                 setSetCount(nextSetCount);
             }
-
             if (showMinutes) {
                 setSavedMinutes(String(nextSavedMinutes));
             }
-
             // Bước 2: Kiểm tra đã đạt mục tiêu chưa
-            const isCompleted = hasSet
-                ? nextSetCount >= targetSets
-                : showMinutes
-                    ? nextSavedMinutes >= targetMinutes
-                    : false;
-
+            const isCompleted = hasSet ? nextSetCount >= targetSets : showMinutes ? nextSavedMinutes >= targetMinutes : false;
             // Bước 3: Đạt mục tiêu thì gọi API hoàn thành
-
             if (isCompleted) {
                 setCompletingExercise(true);
-
-                const completeRes = await apiFitlife.post(
-                    `/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}/hoan-thanh`
-                );
-
+                const completeRes = await apiFitlife.post(`/client/buoi-tap/${idBuoiTap}/tien-do/${idTienDo}/hoan-thanh`);
                 if (!completeRes.data?.success) {
                     throw new Error(
                         completeRes.data?.message ??
                         "Lưu tiến độ được nhưng chưa thể hoàn thành bài tập."
                     );
                 }
-
                 // Kiểm tra xem tất cả bài tập trong ngày đã hoàn thành chưa
                 const allCompleted = await kiemTraTatCaBaiHoanThanh();
-
                 if (allCompleted) {
                     Alert.alert(
                         "🎉 Hoàn thành buổi tập!",
@@ -376,10 +455,10 @@ const ReportPage = ({ navigation, route }: any) => {
                     activeOpacity={0.8} onPress={() => { if (!isWorkoutRunning) { handleWorkoutPause(); } }} >
                     {isWorkoutRunning ? (
                         <View style={styles.timerRow}>
-                        <View style={styles.timerDot} />
-                        <Text style={styles.headerTimerText}>
-                            {formatTime(workoutTime)}
-                        </Text>
+                            <View style={styles.timerDot} />
+                            <Text style={styles.headerTimerText}>
+                                {formatTime(workoutTime)}
+                            </Text>
                         </View>
                     ) : (
                         <Text style={styles.headerTimerStartText}>
@@ -473,125 +552,165 @@ const ReportPage = ({ navigation, route }: any) => {
 
                 {/* ================= CONTROLS ================= */}
                 <View style={styles.controlCard}>
-                <View style={styles.controlContainer}>
-                    {/* GIÂY YÊU CẦU HOẶC SỐ LẦN LẶP */}
-                    <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
-                        onPress={() => {
-                            if (hasWeightAndRep) {
-                                setShowWeight(true);
-                                setShowRep(true);
-                            } else if (hasSeconds) {
-                                setShowSeconds(true);
-                                setTime(Number(exercise?.giay_yeu_cau));
-                                setIsRunning(false);
-                            } else if (hasRep) {
-                                setShowRep(true);
-                            }
-                        }}>
-                        <View style={styles.circleNormal}>
-                            <Text style={styles.circleNumber}>
-                                {hasSeconds ? exercise?.giay_yeu_cau : exercise?.rep_yeu_cau ?? 0}
+                    <View style={styles.controlContainer}>
+                        {/* GIÂY YÊU CẦU HOẶC SỐ LẦN LẶP */}
+                        <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
+                            onPress={() => {
+                                if (hasWeightAndRep) {
+                                    setShowWeight(true);
+                                    setShowRep(true);
+                                } else if (hasSeconds) {
+                                    setShowSeconds(true);
+                                    setTime(Number(exercise?.giay_yeu_cau));
+                                    setIsRunning(false);
+                                } else if (hasRep) {
+                                    setShowRep(true);
+                                }
+                            }}>
+                            <View style={styles.circleNormal}>
+                                <Text style={styles.circleNumber}>
+                                    {hasSeconds ? exercise?.giay_yeu_cau : exercise?.rep_yeu_cau ?? 0}
+                                </Text>
+                            </View>
+
+                            <Text style={styles.controlLabel}>
+                                {hasSeconds ? "Giây" : "Rep"}
+                            </Text>
+
+                            <Text style={styles.controlSubLabel}>
+                                {hasSeconds || hasRep ? "yêu cầu" : ""}
+                            </Text>
+                        </TouchableOpacity>
+                        {/* START / TẠM NGHỈ */}
+                        <View style={styles.controlItem}>
+                            <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleWorkoutPause}>
+
+                                <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.startGradient}>
+                                    <Ionicons name={isWorkoutRunning ? "pause" : "play"} size={28} color={COLORS.white} />
+                                </LinearGradient>
+                            </TouchableOpacity>
+
+                            <Text style={styles.controlLabel}>
+                                Tạm Nghỉ
                             </Text>
                         </View>
 
-                        <Text style={styles.controlLabel}>
-                            {hasSeconds ? "Giây" : "Rep"}
-                        </Text>
+                        {/* SET HOẶC THỜI GIAN PHÚT */}
+                        <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
+                            onPress={() => {
+                                if (hasSet) {
+                                    setSetCount(0);
+                                } else if (showMinutes) {
+                                    setShowMinutesInput(true);
+                                    setTime(Number(exercise?.thoi_gian_phut) * 60);
+                                    setIsRunning(false);
+                                }
+                            }} >
+                            <View style={styles.progressCircle}>
+                                <Svg width={circleSize} height={circleSize} viewBox={`0 0 ${circleSize} ${circleSize}`} >
+                                    {/* Vòng nền */}
+                                    <Circle cx={circleSize / 2} cy={circleSize / 2} r={circleRadius} stroke={COLORS.borderLight} strokeWidth={4} fill="none" />
 
-                        <Text style={styles.controlSubLabel}>
-                            {hasSeconds || hasRep ? "yêu cầu" : ""}
-                        </Text>
-                    </TouchableOpacity>
-                    {/* START / TẠM NGHỈ */}
-                    <View style={styles.controlItem}>
-                        <TouchableOpacity style={styles.startCircle} activeOpacity={0.8} onPress={handleWorkoutPause}>
+                                    {/* Vòng tiến độ */}
+                                    {progress > 0 && (
+                                        <Circle
+                                            cx={circleSize / 2}
+                                            cy={circleSize / 2}
+                                            r={circleRadius}
+                                            stroke={progressColor}
+                                            strokeWidth={4}
+                                            fill="none"
+                                            strokeLinecap="round"
+                                            strokeDasharray={`${circumference} ${circumference}`}
+                                            strokeDashoffset={circumference * (1 - progress)}
+                                            rotation={-90}
+                                            origin={`${circleSize / 2}, ${circleSize / 2}`} />
+                                    )}
+                                </Svg>
 
-                            <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.startGradient}>
-                                <Ionicons name={isWorkoutRunning ? "pause" : "play"} size={28} color={COLORS.white} />
-                            </LinearGradient>
+                                {/* Số hiển thị giữa vòng tròn */}
+                                <View style={styles.progressText}>
+                                    <Text style={styles.circleNumber}>
+                                        {hasSet
+                                            ? `${setCount}/${exercise?.set_yeu_cau}`
+                                            : showMinutes
+                                                ? `${savedMinutes ?? 0}/${exercise?.thoi_gian_phut}`
+                                                : "0"}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <Text style={styles.controlLabel}>
+                                {hasSet ? "Set" : showMinutes ? "Phút" : ""}
+                            </Text>
+
+                            <Text style={styles.controlSubLabel}>
+                                {hasSet || showMinutes ? "tập" : ""}
+                            </Text>
                         </TouchableOpacity>
-
-                        <Text style={styles.controlLabel}>
-                            Tạm Nghỉ
-                        </Text>
                     </View>
 
-                    {/* SET HOẶC THỜI GIAN PHÚT */}
-                    <TouchableOpacity style={styles.controlItem} activeOpacity={0.8}
-                        onPress={() => {
-                            if (hasSet) {
-                                setSetCount(0);
-                            } else if (showMinutes) {
-                                setShowMinutesInput(true);
-                                setTime(Number(exercise?.thoi_gian_phut) * 60);
-                                setIsRunning(false);
-                            }
-                        }} >
-                        <View style={styles.progressCircle}>
-                            <Svg width={circleSize} height={circleSize} viewBox={`0 0 ${circleSize} ${circleSize}`} >
-                                {/* Vòng nền */}
-                                <Circle cx={circleSize / 2} cy={circleSize / 2} r={circleRadius} stroke={COLORS.borderLight} strokeWidth={4} fill="none" />
 
-                                {/* Vòng tiến độ */}
-                                {progress > 0 && (
-                                    <Circle
-                                        cx={circleSize / 2}
-                                        cy={circleSize / 2}
-                                        r={circleRadius}
-                                        stroke={progressColor}
-                                        strokeWidth={4}
-                                        fill="none"
-                                        strokeLinecap="round"
-                                        strokeDasharray={`${circumference} ${circumference}`}
-                                        strokeDashoffset={circumference * (1 - progress)}
-                                        rotation={-90}
-                                        origin={`${circleSize / 2}, ${circleSize / 2}`} />
-                                )}
-                            </Svg>
+                    {/* ================= SECOND INPUT ================= */}
 
-                            {/* Số hiển thị giữa vòng tròn */}
-                            <View style={styles.progressText}>
-                                <Text style={styles.circleNumber}>
-                                    {hasSet
-                                        ? `${setCount}/${exercise?.set_yeu_cau}`
-                                        : showMinutes
-                                            ? `${savedMinutes ?? 0}/${exercise?.thoi_gian_phut}`
-                                            : "0"}
-                                </Text>
-                            </View>
-                        </View>
+                    <View style={styles.secondArea}>
+                        {hasWeightAndRep ? (
+                            <>
+                                {/* Ô chỉnh sửa mức tạ */}
+                                <View style={styles.secondButton}>
+                                    <TextInput
+                                        style={styles.secondInput}
+                                        value={showWeight ? weightValue : ""}
+                                        onChangeText={setWeightValue}
+                                        placeholderTextColor={COLORS.textLight}
+                                        keyboardType="decimal-pad"
+                                        selectTextOnFocus />
+                                    {showWeight && (
+                                        <Text style={styles.secondUnit}>kg</Text>
+                                    )}
+                                </View>
 
-                        <Text style={styles.controlLabel}>
-                            {hasSet ? "Set" : showMinutes ? "Phút" : ""}
-                        </Text>
-
-                        <Text style={styles.controlSubLabel}>
-                            {hasSet || showMinutes ? "tập" : ""}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-
-                {/* ================= SECOND INPUT ================= */}
-
-                <View style={styles.secondArea}>
-                    {hasWeightAndRep ? (
-                        <>
-                            {/* Ô chỉnh sửa mức tạ */}
+                                {/* Ô chỉnh sửa số Rep */}
+                                <View style={styles.secondButton}>
+                                    <TextInput
+                                        style={styles.secondInput}
+                                        value={showRep ? repValue : ""}
+                                        onChangeText={setRepValue}
+                                        placeholderTextColor={COLORS.textLight}
+                                        keyboardType="number-pad"
+                                        selectTextOnFocus />
+                                    {showRep && (
+                                        <Text style={styles.secondUnit}>Rep</Text>
+                                    )}
+                                </View>
+                            </>
+                        ) : hasSeconds ? (
                             <View style={styles.secondButton}>
                                 <TextInput
                                     style={styles.secondInput}
-                                    value={showWeight ? weightValue : ""}
-                                    onChangeText={setWeightValue}
+                                    value={showSeconds ? secondsValue : ""}
+                                    onChangeText={setSecondsValue}
                                     placeholderTextColor={COLORS.textLight}
-                                    keyboardType="decimal-pad"
+                                    keyboardType="number-pad"
                                     selectTextOnFocus />
-                                {showWeight && (
-                                    <Text style={styles.secondUnit}>kg</Text>
+                                {showSeconds && (
+                                    <Text style={styles.secondUnit}>Giây</Text>
                                 )}
                             </View>
-
-                            {/* Ô chỉnh sửa số Rep */}
+                        ) : showMinutes ? (
+                            <View style={styles.secondButton}>
+                                <TextInput
+                                    style={styles.secondInput}
+                                    value={showMinutesInput ? minutesValue : ""}
+                                    onChangeText={setMinutesValue}
+                                    placeholderTextColor={COLORS.textLight}
+                                    keyboardType="number-pad"
+                                    selectTextOnFocus />
+                                {showMinutesInput && (
+                                    <Text style={styles.secondUnit}>Phút</Text>
+                                )}
+                            </View>
+                        ) : hasRep ? (
                             <View style={styles.secondButton}>
                                 <TextInput
                                     style={styles.secondInput}
@@ -604,57 +723,17 @@ const ReportPage = ({ navigation, route }: any) => {
                                     <Text style={styles.secondUnit}>Rep</Text>
                                 )}
                             </View>
-                        </>
-                    ) : hasSeconds ? (
-                        <View style={styles.secondButton}>
-                            <TextInput
-                                style={styles.secondInput}
-                                value={showSeconds ? secondsValue : ""}
-                                onChangeText={setSecondsValue}
-                                placeholderTextColor={COLORS.textLight}
-                                keyboardType="number-pad"
-                                selectTextOnFocus />
-                            {showSeconds && (
-                                <Text style={styles.secondUnit}>Giây</Text>
-                            )}
-                        </View>
-                    ) : showMinutes ? (
-                        <View style={styles.secondButton}>
-                            <TextInput
-                                style={styles.secondInput}
-                                value={showMinutesInput ? minutesValue : ""}
-                                onChangeText={setMinutesValue}
-                                placeholderTextColor={COLORS.textLight}
-                                keyboardType="number-pad"
-                                selectTextOnFocus />
-                            {showMinutesInput && (
-                                <Text style={styles.secondUnit}>Phút</Text>
-                            )}
-                        </View>
-                    ) : hasRep ? (
-                        <View style={styles.secondButton}>
-                            <TextInput
-                                style={styles.secondInput}
-                                value={showRep ? repValue : ""}
-                                onChangeText={setRepValue}
-                                placeholderTextColor={COLORS.textLight}
-                                keyboardType="number-pad"
-                                selectTextOnFocus />
-                            {showRep && (
-                                <Text style={styles.secondUnit}>Rep</Text>
-                            )}
-                        </View>
-                    ) : null}
-                    <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} disabled={savingProgress} >
-                        <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.addGradient}>
-                        {savingProgress ? (
-                            <ActivityIndicator color="#FFFFFF" />
-                        ) : (
-                            <Ionicons name="add" size={28} color="#FFFFFF" />
-                        )}
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
+                        ) : null}
+                        <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={handleAddSet} disabled={savingProgress} >
+                            <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.addGradient}>
+                                {savingProgress ? (
+                                    <ActivityIndicator color="#FFFFFF" />
+                                ) : (
+                                    <Ionicons name="add" size={28} color="#FFFFFF" />
+                                )}
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {!showSetNote ? (
@@ -697,62 +776,63 @@ const ReportPage = ({ navigation, route }: any) => {
                             <Text style={styles.historyTitle}>Lịch sử</Text>
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.historyChartButton}
-                            activeOpacity={0.7}
-                            onPress={() => Alert.alert("Thông báo", "Chức năng biểu đồ đang được phát triển")}
-                        >
+                        <TouchableOpacity style={styles.historyChartButton} activeOpacity={0.7} onPress={() => Alert.alert("Thông báo", "Chức năng biểu đồ đang được phát triển")} >
                             <Text style={styles.historyChartText}>Biểu đồ</Text>
-                            <Ionicons
-                                name="chevron-forward"
-                                size={16}
-                                color={COLORS.primary}
-                            />
+                            <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Thứ 6 */}
-                    <View style={styles.historyDateGroup}>
-                        <Text style={styles.historyDateTitle}>Thứ 6, 23/10/26</Text>
+                    {loadingHistory ? (
+                        <View style={{ padding: 20, alignItems: "center" }}>
+                            <ActivityIndicator color={COLORS.primary} />
+                            <Text style={{ marginTop: 8, color: COLORS.textLight }}>
+                                Đang tải lịch sử...
+                            </Text>
+                        </View>
+                    ) : groupedHistory.length === 0 ? (
+                        <View style={{ padding: 20, alignItems: "center" }}>
+                            <Text style={{ color: COLORS.textLight }}>
+                                Chưa có lịch sử tập luyện
+                            </Text>
+                        </View>
+                    ) : (
+                        groupedHistory.map((group: any) => (
+                            <View style={styles.historyDateGroup} key={group.ngay_tap} >
+                                <Text style={styles.historyDateTitle}>
+                                    {group.thu_tap}, {group.ngay_thang_nam}
+                                </Text>
+                                {group.items.map((item: any) => (
+                                    <View key={item.id}>
+                                        <View style={styles.historyRow}>
+                                            <View style={styles.historyLeft}>
+                                                <Text style={styles.historySet}>
+                                                    {item.so_hiep ? `#${item.so_hiep}` : ""}
+                                                </Text>
 
-                        {[
-                            { set: 2, duration: "8 phút", time: "00:33" },
-                            { set: 1, duration: "8 phút", time: "00:27" },
-                        ].map((item, index) => (
-                            <View style={styles.historyRow} key={index}>
-                                <View style={styles.historyLeft}>
-                                    <Text style={styles.historySet}>#{item.set}</Text>
-                                    <Text style={styles.historyDuration}>
-                                        {item.duration}
-                                    </Text>
-                                </View>
+                                                <Text style={styles.historyDuration}>
+                                                    {getHistoryValue(item)}
+                                                </Text>
+                                            </View>
 
-                                <Text style={styles.historyTime}>{item.time}</Text>
+                                            <Text style={styles.historyTime}>
+                                                {item.gio_tao}
+                                            </Text>
+                                        </View>
+
+                                        {/* Ghi chú chỉ hiện khi có nội dung */}
+                                        {item.ghi_chu?.trim() ? (
+                                            <View style={styles.historyNote}>
+                                                <Ionicons name="chatbox-ellipses-outline" size={15} color={COLORS.primary}/>
+                                                <Text style={styles.historyNoteText}>
+                                                    {item.ghi_chu}
+                                                </Text>
+                                            </View>
+                                        ) : null}
+                                    </View>
+                                ))}
                             </View>
-                        ))}
-                    </View>
-
-                    {/* Thứ 5 */}
-                    <View style={styles.historyDateGroup}>
-                        <Text style={styles.historyDateTitle}>Thứ 5, 22/10/26</Text>
-
-                        {[
-                            { set: 3, duration: "8 phút", time: "20:13" },
-                            { set: 2, duration: "8 phút", time: "20:08" },
-                            { set: 1, duration: "8 phút", time: "20:08" },
-                        ].map((item, index) => (
-                            <View style={styles.historyRow} key={index}>
-                                <View style={styles.historyLeft}>
-                                    <Text style={styles.historySet}>#{item.set}</Text>
-                                    <Text style={styles.historyDuration}>
-                                        {item.duration}
-                                    </Text>
-                                </View>
-
-                                <Text style={styles.historyTime}>{item.time}</Text>
-                            </View>
-                        ))}
-                    </View>
+                        ))
+                    )}
                 </View>
 
             </ScrollView>
@@ -1498,6 +1578,25 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "600",
         color: COLORS.textMuted,
+    },
+    historyNote: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        backgroundColor: "#F0F9FA",
+        marginHorizontal: wp("4%"),
+        marginTop: hp("1%"),
+        marginBottom: hp("1%"),
+        paddingHorizontal: wp("3%"),
+        paddingVertical: hp("1%"),
+        borderRadius: 10,
+        gap: 8,
+    },
+
+    historyNoteText: {
+        flex: 1,
+        fontSize: wp("3.3%"),
+        color: COLORS.textSecondary || "#64748B",
+        lineHeight: 20,
     },
 
 

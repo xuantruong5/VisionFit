@@ -567,23 +567,28 @@ const ExercisePage = ({ navigation, route }: any) => {
       DeviceEventEmitter.emit("workout-session-finish");
 
       // Hoàn thành tất cả bài: quay về kế hoạch, không hỏi thêm.
-      if (quayVeKeHoach) {
-        navigation.navigate("headerPage", {
-          // initialTab: "WorkoutExercisePlan",
-          screen: "WorkoutExercisePlan",
-        });
-        return;
-      }
+      // if (quayVeKeHoach) {
+      //   navigation.navigate("headerPage", {
+      //     // initialTab: "WorkoutExercisePlan",
+      //     screen: "WorkoutExercisePlan",
+      //   });
+      //   return;
+      // }
+      navigation.navigate("ResultPage", {
+          id_buoi_tap: idBuoiTap,
+      });
+
 
       const data = res.data.data;
 
-      Alert.alert(
-        "Thành công",
-        data?.da_mo_ngay_tiep_theo
-          ? `Đã kết thúc buổi tập. Ngày tập ${data.ngay_tiep_theo.ngay_thu} đã được mở.`
-          : `Đã kết thúc buổi tập. Hoàn thành ${data?.phan_tram_hoan_thanh ?? 0
-          }%.`
-      );
+      // Alert.alert(
+      //   "Thành công",
+      //   data?.da_mo_ngay_tiep_theo
+      //     ? `Đã kết thúc buổi tập. Ngày tập ${data.ngay_tiep_theo.ngay_thu} đã được mở.`
+      //     : `Đã kết thúc buổi tập. Hoàn thành ${data?.phan_tram_hoan_thanh ?? 0
+      //     }%.`
+      // );
+    
     } catch (error: any) {
       Alert.alert(
         "Lỗi",
