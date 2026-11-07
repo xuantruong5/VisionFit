@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, StatusBar, Modal, } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, StatusBar, Modal, Alert, } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiFitlife from '../../general/api';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
@@ -21,6 +23,35 @@ const TrainerAuthScreen = ({ navigation }: any) => {
     const [ptCode, setPtCode] = useState("");
     const [account, setAccount] = useState("");
     const [accountPass, setAccountPass] = useState("");
+
+    const handleTrainerLogin = async () => {
+        const loginAccount = account.trim();
+        if (!loginAccount || !accountPass) {
+            Alert.alert('Thông báo', 'Vui lòng nhập tài khoản (email) và mật khẩu');
+            return;
+        }
+        try {
+            const response = await apiFitlife.post('/trainer/login', {
+                email: loginAccount,
+                password: accountPass,
+            });
+            console.log('Kết quả đăng nhập Trainer:', response.data);
+            if (response.data && response.data.status && response.data.token) {
+                await AsyncStorage.setItem('token', response.data.token);
+                await AsyncStorage.setItem('role', 'trainer');
+                Alert.alert('Thành công', 'Đăng nhập thành công');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'MainTabs' }],
+                });
+            } else {
+                Alert.alert('Thất bại', response.data?.message || 'Tài khoản hoặc mật khẩu không chính xác');
+            }
+        } catch (err: any) {
+            console.log('Lỗi đăng nhập Trainer:', err);
+            Alert.alert('Lỗi', err.response?.data?.message || 'Không thể kết nối đến máy chủ');
+        }
+    };
 
     const handleRegister = () => {
         // Mở popup thông báo chờ duyệt theo đúng yêu cầu nghiệp vụ
@@ -121,7 +152,7 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                                     </Text>
                                     <TextInput style={styles.input} placeholder="Nhập mật khẩu" placeholderTextColor={C.textLight} secureTextEntry autoCapitalize="none" value={accountPass} onChangeText={setAccountPass} />
                                 </View>
-                                <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("MainTabs")} activeOpacity={0.85}>
+                                <TouchableOpacity style={styles.registerButton} onPress={handleTrainerLogin} activeOpacity={0.85}>
                                     <Text style={styles.registerText}>
                                         ĐĂNG NHẬP
                                     </Text>

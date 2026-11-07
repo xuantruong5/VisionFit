@@ -81,7 +81,9 @@ Route::post('/ho-so/avatar', [MembersController::class, 'uploadAvatar']);
 Route::get('/bai-tap', [MembersController::class, 'getDanhSachBaiTap']);
 
 // Chat routes
-Route::prefix('chat')->group(function () {
+Route::middleware(['auth:sanctum', 'ClientMiddleware'])
+    ->prefix('chat')
+    ->group(function () {
     Route::get('/rooms', [ChatController::class, 'getListRooms']);
     Route::get('/contacts', [ChatController::class, 'getContacts']);
     Route::get('/room/{id}', [ChatController::class, 'getRoom']);
@@ -125,7 +127,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/activate-program/{id}',[DangKyChuongTrinhController::class, 'activateProgram']);
 
     Route::post('/chuong-trinh-bai-tap/{id}/bo-qua', [ChuongTrinhBaiTapController::class, 'changeSkip']);
-    // Route::get('/my-program-detail',[DangKyChuongTrinhController::class, 'getMyProgramDetail']); // api tổng hợp  
+    // Route::get('/my-program-detail',[DangKyChuongTrinhController::class, 'getMyProgramDetail']); // api tổng hợp
 
     Route::get('/provinces', [MembersController::class, 'getProvinces']);
     Route::get('/provinces/{code}/wards', [MembersController::class, 'getWards']);
@@ -134,7 +136,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
 
 
-    // đếm thời gian bài tập và mức độ hoàn thành 
+    // đếm thời gian bài tập và mức độ hoàn thành
     Route::post('/buoi-tap/bat-dau', [BuoiTapController::class, 'batDau']);
     Route::post('/buoi-tap/{id}/khoi-tao-tien-do', [BuoiTapController::class, 'khoiTaoTienDo']);
     Route::post('/buoi-tap/{id}/tien-do/{idTienDo}',[BuoiTapController::class, 'capNhatTienDo']);
@@ -145,26 +147,26 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'luuLichSuHiep']);
     Route::get('/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'getLichSuHiep']);
 
-    // báo cáo 
+    // báo cáo
     Route::get('/bao-cao/{id}', [BuoiTapController::class, 'baoCaoBuoiTap']);
 
 
-    // lấy dữ liệu 
+    // lấy dữ liệu
     Route::get('/buoi-tap/phan-tram-hoan-thanh',[BuoiTapController::class, 'getLatestProgress']);
     Route::get( '/buoi-tap/phan-tram-hoan-thanh-tat-ca', [BuoiTapController::class, 'getProgressPercent']);
     Route::get('/huan-luyen-tiep-theo',[BuoiTapController::class, 'getHuanLuyenTiepTheo']);
 
 
-    // check đã đăng ký gói tập chưa để đăng ký 
+    // check đã đăng ký gói tập chưa để đăng ký
     Route::post('/check-quyen-tap', [ BuoiTapController::class, 'checkQuyenTap']);
-    // lấy gói tập 
+    // lấy gói tập
     Route::get('/goi-tap', [GoiTapController::class, 'getAll']);
-    // lấy trainer 
+    // lấy trainer
     Route::get('/trainers', [GoiTapController::class, 'getTrainer']);
     Route::post('/search-trainer', [GoiTapController::class, 'searchTrainer']);
-    // thông tin gói tập 
+    // thông tin gói tập
     Route::post('/registration-preview', [GoiTapController::class, 'getRegistrationPreview']);
-    // tính khuyến mãi 
+    // tính khuyến mãi
     Route::post('/tinh-khuyen-mai', [GoiTapController::class, 'tinhKhuyenMai']);
     Route::post('/luu-ma-gioi-thieu', [GoiTapController::class, 'luuMaGioiThieu']);
     Route::get('/thong-tin-gioi-thieu', [GoiTapController::class, 'thongTinGioiThieu']);
@@ -176,7 +178,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
     Route::post('/test-mail', [ThanhToanController::class, 'testGuiMail']);
 
-    // lấy danh sách đã đăng ký gói 
+    // lấy danh sách đã đăng ký gói
     Route::get('/goi-tap-cua-toi', [ ThanhToanController::class, 'danhSachGoiTapCuaToi']);
     Route::get('/goi-tap-cua-toi/{id}', [ ThanhToanController::class, 'chiTietGoiTapCuaToi']);
 
@@ -184,14 +186,14 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::get('/profile', [MembersController::class, 'getProfile']);
 
 
-    
 
 
 
 
 
-    
-    
+
+
+
 
 
 

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Events\ChatUpdatedEvent;
 
 class ChatController extends Controller
 {
@@ -25,7 +26,7 @@ class ChatController extends Controller
     // Lấy danh sách cuộc trò chuyện của người dùng
     public function getListRooms(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $userRooms = DetailRoomClient::with([
             'room.lastMessage',
@@ -136,7 +137,7 @@ class ChatController extends Controller
     // Lấy danh bạ HLV và Hội viên
     public function getContacts(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $trainers = DB::table('trainers')
             ->select('id', 'ho_ten', 'chuc_danh as chuyen_mon', 'hinh_anh as anh_dai_dien')
@@ -180,7 +181,7 @@ class ChatController extends Controller
     // Tìm hoặc tạo phòng chat 1-1
     public function getRoom($id, Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $userRoomIds = DetailRoomClient::where('client_id', $idNguoiDung)->pluck('room_client_id');
         $targetRoomIds = DetailRoomClient::where('client_id', $id)->pluck('room_client_id');
@@ -239,7 +240,7 @@ class ChatController extends Controller
             'member_ids' => 'required|array|min:1',
         ]);
 
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $groupRoom = DB::transaction(function () use ($request, $idNguoiDung) {
             $room = RoomClient::create([
@@ -281,11 +282,18 @@ class ChatController extends Controller
     // Gửi tin nhắn mới trong phòng (Bảo vệ quyền thành viên)
     public function sentMessage(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
-        $room = RoomClient::where('uuid', $request->room_uuid)
-            ->orWhere('id', $request->room_id)
-            ->first();
+        $room = RoomClient::query()
+    ->when(
+        $request->filled('room_uuid'),
+        fn ($query) => $query->where('uuid', $request->room_uuid)
+    )
+    ->when(
+        !$request->filled('room_uuid') && $request->filled('room_id'),
+        fn ($query) => $query->where('id', $request->room_id)
+    )
+    ->first();
 
         if (!$room) {
             return response()->json([
@@ -353,9 +361,16 @@ class ChatController extends Controller
         ];
 
         // Kích hoạt broadcast event cho realtime
+        // Phát sự kiện real-time sau khi lưu tin nhắn thành công
         try {
             event(new SentMessageEvent($room->uuid, $data));
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) {
+            \Log::error('Chat broadcast failed', [
+                'room_uuid' => $room->uuid,
+                'message_id' => $chatMessage->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return response()->json([
@@ -368,13 +383,20 @@ class ChatController extends Controller
     // Lấy lịch sử tin nhắn phòng chat (Phân trang 30 tin gần nhất + Phân quyền + Trạng thái đã xem riêng)
     public function historyMessage(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
         $limit = min((int)($request->limit ?? 30), 100);
         $beforeId = $request->before_id;
 
-        $room = RoomClient::where('uuid', $request->room_uuid)
-            ->orWhere('id', $request->room_id)
-            ->first();
+    $room = RoomClient::query()
+        ->when(
+            $request->filled('room_uuid'),
+            fn ($query) => $query->where('uuid', $request->room_uuid)
+        )
+        ->when(
+            !$request->filled('room_uuid') && $request->filled('room_id'),
+            fn ($query) => $query->where('id', $request->room_id)
+        )
+        ->first();
 
         if (!$room) {
             return response()->json([
@@ -485,7 +507,7 @@ class ChatController extends Controller
     // Đánh dấu đã đọc vị trí tin nhắn của thành viên
     public function markAsRead(Request $request, $id)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $room = RoomClient::where('uuid', $id)->orWhere('id', $id)->first();
         if (!$room) {
@@ -503,13 +525,61 @@ class ChatController extends Controller
             ], 403);
         }
 
-        $targetMessageId = $request->message_id ?? RoomHistoryChat::where('room_client_id', $room->id)->max('id');
+        $request->validate([
+            'message_id' => 'nullable|integer|min:1',
+        ]);
 
-        if ($targetMessageId) {
-            $membership->update([
-                'last_read_message_id' => $targetMessageId,
-                'last_seen_at' => now(),
-            ]);
+        $maxMessageId = RoomHistoryChat::where(
+            'room_client_id',
+            $room->id
+        )->max('id');
+
+        $currentReadId = (int) ($membership->last_read_message_id ?? 0);
+
+        if ($maxMessageId) {
+            $requestedId = $request->filled('message_id')
+                ? (int) $request->message_id
+                : (int) $maxMessageId;
+
+            if ($request->filled('message_id')) {
+                $exists = RoomHistoryChat::where('room_client_id', $room->id)
+                    ->where('id', $requestedId)
+                    ->exists();
+
+                if (!$exists) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Tin nhắn không thuộc phòng này',
+                    ], 422);
+                }
+            }
+
+            $targetMessageId = max($currentReadId, $requestedId);
+
+            if ($targetMessageId > $currentReadId) {
+                $membership->update([
+                    'last_read_message_id' => $targetMessageId,
+                    'last_seen_at' => now(),
+                ]);
+
+                try {
+                    event(new ChatUpdatedEvent(
+                        $room->uuid,
+                        'message.read',
+                        [
+                            'user_id' => $idNguoiDung,
+                            'last_read_message_id' => $targetMessageId,
+                        ]
+                    ));
+                } catch (\Throwable $e) {
+                    \Log::error('Read receipt broadcast failed', [
+                        'room_uuid' => $room->uuid,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } else {
+            $targetMessageId = $currentReadId ?: null;
         }
 
         return response()->json([
@@ -522,7 +592,7 @@ class ChatController extends Controller
     // Thu hồi tin nhắn (Phân quyền: chỉ thu hồi tin do chính mình gửi)
     public function recallMessage(Request $request, $id)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $msg = RoomHistoryChat::find($id);
 
@@ -547,6 +617,22 @@ class ChatController extends Controller
             'media_url' => null,
             'workout_data' => null,
         ]);
+        $room = RoomClient::findOrFail($msg->room_client_id);
+
+        try {
+            event(new ChatUpdatedEvent(
+                $room->uuid,
+                'message.recalled',
+                [
+                    'message_id' => $msg->id,
+                ]
+            ));
+        } catch (\Throwable $e) {
+            \Log::error('Recall broadcast failed', [
+                'message_id' => $msg->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'status' => true,
@@ -562,7 +648,7 @@ class ChatController extends Controller
             'emoji' => 'required|string',
         ]);
 
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $msg = RoomHistoryChat::find($id);
 
@@ -590,6 +676,21 @@ class ChatController extends Controller
         }
 
         $msg->update(['reactions' => $reactions]);
+        try {
+            event(new ChatUpdatedEvent(
+                $room->uuid,
+                'message.reacted',
+                [
+                    'message_id' => $msg->id,
+                    'reactions' => $reactions,
+                ]
+            ));
+        } catch (\Throwable $e) {
+            \Log::error('Reaction broadcast failed', [
+                'message_id' => $msg->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'status' => true,
@@ -601,7 +702,7 @@ class ChatController extends Controller
     // Ghim / Bỏ ghim cuộc trò chuyện
     public function togglePinRoom(Request $request, $id)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $room = RoomClient::where('uuid', $id)->orWhere('id', $id)->first();
         if (!$room) {
@@ -635,7 +736,7 @@ class ChatController extends Controller
     // Tắt / Bật thông báo cuộc trò chuyện
     public function toggleMuteRoom(Request $request, $id)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $idNguoiDung = $request->user('sanctum')->id;
 
         $room = RoomClient::where('uuid', $id)->orWhere('id', $id)->first();
         if (!$room) {

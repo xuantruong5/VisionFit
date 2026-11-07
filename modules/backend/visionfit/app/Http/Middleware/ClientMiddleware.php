@@ -21,18 +21,9 @@ class ClientMiddleware
             return $next($request);
         }
 
-        // H? tr? môi tru?ng local/dev khi test tr?c ti?p các màn hình không qua Login
-        if (app()->environment("local")) {
-            $defaultClient = \App\Models\Client::where("tinh_trang", 1)->first();
-            if ($defaultClient) {
-                Auth::guard("client")->setUser($defaultClient);
-                return $next($request);
-            }
-        }
-
         return response()->json([
             "status" => false,
-            "message" => "B?n c?n dang nh?p d? th?c hi?n ch?c nang này"
+            "message" => "B?n c?n dang nh?p d? th?c hi?n ch?c nang nï¿½y"
         ], 401);
     }
 }

@@ -21,6 +21,7 @@ import Schedule from "./src/page/trainners/Schedule";
 import SessionHistory from "./src/page/trainners/SessionHistory";
 import SessionReview from "./src/page/trainners/SessionReview";
 import Members from "./src/page/trainners/Members";
+import TrainerChat from "./src/page/trainners/TrainerChat";
 import TrainerFeed from "./src/page/trainners/TrainerFeed";
 import SportFeed from "./src/page/member/SportFeed";
 import headerPage from "./src/page/member/TrainingPlan/Header/page";
@@ -403,6 +404,7 @@ const App = () => {
           <Stack.Screen name="Income" component={Income} />
           <Stack.Screen name="MemberDetail" component={MemberDetail} />
           <Stack.Screen name="Members" component={Members} />
+          <Stack.Screen name="TrainerChat" component={TrainerChat} />
           <Stack.Screen name="Profile" component={Profile} />
           <Stack.Screen name="Schedule" component={Schedule} />
           <Stack.Screen name="SessionHistory" component={SessionHistory} />
