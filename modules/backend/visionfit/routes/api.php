@@ -16,17 +16,7 @@ use App\Http\Controllers\PhongGymController;
 use App\Http\Controllers\BuoiTapController;
 use App\Http\Controllers\GoiTapController;
 use App\Http\Controllers\ThanhToanController;
-
-
-
-
-
-
-
-
-
-
-
+use App\Http\Controllers\TrainersController;
 
 
 
@@ -205,8 +195,11 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
 
 // trainner
+Route::post('/trainer/check-ma-pt', [TrainerController::class, 'checkMaPT']);
 Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
+Route::post('/trainer/dang-ky', [TrainerController::class, 'dangKy']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
+    Route::get('/check-token', [TrainerController::class, 'checkTokenTrainer']);
     Route::post('logout', [TrainerController::class, 'logoutTrainer']);
 });
 
@@ -216,6 +209,10 @@ Route::post('admin/login', [AdminController::class, 'loginAdmin']);
 Route::group(['prefix' => 'admin', 'middleware' => 'AdminMiddleware'], function () {
     Route::post('logout', [AdminController::class, 'logoutAdmin']);
     Route::get('/check-token', [AdminController::class, 'checkTokenAdmin']);
+    Route::get('/trainers/ung-vien',[AdminController::class, 'danhSachUngVien']);
+    Route::post( '/gui-thu-moi-phong-van', [AdminController::class, 'guiThuMoiPhongVan']);
+    Route::post('/trainers/{id}/ket-qua-phong-van',[AdminController::class, 'capNhatKetQuaPhongVan']);
+    Route::post('/trainers/{id}/kich-hoat', [AdminController::class, 'kichHoatTrainer']);
 });
 
 
