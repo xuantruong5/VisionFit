@@ -1833,7 +1833,12 @@ const SportFeed = () => {
 
                             <View style={styles.myAvatar}>
                                 <Text style={styles.avatarText}>
-                                    TN
+                                    {user?.ho_ten
+                                        ?.split(' ')
+                                        .slice(-2)
+                                        .map((x: string) => x.charAt(0))
+                                        .join('')
+                                        .toUpperCase() || 'N'}
                                 </Text>
                             </View>
 

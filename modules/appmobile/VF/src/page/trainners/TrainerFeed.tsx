@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, StatusBar, Alert, Platform,} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, StatusBar, Alert, Platform, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import api, { BASE_URL } from '../../general/api';
@@ -229,7 +229,7 @@ const TrainerFeed = () => {
     const toggleLike = async (item: BaiDang) => {
         try {
             if (item.da_thich) {
-                await api.delete(`/trainer/bai-dang/${item.id_bai_dang}/like`);
+                await api.delete(`/trainer/bai-dang/${item.id_bai_dang}/unlike`);
             } else {
                 await api.post(`/trainer/bai-dang/${item.id_bai_dang}/like`);
             }
@@ -1037,7 +1037,14 @@ const TrainerFeed = () => {
 
                         <View style={styles.commentInputRow}>
                             <View style={styles.myAvatar}>
-                                <Text style={styles.avatarText}>HLV</Text>
+                                <Text style={styles.avatarText}>
+                                    {user?.ho_ten
+                                        ?.split(' ')
+                                        .slice(-2)
+                                        .map((x: string) => x.charAt(0))
+                                        .join('')
+                                        .toUpperCase() || 'N'}
+                                </Text>
                             </View>
                             <TextInput
                                 value={commentText}

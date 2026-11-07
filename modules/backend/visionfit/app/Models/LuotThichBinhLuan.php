@@ -13,5 +13,6 @@ class LuotThichBinhLuan extends Model
     protected $fillable = [
         'id_binh_luan',
         'id_nguoi_dung',
+        'loai_nguoi_dung',
     ];
 }

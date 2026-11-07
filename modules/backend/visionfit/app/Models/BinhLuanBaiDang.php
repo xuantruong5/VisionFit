@@ -14,6 +14,7 @@ class BinhLuanBaiDang extends Model
         'id_bai_dang',
         'id_nguoi_dung',
         'id_binh_luan_cha',
+        'loai_nguoi_dung',
         'noi_dung',
         'tinh_trang',
     ];
@@ -33,5 +34,9 @@ class BinhLuanBaiDang extends Model
             'id_binh_luan',
             'id_binh_luan'
         );
+    }
+    public function trainer()
+    {
+        return $this->belongsTo(Trainer::class, 'id_nguoi_dung', 'id');
     }
 }

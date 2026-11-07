@@ -62,4 +62,8 @@ class BaiDang extends Model
             'id_bai_dang'
         );
     }
+    public function trainer()
+    {
+        return $this->belongsTo(Trainer::class, 'id_nguoi_dung', 'id');
+    }
 }
