@@ -29,34 +29,50 @@ class BaiDangController extends Controller
             ], 401);
         }
 
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer'
+            : 'client';
+
+        $anhDaiDien = $loaiNguoiDung == 'trainer'
+            ? $user->hinh_anh
+            : $user->anh_dai_dien;
+
         return response()->json([
             'success' => true,
             'data' => [
                 'id' => $user->id,
+                'loai_nguoi_dung' => $loaiNguoiDung,
                 'ho_ten' => $user->ho_ten,
                 'email' => $user->email,
-                'anh_dai_dien' => $user->anh_dai_dien
+                'anh_dai_dien' => $anhDaiDien
             ]
         ]);
     }
 
+    
 
-
-    // Lấy danh sách bài đăng
     public function index()
     {
-        // Lấy người dùng đang đăng nhập thực tế
         $user = Auth::guard('sanctum')->user();
-        // Kiểm tra người dùng
+
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Chưa đăng nhập'
             ], 401);
         }
-        // Lấy ID người dùng thực tế
+
         $idNguoiDung = $user->id;
-        $data = BaiDang::with([ 'media', 'client:id,ho_ten,anh_dai_dien' ])
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer'
+            : 'client';
+
+        $data = BaiDang::with([
+            'media',
+            'client:id,ho_ten,anh_dai_dien',
+            'trainer:id,ho_ten,hinh_anh'
+        ])
             ->withCount([
                 'luotThich as so_luot_thich',
                 'binhLuan as so_binh_luan',
@@ -64,85 +80,123 @@ class BaiDangController extends Controller
             ->where('tinh_trang', '1')
             ->orderByDesc('created_at')
             ->get()
-            ->map(function ($item) use ($idNguoiDung) {
-                // Lấy tên người đăng
-                $hoTen = $item->client?->ho_ten ?? 'Thành viên VisionFit';
-                // Tách họ tên
+            ->map(function ($item) use ($idNguoiDung, $loaiNguoiDung) {
+
+                if ($item->loai_nguoi_dung == 'trainer') {
+                    $nguoiDang = $item->trainer;
+                } else {
+                    $nguoiDang = $item->client;
+                }
+
+                $hoTen = $nguoiDang?->ho_ten ?? 'Thành viên VisionFit';
+
                 $parts = preg_split('/\s+/', trim($hoTen));
-                // Tạo avatar chữ viết tắt
+
                 $avatar = '';
 
                 foreach (array_slice($parts, -2) as $part) {
-                    $avatar .= mb_strtoupper(
-                        mb_substr($part, 0, 1)
-                    );
+                    $avatar .= mb_strtoupper(mb_substr($part, 0, 1));
                 }
 
-                // Thông tin người đăng
                 $item->ten_nguoi_dung = $hoTen;
                 $item->avatar = $avatar ?: 'VF';
-                $item->anh_dai_dien =
-                    $item->client?->anh_dai_dien;
-                // Kiểm tra người đăng nhập đã thích bài viết chưa
-                $item->da_thich = LuotThichBaiDang::where( 'id_bai_dang', $item->id_bai_dang)
+                $item->anh_dai_dien = $item->loai_nguoi_dung == 'trainer'
+                    ? $nguoiDang?->hinh_anh
+                    : $nguoiDang?->anh_dai_dien;
+
+                $item->da_thich = LuotThichBaiDang::where(
+                    'id_bai_dang', $item->id_bai_dang
+                )
                     ->where('id_nguoi_dung', $idNguoiDung)
+                    ->where('loai_nguoi_dung', $loaiNguoiDung)
                     ->exists();
-                // Kiểm tra người đăng nhập đã lưu bài viết chưa
-                $item->da_luu = LuuBaiDang::where( 'id_bai_dang', $item->id_bai_dang )
+
+                $item->da_luu = LuuBaiDang::where(
+                    'id_bai_dang', $item->id_bai_dang
+                )
                     ->where('id_nguoi_dung', $idNguoiDung)
+                    ->where('loai_nguoi_dung', $loaiNguoiDung)
                     ->exists();
-                // Không trả object client gốc
-                unset($item->client);
+
+                unset($item->client, $item->trainer);
+
                 return $item;
             });
+
         return response()->json([
             'status' => true,
             'message' => 'Lấy danh sách bài đăng thành công',
             'data' => $data
         ]);
     }
-    // Tạo bài đăng
+
+
+
     public function store(Request $request)
     {
+        // Lấy tài khoản từ Bearer Token
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
+
+        // Xác định loại người dùng
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer'
+            : 'client';
+
         $request->validate([
             'caption' => 'nullable|string|max:2000',
             'pham_vi_hien_thi' => 'required|in:0,1,2',
             'media' => 'nullable|file|mimes:jpg,jpeg,png,webp,mp4,mov,quicktime,avi,mkv|max:102400',
         ]);
-        $baiDang = DB::transaction(function () use ($request, $user) {
+
+        $baiDang = DB::transaction(function () use ($request, $user, $loaiNguoiDung) {
+
             $post = BaiDang::create([
                 'id_nguoi_dung' => $user->id,
+                'loai_nguoi_dung' => $loaiNguoiDung,
                 'caption' => $request->caption,
                 'pham_vi_hien_thi' => $request->pham_vi_hien_thi,
                 'tinh_trang' => '1',
             ]);
+
             if ($request->hasFile('media')) {
                 $file = $request->file('media');
                 $path = $file->store('sportfeed', 'public');
-                $loaiMedia = str_starts_with( $file->getMimeType(), 'video/') ? 'video' : 'image';
+
+                $loaiMedia = str_starts_with(
+                    $file->getMimeType(),
+                    'video/'
+                ) ? 'video' : 'image';
 
                 Media::create([
                     'id_bai_dang' => $post->id_bai_dang,
                     'loai_media' => $loaiMedia,
-                    'media_url' => $request->getSchemeAndHttpHost(). Storage::url($path),
+                    'media_url' => $request->getSchemeAndHttpHost() . Storage::url($path),
                     'thu_tu' => 0,
                 ]);
             }
+
             return $post->load('media');
         });
+
         return response()->json([
             'status' => true,
             'message' => 'Đăng bài thành công',
             'data' => $baiDang
         ], 201);
     }
+
+
+
+    
+
+
 
     public function updatePost(Request $request, $id)
     {
@@ -156,6 +210,10 @@ class BaiDangController extends Controller
             ], 401);
         }
 
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+        ? 'trainer' : 'client';
+
+
         // Validate dữ liệu
         $request->validate([
             'caption' => 'sometimes|nullable|string|max:2000',
@@ -165,6 +223,7 @@ class BaiDangController extends Controller
         // Tìm bài đăng của người dùng hiện tại
         $post = BaiDang::where('id_bai_dang', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->where('tinh_trang', '1')
             ->first();
 
@@ -202,9 +261,13 @@ class BaiDangController extends Controller
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
         // Tìm bài đăng của người dùng hiện tại
         $post = BaiDang::where('id_bai_dang', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->where('tinh_trang', '1')
             ->first();
 
@@ -236,6 +299,11 @@ class BaiDangController extends Controller
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
+
         // Kiểm tra bài đăng có tồn tại và đang hoạt động
         $baiDang = BaiDang::where('id_bai_dang', $id)
             ->where('tinh_trang', '1')
@@ -250,6 +318,8 @@ class BaiDangController extends Controller
         LuotThichBaiDang::firstOrCreate([
             'id_bai_dang' => $id,
             'id_nguoi_dung' => $user->id,
+            'loai_nguoi_dung' => $loaiNguoiDung,
+
         ]);
         return response()->json([
             'status' => true,
@@ -267,9 +337,14 @@ class BaiDangController extends Controller
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
         // Xóa lượt thích của chính người đang đăng nhập
         LuotThichBaiDang::where('id_bai_dang', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->delete();
         return response()->json([
             'status' => true,
@@ -291,6 +366,8 @@ class BaiDangController extends Controller
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
 
         // Kiểm tra bài đăng có tồn tại và đang hoạt động
         $baiDang = BaiDang::where('id_bai_dang', $id)
@@ -308,6 +385,7 @@ class BaiDangController extends Controller
         LuuBaiDang::firstOrCreate([
             'id_bai_dang' => $id,
             'id_nguoi_dung' => $user->id,
+            'loai_nguoi_dung' => $loaiNguoiDung,
         ]);
 
         return response()->json([
@@ -327,10 +405,14 @@ class BaiDangController extends Controller
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
 
         // Bỏ lưu bài viết của chính người dùng
         LuuBaiDang::where('id_bai_dang', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->delete();
 
         return response()->json([
@@ -343,41 +425,60 @@ class BaiDangController extends Controller
     
     public function getComments($id)
     {
-        // Lấy người dùng đang đăng nhập
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
-        // Kiểm tra bài đăng có tồn tại
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
         $baiDang = BaiDang::where('id_bai_dang', $id)
             ->where('tinh_trang', '1')
             ->first();
+
         if (!$baiDang) {
             return response()->json([
                 'status' => false,
                 'message' => 'Bài đăng không tồn tại'
             ], 404);
         }
-        // Lấy danh sách bình luận
-        $data = BinhLuanBaiDang::with( 'client:id,ho_ten,anh_dai_dien')
+
+        $data = BinhLuanBaiDang::with([
+            'client:id,ho_ten,anh_dai_dien',
+            'trainer:id,ho_ten,hinh_anh'
+        ])
             ->where('id_bai_dang', $id)
             ->where('tinh_trang', '1')
-            ->withCount([ 'luotThich as so_luot_thich'])
+            ->withCount(['luotThich as so_luot_thich'])
             ->orderBy('created_at')
             ->get()
-            ->map(function ($item) use ($user) {
-                $hoTen = $item->client?->ho_ten ?? 'Thành viên VisionFit';
-                $item->ten_nguoi_dung = $hoTen;
-                $item->anh_dai_dien = $item->client?->anh_dai_dien;
+            ->map(function ($item) use ($user, $loaiNguoiDung) {
 
-                // Kiểm tra người dùng hiện tại đã thích bình luận chưa
-                $item->da_thich = LuotThichBinhLuan::where( 'id_binh_luan', $item->id_binh_luan )
+                $nguoiBinhLuan = $item->loai_nguoi_dung == 'trainer'
+                    ? $item->trainer
+                    : $item->client;
+
+                $item->ten_nguoi_dung = $nguoiBinhLuan?->ho_ten
+                    ?? 'Thành viên VisionFit';
+
+                $item->anh_dai_dien = $item->loai_nguoi_dung == 'trainer'
+                    ? $nguoiBinhLuan?->hinh_anh
+                    : $nguoiBinhLuan?->anh_dai_dien;
+
+                $item->da_thich = LuotThichBinhLuan::where(
+                    'id_binh_luan', $item->id_binh_luan
+                )
                     ->where('id_nguoi_dung', $user->id)
+                    ->where('loai_nguoi_dung', $loaiNguoiDung)
                     ->exists();
-                unset($item->client);
+
+                unset($item->client, $item->trainer);
+
                 return $item;
             });
 
@@ -390,7 +491,6 @@ class BaiDangController extends Controller
 
     public function deleteComment($id)
     {
-        // Lấy người dùng đang đăng nhập
         $user = Auth::guard('sanctum')->user();
 
         if (!$user) {
@@ -400,12 +500,12 @@ class BaiDangController extends Controller
             ], 401);
         }
 
-        // Tìm bình luận thuộc người dùng hiện tại
-        $binhLuan = BinhLuanBaiDang::where(
-            'id_binh_luan',
-            $id
-        )
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
+        $binhLuan = BinhLuanBaiDang::where('id_binh_luan', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->where('tinh_trang', '1')
             ->first();
 
@@ -416,7 +516,6 @@ class BaiDangController extends Controller
             ], 404);
         }
 
-        // Xóa mềm bình luận
         $binhLuan->update([
             'tinh_trang' => '0'
         ]);
@@ -430,21 +529,23 @@ class BaiDangController extends Controller
     
     public function comment(Request $request, $id)
     {
-        // Lấy người dùng đang đăng nhập
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
-        // Validate dữ liệu gửi lên
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
         $request->validate([
             'noi_dung' => 'required|string|max:1000',
             'id_binh_luan_cha' => 'nullable|integer|min:1',
         ]);
 
-        // Kiểm tra bài đăng tồn tại
         $baiDang = BaiDang::where('id_bai_dang', $id)
             ->where('tinh_trang', '1')
             ->first();
@@ -456,11 +557,9 @@ class BaiDangController extends Controller
             ], 404);
         }
 
-        // Nếu là trả lời bình luận thì kiểm tra bình luận cha
         if ($request->filled('id_binh_luan_cha')) {
             $binhLuanCha = BinhLuanBaiDang::where(
-                'id_binh_luan',
-                $request->id_binh_luan_cha
+                'id_binh_luan', $request->id_binh_luan_cha
             )
                 ->where('id_bai_dang', $id)
                 ->where('tinh_trang', '1')
@@ -474,10 +573,10 @@ class BaiDangController extends Controller
             }
         }
 
-        // Tạo bình luận
         $binhLuan = BinhLuanBaiDang::create([
             'id_bai_dang' => $id,
             'id_nguoi_dung' => $user->id,
+            'loai_nguoi_dung' => $loaiNguoiDung,
             'id_binh_luan_cha' => $request->id_binh_luan_cha,
             'noi_dung' => $request->noi_dung,
             'tinh_trang' => '1',
@@ -492,31 +591,39 @@ class BaiDangController extends Controller
 
     public function updateComment(Request $request, $id)
     {
-        // Lấy người dùng đang đăng nhập
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
-        // Validate nội dung
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
         $request->validate([
             'noi_dung' => 'required|string|max:1000',
         ]);
-        // Tìm bình luận của người dùng hiện tại
-        $comment = BinhLuanBaiDang::where( 'id_binh_luan', $id)
+
+        $comment = BinhLuanBaiDang::where('id_binh_luan', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->where('tinh_trang', '1')
             ->first();
+
         if (!$comment) {
             return response()->json([
                 'status' => false,
                 'message' => 'Không tìm thấy bình luận hoặc bạn không có quyền sửa'
             ], 404);
         }
-        // Cập nhật nội dung
-        $comment->update([ 'noi_dung' => $request->noi_dung ]);
+
+        $comment->update([
+            'noi_dung' => $request->noi_dung
+        ]);
+
         return response()->json([
             'status' => true,
             'message' => 'Đã cập nhật bình luận',
@@ -525,7 +632,6 @@ class BaiDangController extends Controller
     }
     public function likeComment($id)
     {
-        // Lấy người dùng đang đăng nhập
         $user = Auth::guard('sanctum')->user();
 
         if (!$user) {
@@ -535,11 +641,10 @@ class BaiDangController extends Controller
             ], 401);
         }
 
-        // Kiểm tra bình luận tồn tại và đang hoạt động
-        $comment = BinhLuanBaiDang::where(
-            'id_binh_luan',
-            $id
-        )
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
+        $comment = BinhLuanBaiDang::where('id_binh_luan', $id)
             ->where('tinh_trang', '1')
             ->first();
 
@@ -550,10 +655,10 @@ class BaiDangController extends Controller
             ], 404);
         }
 
-        // Tạo lượt thích, tránh thích trùng
         LuotThichBinhLuan::firstOrCreate([
             'id_binh_luan' => $id,
             'id_nguoi_dung' => $user->id,
+            'loai_nguoi_dung' => $loaiNguoiDung,
         ]);
 
         return response()->json([
@@ -564,18 +669,23 @@ class BaiDangController extends Controller
 
     public function unlikeComment($id)
     {
-        // Lấy người dùng đang đăng nhập
         $user = Auth::guard('sanctum')->user();
+
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Bạn chưa đăng nhập'
             ], 401);
         }
-        // Xóa lượt thích của người dùng hiện tại
-        LuotThichBinhLuan::where( 'id_binh_luan',  $id )
+
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
+
+        LuotThichBinhLuan::where('id_binh_luan', $id)
             ->where('id_nguoi_dung', $user->id)
+            ->where('loai_nguoi_dung', $loaiNguoiDung)
             ->delete();
+
         return response()->json([
             'status' => true,
             'message' => 'Đã bỏ thích bình luận'
@@ -595,34 +705,34 @@ class BaiDangController extends Controller
         }
 
         $idNguoiDung = $user->id;
+        $loaiNguoiDung = $user instanceof \App\Models\Trainer
+            ? 'trainer' : 'client';
         // Lấy danh sách bài đăng đã lưu
         $data = BaiDang::with([
             'media',
-            'client:id,ho_ten,anh_dai_dien'
+            'client:id,ho_ten,anh_dai_dien',
+            'trainer:id,ho_ten,hinh_anh'
         ])
             ->withCount([
                 'luotThich as so_luot_thich',
                 'binhLuan as so_binh_luan',
             ])
             ->where('tinh_trang', '1')
-            ->whereHas('luuBaiDang', function ($query) use ($idNguoiDung) {
-                $query->where(
-                    'id_nguoi_dung',
-                    $idNguoiDung
-                );
+            ->whereHas('luuBaiDang', function ($query) use ($idNguoiDung, $loaiNguoiDung) {
+                $query->where('id_nguoi_dung',$idNguoiDung)
+                        ->where('loai_nguoi_dung', $loaiNguoiDung);
             })
             ->orderByDesc('created_at')
             ->get()
-            ->map(function ($item) use ($idNguoiDung) {
+            ->map(function ($item) use ($idNguoiDung, $loaiNguoiDung) {
+                $nguoiDang = $item->loai_nguoi_dung == 'trainer'
+                    ? $item->trainer
+                    : $item->client;
 
-                $hoTen = $item->client?->ho_ten
-                    ?? 'Thành viên VisionFit';
-
+                $hoTen = $nguoiDang?->ho_ten ?? 'Thành viên VisionFit';
                 // Tách họ tên để tạo avatar
-                $parts = preg_split(
-                    '/\s+/',
-                    trim($hoTen)
-                );
+                $parts = preg_split('/\s+/', trim($hoTen));
+
 
                 $avatar = '';
 
@@ -635,8 +745,9 @@ class BaiDangController extends Controller
                 $item->ten_nguoi_dung = $hoTen;
                 $item->avatar = $avatar ?: 'VF';
 
-                $item->anh_dai_dien =
-                    $item->client?->anh_dai_dien;
+                 $item->anh_dai_dien = $item->loai_nguoi_dung == 'trainer'
+                    ? $nguoiDang?->hinh_anh
+                    : $nguoiDang?->anh_dai_dien;
 
                 // Kiểm tra đã thích bài đăng chưa
                 $item->da_thich = LuotThichBaiDang::where(
@@ -644,12 +755,13 @@ class BaiDangController extends Controller
                     $item->id_bai_dang
                 )
                     ->where('id_nguoi_dung', $idNguoiDung)
+                    ->where('loai_nguoi_dung', $loaiNguoiDung)
                     ->exists();
 
                 // Những bài trong danh sách này đều đã được lưu
                 $item->da_luu = true;
 
-                unset($item->client);
+                unset($item->client, $item->trainer);
 
                 return $item;
             });

@@ -1,24 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    TextInput,
-    Modal,
-    Image,
-    StatusBar,
-    Alert,
-    Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, StatusBar, Alert, Platform, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import api, { BASE_URL } from '../../general/api';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import { launchImageLibrary, Asset } from 'react-native-image-picker';
-
 const resolveMediaUrl = (url?: string | null): string => {
     if (!url) return '';
     const storageIdx = url.indexOf('/storage/');
@@ -30,7 +17,6 @@ const resolveMediaUrl = (url?: string | null): string => {
     }
     return url;
 };
-
 type Media = {
     id_media: number;
     id_bai_dang: number;
@@ -141,6 +127,7 @@ const TrainerFeed = () => {
     const [editingPost, setEditingPost] = useState<BaiDang | null>(null);
     const [editCaption, setEditCaption] = useState('');
     const [playingVideoId, setPlayingVideoId] = useState<number | null>(null);
+    const [user, setUser] = useState<any>(null);
 
     const chonMedia = async () => {
         const result = await launchImageLibrary({
@@ -152,6 +139,18 @@ const TrainerFeed = () => {
         if (result.didCancel || result.errorCode) return;
         if (result.assets && result.assets.length > 0) {
             setSelectedMedia(result.assets[0]);
+        }
+    };
+
+    const loadUser = async () => {
+        try {
+            const response = await api.get('/trainer/user');
+
+            if (response.data.success) {
+                setUser(response.data.data);
+            }
+        } catch (error) {
+            console.log('Lỗi lấy thông tin người dùng:', error);
         }
     };
 
@@ -170,7 +169,7 @@ const TrainerFeed = () => {
 
         try {
             const formData = new FormData();
-            formData.append('id_nguoi_dung', '1');
+            // formData.append('id_nguoi_dung', '1');
             formData.append('caption', caption.trim());
             formData.append('pham_vi_hien_thi', phamViHienThi);
 
@@ -189,7 +188,7 @@ const TrainerFeed = () => {
                 } as any);
             }
 
-            const response = await api.post('/bai-dang', formData, {
+            const response = await api.post('/trainer/bai-dang/store', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 transformRequest: (data) => data,
             });
@@ -208,7 +207,7 @@ const TrainerFeed = () => {
 
     const loadBaiDang = async () => {
         try {
-            const response = await api.get('/bai-dang');
+            const response = await api.get('/trainer/bai-dang');
             if (response.data.status) {
                 const data = response.data.data.map((item: any) => ({
                     ...item,
@@ -230,9 +229,9 @@ const TrainerFeed = () => {
     const toggleLike = async (item: BaiDang) => {
         try {
             if (item.da_thich) {
-                await api.delete(`/bai-dang/${item.id_bai_dang}/like`);
+                await api.delete(`/trainer/bai-dang/${item.id_bai_dang}/unlike`);
             } else {
-                await api.post(`/bai-dang/${item.id_bai_dang}/like`);
+                await api.post(`/trainer/bai-dang/${item.id_bai_dang}/like`);
             }
 
             setBaiDang((prev) =>
@@ -254,9 +253,9 @@ const TrainerFeed = () => {
     const toggleSave = async (item: BaiDang) => {
         try {
             if (item.da_luu) {
-                await api.delete(`/bai-dang/${item.id_bai_dang}/save`);
+                await api.delete(`/trainer/bai-dang/${item.id_bai_dang}/save`);
             } else {
-                await api.post(`/bai-dang/${item.id_bai_dang}/save`);
+                await api.post(`/trainer/bai-dang/${item.id_bai_dang}/save`);
             }
 
             setBaiDang((prev) =>
@@ -280,7 +279,7 @@ const TrainerFeed = () => {
     const loadSavedPosts = async () => {
         try {
             setLoadingSavedPosts(true);
-            const response = await api.get('/bai-dang-da-luu');
+            const response = await api.get('/trainer/bai-dang-da-luu');
             if (response.data.status) {
                 setSavedPostsData(response.data.data);
             }
@@ -298,7 +297,7 @@ const TrainerFeed = () => {
 
     const boLuuBaiDang = async (item: BaiDang) => {
         try {
-            const response = await api.delete(`/bai-dang/${item.id_bai_dang}/save`);
+            const response = await api.delete(`/trainer/bai-dang/${item.id_bai_dang}/save`);
             if (response.data.status) {
                 setSavedPostsData((prev) => prev.filter((post) => post.id_bai_dang !== item.id_bai_dang));
                 setBaiDang((prev) =>
@@ -315,9 +314,9 @@ const TrainerFeed = () => {
     const toggleLikeComment = async (comment: BinhLuan) => {
         try {
             if (comment.da_thich) {
-                await api.delete(`/binh-luan/${comment.id_binh_luan}/like`);
+                await api.delete(`/trainer/binh-luan/${comment.id_binh_luan}/like`);
             } else {
-                await api.post(`/binh-luan/${comment.id_binh_luan}/like`);
+                await api.post(`/trainer/binh-luan/${comment.id_binh_luan}/like`);
             }
 
             setComments((prev) =>
@@ -341,7 +340,7 @@ const TrainerFeed = () => {
 
         try {
             if (editingComment) {
-                const response = await api.put(`/binh-luan/${editingComment.id_binh_luan}`, {
+                const response = await api.post(`/trainer/binh-luan/${editingComment.id_binh_luan}`, {
                     noi_dung: commentText.trim(),
                 });
 
@@ -353,7 +352,7 @@ const TrainerFeed = () => {
                 return;
             }
 
-            const response = await api.post(`/bai-dang/${selectedPost.id_bai_dang}/binh-luan`, {
+            const response = await api.post(`/trainer/bai-dang/${selectedPost.id_bai_dang}/binh-luan`, {
                 noi_dung: commentText.trim(),
                 id_binh_luan_cha: replyingTo?.id_binh_luan || null,
             });
@@ -378,7 +377,7 @@ const TrainerFeed = () => {
     const suaBaiDang = async () => {
         if (!editingPost) return;
         try {
-            const response = await api.put(`/bai-dang/${editingPost.id_bai_dang}`, {
+            const response = await api.post(`/trainer/bai-dang/${editingPost.id_bai_dang}`, {
                 caption: editCaption.trim(),
                 pham_vi_hien_thi: editingPost.pham_vi_hien_thi,
             });
@@ -407,7 +406,7 @@ const TrainerFeed = () => {
                 style: 'destructive',
                 onPress: async () => {
                     try {
-                        const response = await api.delete(`/bai-dang/${item.id_bai_dang}`);
+                        const response = await api.delete(`/trainer/bai-dang/${item.id_bai_dang}`);
                         if (response.data.status) {
                             setBaiDang((prev) => prev.filter((post) => post.id_bai_dang !== item.id_bai_dang));
                             setShowPostMenu(null);
@@ -422,6 +421,7 @@ const TrainerFeed = () => {
 
     useEffect(() => {
         loadBaiDang();
+        loadUser();
     }, []);
 
     const openCreate = (title: string) => {
@@ -433,7 +433,7 @@ const TrainerFeed = () => {
     const loadComments = async (idBaiDang: number) => {
         try {
             setLoadingComments(true);
-            const response = await api.get(`/bai-dang/${idBaiDang}/binh-luan`);
+            const response = await api.get(`/trainer/bai-dang/${idBaiDang}/binh-luan`);
             if (response.data.status) {
                 setComments(response.data.data);
             }
@@ -446,7 +446,7 @@ const TrainerFeed = () => {
 
     const xoaBinhLuan = async (comment: BinhLuan) => {
         try {
-            const response = await api.delete(`/binh-luan/${comment.id_binh_luan}`);
+            const response = await api.delete(`/trainer/binh-luan/${comment.id_binh_luan}`);
             if (response.data.status) {
                 setComments((prev) => prev.filter((item) => item.id_binh_luan !== comment.id_binh_luan));
                 if (selectedPost) {
@@ -747,7 +747,7 @@ const TrainerFeed = () => {
                                     <Text style={styles.avatarText}>HLV</Text>
                                 </View>
                                 <View style={styles.modalUserInfo}>
-                                    <Text style={styles.userName}>Huấn luyện viên VisionFit</Text>
+                                    <Text style={styles.userName}>{user?.ho_ten || 'Đang tải...'}</Text>
                                     <Text style={styles.postTime}>HLV Chuyên nghiệp • Cộng đồng</Text>
                                 </View>
                             </View>
@@ -1037,7 +1037,14 @@ const TrainerFeed = () => {
 
                         <View style={styles.commentInputRow}>
                             <View style={styles.myAvatar}>
-                                <Text style={styles.avatarText}>HLV</Text>
+                                <Text style={styles.avatarText}>
+                                    {user?.ho_ten
+                                        ?.split(' ')
+                                        .slice(-2)
+                                        .map((x: string) => x.charAt(0))
+                                        .join('')
+                                        .toUpperCase() || 'N'}
+                                </Text>
                             </View>
                             <TextInput
                                 value={commentText}

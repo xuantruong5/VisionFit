@@ -292,7 +292,7 @@ const SportFeed = () => {
         try {
             if (item.da_thich) {
                 await api.delete(
-                    `/client/bai-dang/${item.id_bai_dang}/like`
+                    `/client/bai-dang/${item.id_bai_dang}/unlike`
                 );
             } else {
                 await api.post(
@@ -1833,7 +1833,12 @@ const SportFeed = () => {
 
                             <View style={styles.myAvatar}>
                                 <Text style={styles.avatarText}>
-                                    TN
+                                    {user?.ho_ten
+                                        ?.split(' ')
+                                        .slice(-2)
+                                        .map((x: string) => x.charAt(0))
+                                        .join('')
+                                        .toUpperCase() || 'N'}
                                 </Text>
                             </View>
 

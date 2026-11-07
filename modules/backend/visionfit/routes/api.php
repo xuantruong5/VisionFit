@@ -221,8 +221,30 @@ Route::post('/trainer/check-ma-pt', [TrainerController::class, 'checkMaPT']);
 Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
 Route::post('/trainer/dang-ky', [TrainerController::class, 'dangKy']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
+    Route::get('/user', [BaiDangController::class, 'getUser']);
     Route::get('/check-token', [TrainerController::class, 'checkTokenTrainer']);
     Route::post('logout', [TrainerController::class, 'logoutTrainer']);
+
+
+
+    Route::get('/bai-dang', [BaiDangController::class, 'index']);
+    Route::post('/bai-dang/store', [BaiDangController::class, 'store']);
+    Route::post('/bai-dang/{id}/like', [BaiDangController::class, 'like']);
+    Route::delete('/bai-dang/{id}/unlike', [BaiDangController::class, 'unlike']);
+    Route::post('/bai-dang/{id}/save', [BaiDangController::class, 'savePost']);
+    Route::delete('/bai-dang/{id}/save', [BaiDangController::class, 'unsavePost']);
+    
+    Route::get('/bai-dang/{id}/binh-luan', [BaiDangController::class, 'getComments']);
+    Route::post('/bai-dang/{id}/binh-luan', [BaiDangController::class, 'comment']);
+    Route::delete('/binh-luan/{id}', [BaiDangController::class, 'deleteComment']);
+    Route::post('/binh-luan/{id}', [BaiDangController::class, 'updateComment']);
+    Route::post('/binh-luan/{id}/like', [BaiDangController::class, 'likeComment']);
+    Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']);
+
+
+    Route::get('/bai-dang-da-luu', [BaiDangController::class, 'savedPosts']);
+    Route::post('/bai-dang/{id}',[BaiDangController::class, 'updatePost']);
+    Route::delete('/bai-dang/{id}',[BaiDangController::class, 'deletePost']);
 });
 
 

@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->unsignedBigInteger('id_bai_dang');
             $table->unsignedBigInteger('id_nguoi_dung');
+            $table->string('loai_nguoi_dung', 20);
 
             $table->text('noi_dung');
 
