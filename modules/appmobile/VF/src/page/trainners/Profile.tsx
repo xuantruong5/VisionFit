@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiFitlife from '../../general/api';
+
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const COVER = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80';
@@ -40,6 +43,45 @@ const MENU = [
 const Profile = ({ navigation }: any) => {
   const [showQrModal, setShowQrModal] = useState(false);
   const referralCode = 'PT-HOANGNAM-88';
+  const handleLogout = () => {
+  Alert.alert(
+    "Xác nhận đăng xuất",
+    "Bạn có chắc chắn muốn đăng xuất không?",
+    [
+      {
+        text: "Hủy",
+        style: "cancel",
+      },
+      {
+        text: "Đăng xuất",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // Gọi API đăng xuất Trainer
+            const response = await apiFitlife.post("/trainer/logout");
+
+            console.log("LOGOUT TRAINER =", response.data);
+          } catch (error: any) {
+            console.log(
+              "Lỗi API đăng xuất:",
+              error.response?.data || error.message
+            );
+          } finally {
+            // Xóa thông tin đăng nhập ở máy
+            await AsyncStorage.removeItem("token");
+            await AsyncStorage.removeItem("role");
+            // Quay về màn hình đăng nhập Trainer
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          }
+        },
+      },
+    ]
+  );
+};
+
 
   const handleCopyCode = () => {
     Alert.alert('Đã sao chép!', `Mã giới thiệu "${referralCode}" đã được lưu vào bộ nhớ tạm. Hãy gửi cho học viên của bạn.`);
@@ -198,10 +240,7 @@ const Profile = ({ navigation }: any) => {
           </View>
 
           {/* 6. ĐĂNG XUẤT */}
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            activeOpacity={0.8}
-            onPress={() => navigation?.reset?.({ index: 0, routes: [{ name: 'TrainerAuthScreen' }] })}>
+          <TouchableOpacity style={styles.logoutBtn} activeOpacity={0.8} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={19} color={COLORS.accentRed} />
             <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
