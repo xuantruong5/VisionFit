@@ -1,25 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    TextInput,
-    Modal,
-    Image,
-    StatusBar,
-    Alert,
-    Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, StatusBar, Alert, Platform,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import api, { BASE_URL } from '../../general/api';
 import { COLORS, SHADOWS } from '../../general/theme';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import { launchImageLibrary, Asset, } from 'react-native-image-picker';
+import api, { BASE_URL } from '../../general/api';
 
 const resolveMediaUrl = (url?: string | null): string => {
     if (!url) return '';
@@ -79,14 +67,12 @@ type BinhLuan = {
 const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-
     const diffMs = now.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / 60000);
 
     if (diffMinutes < 1) {
         return 'Vừa xong';
     }
-
     if (diffMinutes < 60) {
         return `${diffMinutes} phút trước`;
     }
@@ -170,8 +156,22 @@ const SportFeed = () => {
     const [showPostMenu, setShowPostMenu] = useState<number | null>(null);
     const [editingPost, setEditingPost] = useState<BaiDang | null>(null);
     const [editCaption, setEditCaption] = useState('');
+    const [user, setUser] = useState<any>(null);
 
     const [playingVideoId, setPlayingVideoId] = useState<number | null>(null);
+
+
+    const loadUser = async () => {
+        try {
+            const response = await api.get('/client/user');
+
+            if (response.data.success) {
+                setUser(response.data.data);
+            }
+        } catch (error) {
+            console.log('Lỗi lấy thông tin người dùng:', error);
+        }
+    };
 
     const chonMedia = async () => {
         const result = await launchImageLibrary({
@@ -194,12 +194,8 @@ const SportFeed = () => {
         }
     };
 
-    const privacyLabel =
-        phamViHienThi === '0'
-            ? 'Cộng đồng'
-            : phamViHienThi === '1'
-                ? 'Bạn bè'
-                : 'Người được phép xem';
+    const privacyLabel = phamViHienThi === '0' ? 'Cộng đồng' : phamViHienThi === '1' ? 'Bạn bè' : 'Người được phép xem';
+
 
     const dangBai = async () => {
         if (!caption.trim() && !selectedMedia) {
@@ -209,17 +205,11 @@ const SportFeed = () => {
             );
             return;
         }
-
         try {
             const formData = new FormData();
-
-            formData.append('id_nguoi_dung', '1');
+            // formData.append('id_nguoi_dung', '1');
             formData.append('caption', caption.trim());
-            formData.append(
-                'pham_vi_hien_thi',
-                phamViHienThi
-            );
-
+            formData.append( 'pham_vi_hien_thi',  phamViHienThi );
             if (selectedMedia?.uri) {
                 const isVideo = selectedMedia.type?.startsWith('video') || 
                                 selectedMedia.uri.toLowerCase().endsWith('.mp4') || 
@@ -234,12 +224,8 @@ const SportFeed = () => {
                     name: fileName,
                 } as any);
             }
-
             console.log('Đang gửi bài đăng...');
-
-            const response = await api.post(
-                '/bai-dang',
-                formData,
+            const response = await api.post(  '/client/bai-dang/store', formData,
                 {
                     headers: {
                         'Content-Type': 'multipart/form-data',
@@ -247,9 +233,7 @@ const SportFeed = () => {
                     transformRequest: (data) => data, // prevent Axios from converting FormData to JSON
                 }
             );
-
             console.log('Kết quả đăng bài:', response.data);
-
             if (response.data.status) {
                 Alert.alert(
                     'Thành công',
@@ -279,7 +263,7 @@ const SportFeed = () => {
     };
     const loadBaiDang = async () => {
         try {
-            const response = await api.get('/bai-dang');
+            const response = await api.get('/client/bai-dang');
 
             if (response.data.status) {
                 const data = response.data.data.map((item: any) => ({
@@ -308,11 +292,11 @@ const SportFeed = () => {
         try {
             if (item.da_thich) {
                 await api.delete(
-                    `/bai-dang/${item.id_bai_dang}/like`
+                    `/client/bai-dang/${item.id_bai_dang}/like`
                 );
             } else {
                 await api.post(
-                    `/bai-dang/${item.id_bai_dang}/like`
+                    `/client/bai-dang/${item.id_bai_dang}/like`
                 );
             }
 
@@ -344,11 +328,11 @@ const SportFeed = () => {
         try {
             if (item.da_luu) {
                 await api.delete(
-                    `/bai-dang/${item.id_bai_dang}/save`
+                    `/client/bai-dang/${item.id_bai_dang}/save`
                 );
             } else {
                 await api.post(
-                    `/bai-dang/${item.id_bai_dang}/save`
+                    `/client/bai-dang/${item.id_bai_dang}/save`
                 );
             }
 
@@ -382,7 +366,7 @@ const SportFeed = () => {
             setLoadingSavedPosts(true);
 
             const response = await api.get(
-                '/bai-dang-da-luu'
+                '/client/bai-dang-da-luu'
             );
 
             if (response.data.status) {
@@ -413,7 +397,7 @@ const SportFeed = () => {
     const boLuuBaiDang = async (item: BaiDang) => {
         try {
             const response = await api.delete(
-                `/bai-dang/${item.id_bai_dang}/save`
+                `/client/bai-dang/${item.id_bai_dang}/save`
             );
 
             if (response.data.status) {
@@ -449,11 +433,11 @@ const SportFeed = () => {
         try {
             if (comment.da_thich) {
                 await api.delete(
-                    `/binh-luan/${comment.id_binh_luan}/like`
+                    `/client/binh-luan/${comment.id_binh_luan}/like`
                 );
             } else {
                 await api.post(
-                    `/binh-luan/${comment.id_binh_luan}/like`
+                    `/client/binh-luan/${comment.id_binh_luan}/like`
                 );
             }
 
@@ -487,8 +471,8 @@ const SportFeed = () => {
 
             // ĐANG CHỈNH SỬA
             if (editingComment) {
-                const response = await api.put(
-                    `/binh-luan/${editingComment.id_binh_luan}`,
+                const response = await api.post(
+                    `/client/binh-luan/${editingComment.id_binh_luan}`,
                     {
                         noi_dung: commentText.trim(),
                     }
@@ -508,7 +492,7 @@ const SportFeed = () => {
 
             // COMMENT / REPLY
             const response = await api.post(
-                `/bai-dang/${selectedPost.id_bai_dang}/binh-luan`,
+                `/client/bai-dang/${selectedPost.id_bai_dang}/binh-luan`,
                 {
                     noi_dung: commentText.trim(),
 
@@ -553,8 +537,8 @@ const SportFeed = () => {
         }
 
         try {
-            const response = await api.put(
-                `/bai-dang/${editingPost.id_bai_dang}`,
+            const response = await api.post(
+                `/client/bai-dang/${editingPost.id_bai_dang}`,
                 {
                     caption: editCaption.trim(),
                     pham_vi_hien_thi:
@@ -602,7 +586,7 @@ const SportFeed = () => {
                     onPress: async () => {
                         try {
                             const response = await api.delete(
-                                `/bai-dang/${item.id_bai_dang}`
+                                `/client/bai-dang/${item.id_bai_dang}`
                             );
 
                             if (response.data.status) {
@@ -630,6 +614,7 @@ const SportFeed = () => {
     };
     useEffect(() => {
         loadBaiDang();
+        loadUser();
     }, []);
 
     const openCreate = (title: string) => {
@@ -643,7 +628,7 @@ const SportFeed = () => {
             setLoadingComments(true);
 
             const response = await api.get(
-                `/bai-dang/${idBaiDang}/binh-luan`
+                `/client/bai-dang/${idBaiDang}/binh-luan`
             );
 
             if (response.data.status) {
@@ -662,7 +647,7 @@ const SportFeed = () => {
     const xoaBinhLuan = async (comment: BinhLuan) => {
         try {
             const response = await api.delete(
-                `/binh-luan/${comment.id_binh_luan}`
+                `/client/binh-luan/${comment.id_binh_luan}`
             );
 
             if (response.data.status) {
@@ -1252,47 +1237,31 @@ const SportFeed = () => {
                 </ScrollView>
 
                 {/* CREATE POST */}
-                <Modal
-                    visible={showCreatePost}
-                    transparent
-                    animationType="slide"
-                    onRequestClose={() => setShowCreatePost(false)}>
-
+                <Modal visible={showCreatePost} transparent animationType="slide" onRequestClose={() => setShowCreatePost(false)}>
                     <View style={styles.modalOverlay}>
-
                         <View style={styles.modalContent}>
-
                             <View style={styles.modalHandle} />
-
                             <View style={styles.modalHeader}>
-
                                 <TouchableOpacity
                                     onPress={() => setShowCreatePost(false)}>
                                     <Text style={styles.cancel}>Hủy</Text>
                                 </TouchableOpacity>
-
                                 <Text style={styles.modalTitle}>
                                     {createTitle}
                                 </Text>
-
-                                <TouchableOpacity
-                                    style={styles.publish}
-                                    onPress={dangBai}>
+                                <TouchableOpacity style={styles.publish} onPress={dangBai}>
                                     <Text style={styles.publishText}>Đăng</Text>
                                 </TouchableOpacity>
-
                             </View>
-
                             <View style={styles.modalUser}>
                                 <View style={styles.myAvatar}>
                                     <Text style={styles.avatarText}>N</Text>
                                 </View>
-
                                 <View style={styles.modalUserInfo}>
                                     <Text style={styles.userName}>
-                                        Võ Thị Thái Ngọc
+                                        {user?.ho_ten || 'Đang tải...'}
+                                        {/* {user?.ho_ten || 'Đang tải...'} */}
                                     </Text>
-
                                     <Text style={styles.postTime}>
                                         Cộng đồng VisionFit
                                     </Text>
@@ -2013,20 +1982,11 @@ const SportFeed = () => {
                 </SafeAreaView>
 
             </Modal>
-            <Modal
-                visible={editingPost !== null}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setEditingPost(null)}>
-
+            <Modal  visible={editingPost !== null} transparent animationType="slide" onRequestClose={() => setEditingPost(null)}>
                 <View style={styles.editPostOverlay}>
-
                     <View style={styles.editPostModal}>
-
                         <View style={styles.modalHandle} />
-
                         <View style={styles.editPostHeader}>
-
                             <TouchableOpacity
                                 onPress={() => {
                                     setEditingPost(null);
@@ -2036,35 +1996,20 @@ const SportFeed = () => {
                                     Hủy
                                 </Text>
                             </TouchableOpacity>
-
                             <Text style={styles.editPostTitle}>
                                 Chỉnh sửa bài viết
                             </Text>
-
                             <TouchableOpacity
                                 onPress={suaBaiDang}>
                                 <Text style={styles.editSave}>
                                     Lưu
                                 </Text>
                             </TouchableOpacity>
-
                         </View>
-
-                        <TextInput
-                            value={editCaption}
-                            onChangeText={setEditCaption}
-                            multiline
-                            placeholder="Nội dung bài viết..."
-                            placeholderTextColor="#8CA4AF"
-                            style={styles.editPostInput}
-                        />
-
+                        <TextInput value={editCaption} onChangeText={setEditCaption} multiline placeholder="Nội dung bài viết..." placeholderTextColor="#8CA4AF" style={styles.editPostInput} />
                     </View>
-
                 </View>
-
             </Modal>
-
         </SafeAreaView>
     );
 };
