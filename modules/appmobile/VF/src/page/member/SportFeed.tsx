@@ -292,7 +292,7 @@ const SportFeed = () => {
         try {
             if (item.da_thich) {
                 await api.delete(
-                    `/client/bai-dang/${item.id_bai_dang}/like`
+                    `/client/bai-dang/${item.id_bai_dang}/unlike`
                 );
             } else {
                 await api.post(

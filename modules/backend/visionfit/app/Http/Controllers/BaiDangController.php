@@ -40,6 +40,8 @@ class BaiDangController extends Controller
         ]);
     }
 
+    
+
 
 
     // Lấy danh sách bài đăng
@@ -143,6 +145,10 @@ class BaiDangController extends Controller
             'data' => $baiDang
         ], 201);
     }
+
+    
+
+
 
     public function updatePost(Request $request, $id)
     {
