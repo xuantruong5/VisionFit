@@ -18,6 +18,7 @@ class TrainerSeeder extends Seeder
 
         DB::table('trainers')->insert([
             [
+                'ma_gioi_thieu' => 'PT000001',
                 'ho_ten' => 'Nguyễn Văn Hùng',
                 'email' => 'trainer1@gmail.com',
                 'password' => bcrypt('123456'),
@@ -43,6 +44,7 @@ class TrainerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'ma_gioi_thieu' => 'PT000002',
                 'ho_ten' => 'Trần Minh Tuấn',
                 'email' => 'trainer2@gmail.com',
                 'password' => bcrypt('123456'),
@@ -68,6 +70,7 @@ class TrainerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'ma_gioi_thieu' => 'PT000003',
                 'ho_ten' => 'Lê Quốc Bảo',
                 'email' => 'trainer3@gmail.com',
                 'password' => bcrypt('123456'),
@@ -93,6 +96,7 @@ class TrainerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'ma_gioi_thieu' => 'PT000004',
                 'ho_ten' => 'Phạm Hoàng Nam',
                 'email' => 'trainer4@gmail.com',
                 'password' => bcrypt('123456'),
@@ -118,6 +122,7 @@ class TrainerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'ma_gioi_thieu' => 'PT000005',
                 'ho_ten' => 'Nguyễn Thị Lan',
                 'email' => 'trainer5@gmail.com',
                 'password' => bcrypt('123456'),
@@ -143,6 +148,7 @@ class TrainerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'ma_gioi_thieu' => 'PT000006',
                 'ho_ten' => 'Đỗ Minh Khôi',
                 'email' => 'trainer6@gmail.com',
                 'password' => bcrypt('123456'),
