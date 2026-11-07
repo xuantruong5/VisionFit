@@ -26,4 +26,12 @@ class BinhLuanBaiDang extends Model
             'id'
         );
     }
+    public function luotThich()
+    {
+        return $this->hasMany(
+            LuotThichBinhLuan::class,
+            'id_binh_luan',
+            'id_binh_luan'
+        );
+    }
 }
