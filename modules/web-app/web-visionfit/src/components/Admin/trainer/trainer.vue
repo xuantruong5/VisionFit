@@ -195,7 +195,7 @@
                             <tr>
                                 <th>Ứng viên PT</th>
                                 <th>Liên hệ</th>
-                                <th>Chuyên môn & Bằng cấp</th>
+                                <th>Người giới thiệu</th>
                                 <th>Ngày đăng ký</th>
                                 <th>Lịch hẹn test kỹ năng</th>
                                 <th>Trạng thái</th>
@@ -225,10 +225,11 @@
                                 </td>
 
                                 <td>
-                                    <div>
-                                        <strong style="color: #11343a; font-size: 13.5px;">{{ app.chuyen_mon }}</strong>
-                                        <div style="color: #71949a; font-size: 12px; margin-top: 2px;">{{ app.chung_chi }}</div>
+                                    <div v-if="app.nguoi_gioi_thieu">
+                                        <strong style="color: #11343a; font-size: 13.5px;">{{ app.nguoi_gioi_thieu }}</strong>
+                                        <div style="color: #71949a; font-size: 12px; margin-top: 2px;">{{ app.ma_gioi_thieu }}</div>
                                     </div>
+                                    <span v-else style="color: #9bb8bd; font-size: 12.5px;">—</span>
                                 </td>
 
                                 <td>
@@ -244,33 +245,29 @@
                                 </td>
 
                                 <td>
-                                    <span class="status" :class="app.trang_thai === 'approved' ? 'active' : app.trang_thai === 'invited' ? 'invited' : 'pending'">
+                                    <span class="status" :class="app.da_kich_hoat || app.trang_thai === 2 ? 'active' : app.trang_thai === 3 ? 'inactive' : app.trang_thai === 1 ? 'invited' : 'pending'">
                                         <span class="status-dot"></span>
-                                        {{
-                                            app.trang_thai === 'approved'
-                                                ? 'Đã kích hoạt'
-                                                : app.trang_thai === 'invited'
-                                                ? 'Đã gửi thư mời test'
-                                                : 'Chờ liên hệ & test'
-                                        }}
+                                        <template v-if="app.da_kich_hoat">Đã kích hoạt</template>
+                                        <template v-else-if="app.trang_thai === 0">Chờ liên hệ & test</template>
+                                        <template v-else-if="app.trang_thai === 1">Đã gửi thư mời phỏng vấn</template>
+                                        <template v-else-if="app.trang_thai === 2">Phỏng vấn đậu</template>
+                                        <template v-else>Rớt phỏng vấn</template>
                                     </span>
                                 </td>
 
                                 <td>
                                     <div class="action-btn-group">
-                                        <button
-                                            class="btn-email"
-                                            @click="openEmailModal(app)"
-                                            title="Gửi email hẹn giờ và địa chỉ test kỹ năng"
-                                        >
+                                        <button class="btn-detail" @click="openProfileModal(app)">📄 Xem hồ sơ</button>
+                                        <button v-if="app.trang_thai === 0 || app.trang_thai === 1" class="btn-email" @click="openEmailModal(app)">
                                             ✉️ Gửi Email hẹn test
                                         </button>
-                                        <button
-                                            v-if="app.trang_thai !== 'approved'"
-                                            class="btn-approve"
-                                            @click="approveApplicant(app)"
-                                            title="Phê duyệt và cấp mã Trainer"
-                                        >
+                                        <button v-if="app.trang_thai === 1" class="btn-approve" @click="app.trang_thai = 2">
+                                            ✓ Đạt
+                                        </button>
+                                        <button v-if="app.trang_thai === 1" class="btn-reject" @click="app.trang_thai = 3">
+                                            ✕ Rớt
+                                        </button>
+                                        <button v-if="app.trang_thai === 2 && !app.da_kich_hoat" class="btn-approve" @click="approveApplicant(app)">
                                             ✓ Kích hoạt PT
                                         </button>
                                     </div>
@@ -314,6 +311,11 @@
                     <div class="setup-col">
                         <label>Lương cơ bản mặc định (VNĐ)</label>
                         <input type="number" v-model.number="salary_config.luong_co_ban" step="500000" />
+                    </div>
+
+                    <div class="setup-col">
+                        <label>Hoa hồng giới thiệu PT mới (VNĐ)</label>
+                        <input type="number" v-model.number="salary_config.hoa_hong_gioi_thieu_pt" step="100000" />
                     </div>
 
                     <div class="setup-col">
@@ -432,6 +434,23 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL XEM HỒ SƠ ỨNG VIÊN PT ================= -->
+        <div v-if="showProfileModal" class="modal-overlay" @click.self="showProfileModal = false">
+            <div class="modal-box modal-profile-box">
+                <div class="modal-header">
+                    <div>
+                        <h3>📄 Hồ sơ ứng viên: {{ selectedApplicant.ho_ten }}</h3>
+                        <p>{{ selectedApplicant.email }} · {{ selectedApplicant.so_dien_thoai }}</p>
+                    </div>
+                    <button class="btn-close" @click="showProfileModal = false">×</button>
+                </div>
+
+                <p style="margin: 0 0 12px;"><strong>Người giới thiệu:</strong> {{ selectedApplicant.nguoi_gioi_thieu || 'Không có' }}</p>
+
+                <iframe class="cv-frame" :src="selectedApplicant.cv_url"></iframe>
             </div>
         </div>
 
@@ -603,6 +622,7 @@ export default {
             specialtyFilter: '',
             showCreateModal: false,
             showEmailModal: false,
+            showProfileModal: false,
             selectedApplicant: null,
 
             // Cấu hình Form Email mẫu gửi ứng viên PT
@@ -622,6 +642,7 @@ export default {
                 luong_co_ban: 5000000,
                 thuong_5_sao: 50000,
                 phat_vang: 100000,
+                hoa_hong_gioi_thieu_pt: 500000,
             },
 
             // Danh sách ứng viên đăng ký làm PT từ app
@@ -631,10 +652,12 @@ export default {
                     ho_ten: 'Lê Quốc Huy',
                     email: 'huy.le@gmail.com',
                     so_dien_thoai: '0912 345 678',
-                    chuyen_mon: 'Strength & Hypertrophy',
-                    chung_chi: 'Chứng chỉ NASM CPT quốc tế 2023',
                     ngay_dang_ky: 'Hôm nay, 16:30',
-                    trang_thai: 'pending',
+                    nguoi_gioi_thieu: 'Trần Quốc Huy',
+                    ma_gioi_thieu: 'PT000001',
+                    cv_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+                    da_kich_hoat: false,
+                    trang_thai: 0,
                     gio_hen: '',
                     dia_chi_test: '',
                 },
@@ -643,10 +666,12 @@ export default {
                     ho_ten: 'Hoàng Thị Ngọc',
                     email: 'ngoc.hoang@gmail.com',
                     so_dien_thoai: '0934 567 890',
-                    chuyen_mon: 'Cardio & Giảm mỡ nữ',
-                    chung_chi: 'Cử nhân Đại học TDTT TP.HCM',
                     ngay_dang_ky: 'Hôm qua, 10:15',
-                    trang_thai: 'invited',
+                    nguoi_gioi_thieu: '',
+                    ma_gioi_thieu: '',
+                    cv_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+                    da_kich_hoat: false,
+                    trang_thai: 1,
                     gio_hen: '14:00 ngày 04/11/2026',
                     dia_chi_test: 'VisionFit Cơ sở 2 - 456 Hai Bà Trưng, Q.3',
                 },
@@ -756,7 +781,7 @@ export default {
 
     computed: {
         pendingApplicantsCount() {
-            return this.pt_applicants.filter(a => a.trang_thai === 'pending').length;
+            return this.pt_applicants.filter(a => a.trang_thai === 0).length;
         },
 
         filteredTrainers() {
@@ -858,6 +883,11 @@ export default {
             this.$router.push('/admin/trainer/' + trainer.id);
         },
 
+        openProfileModal(applicant) {
+            this.selectedApplicant = applicant;
+            this.showProfileModal = true;
+        },
+
         // EMAIL MODAL CHO ỨNG VIÊN PT
         openEmailModal(applicant) {
             this.selectedApplicant = applicant;
@@ -876,7 +906,7 @@ export default {
             }
 
             if (this.selectedApplicant) {
-                this.selectedApplicant.trang_thai = 'invited';
+                this.selectedApplicant.trang_thai = 1;
                 this.selectedApplicant.gio_hen = this.emailForm.time;
                 this.selectedApplicant.dia_chi_test = this.emailForm.location;
             }
@@ -889,14 +919,14 @@ export default {
             const lastName = applicant.ho_ten.trim().split(' ').pop().toUpperCase();
             const newCode = `PT-${lastName}-${Math.floor(10 + Math.random() * 90)}`;
             if (confirm(`Xác nhận phê duyệt hồ sơ và kích hoạt tài khoản HLV cho ${applicant.ho_ten}?\n\nMã giới thiệu được cấp: ${newCode}`)) {
-                applicant.trang_thai = 'approved';
+                applicant.da_kich_hoat = true;
 
                 const newTrainer = {
                     id: Date.now().toString().slice(-4),
                     ho_ten: applicant.ho_ten,
                     email: applicant.email,
                     so_dien_thoai: applicant.so_dien_thoai,
-                    chuyen_mon: applicant.chuyen_mon,
+                    chuyen_mon: 'Fitness', // PT tự cập nhật chuyên môn/chứng chỉ trong app sau khi được kích hoạt
                     kinh_nghiem: 2,
                     so_gymmer: 0,
                     so_review: 0,
@@ -1319,6 +1349,7 @@ export default {
 /* APPLICANT ACTIONS */
 .action-btn-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
 }
 
@@ -1345,6 +1376,26 @@ export default {
     cursor: pointer;
 }
 .btn-approve:hover { background: #d1fae5; }
+
+.btn-reject {
+    padding: 6px 12px;
+    border: 1px solid #ef4444;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-reject:hover { background: #fee2e2; }
+
+.modal-profile-box { max-width: 820px; }
+.cv-frame {
+    width: 100%;
+    height: 480px;
+    border: 1px solid #d3e6e9;
+    border-radius: 12px;
+}
 
 .schedule-brief strong {
     display: block;
@@ -1412,7 +1463,7 @@ export default {
 
 .quick-setup-inputs {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
 }
 

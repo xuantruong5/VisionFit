@@ -15,6 +15,12 @@ const TrainerAuthScreen = ({ navigation }: any) => {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [referralCode, setReferralCode] = useState("");
+    const [cvName, setCvName] = useState("");
+    // Tab xã hội: bước 1 nhập mã PT, bước 2 nhập tài khoản + mật khẩu
+    const [step, setStep] = useState("code");
+    const [ptCode, setPtCode] = useState("");
+    const [account, setAccount] = useState("");
+    const [accountPass, setAccountPass] = useState("");
 
     const handleRegister = () => {
         // Mở popup thông báo chờ duyệt theo đúng yêu cầu nghiệp vụ
@@ -58,30 +64,75 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                             bạn, giao tiếp và giúp người dùng đạt được kết quả mỹ 
                             mãn!
                         </Text>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>
-                                Mã
-                            </Text>
-                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor={C.textLight}/>
-                        </View>
-                        <TouchableOpacity>
-                            <Text style={styles.helpText}>
-                                Làm thế nào để nhận được mã giới thiệu?
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[ styles.socialButton, styles.appleButton, ]} >
-                            <MaterialCommunityIcons name="google" size={wp("7%")} color={C.textPrimary} />
-                            <Text style={styles.socialText}>
-                                Đăng nhập bằng Google
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.socialButton,styles.facebookButton,]} >
-                            <Ionicons name="logo-facebook" size={wp("7%")} color={C.textPrimary}/>
-                            <Text style={styles.socialText}>
-                                Đăng nhập bằng Facebook
-                            </Text>
-                        </TouchableOpacity>
+                        {step === "code" && (
+                            <>
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>
+                                        Mã PT
+                                    </Text>
+                                    <View style={styles.passwordContainer}>
+                                        <TextInput
+                                            style={styles.passwordInput}
+                                            placeholder="Nhập mã PT của bạn (VD: PT000007)"
+                                            placeholderTextColor={C.textLight}
+                                            autoCapitalize="characters"
+                                            value={ptCode}
+                                            onChangeText={setPtCode}
+                                        />
+                                        {ptCode.trim().length > 0 && (
+                                            <TouchableOpacity style={styles.arrowButton} onPress={() => setStep("login")} activeOpacity={0.85}>
+                                                <Ionicons name="arrow-forward" size={wp("5.5%")} color={C.white} />
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                </View>
+                                <TouchableOpacity>
+                                    <Text style={styles.helpText}>
+                                        Làm thế nào để nhận được mã giới thiệu?
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={[ styles.socialButton, styles.appleButton, ]} >
+                                    <MaterialCommunityIcons name="google" size={wp("7%")} color={C.textPrimary} />
+                                    <Text style={styles.socialText}>
+                                        Đăng nhập bằng Google
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.socialButton,styles.facebookButton,]} >
+                                    <Ionicons name="logo-facebook" size={wp("7%")} color={C.textPrimary}/>
+                                    <Text style={styles.socialText}>
+                                        Đăng nhập bằng Facebook
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        {step === "login" && (
+                            <>
+                                <Text style={styles.ptCodeTag}>Mã PT: {ptCode.trim().toUpperCase()}</Text>
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>
+                                        Tài khoản
+                                    </Text>
+                                    <TextInput style={styles.input} placeholder="Nhập tài khoản (email)" placeholderTextColor={C.textLight} autoCapitalize="none" value={account} onChangeText={setAccount} />
+                                </View>
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>
+                                        Mật khẩu
+                                    </Text>
+                                    <TextInput style={styles.input} placeholder="Nhập mật khẩu" placeholderTextColor={C.textLight} secureTextEntry autoCapitalize="none" value={accountPass} onChangeText={setAccountPass} />
+                                </View>
+                                <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("MainTabs")} activeOpacity={0.85}>
+                                    <Text style={styles.registerText}>
+                                        ĐĂNG NHẬP
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setStep("code")}>
+                                    <Text style={styles.backLink}>
+                                        Nhập lại mã PT
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                         <View style={styles.termsContainer}>
                             <Text style={styles.termsText}>
                                 Bằng việc tiếp tục sử dụng Fitness Online, bạn đồng ý
@@ -154,9 +205,21 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                         </View>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>
-                                Mã
+                                CV xin việc (PDF/DOC)
                             </Text>
-                            <TextInput style={styles.input} placeholder="Nhập mã giới thiệu của bạn" placeholderTextColor={C.textLight} value={referralCode} onChangeText={setReferralCode} />
+                            {/* TODO: gắn thư viện chọn file (document picker) rồi setCvName(tên file) */}
+                            <TouchableOpacity style={styles.cvButton} activeOpacity={0.85}>
+                                <Ionicons name="document-attach-outline" size={wp("6%")} color={C.primaryDark} />
+                                <Text style={styles.cvText} numberOfLines={1}>
+                                    {cvName ? cvName : "Chọn file CV từ điện thoại"}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>
+                                Mã giới thiệu (không bắt buộc)
+                            </Text>
+                            <TextInput style={styles.input} placeholder="Nhập mã PT người giới thiệu (nếu có)" placeholderTextColor={C.textLight} autoCapitalize="characters" value={referralCode} onChangeText={setReferralCode} />
                         </View>
                  
                         <TouchableOpacity>
@@ -364,6 +427,42 @@ const styles = StyleSheet.create({
         fontSize: 14.5,
         fontWeight: "700",
         color: C.textPrimary,
+    },
+    arrowButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: C.primary,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    ptCodeTag: {
+        fontSize: 14,
+        fontWeight: "800",
+        color: C.primaryDark,
+        marginBottom: 14,
+    },
+    backLink: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: C.primaryDark,
+        textAlign: "center",
+        marginTop: 10,
+    },
+    cvButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: C.background,
+        paddingHorizontal: 18,
+    },
+    cvText: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: "600",
+        color: C.textLight,
     },
     registerButton: {
         height: 54,

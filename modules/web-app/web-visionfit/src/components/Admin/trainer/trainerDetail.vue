@@ -10,7 +10,7 @@
             </div>
 
             <div class="header-actions">
-                <button class="btn-outline">Chỉnh sửa</button>
+                <button class="btn-outline" @click="openEditModal">Chỉnh sửa</button>
                 <router-link to="/admin/phan-cong" class="btn-primary">Phân công học viên</router-link>
             </div>
         </div>
@@ -22,9 +22,11 @@
             <div class="profile-info">
                 <div class="name-row">
                     <h3>{{ trainer.name }}</h3>
-                    <span class="status-pill active">● Đang làm việc</span>
+                    <span class="status-pill" :class="trainer.trang_thai === 'active' ? 'active' : 'inactive'">● {{ trainer.trang_thai === 'active' ? 'Đang làm việc' : 'Đã nghỉ' }}</span>
+                    <span v-if="trainer.bi_khoa" class="status-pill inactive">🔒 Đã khóa tài khoản</span>
                 </div>
                 <p class="code">{{ trainer.code }} • {{ trainer.role }}</p>
+                <p v-if="trainer.mo_ta" class="muted">{{ trainer.mo_ta }}</p>
 
                 <div class="chip-row">
                     <span v-for="item in trainer.specialties" :key="item" class="tag">{{ item }}</span>
@@ -34,6 +36,19 @@
                     <div v-for="item in trainer.contact" :key="item.label" class="info-item">
                         <span>{{ item.label }}</span>
                         <strong>{{ item.value }}</strong>
+                    </div>
+                </div>
+
+                <!-- CHỨNG CHỈ DO TRAINER TỰ NHẬP, ADMIN XÁC MINH -->
+                <div class="cert-list">
+                    <span class="cert-title">Chứng chỉ (trainer tự cập nhật)</span>
+                    <div v-for="cert in trainer.certificates" :key="cert.name" class="cert-item">
+                        <div>
+                            <strong>{{ cert.name }}</strong>
+                            <small class="muted"> {{ cert.issuer }}</small>
+                        </div>
+                        <span class="status-pill" :class="cert.verified ? 'active' : 'inactive'">{{ cert.verified ? '✓ Đã xác minh' : 'Chưa xác minh' }}</span>
+                        <button class="btn-outline small" @click="cert.verified = !cert.verified">{{ cert.verified ? 'Bỏ xác minh' : 'Xác minh' }}</button>
                     </div>
                 </div>
             </div>
@@ -111,6 +126,46 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- MODAL CHỈNH SỬA (ADMIN CHỈ SỬA PHẦN QUẢN TRỊ) -->
+        <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <div>
+                        <h3>Chỉnh sửa thông tin quản trị</h3>
+                        <p>{{ trainer.code }} • {{ trainer.name }}. Giới thiệu, chuyên môn, chứng chỉ do trainer tự cập nhật trên app.</p>
+                    </div>
+                    <button class="btn-close" @click="showEditModal = false">×</button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Cơ sở làm việc</label>
+                        <input type="text" v-model="editForm.coSo" />
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Trạng thái làm việc</label>
+                        <select v-model="editForm.trang_thai">
+                            <option value="active">Đang làm việc</option>
+                            <option value="inactive">Đã nghỉ</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="check-line">
+                            <input type="checkbox" v-model="editForm.bi_khoa" />
+                            Khóa tài khoản (trainer không đăng nhập được)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" @click="showEditModal = false">Hủy</button>
+                    <button class="btn-save" @click="saveEdit">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -119,16 +174,24 @@
 export default {
     data() {
         return {
+            showEditModal: false,
+            editForm: {},
             trainer: {
                 initials: 'TH',
                 name: 'Trần Quốc Huy',
                 code: '#HLV0012',
                 role: 'Personal Trainer • 5 năm kinh nghiệm',
+                mo_ta: '5 năm kinh nghiệm huấn luyện sức mạnh và giảm mỡ. Tập trung vào kỹ thuật chuẩn và lộ trình bền vững.',
+                certificates: [
+                    { name: 'NASM Certified Personal Trainer', issuer: 'NASM • 2021', verified: true },
+                    { name: 'First Aid / CPR / AED', issuer: 'Red Cross • 2023', verified: false },
+                ],
                 specialties: ['Strength Training', 'Cardio', 'Giảm mỡ'],
+                trang_thai: 'active',
+                bi_khoa: false,
                 contact: [
                     { label: 'Email', value: 'huy.tran@visionfit.vn' },
                     { label: 'Số điện thoại', value: '0908 123 456' },
-                    { label: 'Chứng chỉ', value: 'NASM-CPT, CPR' },
                     { label: 'Cơ sở', value: 'VisionFit Quận 1' },
                 ],
             },
@@ -154,6 +217,25 @@ export default {
                 { name: 'Đỗ Minh Khoa', code: '#GM00110', package: 'Gym + AI 3 tháng', progress: 20, sessions: 5, active: false },
             ],
         };
+    },
+
+    methods: {
+        openEditModal() {
+            // copy ra form để bấm Hủy thì không bị đổi
+            this.editForm = {
+                coSo: this.trainer.contact[2].value,
+                trang_thai: this.trainer.trang_thai,
+                bi_khoa: this.trainer.bi_khoa,
+            };
+            this.showEditModal = true;
+        },
+
+        saveEdit() {
+            this.trainer.contact[2].value = this.editForm.coSo;
+            this.trainer.trang_thai = this.editForm.trang_thai;
+            this.trainer.bi_khoa = this.editForm.bi_khoa;
+            this.showEditModal = false;
+        },
     },
 };
 </script>
@@ -506,6 +588,31 @@ export default {
     color: #24484e;
     font-size: 15px;
 }
+
+/* MODAL CHỈNH SỬA */
+.modal-overlay { position: fixed; inset: 0; background: rgba(17, 52, 58, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); }
+.modal-box { width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
+.modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.modal-header h3 { margin: 0; color: #11343a; font-size: 20px; font-weight: 800; }
+.modal-header p { margin: 4px 0 0; color: #71949a; font-size: 13.5px; }
+.btn-close { border: none; background: none; font-size: 22px; color: #8faeb4; cursor: pointer; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.form-group.full { grid-column: span 2; }
+.form-group label { display: block; margin-bottom: 5px; color: #51777d; font-size: 13px; font-weight: 700; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0 11px; border: 1px solid #cfe8eb; border-radius: 10px; outline: none; color: #11343a; font-size: 14px; box-sizing: border-box; }
+.form-group input, .form-group select { height: 40px; }
+.form-group select { width: 100%; padding: 0 11px; border: 1px solid #cfe8eb; border-radius: 10px; color: #11343a; font-size: 14px; background: white; }
+.check-line { display: flex !important; align-items: center; gap: 8px; }
+.check-line input { width: auto; height: auto; }
+.cert-list { margin-top: 14px; padding-top: 12px; border-top: 1px solid #eef5f6; }
+.cert-title { display: block; margin-bottom: 8px; color: #51777d; font-size: 13px; font-weight: 700; }
+.cert-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.cert-item > div { flex: 1; }
+.form-group textarea { padding-top: 8px; resize: vertical; }
+.form-group input:focus, .form-group textarea:focus { border-color: #0d7f8d; box-shadow: 0 0 0 3px rgba(13, 127, 141, 0.08); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.btn-cancel { padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; border: 1px solid #9ed9df; background: white; color: #0d7f8d; cursor: pointer; }
+.btn-save { padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; border: 1px solid #0d7f8d; background: #0d7f8d; color: white; cursor: pointer; }
 
 .tag {
     padding: 4px 10px;
