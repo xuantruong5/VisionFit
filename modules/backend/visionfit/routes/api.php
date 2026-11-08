@@ -98,7 +98,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::delete('/bai-dang/{id}/unlike', [BaiDangController::class, 'unlike']);
     Route::post('/bai-dang/{id}/save', [BaiDangController::class, 'savePost']);
     Route::delete('/bai-dang/{id}/save', [BaiDangController::class, 'unsavePost']);
-    
+
     Route::get('/bai-dang/{id}/binh-luan', [BaiDangController::class, 'getComments']);
     Route::post('/bai-dang/{id}/binh-luan', [BaiDangController::class, 'comment']);
     Route::delete('/binh-luan/{id}', [BaiDangController::class, 'deleteComment']);
@@ -111,7 +111,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/bai-dang/{id}',[BaiDangController::class, 'updatePost']);
     Route::delete('/bai-dang/{id}',[BaiDangController::class, 'deletePost']);
 
-   
+
 
 
 
@@ -223,6 +223,32 @@ Route::post('/trainer/check-ma-pt', [TrainerController::class, 'checkMaPT']);
 Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
 Route::post('/trainer/dang-ky', [TrainerController::class, 'dangKy']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
+
+    Route::get('/chat/contacts', [ChatController::class, 'getTrainerContacts']);
+
+    Route::get('/chat/rooms', [ChatController::class, 'getTrainerRooms']);
+
+    Route::get('/chat/room/{id}', [ChatController::class, 'getTrainerRoom']);
+
+    Route::match(['get', 'post'], '/chat/history-message', [ChatController::class, 'getTrainerHistory']);
+
+    Route::post('/chat/send-message', [ChatController::class, 'sendTrainerMessage']);
+
+    Route::post('/chat/room/{id}/read', [ChatController::class, 'markAsRead']);
+
+    Route::post('/chat/room/{id}/pin', [ChatController::class, 'togglePinRoom']);
+
+    Route::post('/chat/room/{id}/mute', [ChatController::class, 'toggleMuteRoom']);
+
+    Route::post('/chat/message/{id}/recall', [ChatController::class, 'recallMessage']);
+
+    Route::post('/chat/message/{id}/reaction', [ChatController::class, 'reactMessage']);
+
+    Route::post('/chat/upload', [ChatController::class, 'uploadMedia']);
+
+    Route::get('/chat/room/{id}', [ChatController::class, 'getTrainerRoom']);
+    Route::get('/chat/rooms', [ChatController::class, 'getTrainerRooms']);
+    Route::get('/chat/contacts', [ChatController::class, 'getTrainerContacts']);
     Route::get('/user', [BaiDangController::class, 'getUser']);
     Route::get('/check-token', [TrainerController::class, 'checkTokenTrainer']);
     Route::post('logout', [TrainerController::class, 'logoutTrainer']);
@@ -235,7 +261,7 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
     Route::delete('/bai-dang/{id}/unlike', [BaiDangController::class, 'unlike']);
     Route::post('/bai-dang/{id}/save', [BaiDangController::class, 'savePost']);
     Route::delete('/bai-dang/{id}/save', [BaiDangController::class, 'unsavePost']);
-    
+
     Route::get('/bai-dang/{id}/binh-luan', [BaiDangController::class, 'getComments']);
     Route::post('/bai-dang/{id}/binh-luan', [BaiDangController::class, 'comment']);
     Route::delete('/binh-luan/{id}', [BaiDangController::class, 'deleteComment']);

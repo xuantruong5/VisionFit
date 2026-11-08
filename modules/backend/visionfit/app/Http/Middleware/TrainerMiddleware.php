@@ -2,42 +2,53 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Trainer;
 use Closure;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\Trainer;
+
 class TrainerMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        // Thử lấy user từ token trước
-        $user = null;
-        if ($request->bearerToken()) {
-            $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($request->bearerToken());
-            if ($accessToken && $accessToken->tokenable_type === \App\Models\Trainer::class) {
-                $user = $accessToken->tokenable;
-            }
+        $plainTextToken = $request->bearerToken();
+        $accessToken = $plainTextToken
+            ? PersonalAccessToken::findToken($plainTextToken)
+            : null;
+
+        $trainer = $accessToken?->tokenable;
+
+        if (!$accessToken || !($trainer instanceof Trainer)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.',
+            ], 401);
         }
 
-        //  Nếu chưa có user từ token, thử lấy từ session guard (nếu có)
-        if (!$user && Auth::check()) {
-            $user = Auth::user();
+        if ((int) $trainer->is_active !== Trainer::DAKICHHOAT) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Tài khoản Trainer chưa được kích hoạt.',
+            ], 403);
         }
 
-        // Nếu tìm thấy nhân viên hợp lệ
-        if ($user && $user instanceof \App\Models\Trainer && $user->tinh_trang == 1) {
-            $request->merge(['trainer' => $user]); 
-            return $next($request);
+        if ((int) $trainer->is_block === Trainer::DAKHOA) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Tài khoản Trainer đã bị khóa.',
+            ], 403);
         }
 
-        return response()->json([
-            'status' => false,
-            'message' => 'Bạn cần đăng nhập để thực hiện chức năng này.',
-        ]);
+        if ((int) $trainer->tinh_trang !== Trainer::DANGHOATDONG) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Tài khoản Trainer chưa ở trạng thái hoạt động.',
+            ], 403);
+        }
+
+        // Existing controllers read the trainer from request('trainer').
+        $request->merge(['trainer' => $trainer]);
+        return $next($request);
     }
 }

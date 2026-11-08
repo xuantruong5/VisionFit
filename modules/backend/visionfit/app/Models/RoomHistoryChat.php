@@ -13,6 +13,7 @@ class RoomHistoryChat extends Model
         'room_client_id',
         'client_id',
         'message',
+        'sender_type',
         'message_type',
         'media_url',
         'workout_data',
