@@ -179,7 +179,7 @@ const ExercisePage = ({ navigation, route }: any) => {
               res.data.total_exercises ?? data.length
             ),
           }))
-          .sort((a, b) => a.thu_tu - b.thu_tu);
+          .sort((a: any, b: any) => a.thu_tu - b.thu_tu);
 
         setExercises(danhSachBaiTap);
 
