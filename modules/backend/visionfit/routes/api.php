@@ -17,6 +17,8 @@ use App\Http\Controllers\BuoiTapController;
 use App\Http\Controllers\GoiTapController;
 use App\Http\Controllers\ThanhToanController;
 use App\Http\Controllers\TrainersController;
+use App\Http\Controllers\TanSuatThuongController;
+
 
 
 
@@ -104,19 +106,11 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/binh-luan/{id}/like', [BaiDangController::class, 'likeComment']);
     Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']);
 
-
     Route::get('/bai-dang-da-luu', [BaiDangController::class, 'savedPosts']);
     Route::post('/bai-dang/{id}',[BaiDangController::class, 'updatePost']);
     Route::delete('/bai-dang/{id}',[BaiDangController::class, 'deletePost']);
 
    
-
-
-
-
-
-
-
 
     Route::get('/chuong-trinh-tap', [MembersController::class, 'getChuongTrinhTap']);
     Route::get('/chuong-trinh-tap/khong-muc-tieu', [MembersController::class, 'getChuongTrinhTapKhongMucTieu']);
@@ -138,13 +132,10 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
     Route::post('/chuong-trinh-bai-tap/{id}/bo-qua', [ChuongTrinhBaiTapController::class, 'changeSkip']);
     // Route::get('/my-program-detail',[DangKyChuongTrinhController::class, 'getMyProgramDetail']); // api tổng hợp  
-
     Route::get('/provinces', [MembersController::class, 'getProvinces']);
     Route::get('/provinces/{code}/wards', [MembersController::class, 'getWards']);
     Route::get('/provinces/{code}/gyms', [MembersController::class, 'getGymsByProvince']);
     Route::get('/wards/{id}/gyms', [MembersController::class,'getGymsByWard']);
-
-
 
     // đếm thời gian bài tập và mức độ hoàn thành 
     Route::post('/buoi-tap/bat-dau', [BuoiTapController::class, 'batDau']);
@@ -153,19 +144,16 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/hoan-thanh',[BuoiTapController::class, 'hoanThanhBaiTap']);
     Route::post('/buoi-tap/{id}/ket-thuc',[BuoiTapController::class, 'ketThuc']);
 
-
     Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'luuLichSuHiep']);
     Route::get('/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'getLichSuHiep']);
 
     // báo cáo 
     Route::get('/bao-cao/{id}', [BuoiTapController::class, 'baoCaoBuoiTap']);
 
-
     // lấy dữ liệu 
     Route::get('/buoi-tap/phan-tram-hoan-thanh',[BuoiTapController::class, 'getLatestProgress']);
     Route::get( '/buoi-tap/phan-tram-hoan-thanh-tat-ca', [BuoiTapController::class, 'getProgressPercent']);
     Route::get('/huan-luyen-tiep-theo',[BuoiTapController::class, 'getHuanLuyenTiepTheo']);
-
 
     // check đã đăng ký gói tập chưa để đăng ký 
     Route::post('/check-quyen-tap', [ BuoiTapController::class, 'checkQuyenTap']);
@@ -185,7 +173,6 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
     Route::get('/auto-thanh-toan-goi/{id}', [ThanhToanController::class, 'autoThanhToanGoi']);
 
-
     Route::post('/test-mail', [ThanhToanController::class, 'testGuiMail']);
 
     // lấy danh sách đã đăng ký gói 
@@ -194,6 +181,11 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
 
     Route::get('/profile', [MembersController::class, 'getProfile']);
+
+    // tần suất tập và thưởng 
+    Route::get('/thong-ke-chuoi-ngay-tap', [TanSuatThuongController::class, 'thongKeChuoiNgayTap']);
+    Route::post('/nhan-phan-thuong', [TanSuatThuongController::class, 'nhanPhanThuong']);
+
 
 
     
