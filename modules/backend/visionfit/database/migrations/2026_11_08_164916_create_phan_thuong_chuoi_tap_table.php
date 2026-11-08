@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_hoi_vien');
             $table->unsignedBigInteger('id_dang_ky_chuong_trinh');
-            $table->integer('so_ngay');
+            $table->unsignedBigInteger('id_moc_phan_thuong')->nullable();
+            $table->unsignedInteger('so_ngay');
             $table->string('ten_phan_thuong');
             $table->tinyInteger('tinh_trang')->default(0);
             $table->dateTime('ngay_dat_moc')->nullable();
