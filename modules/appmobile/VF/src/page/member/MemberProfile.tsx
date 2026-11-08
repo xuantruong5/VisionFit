@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert, StatusBar, Switch,} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -207,14 +208,34 @@ const MemberProfile = ({ navigation }: any) => {
             'Xác nhận đăng xuất',
             'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản VisionFit?',
             [
-                { text: 'Ở lại', style: 'cancel' },
+                {
+                    text: 'Ở lại',
+                    style: 'cancel',
+                },
                 {
                     text: 'Đăng xuất',
                     style: 'destructive',
-                    onPress: () => {
-                        Alert.alert('Đã đăng xuất', 'Hẹn gặp lại bạn tại buổi tập tiếp theo!');
-                        if (navigation?.navigate) {
-                            navigation.navigate('AuthScreen');
+                    onPress: async () => {
+                        try {
+                            // Gọi API đăng xuất hội viên
+                            const response = await apiFitlife.post('/client/logout');
+
+                            console.log('LOGOUT CLIENT =', response.data);
+                        } catch (error: any) {
+                            console.log(
+                                'Lỗi API đăng xuất:',
+                                error.response?.data || error.message
+                            );
+                        } finally {
+                            // Xóa thông tin đăng nhập
+                            await AsyncStorage.removeItem("token");
+                            await AsyncStorage.removeItem("role");
+
+                            // Quay về màn hình đăng nhập
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
                         }
                     },
                 },

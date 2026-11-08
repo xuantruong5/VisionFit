@@ -21,15 +21,15 @@ const Onloading = ({ navigation }: any) => {
                 }
                 // Hội viên
                 if (role === "member") {
-                    try {const response = await apiFitlife.get("/client/my-programs");
+                    try {
+                        const response = await apiFitlife.get("/client/my-programs");
                         const chuongTrinh = response.data.data;
                         console.log("MY PROGRAMS =", chuongTrinh);
                         const targetScreen =
                             Array.isArray(chuongTrinh) &&
-                            chuongTrinh.length > 0
+                                chuongTrinh.length > 0
                                 ? "headerPage"
                                 : "WorkoutPlanScreen";
-
                         navigation.reset({
                             index: 0,
                             routes: [
@@ -74,10 +74,42 @@ const Onloading = ({ navigation }: any) => {
 
                 // Huấn luyện viên
                 if (role === "trainer") {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: "MainTabs" }],
-                    });
+                    try {
+                        const response = await apiFitlife.get("/trainer/check-token");
+                        console.log("CHECK TOKEN TRAINER =", response.data);
+                        if (response.data.status === true) {
+                            // Token hợp lệ
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: "MainTabs" }],
+                            });
+                        } else {
+                            // Tài khoản bị khóa hoặc không hoạt động
+                            await AsyncStorage.removeItem("token");
+                            await AsyncStorage.removeItem("role");
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: "OnboardingScreen" }],
+                            });
+                        }
+                    } catch (error: any) {
+                        console.log(
+                            "Lỗi kiểm tra token Trainer:",
+                            error.response?.data || error.message
+                        );
+                        if (
+                            error.response?.status === 401 ||
+                            error.response?.status === 403
+                        ) {
+                            await AsyncStorage.removeItem("token");
+                            await AsyncStorage.removeItem("role");
+                        }
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: "OnboardingScreen" }],
+                        });
+                    }
+
                     return;
                 }
                 // Role không hợp lệ

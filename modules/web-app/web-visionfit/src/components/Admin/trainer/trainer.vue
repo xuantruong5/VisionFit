@@ -23,7 +23,7 @@
             <button
                 class="trainer-nav-tab"
                 :class="{ active: currentTab === 'applicants' }"
-                @click="currentTab = 'applicants'"
+                 @click="currentTab = 'applicants'; layDanhSachUngVien()"
             >
                 ✉️ Ứng viên đăng ký làm PT
                 <span class="badge-count" v-if="pendingApplicantsCount > 0">{{ pendingApplicantsCount }}</span>
@@ -235,13 +235,18 @@
                                 <td>
                                     <span style="font-size: 13px; color: #51777d;">{{ app.ngay_dang_ky }}</span>
                                 </td>
-
                                 <td>
-                                    <div v-if="app.gio_hen" class="schedule-brief">
-                                        <strong>🕒 {{ app.gio_hen }}</strong>
-                                        <small>📍 {{ app.dia_chi_test }}</small>
+                                    <div v-if="app.gio_hen || app.ngay_phong_van" class="schedule-brief">
+                                        <strong>
+                                            🕒 {{ formatDateTime(app.ngay_phong_van || app.gio_hen) }}
+                                        </strong>
+                                        <small>
+                                            📍 {{ app.dia_chi_test || 'Chưa có địa chỉ test' }}
+                                        </small>
                                     </div>
-                                    <span v-else style="color: #9bb8bd; font-size: 12.5px; font-style: italic;">Chưa lên lịch test</span>
+                                    <span v-else  style="color: #9bb8bd; font-size: 12.5px; font-style: italic;"  >
+                                        Chưa lên lịch test
+                                    </span>
                                 </td>
 
                                 <td>
@@ -258,13 +263,13 @@
                                 <td>
                                     <div class="action-btn-group">
                                         <button class="btn-detail" @click="openProfileModal(app)">📄 Xem hồ sơ</button>
-                                        <button v-if="app.trang_thai === 0 || app.trang_thai === 1" class="btn-email" @click="openEmailModal(app)">
-                                            ✉️ Gửi Email hẹn test
-                                        </button>
-                                        <button v-if="app.trang_thai === 1" class="btn-approve" @click="app.trang_thai = 2">
+                                        <button v-if="app.trang_thai === 0" class="btn-email" @click="openEmailModal(app)" >
+                                                ✉️ Gửi Email hẹn test
+                                            </button>
+                                        <button v-if="app.trang_thai === 1" class="btn-approve" @click="capNhatKetQuaPhongVan(app, 2)" >
                                             ✓ Đạt
                                         </button>
-                                        <button v-if="app.trang_thai === 1" class="btn-reject" @click="app.trang_thai = 3">
+                                        <button v-if="app.trang_thai === 1" class="btn-reject" @click="capNhatKetQuaPhongVan(app, 3)">
                                             ✕ Rớt
                                         </button>
                                         <button v-if="app.trang_thai === 2 && !app.da_kich_hoat" class="btn-approve" @click="approveApplicant(app)">
@@ -478,7 +483,7 @@
 
                     <div class="form-group">
                         <label>🕒 Thời gian hẹn test kỹ năng (Sửa nhanh)</label>
-                        <input type="text" v-model="emailForm.time" placeholder="VD: 09:30 ngày 05/11/2026" />
+                         <input type="datetime-local" v-model="emailForm.time"/>
                     </div>
 
                     <div class="form-group">
@@ -499,7 +504,7 @@
                             <p>Cảm ơn bạn đã đăng ký gia nhập đội ngũ Huấn luyện viên thể hình cá nhân (PT) của hệ thống VisionFit.</p>
                             <p>Ban quản trị trân trọng kính mời bạn tham gia buổi phỏng vấn và kiểm tra kỹ năng thực hành chuyên môn:</p>
                             <ul>
-                                <li><strong>Thời gian:</strong> {{ emailForm.time }}</li>
+                                <li><strong>Thời gian:</strong> {{ formatDateTime(emailForm.time) }}</li>
                                 <li><strong>Địa điểm:</strong> {{ emailForm.location }}</li>
                                 <li><strong>Lưu ý:</strong> {{ emailForm.note }}</li>
                             </ul>
@@ -511,8 +516,12 @@
 
                 <div class="modal-actions">
                     <button class="btn-cancel" @click="showEmailModal = false">Đóng</button>
-                    <button class="btn-send-email" @click="sendEmailToApplicant">
-                        🚀 BẤM GỬI EMAIL NGAY
+                    <button
+                        class="btn-send-email"
+                        @click="sendEmailToApplicant"
+                        :disabled="sendingEmail"
+                    >
+                        {{ sendingEmail ? '⏳ ĐANG GỬI EMAIL...' : '🚀 BẤM GỬI EMAIL NGAY' }}
                     </button>
                 </div>
             </div>
@@ -611,6 +620,7 @@
 </template>
 
 <script>
+import baseRequestAdmin from '@/core/baseRequestAdmin';
 export default {
     name: "AdminTrainer",
 
@@ -624,13 +634,14 @@ export default {
             showEmailModal: false,
             showProfileModal: false,
             selectedApplicant: null,
+            sendingEmail: false,
 
             // Cấu hình Form Email mẫu gửi ứng viên PT
             emailForm: {
                 recipient: '',
                 applicantName: '',
                 title: '[VisionFit] Thư mời phỏng vấn & Kiểm tra kỹ năng HLV thể hình',
-                time: '09:30 ngày 05/11/2026',
+                time: '2026-11-10T09:30',
                 location: 'VisionFit Cơ sở 1 - 123 Nguyễn Thị Minh Khai, P. Bến Thành, Quận 1',
                 note: 'Vui lòng mang theo trang phục thể thao thoải mái để thực hiện bài test kỹ năng hướng dẫn động tác và bản sao chứng chỉ.',
             },
@@ -646,36 +657,7 @@ export default {
             },
 
             // Danh sách ứng viên đăng ký làm PT từ app
-            pt_applicants: [
-                {
-                    id: 'APP-01',
-                    ho_ten: 'Lê Quốc Huy',
-                    email: 'huy.le@gmail.com',
-                    so_dien_thoai: '0912 345 678',
-                    ngay_dang_ky: 'Hôm nay, 16:30',
-                    nguoi_gioi_thieu: 'Trần Quốc Huy',
-                    ma_gioi_thieu: 'PT000001',
-                    cv_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-                    da_kich_hoat: false,
-                    trang_thai: 0,
-                    gio_hen: '',
-                    dia_chi_test: '',
-                },
-                {
-                    id: 'APP-02',
-                    ho_ten: 'Hoàng Thị Ngọc',
-                    email: 'ngoc.hoang@gmail.com',
-                    so_dien_thoai: '0934 567 890',
-                    ngay_dang_ky: 'Hôm qua, 10:15',
-                    nguoi_gioi_thieu: '',
-                    ma_gioi_thieu: '',
-                    cv_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-                    da_kich_hoat: false,
-                    trang_thai: 1,
-                    gio_hen: '14:00 ngày 04/11/2026',
-                    dia_chi_test: 'VisionFit Cơ sở 2 - 456 Hai Bà Trưng, Q.3',
-                },
-            ],
+            pt_applicants: [],
 
             // Bảng tính lương Trainer
             trainer_payrolls: [
@@ -893,66 +875,121 @@ export default {
             this.selectedApplicant = applicant;
             this.emailForm.recipient = applicant.email;
             this.emailForm.applicantName = applicant.ho_ten;
-            this.emailForm.time = applicant.gio_hen || '09:30 ngày 05/11/2026';
+            this.emailForm.time = applicant.gio_hen || '2026-11-10T09:30';
             this.emailForm.location = applicant.dia_chi_test || 'VisionFit Cơ sở 1 - 123 Nguyễn Thị Minh Khai, P. Bến Thành, Quận 1';
             this.emailForm.note = 'Vui lòng mang theo trang phục thể thao thoải mái để thực hiện bài test chuyên môn và bản sao các chứng chỉ liên quan.';
             this.showEmailModal = true;
         },
 
-        sendEmailToApplicant() {
-            if (!this.emailForm.time || !this.emailForm.location) {
+        
+        async sendEmailToApplicant() {
+
+            if (!this.emailForm.recipient) {
+                alert('Không tìm thấy email ứng viên!');
+                return;
+            }
+            if (!this.emailForm.time || !this.emailForm.location.trim()) {
                 alert('Vui lòng nhập đầy đủ thời gian và địa chỉ hẹn test kỹ năng.');
                 return;
             }
-
-            if (this.selectedApplicant) {
-                this.selectedApplicant.trang_thai = 1;
-                this.selectedApplicant.gio_hen = this.emailForm.time;
-                this.selectedApplicant.dia_chi_test = this.emailForm.location;
+            if (!this.emailForm.title.trim()) {
+                alert('Vui lòng nhập tiêu đề email!');
+                return;
             }
-
-            this.showEmailModal = false;
-            alert(`Đã gửi email thư mời phỏng vấn & test kỹ năng thành công!\n\nNgười nhận: ${this.emailForm.recipient}\nThời gian: ${this.emailForm.time}\nĐịa điểm: ${this.emailForm.location}\n\n(Hệ thống đã bắn mail tự động qua SMTP Gmail)`);
-        },
-
-        approveApplicant(applicant) {
-            const lastName = applicant.ho_ten.trim().split(' ').pop().toUpperCase();
-            const newCode = `PT-${lastName}-${Math.floor(10 + Math.random() * 90)}`;
-            if (confirm(`Xác nhận phê duyệt hồ sơ và kích hoạt tài khoản HLV cho ${applicant.ho_ten}?\n\nMã giới thiệu được cấp: ${newCode}`)) {
-                applicant.da_kich_hoat = true;
-
-                const newTrainer = {
-                    id: Date.now().toString().slice(-4),
-                    ho_ten: applicant.ho_ten,
-                    email: applicant.email,
-                    so_dien_thoai: applicant.so_dien_thoai,
-                    chuyen_mon: 'Fitness', // PT tự cập nhật chuyên môn/chứng chỉ trong app sau khi được kích hoạt
-                    kinh_nghiem: 2,
-                    so_gymmer: 0,
-                    so_review: 0,
-                    trang_thai: 'active',
-                    ma_gioi_thieu: newCode,
+            try {
+                this.sendingEmail = true;
+                const payload = {
+                    email: this.emailForm.recipient.trim(),
+                    ho_ten: this.emailForm.applicantName,
+                    tieu_de: this.emailForm.title.trim(),
+                    thoi_gian: this.emailForm.time,
+                    dia_chi: this.emailForm.location.trim(),
+                    ghi_chu: this.emailForm.note.trim(),
                 };
 
-                this.list_trainer.unshift(newTrainer);
+                // Gọi API gửi thư mời
+                const response = await baseRequestAdmin.post( 'admin/gui-thu-moi-phong-van', payload);
+                if (response.data.success) {
+                    if (this.selectedApplicant) {
+                        this.selectedApplicant.trang_thai = 1;
+                        this.selectedApplicant.gio_hen = this.formatDateTime( this.emailForm.time);
+                        this.selectedApplicant.dia_chi_test = this.emailForm.location;
+                    }
+                    this.showEmailModal = false;
+                    alert(
+                        'Gửi thư mời phỏng vấn thành công!\n\n' +
+                        'Người nhận: ' + this.emailForm.recipient + '\n' +
+                        'Thời gian: ' + this.formatDateTime(this.emailForm.time) + '\n' +
+                        'Địa điểm: ' + this.emailForm.location
+                    );
+                }
 
-                // Thêm vào bảng tính lương
-                this.trainer_payrolls.push({
-                    id: 'TR-' + newTrainer.id,
-                    trainer_name: applicant.ho_ten,
-                    ma_gioi_thieu: newCode,
-                    luong_co_ban: this.salary_config.luong_co_ban,
-                    so_ca_day: 0,
-                    so_hoc_vien_gioi_thieu: 0,
-                    doanh_thu_goi: 0,
-                    thuong: 0,
-                    phat: 0,
-                    trang_thai: 'tam_tinh',
-                });
+            } catch (error) {
+                console.error('Lỗi gửi email ứng viên:', error);
 
-                alert(`Đã kích hoạt thành công tài khoản HLV ${applicant.ho_ten}!\nMã giới thiệu cá nhân: ${newCode}\nHLV đã có thể đăng nhập vào ứng dụng di động.`);
+                const message =
+                    error.response?.data?.message ||
+                    'Không thể gửi email. Vui lòng thử lại!';
+
+                alert(message);
+
+            } finally {
+                this.sendingEmail = false;
             }
         },
+
+
+        async approveApplicant(applicant) {
+            if (applicant.da_kich_hoat) {
+                alert('Ứng viên đã được kích hoạt!');
+                return;
+            }
+            try {
+                const response = await baseRequestAdmin.post( `admin/trainers/${applicant.id}/kich-hoat`);
+                if (response.data.success) {
+                    const data = response.data.data;
+                    // Cập nhật giao diện theo dữ liệu Backend
+                    applicant.da_kich_hoat = Number(data.is_active) === 1;
+                    applicant.tinh_trang = Number(data.tinh_trang);
+                    applicant.trang_thai = Number(data.trang_thai_tuyen_dung);
+                }
+
+            } catch (error) {
+                console.error('Lỗi kích hoạt PT:', error);
+                alert(
+                    error.response?.data?.message ||
+                    'Không thể kích hoạt tài khoản PT!'
+                );
+            }
+        },
+
+        // CẬP NHẬT KẾT QUẢ PHỎNG VẤN
+        async capNhatKetQuaPhongVan(applicant, trangThai) {
+            const ketQua = trangThai === 2 ? 'ĐẠT' : 'RỚT';
+            try {
+                const response = await baseRequestAdmin.post(
+                    `admin/trainers/${applicant.id}/ket-qua-phong-van`,
+                    {
+                        trang_thai_tuyen_dung: trangThai
+                    }
+                );
+                if (response.data.success) {
+                    // Cập nhật giao diện sau khi API thành công
+                    applicant.trang_thai = Number(
+                        response.data.data.trang_thai_tuyen_dung
+                    );
+                }
+            } catch (error) {
+                console.error('Lỗi cập nhật kết quả phỏng vấn:', error);
+
+                alert(
+                    error.response?.data?.message ||
+                    'Không thể cập nhật kết quả phỏng vấn!'
+                );
+            }
+        },
+
+
 
         // BẢNG LƯƠNG
         formatCurrency(val) {
@@ -997,11 +1034,68 @@ export default {
             alert(`Đã chốt bảng lương tháng cho HLV ${payroll.trainer_name}!\nTổng thực lĩnh: ${this.formatCurrency(this.calcTongThucLinh(payroll))}`);
         },
 
+
+        formatDateTime(value) {
+            if (!value) return '';
+
+            // Hỗ trợ cả ISO và datetime từ Laravel
+            const normalizedValue = value.replace(' ', 'T');
+
+            const date = new Date(normalizedValue);
+
+            if (isNaN(date.getTime())) {
+                return value;
+            }
+
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+
+            return `${hours}:${minutes} ngày ${day}/${month}/${year}`;
+        },
+
         thanhToanLuong(payroll) {
             payroll.trang_thai = 'da_thanh_toan';
             alert(`Đã xác nhận thanh toán chuyển khoản cho HLV ${payroll.trainer_name}!`);
-        }
-    }
+        },
+        // LẤY DANH SÁCH ỨNG VIÊN TỪ API
+        async layDanhSachUngVien() {
+            try {
+                const response = await baseRequestAdmin.get('admin/trainers/ung-vien');
+
+                if (response.data.success) {
+                    this.pt_applicants = response.data.data.map(item => ({
+                        ...item,
+
+                        // Đồng bộ tên trạng thái với giao diện
+                        trang_thai: Number(item.trang_thai_tuyen_dung),
+
+                        // Trạng thái kích hoạt
+                        da_kich_hoat: Number(item.is_active) === 1,
+                        tinh_trang: Number(item.tinh_trang),
+
+                        // Lịch hẹn test
+                        gio_hen: item.ngay_phong_van || '',
+                        // Lấy địa chỉ test từ database
+                        dia_chi_test: item.dia_chi_test || ''
+                    }));
+                }
+
+            } catch (error) {
+                console.error('Lỗi lấy danh sách ứng viên:', error);
+
+                alert(
+                    error.response?.data?.message ||
+                    'Không thể tải danh sách ứng viên!'
+                );
+            }
+        },
+    },
+    mounted() {
+        this.layDanhSachUngVien();
+    },
 }
 </script>
 
@@ -1350,7 +1444,7 @@ export default {
 .action-btn-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
 }
 
 .btn-email {
@@ -1704,6 +1798,10 @@ export default {
     box-shadow: 0 4px 12px rgba(13, 127, 141, 0.25);
 }
 .btn-send-email:hover { background: #075e68; }
+.btn-send-email:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
 @keyframes showModal {
     from {
