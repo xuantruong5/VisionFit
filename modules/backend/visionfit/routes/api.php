@@ -18,6 +18,10 @@ use App\Http\Controllers\GoiTapController;
 use App\Http\Controllers\ThanhToanController;
 use App\Http\Controllers\TrainersController;
 use App\Http\Controllers\TanSuatThuongController;
+use App\Http\Controllers\ThongBaoController;
+
+
+
 
 
 
@@ -185,6 +189,14 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     // tần suất tập và thưởng 
     Route::get('/thong-ke-chuoi-ngay-tap', [TanSuatThuongController::class, 'thongKeChuoiNgayTap']);
     Route::post('/nhan-phan-thuong', [TanSuatThuongController::class, 'nhanPhanThuong']);
+
+
+    // thong bao 
+    Route::get('/thong-bao', [ThongBaoController::class, 'danhSach']);
+    Route::post('/thong-bao/{id}/da-doc', [ThongBaoController::class, 'danhDauDaDoc']);
+    Route::post('/thong-bao/da-doc-tat-ca', [ThongBaoController::class, 'danhDauTatCaDaDoc']);
+    Route::delete('/thong-bao/{id}', [ThongBaoController::class, 'xoa']);
+    Route::delete('/thong-bao', [ThongBaoController::class, 'xoaTatCa']);
 
 
 

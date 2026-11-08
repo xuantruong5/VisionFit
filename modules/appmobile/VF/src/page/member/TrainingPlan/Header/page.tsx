@@ -8,6 +8,8 @@ import WorkoutExercisePlan from "../Tab/WorkoutExercisePlan";
 import MyPlansModal from "./MyPlansModal";
 import { COLORS, PASTEL, SOFT_SHADOW } from "../../../../general/theme";
 import { Notice, notificationEmitter } from "../../../../general/notification";
+import apiFitlife from "../../../../general/api";
+
 
 // Nhãn ngày hôm nay hiển thị trên header
 const WEEKDAY_NAMES = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
@@ -18,17 +20,119 @@ const HeaderPage = ({ navigation, route }: any) => {
   const [activeTab, setActiveTab] = useState("Trang tổng quan");
   const [myPlansVisible, setMyPlansVisible] = useState(false);
 
+  // Kiểu dữ liệu thông báo lấy từ database
+  type NotificationItem = {
+    id: number;
+    loai: "success" | "error" | "info" | "auth";
+    tieu_de: string;
+    noi_dung: string;
+    da_doc: number; // 0: chưa đọc, 1: đã đọc
+    created_at: string;
+  };
 
-  // thông báo 
-  const [notifications, setNotifications] = useState<Notice[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [soThongBaoChuaDoc, setSoThongBaoChuaDoc] = useState(0);
   const [notificationVisible, setNotificationVisible] = useState(false);
+  const [thongBaoDangChon, setThongBaoDangChon] = useState<number | null>(null);
+
+  // Lấy danh sách thông báo từ backend
+  const taiThongBao = async () => {
+    try {
+      const res = await apiFitlife.get("/client/thong-bao");
+
+      const danhSach = res.data.data.data || [];
+
+      setNotifications(danhSach);
+      setSoThongBaoChuaDoc(res.data.so_thong_bao_chua_doc || 0);
+    } catch (error) {
+      console.log("Lỗi tải thông báo:", error);
+    }
+  };
+
+  // Đánh dấu một thông báo đã đọc
+  const danhDauDaDoc = async (item: NotificationItem) => {
+    // Nếu đã đọc thì không cần gọi API nữa
+    if (item.da_doc === 1) return;
+
+    try {
+      await apiFitlife.post(`/client/thong-bao/${item.id}/da-doc`);
+
+      setNotifications(prev =>
+        prev.map(thongBao =>
+          thongBao.id === item.id
+            ? { ...thongBao, da_doc: 1 }
+            : thongBao
+        )
+      );
+
+      setSoThongBaoChuaDoc(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.log("Lỗi đánh dấu thông báo đã đọc:", error);
+    }
+  };
+  const xoaThongBao = async (id: number) => {
+    try {
+      await apiFitlife.delete(`/client/thong-bao/${id}`);
+
+      const thongBaoBiXoa = notifications.find(item => item.id === id);
+
+      setNotifications(prev =>
+        prev.filter(item => item.id !== id)
+      );
+
+      if (thongBaoBiXoa && thongBaoBiXoa.da_doc === 0) {
+        setSoThongBaoChuaDoc(prev => Math.max(0, prev - 1));
+      }
+
+      setThongBaoDangChon(null);
+    } catch (error: any) {
+      console.log(
+        "Lỗi xóa thông báo:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  // Xóa tất cả thông báo
+  const xoaTatCaThongBao = async () => {
+    try {
+      await apiFitlife.delete("/client/thong-bao");
+
+      setNotifications([]);
+      setSoThongBaoChuaDoc(0);
+      setNotificationVisible(false);
+    } catch (error) {
+      console.log("Lỗi xóa thông báo:", error);
+    }
+  };
+
+  // Tải thông báo và lắng nghe thông báo mới
   useEffect(() => {
+    taiThongBao();
+
     const handleNotification = (notice: Notice) => {
-      setNotifications(prev => [notice, ...prev]);
-      // Tự động mở modal thông báo
+      // Mở modal ngay khi có thông báo mới
       setNotificationVisible(true);
+
+      // Hiển thị tạm thời để giao diện phản hồi ngay
+      const thongBaoTam: NotificationItem = {
+        id: -Date.now(),
+        loai: notice.type,
+        tieu_de: notice.type === "success" ? "Chúc mừng bạn!" : "Thông báo",
+        noi_dung: notice.message,
+        da_doc: 0,
+        created_at: new Date().toISOString(),
+      };
+
+      setNotifications(prev => [thongBaoTam, ...prev]);
+      setSoThongBaoChuaDoc(prev => prev + 1);
+
+      // Lấy thông báo chính thức đã được lưu trong database
+      taiThongBao();
     };
+
     notificationEmitter.on("thong_bao", handleNotification);
+
     return () => {
       notificationEmitter.removeListener("thong_bao", handleNotification);
     };
@@ -69,13 +173,24 @@ const HeaderPage = ({ navigation, route }: any) => {
             </TouchableOpacity>
 
             {notifications.length > 0 && (
-              <TouchableOpacity style={styles.iconButton} onPress={() => setNotificationVisible(true)} activeOpacity={0.7} >
-                <Ionicons name="notifications-outline" size={21} color={PASTEL.ink} />
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {notifications.length > 99 ? "99+" : notifications.length}
-                  </Text>
-                </View>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setNotificationVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={21}
+                  color={PASTEL.ink}
+                />
+
+                {soThongBaoChuaDoc > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {soThongBaoChuaDoc > 99 ? "99+" : soThongBaoChuaDoc}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -122,61 +237,134 @@ const HeaderPage = ({ navigation, route }: any) => {
       {/* Modal Kế hoạch của tôi */}
       <MyPlansModal visible={myPlansVisible} onClose={() => setMyPlansVisible(false)} navigation={navigation} />
 
-      <Modal visible={notificationVisible} transparent animationType="fade" onRequestClose={() => setNotificationVisible(false)} >
+      <Modal
+        visible={notificationVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNotificationVisible(false)}
+      >
         <View style={styles.notificationOverlay}>
           <View style={styles.notificationModal}>
             <View style={styles.notificationHeader}>
               <View>
                 <Text style={styles.notificationTitle}>Thông báo</Text>
+
                 <Text style={styles.notificationSubtitle}>
-                  Bạn có {notifications.length} thông báo mới
+                  Bạn có {soThongBaoChuaDoc} thông báo chưa đọc
                 </Text>
               </View>
 
               <TouchableOpacity
                 onPress={() => setNotificationVisible(false)}
               >
-                <Ionicons name="close-circle-outline" size={27} color="#777" />
+                <Ionicons
+                  name="close-circle-outline"
+                  size={27}
+                  color="#777"
+                />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {notifications.map((item, index) => (
-                <View key={index} style={styles.notificationItem}>
-                  <View style={styles.notificationIcon}>
+              {notifications.map(item => (
+                <View
+                  key={item.id}
+                  style={[
+                    styles.notificationItem,
+                    item.da_doc === 0 && {
+                      backgroundColor: "#F0F9FA",
+                      borderRadius: 12,
+                      padding: 8,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.notificationIcon}
+                    activeOpacity={0.8}
+                    onPress={() => danhDauDaDoc(item)}
+                  >
                     <Ionicons
-                      name="trophy"
+                      name={item.loai === "success" ? "trophy" : "notifications"}
                       size={23}
-                      color="#E9A23B"
+                      color={item.loai === "success" ? "#E9A23B" : "#0D7F8D"}
                     />
-                  </View>
+                  </TouchableOpacity>
 
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.notificationItemTitle}>
-                      {item.type === "success"
-                        ? "Chúc mừng bạn!"
-                        : "Thông báo"}
-                    </Text>
+                  {/* Nội dung thông báo */}
+                  <TouchableOpacity
+                    style={{ flex: 1 }}
+                    activeOpacity={0.8}
+                    delayLongPress={500}
+                    onPress={() => {
+                      setThongBaoDangChon(null);
+                      danhDauDaDoc(item);
+                    }}
+                    onLongPress={() => setThongBaoDangChon(item.id)}
+                  >
+                    <View style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}>
+                      <Text style={styles.notificationItemTitle}>
+                        {item.tieu_de}
+                      </Text>
+
+                      {item.da_doc === 0 && (
+                        <View style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: "#E53935",
+                        }} />
+                      )}
+                    </View>
 
                     <Text style={styles.notificationMessage}>
-                      {item.message}
+                      {item.noi_dung}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
+
+                  {/* Thùng rác chỉ hiện khi nhấn giữ */}
+                  {thongBaoDangChon === item.id && (
+                    <TouchableOpacity
+                      style={{ padding: 10 }}
+                      onPress={() => {
+                        xoaThongBao(item.id);
+                        setThongBaoDangChon(null);
+                      }}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={22}
+                        color="#E53935"
+                      />
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
+
+              {notifications.length === 0 && (
+                <Text style={{
+                  textAlign: "center",
+                  color: "#888",
+                  paddingVertical: 25,
+                }}>
+                  Bạn chưa có thông báo nào.
+                </Text>
+              )}
             </ScrollView>
 
-            <TouchableOpacity
-              style={styles.clearNotificationButton}
-              onPress={() => {
-                setNotifications([]);
-                setNotificationVisible(false);
-              }}
-            >
-              <Text style={styles.clearNotificationText}>
-                Xóa tất cả thông báo
-              </Text>
-            </TouchableOpacity>
+            {notifications.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearNotificationButton}
+                onPress={xoaTatCaThongBao}
+              >
+                <Text style={styles.clearNotificationText}>
+                  Xóa tất cả thông báo
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>

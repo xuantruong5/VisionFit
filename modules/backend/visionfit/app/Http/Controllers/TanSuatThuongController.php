@@ -117,6 +117,16 @@ class TanSuatThuongController extends Controller
                         'so_ngay' => $soNgay,
                         'ten_phan_thuong' => $tenPhanThuong,
                     ];
+                    DB::table('thong_bao')->insert([
+                        'id_nguoi_nhan' => $idHoiVien,
+                        'vai_tro' => 'hoi_vien',
+                        'loai' => 'success',
+                        'tieu_de' => 'Chúc mừng bạn!',
+                        'noi_dung' => "Bạn đã hoàn thành chuỗi {$soNgay} ngày tập liên tiếp và đạt được {$tenPhanThuong}!",
+                        'da_doc' => 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                 }
             }
         }
