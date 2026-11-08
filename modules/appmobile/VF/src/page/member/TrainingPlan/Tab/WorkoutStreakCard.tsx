@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, Modal } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image, Modal, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import LinearGradient from "react-native-linear-gradient";
 import { COLORS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
+import apiFitlife from "../../../../general/api";
 
 interface Milestone {
   id: string;
@@ -15,6 +16,13 @@ interface Milestone {
   badgeBg: string;
   badgeColor: string;
   rewardPoints: number;
+}
+
+interface Props {
+  currentStreak?: number;
+  highestStreak?: number;
+  targetStreak?: number;
+  milestones?: Milestone[];
 }
 
 const MILESTONES: Milestone[] = [
@@ -56,16 +64,13 @@ const MILESTONES: Milestone[] = [
   },
 ];
 
-interface Props {
-  currentStreak?: number;
-  highestStreak?: number;
-  targetStreak?: number;
-}
+
 
 const WorkoutStreakCard: React.FC<Props> = ({
-  currentStreak = 7,
-  highestStreak = 14,
-  targetStreak = 14,
+  currentStreak = 0,
+  highestStreak = 0,
+  targetStreak = 7,
+  milestones = [],
 }) => {
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
 
@@ -156,67 +161,78 @@ const WorkoutStreakCard: React.FC<Props> = ({
       </View>
 
       {/* CỘT MỐC PHẦN THƯỞNG / HUY HIỆU */}
+      {/* CỘT MỐC PHẦN THƯỞNG */}
       <View style={styles.milestoneSection}>
         <View style={styles.milestoneSectionHeader}>
-          <Text style={styles.milestoneSectionTitle}>Các cột mốc phần thưởng</Text>
-          <Text style={styles.milestoneSectionHint}>Nhấn để xem chi tiết</Text>
+          <Text style={styles.milestoneSectionTitle}>
+            Các cột mốc phần thưởng
+          </Text>
+
+          <Text style={styles.milestoneSectionHint}>
+            Vuốt để xem thêm
+          </Text>
         </View>
 
-        <View style={styles.milestoneRow}>
-          {MILESTONES.map((item) => {
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.milestoneScrollContent} >
+          {milestones.map((item) => {
             const isAchieved = item.status === "achieved";
             const isInProgress = item.status === "in_progress";
-
             return (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.milestoneCard,
-                  isAchieved && styles.milestoneCardAchieved,
-                  isInProgress && styles.milestoneCardInProgress,
-                ]}
+              <TouchableOpacity key={item.id}  style={[ styles.milestoneCard, isAchieved && styles.milestoneCardAchieved, isInProgress && styles.milestoneCardInProgress, ]}
                 activeOpacity={0.8}
                 onPress={() => setSelectedMilestone(item)}
               >
-                {/* Vòng tròn biểu tượng huy hiệu */}
-                <View
-                  style={[
-                    styles.milestoneIconCircle,
-                    isAchieved && styles.iconCircleAchieved,
-                    isInProgress && styles.iconCircleInProgress,
-                  ]}
-                >
+                {/* ICON HUY HIỆU */}
+                <View style={[ styles.milestoneIconCircle, isAchieved && styles.iconCircleAchieved, isInProgress && styles.iconCircleInProgress, ]} >
                   <Ionicons
                     name={item.icon as any}
-                    size={22}
+                    size={27}
                     color={
                       isAchieved
                         ? "#F59E0B"
                         : isInProgress
-                        ? COLORS.primary
-                        : "#9CA3AF"
+                          ? "#155E75"
+                          : "#9CA3AF"
                     }
                   />
-                  {isAchieved ? (
+
+                  {isAchieved && (
                     <View style={styles.checkMarkBadge}>
-                      <Ionicons name="checkmark-sharp" size={10} color="#FFFFFF" />
+                      <Ionicons
+                        name="checkmark-sharp"
+                        size={11}
+                        color="#FFFFFF"
+                      />
                     </View>
-                  ) : null}
+                  )}
                 </View>
 
-                {/* Tên mốc */}
-                <Text style={styles.milestoneDaysText}>{item.days} ngày</Text>
+                {/* SỐ NGÀY */}
+                <Text style={styles.milestoneDaysText}>
+                  {item.days} ngày
+                </Text>
 
-                {/* Badge trạng thái */}
-                <View style={[styles.milestonePill, { backgroundColor: item.badgeBg }]}>
-                  <Text style={[styles.milestonePillText, { color: item.badgeColor }]}>
+                {/* TRẠNG THÁI */}
+                <View
+                  style={[
+                    styles.milestonePill,
+                    { backgroundColor: item.badgeBg },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.milestonePillText,
+                      { color: item.badgeColor },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {item.statusText}
                   </Text>
                 </View>
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       {/* MODAL CHI TIẾT HUY HIỆU */}
@@ -238,8 +254,8 @@ const WorkoutStreakCard: React.FC<Props> = ({
                   selectedMilestone?.status === "achieved"
                     ? ["#FDE68A", "#F59E0B"]
                     : selectedMilestone?.status === "in_progress"
-                    ? [COLORS.primaryLight, COLORS.primary]
-                    : ["#F3F4F6", "#9CA3AF"]
+                      ? [COLORS.primaryLight, COLORS.primary]
+                      : ["#F3F4F6", "#9CA3AF"]
                 }
                 style={styles.modalGradientCircle}
               >
@@ -261,12 +277,23 @@ const WorkoutStreakCard: React.FC<Props> = ({
 
             <Text style={styles.modalDesc}>{selectedMilestone?.desc}</Text>
 
-            <View style={styles.modalRewardBox}>
+            {/* <View style={styles.modalRewardBox}>
               <Ionicons name="sparkles" size={18} color="#D97706" />
               <Text style={styles.modalRewardText}>
                 Phần thưởng: <Text style={styles.modalRewardBold}>+{selectedMilestone?.rewardPoints} Điểm VIP</Text>
               </Text>
-            </View>
+            </View> */}
+            {(selectedMilestone?.rewardPoints ?? 0) > 0 && (
+              <View style={styles.modalRewardBox}>
+                <Ionicons name="sparkles" size={18} color="#D97706" />
+                <Text style={styles.modalRewardText}>
+                  Phần thưởng:{" "}
+                  <Text style={styles.modalRewardBold}>
+                    +{selectedMilestone?.rewardPoints} Điểm VIP
+                  </Text>
+                </Text>
+              </View>
+            )}
 
             <TouchableOpacity
               style={styles.modalCloseBtn}
@@ -488,100 +515,11 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: RADIUS.pill,
   },
-
-  // MILESTONES
-  milestoneSection: {
-    marginTop: 16,
-  },
-  milestoneSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  milestoneSectionTitle: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: PASTEL.ink,
-  },
-  milestoneSectionHint: {
-    fontSize: 11,
-    color: PASTEL.inkMuted,
-    fontWeight: "500",
-  },
   milestoneRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
   },
-  milestoneCard: {
-    flex: 1,
-    backgroundColor: "#FAFAFA",
-    borderRadius: RADIUS.md,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-  },
-  milestoneCardAchieved: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    ...SOFT_SHADOW,
-  },
-  milestoneCardInProgress: {
-    backgroundColor: "#FDFDFD",
-    borderColor: "#FDE68A",
-  },
-  milestoneIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    marginBottom: 6,
-  },
-  iconCircleAchieved: {
-    backgroundColor: "#FEF3C7",
-    borderWidth: 1.5,
-    borderColor: "#F59E0B",
-  },
-  iconCircleInProgress: {
-    backgroundColor: "#E6F0F4",
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-  },
-  checkMarkBadge: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#10B981",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#FFFFFF",
-  },
-  milestoneDaysText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: PASTEL.ink,
-    marginBottom: 4,
-  },
-  milestonePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.pill,
-  },
-  milestonePillText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-  },
-
   // MODAL
   modalOverlay: {
     flex: 1,
@@ -667,6 +605,113 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  milestoneSection: {
+    marginTop: 22,
+  },
+
+  milestoneSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+
+  milestoneSectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: PASTEL.ink,
+  },
+
+  milestoneSectionHint: {
+    fontSize: 12,
+    color: PASTEL.inkMuted,
+  },
+
+  milestoneScrollContent: {
+    paddingRight: 8,
+    paddingBottom: 8,
+    gap: 12,
+  },
+
+  milestoneCard: {
+    width: 175,
+    minHeight: 170,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    ...SOFT_SHADOW,
+  },
+
+  milestoneCardAchieved: {
+    borderColor: "#E5E7EB",
+    elevation: 3,
+  },
+
+  milestoneCardInProgress: {
+    borderColor: "#FCD34D",
+    borderWidth: 1,
+    backgroundColor: "#FFFEFA",
+  },
+
+  milestoneIconCircle: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+
+  iconCircleAchieved: {
+    backgroundColor: "#FFF7E6",
+    borderWidth: 2,
+    borderColor: "#F59E0B",
+  },
+
+  iconCircleInProgress: {
+    backgroundColor: "#E0F2F1",
+    borderWidth: 2,
+    borderColor: "#155E75",
+  },
+
+  checkMarkBadge: {
+    position: "absolute",
+    right: -3,
+    bottom: -2,
+    width: 21,
+    height: 21,
+    borderRadius: 11,
+    backgroundColor: "#10B981",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  milestoneDaysText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: PASTEL.ink,
+    marginBottom: 8,
+  },
+
+  milestonePill: {
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    maxWidth: "100%",
+  },
+
+  milestonePillText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
 });
 

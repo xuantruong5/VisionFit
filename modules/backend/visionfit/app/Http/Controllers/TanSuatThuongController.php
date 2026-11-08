@@ -12,7 +12,7 @@ class TanSuatThuongController extends Controller
 {
     public function thongKeChuoiNgayTap(Request $request)
     {
-       $hoiVien = Auth::guard('sanctum')->user();
+        $hoiVien = Auth::guard('sanctum')->user();
         if (!$hoiVien) {
             return response()->json([
                 'success' => false,
@@ -22,11 +22,9 @@ class TanSuatThuongController extends Controller
         $request->validate([
             'id_dang_ky_chuong_trinh' => 'required|integer',
         ]);
-
         $idHoiVien = $hoiVien->id;
         $idDangKy = $request->id_dang_ky_chuong_trinh;
-
-        // 1. Lấy danh sách ngày hội viên hoàn thành buổi tập
+        // 1. Lấy danh sách ngày hoàn thành buổi tập
         $ngayTap = DB::table('lich_tap as lt')
             ->join('buoi_tap as bt', 'lt.id', '=', 'bt.id_lich_tap')
             ->where('lt.id_dang_ky_chuong_trinh', $idDangKy)
@@ -37,20 +35,15 @@ class TanSuatThuongController extends Controller
             ->distinct()
             ->orderBy('ngay_tap')
             ->pluck('ngay_tap');
-        // 2. Khai báo các mốc phần thưởng
-        $mocPhanThuong = [
-            1 => 'Phần thưởng Test 1 ngày',
-            3 => 'Huy hiệu Khởi động',
-            7 => 'Huy hiệu Kiên trì',
-            14 => 'Huy hiệu Chăm chỉ',
-            21 => 'Huy hiệu Bền bỉ',
-            30 => 'Huy hiệu Kỷ luật',
-        ];
+        // 2. Lấy các mốc phần thưởng đang hoạt động từ database
+        $mocPhanThuong = DB::table('moc_phan_thuong_chuoi_tap')
+            ->where('trang_thai', 1)
+            ->orderBy('so_ngay')
+            ->get();
         // 3. Tính chuỗi ngày tập
         $chuoiHienTai = 0;
         $chuoiDaiNhat = 0;
         $ngayTruoc = null;
-        // Lưu ngày đạt từng mốc
         $ngayDatMoc = [];
         foreach ($ngayTap as $ngay) {
             $ngayHienTai = Carbon::parse($ngay)->startOfDay();
@@ -65,98 +58,259 @@ class TanSuatThuongController extends Controller
                 }
             }
             $chuoiDaiNhat = max($chuoiDaiNhat, $chuoiHienTai);
-            // Kiểm tra ngày đạt mốc phần thưởng
-            foreach ($mocPhanThuong as $soNgay => $ten) {
+            // Kiểm tra ngày đạt từng mốc
+            foreach ($mocPhanThuong as $moc) {
                 if (
-                    $chuoiHienTai == $soNgay &&
-                    !isset($ngayDatMoc[$soNgay])
+                    $chuoiHienTai == $moc->so_ngay &&
+                    !isset($ngayDatMoc[$moc->id])
                 ) {
-                    $ngayDatMoc[$soNgay] = $ngayHienTai->toDateTimeString();
+                    $ngayDatMoc[$moc->id] = $ngayHienTai->toDateTimeString();
                 }
             }
             $ngayTruoc = $ngayHienTai;
         }
+
         // 4. Tính chuỗi ngày tập hiện tại
         $chuoiDangDuyTri = 0;
         if ($ngayTap->count() > 0) {
             $ngayCuoi = Carbon::parse($ngayTap->last())->startOfDay();
             $homNay = Carbon::today();
             $khoangCach = $ngayCuoi->diffInDays($homNay);
-            // Nếu tập hôm nay hoặc hôm qua thì vẫn duy trì chuỗi
+            // Tập hôm nay hoặc hôm qua vẫn duy trì chuỗi
             if ($khoangCach <= 1) {
                 $chuoiDangDuyTri = $chuoiHienTai;
             }
         }
-        // 5. Kiểm tra và thêm phần thưởng nếu đạt mốc
+        // 5. Lấy phần thưởng đã đạt trước đó
+        $phanThuongCu = DB::table('phan_thuong_chuoi_tap')
+            ->where('id_hoi_vien', $idHoiVien)
+            ->where('id_dang_ky_chuong_trinh', $idDangKy)
+            ->get();
         $phanThuongMoi = [];
+        // 6. Kiểm tra và thêm phần thưởng khi đạt mốc
+        foreach ($mocPhanThuong as $moc) {
+            // Kiểm tra phần thưởng đã tồn tại theo ID mốc
+            $kiemTra = $phanThuongCu->firstWhere(
+                'id_moc_phan_thuong',
+                $moc->id
+            );
+            // Hỗ trợ cả dữ liệu phần thưởng cũ chưa có id_moc_phan_thuong
+            if (!$kiemTra) {
+                $kiemTra = $phanThuongCu->first(function ($item) use ($moc) {
+                    return $item->id_moc_phan_thuong == null
+                        && $item->so_ngay == $moc->so_ngay;
+                });
+            }
+            // Chỉ tạo phần thưởng nếu đạt mốc và chưa có phần thưởng
+            if (
+                isset($ngayDatMoc[$moc->id]) &&
+                !$kiemTra
+            ) {
 
-        foreach ($mocPhanThuong as $soNgay => $tenPhanThuong) {
-            if (isset($ngayDatMoc[$soNgay])) {
+                $idMoi = DB::table('phan_thuong_chuoi_tap')->insertGetId([
+                    'id_hoi_vien' => $idHoiVien,
+                    'id_dang_ky_chuong_trinh' => $idDangKy,
+                    'id_moc_phan_thuong' => $moc->id,
+                    'so_ngay' => $moc->so_ngay,
+                    'ten_phan_thuong' => $moc->ten_phan_thuong,
+                    'tinh_trang' => 0,
+                    'ngay_dat_moc' => $ngayDatMoc[$moc->id],
+                    'ngay_nhan' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-                $kiemTra = DB::table('phan_thuong_chuoi_tap')
-                    ->where('id_hoi_vien', $idHoiVien)
-                    ->where('id_dang_ky_chuong_trinh', $idDangKy)
-                    ->where('so_ngay', $soNgay)
-                    ->first();
+                $phanThuongMoi[] = [
+                    'id' => $idMoi,
+                    'id_moc_phan_thuong' => $moc->id,
+                    'so_ngay' => $moc->so_ngay,
+                    'ten_phan_thuong' => $moc->ten_phan_thuong,
+                ];
 
-                if (!$kiemTra) {
-                    $idMoi = DB::table('phan_thuong_chuoi_tap')->insertGetId([
-                        'id_hoi_vien' => $idHoiVien,
-                        'id_dang_ky_chuong_trinh' => $idDangKy,
-                        'so_ngay' => $soNgay,
-                        'ten_phan_thuong' => $tenPhanThuong,
-                        'tinh_trang' => 0,
-                        'ngay_dat_moc' => $ngayDatMoc[$soNgay],
-                        'ngay_nhan' => null,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    $phanThuongMoi[] = [
-                        'id' => $idMoi,
-                        'so_ngay' => $soNgay,
-                        'ten_phan_thuong' => $tenPhanThuong,
-                    ];
-                    DB::table('thong_bao')->insert([
-                        'id_nguoi_nhan' => $idHoiVien,
-                        'vai_tro' => 'hoi_vien',
-                        'loai' => 'success',
-                        'tieu_de' => 'Chúc mừng bạn!',
-                        'noi_dung' => "Bạn đã hoàn thành chuỗi {$soNgay} ngày tập liên tiếp và đạt được {$tenPhanThuong}!",
-                        'da_doc' => 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+                // Tạo thông báo khi đạt mốc mới
+                DB::table('thong_bao')->insert([
+                    'id_nguoi_nhan' => $idHoiVien,
+                    'vai_tro' => 'hoi_vien',
+                    'loai' => 'success',
+                    'tieu_de' => 'Chúc mừng bạn!',
+                    'noi_dung' => "Bạn đã hoàn thành chuỗi {$moc->so_ngay} ngày tập liên tiếp và đạt được {$moc->ten_phan_thuong}!",
+                    'da_doc' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
         }
-
-        // 6. Lấy danh sách phần thưởng
+        // 7. Lấy lại danh sách phần thưởng sau khi cập nhật
         $phanThuong = DB::table('phan_thuong_chuoi_tap')
             ->where('id_hoi_vien', $idHoiVien)
             ->where('id_dang_ky_chuong_trinh', $idDangKy)
             ->orderBy('so_ngay')
             ->get();
 
-        // 7. Xác định mốc tiếp theo
+        // 8. Tạo trạng thái cho từng mốc phần thưởng
+        $cacMocPhanThuong = [];
+        foreach ($mocPhanThuong as $moc) {
+
+            $daDat = $phanThuong->first(function ($item) use ($moc) {
+                return $item->id_moc_phan_thuong == $moc->id
+                    || (
+                        $item->id_moc_phan_thuong == null
+                        && $item->so_ngay == $moc->so_ngay
+                    );
+            });
+
+            if ($daDat) {
+                $trangThai = 'da_dat';
+            } else {
+                $trangThai = 'chua_mo';
+            }
+
+            $cacMocPhanThuong[] = [
+                'id_moc_phan_thuong' => $moc->id,
+                'so_ngay' => $moc->so_ngay,
+                'ten_phan_thuong' => $moc->ten_phan_thuong,
+                'mo_ta' => $moc->mo_ta,
+                'hinh_anh' => $moc->hinh_anh,
+                'trang_thai' => $trangThai,
+                'id_phan_thuong' => $daDat->id ?? null,
+                'da_nhan' => $daDat ? (int) $daDat->tinh_trang : null,
+                'ngay_dat_moc' => $daDat->ngay_dat_moc ?? null,
+                'ngay_nhan' => $daDat->ngay_nhan ?? null,
+            ];
+        }
+
+        // 9. Xác định mốc tiếp theo chưa đạt
         $mocTiepTheo = null;
 
-        foreach (array_keys($mocPhanThuong) as $moc) {
+        foreach ($cacMocPhanThuong as $moc) {
 
-            if ($moc > $chuoiDangDuyTri) {
-                $mocTiepTheo = $moc;
+            if ($moc['trang_thai'] == 'chua_mo') {
+
+                $mocTiepTheo = $moc['so_ngay'];
+
+                // Đánh dấu mốc này đang chinh phục
+                $moc['trang_thai'] = 'dang_chinh_phuc';
+
                 break;
             }
         }
 
+        // Cập nhật trạng thái mốc đang chinh phục trong danh sách
+        if ($mocTiepTheo !== null) {
+
+            foreach ($cacMocPhanThuong as &$moc) {
+
+                if ($moc['so_ngay'] == $mocTiepTheo) {
+                    $moc['trang_thai'] = 'dang_chinh_phuc';
+                    $moc['so_ngay_con_lai'] = max(
+                        0,
+                        $mocTiepTheo - $chuoiDangDuyTri
+                    );
+                } else {
+                    $moc['so_ngay_con_lai'] = 0;
+                }
+            }
+
+            unset($moc);
+
+        } else {
+
+            foreach ($cacMocPhanThuong as &$moc) {
+                $moc['so_ngay_con_lai'] = 0;
+            }
+
+            unset($moc);
+        }
+
+        // 10. Tính phần trăm tiến độ mốc tiếp theo
+        $tienDoMoc = $mocTiepTheo
+            ? min(100, round(($chuoiDangDuyTri / $mocTiepTheo) * 100))
+            : 100;
+
+        // 11. Thống kê tần suất tập trong tuần
+        $batDauTuan = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $ketThucTuan = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+
+        $buoiTapTrongTuan = DB::table('lich_tap as lt')
+            ->join('buoi_tap as bt', 'lt.id', '=', 'bt.id_lich_tap')
+            ->where('lt.id_dang_ky_chuong_trinh', $idDangKy)
+            ->where('bt.id_hoi_vien', $idHoiVien)
+            ->where('bt.tinh_trang', 3)
+            ->whereNotNull('bt.thoi_gian_ket_thuc')
+            ->whereBetween('bt.thoi_gian_ket_thuc', [
+                $batDauTuan,
+                $ketThucTuan
+            ])
+            ->selectRaw('DATE(bt.thoi_gian_ket_thuc) as ngay_tap')
+            ->selectRaw('COUNT(bt.id) as so_buoi')
+            ->groupByRaw('DATE(bt.thoi_gian_ket_thuc)')
+            ->get();
+
+        // Khởi tạo đủ 7 ngày
+        $thongKeTheoNgay = [];
+
+        $tenThu = [
+            1 => 'Thứ 2',
+            2 => 'Thứ 3',
+            3 => 'Thứ 4',
+            4 => 'Thứ 5',
+            5 => 'Thứ 6',
+            6 => 'Thứ 7',
+            7 => 'Chủ nhật',
+        ];
+
+        for ($i = 0; $i < 7; $i++) {
+
+            $ngay = $batDauTuan->copy()->addDays($i);
+
+            $thongKeTheoNgay[] = [
+                'thu' => $ngay->dayOfWeekIso,
+                'ten_thu' => $tenThu[$ngay->dayOfWeekIso],
+                'ngay' => $ngay->toDateString(),
+                'so_buoi' => 0,
+                'la_hom_nay' => $ngay->isToday(),
+            ];
+        }
+
+        // Gán số buổi tập từng ngày
+        foreach ($buoiTapTrongTuan as $buoi) {
+
+            $ngay = Carbon::parse($buoi->ngay_tap);
+            $viTri = $ngay->dayOfWeekIso - 1;
+
+            $thongKeTheoNgay[$viTri]['so_buoi'] = (int) $buoi->so_buoi;
+        }
+
+        $tongBuoiTapTuan = $buoiTapTrongTuan->sum('so_buoi');
+        $soNgayDaTapTuan = $buoiTapTrongTuan->count();
+
+        // 12. Trả dữ liệu về frontend
         return response()->json([
-            'so_ngay_da_tap' => $ngayTap->count(),
-            'chuoi_dang_duy_tri' => $chuoiDangDuyTri,
-            'chuoi_dai_nhat' => $chuoiDaiNhat,
-            'moc_tiep_theo' => $mocTiepTheo,
-            'so_ngay_con_lai' => $mocTiepTheo? $mocTiepTheo - $chuoiDangDuyTri : 0,
+            'success' => true,
+
+            'chuoi_tap' => [
+                'so_ngay_da_tap' => $ngayTap->count(),
+                'chuoi_dang_duy_tri' => $chuoiDangDuyTri,
+                'chuoi_dai_nhat' => $chuoiDaiNhat,
+                'moc_tiep_theo' => $mocTiepTheo,
+                'so_ngay_con_lai' => $mocTiepTheo
+                    ? max(0, $mocTiepTheo - $chuoiDangDuyTri)
+                    : 0,
+                'tien_do_moc' => $tienDoMoc,
+            ],
+
+            'cac_moc_phan_thuong' => $cacMocPhanThuong,
+
             'phan_thuong' => $phanThuong,
+
             'phan_thuong_moi' => $phanThuongMoi,
+
+            'tan_suat_tuan' => [
+                'tong_buoi_tap' => (int) $tongBuoiTapTuan,
+                'so_ngay_da_tap' => $soNgayDaTapTuan,
+                'muc_tieu_buoi_moi_ngay' => 1,
+                'chi_tiet_theo_ngay' => $thongKeTheoNgay,
+            ],
         ]);
     }
 
