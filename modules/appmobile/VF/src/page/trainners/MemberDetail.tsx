@@ -102,7 +102,28 @@ const MemberDetail = ({ navigation, route }: any) => {
             <TouchableOpacity
               style={styles.outlineBtn}
               activeOpacity={0.8}
-              onPress={() => navigation?.navigate('ChatRoom', { name: member.name })}>
+              onPress={() =>
+                navigation?.navigate('ChatRoom', {
+                  conversation: {
+                    id_cuoc_tro_chuyen: member.id || 1,
+                    room_uuid: `room-pt-${member.id || 1}`,
+                    loai: 'TRUC_TIEP',
+                    doi_phuong: {
+                      id_nguoi_dung: member.id || 1,
+                      ho_ten: member.name,
+                      anh_dai_dien: member.avatar,
+                      chuyen_mon: `Mục tiêu: ${member.goal || 'Tập luyện'}`,
+                      online: true,
+                    },
+                  },
+                  currentUser: {
+                    id_nguoi_dung: 99,
+                    ho_ten: 'HLV VisionFit',
+                    vai_tro: 'HUAN_LUYEN_VIEN',
+                    online: true,
+                  },
+                })
+              }>
               <Ionicons name="chatbubble-ellipses-outline" size={17} color={COLORS.primary} />
               <Text style={styles.outlineBtnText}>Nhắn tin</Text>
             </TouchableOpacity>

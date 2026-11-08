@@ -15,18 +15,20 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LinearGradient from "react-native-linear-gradient";
 import apiFitlife, { BASE_URL } from "../../general/api";
 import { COLORS, SHADOWS } from "../../general/theme";
 
-// Dữ liệu người dùng hiện tại (Hội viên VisionFit)
-const CURRENT_USER = {
-    id_nguoi_dung: 1,
-    ho_ten: "Lê Hoàng Nam",
-    anh_dai_dien: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-    vai_tro: "HOI_VIEN",
-    online: true,
+// Không dùng tài khoản giả lập ID=1: luôn lấy hội viên đang đăng nhập.
+// Endpoint /profile cần trả về thông tin của token Sanctum hiện tại.
+const normalizeAuthenticatedUser = (payload: any) => {
+    const user = payload?.data?.user ?? payload?.data?.client ??
+        payload?.data?.data ?? payload?.data ?? payload?.user ?? payload;
+    const id = Number(user?.id_nguoi_dung ?? user?.id);
+    if (!Number.isInteger(id) || id <= 0) return null;
+    return { ...user, id_nguoi_dung: id };
 };
 
 const getImageUrl = (url: string | null) => {
@@ -36,6 +38,8 @@ const getImageUrl = (url: string | null) => {
 };
 
 const ChatList = ({ navigation }: any) => {
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [isLoadingUser, setIsLoadingUser] = useState(true);
     const [conversations, setConversations] = useState<any[]>([]);
     const [contacts, setContacts] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -45,11 +49,59 @@ const ChatList = ({ navigation }: any) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
+    const fetchCurrentUser = async () => {
+        setIsLoadingUser(true);
+    
+        try {
+            const role = await AsyncStorage.getItem("role");
+    
+            console.log("ROLE HIỆN TẠI:", role);
+    
+            let response;
+    
+            if (role === "trainer") {
+                // API lấy thông tin Trainer
+                response = await apiFitlife.get("/trainer/user");
+            } else {
+                // API lấy thông tin Member
+                response = await apiFitlife.get("/client/profile");
+            }
+    
+            console.log("CURRENT USER API:", response.data);
+    
+            const user = normalizeAuthenticatedUser(response.data);
+    
+            if (!user) {
+                throw new Error(
+                    "Không tìm thấy ID người dùng trong dữ liệu API"
+                );
+            }
+    
+            setCurrentUser(user);
+    
+            console.log("CURRENT USER:", user);
+    
+        } catch (error: any) {
+            setCurrentUser(null);
+    
+            console.error("Lỗi lấy thông tin người dùng:", {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message,
+            });
+    
+        } finally {
+            setIsLoadingUser(false);
+        }
+    };
+
     useEffect(() => {
+        fetchCurrentUser();
         fetchRooms();
         fetchContacts();
 
         const unsubscribe = navigation.addListener?.("focus", () => {
+            fetchCurrentUser();
             fetchRooms();
         });
         return unsubscribe;
@@ -59,22 +111,44 @@ const ChatList = ({ navigation }: any) => {
     const fetchRooms = async () => {
         try {
             setIsLoading(true);
-            const response = await apiFitlife.get("/chat/rooms");
-            if (response.data && response.data.status) {
-                setConversations(response.data.data);
+    
+            const role = await AsyncStorage.getItem("role");
+    
+            const endpoint =
+                role === "trainer"
+                    ? "/trainer/chat/rooms"
+                    : "/chat/rooms";
+    
+            const response = await apiFitlife.get(endpoint);
+    
+            console.log("CHAT ROOMS:", response.data);
+    
+            if (response.data?.status) {
+                setConversations(response.data.data || []);
             }
-        } catch (error) {
-            console.error("Error fetching chat rooms:", error);
+        } catch (error: any) {
+            console.error("Error fetching chat rooms:", {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message,
+            });
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
         }
     };
-
     // Tải danh bạ HLV và Hội viên từ Backend
     const fetchContacts = async () => {
         try {
-            const response = await apiFitlife.get("/chat/contacts");
+            const role = await AsyncStorage.getItem("role");
+            const endpoint =
+                role === "trainer"
+                    ? "/trainer/chat/contacts"
+                    : "/chat/contacts";
+
+            const response = await apiFitlife.get(endpoint);
+
+            console.log("CHAT CONTACTS:", response.data);
             if (response.data && response.data.status && response.data.data) {
                 const allList = response.data.data.all || [
                     ...(response.data.data.trainers || []),
@@ -100,7 +174,7 @@ const ChatList = ({ navigation }: any) => {
                 id: 'self',
                 isSelf: true,
                 ho_ten: "Ghi chú",
-                anh_dai_dien: CURRENT_USER.anh_dai_dien,
+                anh_dai_dien: getImageUrl(currentUser?.anh_dai_dien ?? null),
                 note: "Ghi chú: Tập luyện 💪",
             }
         ];
@@ -115,7 +189,7 @@ const ChatList = ({ navigation }: any) => {
             });
         });
         return list;
-    }, [contacts]);
+    }, [contacts, currentUser?.anh_dai_dien]);
 
     // Tính tổng số tin nhắn chưa đọc
     const totalUnread = useMemo(() => {
@@ -141,18 +215,35 @@ const ChatList = ({ navigation }: any) => {
 
     // Mở phòng chat
     const handleOpenChat = (item: any) => {
+        if (!currentUser?.id_nguoi_dung) {
+            Alert.alert("Chưa xác định tài khoản", "Không lấy được tài khoản đang đăng nhập. Hãy kiểm tra API /profile và token đăng nhập.");
+            return;
+        }
         setConversations(prev =>
             prev.map(c => c.id_cuoc_tro_chuyen === item.id_cuoc_tro_chuyen ? { ...c, so_tin_chua_doc: 0, da_xem: true } : c)
         );
-        navigation.navigate("ChatRoom", { conversation: item, currentUser: CURRENT_USER });
+        navigation.navigate("ChatRoom", { conversation: item, currentUser });
     };
 
     // Bắt đầu chat với một người trong danh bạ
     const handleStartChat = async (contact: any) => {
+        if (!currentUser?.id_nguoi_dung) {
+            Alert.alert("Chưa xác định tài khoản", "Không thể bắt đầu chat khi chưa lấy được thông tin đăng nhập.");
+            return;
+        }
         setShowNewChatModal(false);
 
         try {
-            const response = await apiFitlife.get(`/chat/room/${contact.id_nguoi_dung}`);
+            const role = await AsyncStorage.getItem("role");
+
+            const endpoint =
+                role === "trainer"
+                    ? `/trainer/chat/room/${contact.id_nguoi_dung}`
+                    : `/chat/room/${contact.id_nguoi_dung}`;
+
+            const response = await apiFitlife.get(endpoint);
+
+            console.log("START CHAT RESPONSE:", response.data);
             if (response.data && response.data.status && response.data.data) {
                 const room = response.data.data;
                 const newConv = {
@@ -256,7 +347,7 @@ const ChatList = ({ navigation }: any) => {
             </View>
 
             {/* Danh sách chính */}
-            {isLoading ? (
+            {isLoading || isLoadingUser ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>

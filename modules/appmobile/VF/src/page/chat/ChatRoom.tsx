@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { launchImageLibrary } from "react-native-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LinearGradient from "react-native-linear-gradient";
@@ -33,10 +34,60 @@ const getImageUrl = (url: string | null) => {
 
 const ChatRoom = ({ navigation, route }: any) => {
     const conversation = route?.params?.conversation || {};
-    const currentUser = route?.params?.currentUser || {
-        id_nguoi_dung: 1,
-        ho_ten: "Lê Hoàng Nam",
+    const getChatEndpoint = async (action: "history" | "send") => {
+        const role = await AsyncStorage.getItem("role");
+        const prefix = role === "trainer" ? "/trainer/chat" : "/chat";
+    
+        return action === "history"
+            ? `${prefix}/history-message`
+            : `${prefix}/send-message`;
     };
+    // ID phải thuộc tài khoản đang đăng nhập; không dùng ID mặc định.
+    const currentUser = route?.params?.currentUser;
+    const rawCurrentUserId = currentUser?.id_nguoi_dung ?? currentUser?.id;
+    const currentUserId = rawCurrentUserId == null || rawCurrentUserId === ''
+        ? NaN : Number(rawCurrentUserId);
+
+    
+const [accountRole, setAccountRole] = useState<string>("");
+
+useEffect(() => {
+    AsyncStorage.getItem("role").then((role) => {
+        const normalizedRole =
+            role?.toLowerCase() === "trainer" ? "trainer" : "client";
+
+        setAccountRole(normalizedRole);
+        console.log("[ChatRoom] Account role:", normalizedRole);
+    });
+}, []);
+
+    const isMyMessage = (message: any): boolean => {
+        if (!message || !accountRole) return false;
+
+        const senderId = Number(
+            message.id_nguoi_gui ?? message.sender_id ?? message.client_id
+        );
+
+        const senderType = String(
+            message.sender_type ?? ""
+        ).toLowerCase();
+
+        if (!Number.isFinite(currentUserId) ||
+            !Number.isFinite(senderId)) {
+            return false;
+        }
+
+        // Phân biệt Trainer 1 và Member 1
+        if (senderType === "trainer" || senderType === "client") {
+            return senderId === currentUserId &&
+                senderType === accountRole;
+        }
+
+        // Chỉ áp dụng cho dữ liệu Member cũ không có sender_type
+        return accountRole === "client" &&
+            senderId === currentUserId;
+    };
+
 
     const isGroup = conversation.loai === "NHOM";
     const partner = conversation.doi_phuong;
@@ -58,55 +109,99 @@ const ChatRoom = ({ navigation, route }: any) => {
 
     const flatListRef = useRef<FlatList>(null);
 
+    // Lấy lịch sử và polling chỉ khi màn hình đang được focus.
     useEffect(() => {
-        fetchMessages();
+        let disposed = false;
+        let inFlight = false;
+        let pollingBlocked = false;
+        let timer: ReturnType<typeof setInterval> | undefined;
+        const roomUuid = conversation?.room_uuid;
+        const roomId = conversation?.id_cuoc_tro_chuyen;
 
-        // Polling định kỳ mỗi 3.5s để cập nhật tin nhắn mới
-        const interval = setInterval(() => {
-            const roomUuid = conversation?.room_uuid;
-            const roomId = conversation?.id_cuoc_tro_chuyen;
-            apiFitlife.get("/chat/history-message", {
-                params: {
-                    room_uuid: roomUuid,
-                    room_id: roomId,
-                },
-            }).then((res) => {
-                if (res.data && res.data.status && Array.isArray(res.data.data)) {
-                    setMessages(res.data.data);
+        const stop = () => {
+            disposed = true;
+            if (timer) clearInterval(timer);
+        };
+
+        const load = async (endpoint: string, initial: boolean) => {
+            if (disposed || inFlight || pollingBlocked) return;
+            inFlight = true;
+            if (initial) setIsMessagesLoading(true);
+            try {
+                const response = await apiFitlife.get(endpoint, {
+                    params: { room_uuid: roomUuid, room_id: roomId },
+                });
+                if (!disposed && response.data?.status && Array.isArray(response.data.data)) {
+                    setMessages(response.data.data);
                 }
-            }).catch((err) => {
-                console.error("Polling error:", err);
-            });
-        }, 3500);
+            } catch (error: any) {
+                const status = error?.response?.status;
+                console.error('[ChatRoom] History error:', {
+                    endpoint,
+                    status,
+                    data: error?.response?.data,
+                });
+                // Chặn vòng lặp gọi API khi token/role không hợp lệ.
+                if (status === 401 || status === 403 || status === 404) {
+                    pollingBlocked = true;
+                    if (timer) clearInterval(timer);
+                }
+            } finally {
+                inFlight = false;
+                if (initial && !disposed) setIsMessagesLoading(false);
+            }
+        };
 
-        return () => clearInterval(interval);
-    }, [conversation?.room_uuid, conversation?.id_cuoc_tro_chuyen]);
+        const begin = async () => {
+            if (!roomUuid && !roomId) {
+                console.warn('[ChatRoom] Thiếu room_uuid/room_id');
+                setIsMessagesLoading(false);
+                return;
+            }
+            const endpoint = await getChatEndpoint('history');
+            if (disposed) return;
+            console.log('[ChatRoom] history endpoint:', endpoint);
+            await load(endpoint, true);
+            if (!disposed && !pollingBlocked) {
+                timer = setInterval(() => {
+                    void load(endpoint, false);
+                }, 3500);
+            }
+        };
 
-    // Tải lịch sử tin nhắn từ Backend theo phong cách WorkoutPlanScreen
+        void begin();
+        const unsubscribe = navigation.addListener('blur', stop);
+        return () => {
+            stop();
+            unsubscribe();
+        };
+    }, [conversation?.room_uuid, conversation?.id_cuoc_tro_chuyen, navigation]);
+
+    // Dùng để làm mới sau khi gửi tin nhắn thành công.
     const fetchMessages = async () => {
         try {
-            setIsMessagesLoading(true);
-            const roomUuid = conversation?.room_uuid;
-            const roomId = conversation?.id_cuoc_tro_chuyen;
-            const response = await apiFitlife.get("/chat/history-message", {
+            const endpoint = await getChatEndpoint('history');
+            const response = await apiFitlife.get(endpoint, {
                 params: {
-                    room_uuid: roomUuid,
-                    room_id: roomId,
+                    room_uuid: conversation?.room_uuid,
+                    room_id: conversation?.id_cuoc_tro_chuyen,
                 },
             });
-            if (response.data && response.data.status) {
+            if (response.data?.status && Array.isArray(response.data.data)) {
                 setMessages(response.data.data);
             }
-        } catch (error) {
-            console.error("Error fetching chat history:", error);
-        } finally {
-            setIsMessagesLoading(false);
+        } catch (error: any) {
+            console.error('[ChatRoom] Refresh messages:', error?.response?.status, error?.response?.data);
         }
     };
 
     // Gửi tin nhắn mới
     const handleSend = async (text: string, type: string = "VAN_BAN", mediaUrl?: string, workoutData?: any) => {
         if (!text.trim() && !mediaUrl && type === "VAN_BAN") return;
+        if (!Number.isFinite(currentUserId) || currentUserId <= 0) {
+            Alert.alert("Chưa xác định tài khoản", "Không tìm thấy ID người dùng đang đăng nhập. Hãy kiểm tra màn hình mở ChatRoom.");
+            return;
+        }
 
         const now = new Date();
         const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
@@ -114,7 +209,8 @@ const ChatRoom = ({ navigation, route }: any) => {
         const tempId = Date.now();
         const newMsg: any = {
             id_tin_nhan: tempId,
-            id_nguoi_gui: currentUser.id_nguoi_dung,
+            id_nguoi_gui: currentUserId,
+            sender_type: String(currentUser?.loai_nguoi_dung ?? "").toLowerCase() === "trainer" ? "trainer" : "client",
             loai_tin_nhan: type,
             noi_dung: text,
             media_url: mediaUrl,
@@ -127,7 +223,7 @@ const ChatRoom = ({ navigation, route }: any) => {
         if (replyingTo) {
             newMsg.id_tin_nhan_tra_loi = replyingTo.id_tin_nhan;
             newMsg.tra_loi_noi_dung = replyingTo.noi_dung;
-            newMsg.tra_loi_nguoi_gui = replyingTo.id_nguoi_gui === currentUser.id_nguoi_dung ? "Bạn" : partner?.ho_ten;
+            newMsg.tra_loi_nguoi_gui = isMyMessage(replyingTo) ? "Bạn" : partner?.ho_ten;
         }
 
         setMessages((prev) => [...prev, newMsg]);
@@ -140,7 +236,8 @@ const ChatRoom = ({ navigation, route }: any) => {
 
         // Gửi lên Backend
         try {
-            const res = await apiFitlife.post("/chat/send-message", {
+            const endpoint = await getChatEndpoint("send");
+            const res = await apiFitlife.post(endpoint, {
                 room_uuid: conversation.room_uuid,
                 room_id: conversation.id_cuoc_tro_chuyen,
                 message: text,
@@ -156,8 +253,11 @@ const ChatRoom = ({ navigation, route }: any) => {
                     prev.map((m) => (m.id_tin_nhan === tempId ? { ...m, ...savedMsg, id_tin_nhan: savedMsg.id_tin_nhan || savedMsg.id } : m))
                 );
             }
-        } catch (err) {
-            console.log("Lỗi khi gửi tin nhắn lên Backend:", err);
+        } catch (err: any) {
+            setMessages((prev) => prev.filter((m) => m.id_tin_nhan !== tempId));
+            setInputText(text);
+            console.error("Lỗi khi gửi tin nhắn lên Backend:", err?.response?.status, err?.response?.data);
+            Alert.alert("Gửi thất bại", "Không gửi được tin nhắn. Vui lòng thử lại.");
         }
     };
 
@@ -177,7 +277,9 @@ const ChatRoom = ({ navigation, route }: any) => {
                         name: asset.fileName || `chat_${Date.now()}.jpg`,
                     } as any);
 
-                    const uploadRes = await apiFitlife.post("/chat/upload", formData, {
+                    const role = await AsyncStorage.getItem("role");
+                    const uploadEndpoint = role === "trainer" ? "/trainer/chat/upload" : "/chat/upload";
+                    const uploadRes = await apiFitlife.post(uploadEndpoint, formData, {
                         headers: { "Content-Type": "multipart/form-data" },
                     });
 
@@ -189,7 +291,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                     console.log("Upload ảnh lên Backend thất bại, dùng ảnh local:", uploadError);
                 }
 
-                handleSend("Đã gửi một hình ảnh", "HINH_ANH", asset.uri);
+                Alert.alert("Không thể tải ảnh", "Ảnh chưa được tải lên máy chủ. Vui lòng thử lại.");
             }
         } catch (e) {
             console.log("Lỗi khi chọn ảnh:", e);
@@ -212,7 +314,9 @@ const ChatRoom = ({ navigation, route }: any) => {
         setSelectedMsgForReaction(null);
 
         try {
-            await apiFitlife.post(`/chat/message/${msgId}/reaction`, { emoji });
+            const role = await AsyncStorage.getItem("role");
+            const prefix = role === "trainer" ? "/trainer/chat" : "/chat";
+            await apiFitlife.post(`${prefix}/message/${msgId}/reaction`, { emoji });
         } catch (e) {
             console.log("Lỗi gửi reaction lên Backend:", e);
         }
@@ -230,7 +334,9 @@ const ChatRoom = ({ navigation, route }: any) => {
         setSelectedMsgForReaction(null);
 
         try {
-            await apiFitlife.post(`/chat/message/${msgId}/recall`);
+            const role = await AsyncStorage.getItem("role");
+            const prefix = role === "trainer" ? "/trainer/chat" : "/chat";
+            await apiFitlife.post(`${prefix}/message/${msgId}/recall`);
         } catch (e) {
             console.log("Lỗi thu hồi tin nhắn trên Backend:", e);
         }
@@ -313,7 +419,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                             </View>
                         }
                         renderItem={({ item }) => {
-                            const isSender = item.id_nguoi_gui === currentUser.id_nguoi_dung;
+                            const isSender = isMyMessage(item);
                             const isRecalled = item.trang_thai === "DA_THU_HOI";
 
                             return (
@@ -460,7 +566,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                         <View style={styles.replyBanner}>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.replyBannerTitle}>
-                                    Đang trả lời <Text style={{ fontWeight: "bold" }}>{replyingTo.id_nguoi_gui === currentUser.id_nguoi_dung ? "chính bạn" : partner?.ho_ten}</Text>
+                                    Đang trả lời <Text style={{ fontWeight: "bold" }}>{isMyMessage(replyingTo) ? "chính bạn" : partner?.ho_ten}</Text>
                                 </Text>
                                 <Text style={styles.replyBannerText} numberOfLines={1}>
                                     {replyingTo.noi_dung}
@@ -619,7 +725,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                 <Text style={styles.msgActionText}>Sao chép</Text>
                             </TouchableOpacity>
 
-                            {selectedMsgForReaction?.id_nguoi_gui === currentUser.id_nguoi_dung && selectedMsgForReaction?.trang_thai !== "DA_THU_HOI" && (
+                            {isMyMessage(selectedMsgForReaction) && selectedMsgForReaction?.trang_thai !== "DA_THU_HOI" && (
                                 <TouchableOpacity
                                     style={[styles.msgActionRow, { borderTopWidth: 1, borderTopColor: COLORS.borderLight }]}
                                     onPress={() => selectedMsgForReaction && handleRecall(selectedMsgForReaction.id_tin_nhan)}

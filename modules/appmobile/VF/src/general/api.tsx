@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notify } from './notification';
 
 
-export const BASE_URL = "http://172.29.192.1:8000";
+export const BASE_URL = "http://192.168.4.61:8000";
 
 // cái ni của Ngọc đừng xóa :)) comment nó lại giùm đi. 
 // export const BASE_URL = "http://192.168.1.152:8000"; 
@@ -38,13 +38,21 @@ apiFitlife.interceptors.response.use(
         // const navigation = require('../navigation/RootNavigation').default;
         var check_error = error.response;
         const status = check_error ? error.response.status : 500;
-        if (status == 401 && is_auth_alert_shown == false) {
+        if (status === 401 && !is_auth_alert_shown) {
             is_auth_alert_shown = true;
+        
+            console.log("AUTH ERROR:", {
+                url: error.config?.url,
+                status: error.response?.status,
+                message: error.response?.data?.message,
+            });
+        
             notify({
                 type: "auth",
-                message: check_error.data.message ? check_error.data.message : "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại."
-            })
-            await AsyncStorage.removeItem('token');
+                message:
+                    error.response?.data?.message ||
+                    "API không chấp nhận quyền truy cập hiện tại."
+            });
         }
         setTimeout(() => {
             is_auth_alert_shown = false;

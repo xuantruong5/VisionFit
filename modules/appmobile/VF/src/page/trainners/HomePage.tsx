@@ -52,7 +52,7 @@ const HomePage = ({ navigation }: any) => {
             </View>
             <Text style={styles.name}>HLV Nguyễn Trainer</Text>
           </View>
-          <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('ChatList')}>
+          <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('TrainerChat')}>
             <Ionicons name="chatbubble-outline" size={19} color={PASTEL.ink} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('TrainerNotifications')}>

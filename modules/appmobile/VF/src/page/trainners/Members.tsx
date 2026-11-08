@@ -47,6 +47,9 @@ const Members = ({ navigation }: any) => {
               <Text style={styles.headerSub}>Quản lý & theo dõi tiến độ</Text>
               <Text style={styles.headerTitle}>Học viên của tôi</Text>
             </View>
+            <TouchableOpacity style={[styles.addBtn, { marginRight: 8 }]} activeOpacity={0.8} onPress={() => navigation?.navigate('TrainerChat')}>
+              <Ionicons name="chatbubbles" size={19} color={COLORS.primary} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.addBtn} activeOpacity={0.8} onPress={() => navigation?.navigate('AddMember')}>
               <Ionicons name="person-add" size={19} color={COLORS.primary} />
             </TouchableOpacity>

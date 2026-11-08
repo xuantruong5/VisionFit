@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, StatusBar, Modal, Alert, ActivityIndicator, } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, StatusBar, Alert, ActivityIndicator, } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -185,12 +185,15 @@ const TrainerAuthScreen = ({ navigation }: any) => {
                 }
             );
 
-            if (response.data.status) {
+            if (response.data?.status && response.data?.token) {
                 // Lưu token đăng nhập
                 await AsyncStorage.setItem("token", response.data.token);
                 await AsyncStorage.setItem("role", "trainer");
 
-                navigation.replace("MainTabs");
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs" }],
+                });
             } else {
                 Alert.alert(
                     "Đăng nhập thất bại",

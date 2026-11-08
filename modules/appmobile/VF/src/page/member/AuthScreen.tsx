@@ -16,34 +16,63 @@ const AuthScreen = ({ navigation }: any) => {
     const [lastName, setLastName] = useState("");
 
     const handleLogin = async () => {
-        if (!email.trim() || !password) {
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail || !password) {
             Alert.alert('Thông báo', 'Vui lòng nhập email và mật khẩu');
             return;
         }
         try {
+            // 1. Thử đăng nhập với tài khoản Hội viên (Client)
             const response = await apiFitlife.post('/client/login', {
-                email: email.trim(),
+                email: trimmedEmail,
                 password: password,
             });
-            console.log('Kết quả đăng nhập:', response.data);
-            const token = response.data.token;
-            if (!token) {
+            console.log('Kết quả đăng nhập Client:', response.data);
+
+            // 2. Nếu đăng nhập Client không thành công, thử đăng nhập với tài khoản Huấn luyện viên (Trainer)
+            if (!response.data?.status || !response.data?.token) {
+                try {
+                    const trainerRes = await apiFitlife.post('/trainer/login', {
+                        email: trimmedEmail,
+                        password: password,
+                    });
+                    console.log('Kết quả đăng nhập Trainer:', trainerRes.data);
+
+                    if (trainerRes.data?.status && trainerRes.data?.token) {
+                        const trainerToken = trainerRes.data.token;
+                        await AsyncStorage.setItem('token', trainerToken);
+                        await AsyncStorage.setItem('role', 'trainer');
+
+                        Alert.alert('Thành công', 'Đăng nhập thành công với vai trò Huấn luyện viên');
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'MainTabs' }],
+                        });
+                        return;
+                    }
+                } catch (trainerErr) {
+                    console.log('Lỗi thử đăng nhập Trainer:', trainerErr);
+                }
+
+                // Cả hai đều không thành công -> Thông báo lỗi từ server
                 Alert.alert(
-                    'Thông báo',
-                    'Đăng nhập thành công nhưng API không trả về token'
+                    'Đăng nhập thất bại',
+                    response.data?.message || 'Tài khoản hoặc mật khẩu không chính xác'
                 );
                 return;
             }
-            // Lưu token và role
+
+            // 3. Đăng nhập Hội viên thành công
+            const token = response.data.token;
             await AsyncStorage.setItem('token', token);
             await AsyncStorage.setItem('role', 'member');
             console.log('Đăng nhập thành công, đang kiểm tra chương trình tập...');
+
             // Kiểm tra chương trình tập đã đăng ký
             const programResponse = await apiFitlife.get('/client/my-programs');
-            const chuongTrinh = programResponse.data.data;
+            const chuongTrinh = programResponse.data?.data;
             console.log('MY PROGRAMS =', chuongTrinh);
-            // Có chương trình thì vào DashboardScreen
-            // Chưa có chương trình thì vào WorkoutPlanScreen
+
             const targetScreen = Array.isArray(chuongTrinh) && chuongTrinh.length > 0
                     ? 'headerPage'
                     : 'WorkoutPlanScreen';
@@ -72,7 +101,7 @@ const AuthScreen = ({ navigation }: any) => {
             Alert.alert(
                 'Thông báo',
                 error.response?.data?.message ||
-                'Không thể đăng nhập hoặc kiểm tra chương trình tập'
+                'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại đường truyền.'
             );
         }
     };
@@ -115,7 +144,7 @@ const AuthScreen = ({ navigation }: any) => {
                             <Text style={styles.brandTitle}>
                                 {isRegister ? 'Đăng ký' : 'Đăng nhập'}
                             </Text>
-                            <Text style={styles.brandSub}>VisionFit • Member</Text>
+                            <Text style={styles.brandSub}>VisionFit • Member & Trainer</Text>
                         </View>
                     </View>
                 </LinearGradient>

@@ -21,6 +21,7 @@ import Schedule from "./src/page/trainners/Schedule";
 import SessionHistory from "./src/page/trainners/SessionHistory";
 import SessionReview from "./src/page/trainners/SessionReview";
 import Members from "./src/page/trainners/Members";
+import TrainerChat from "./src/page/trainners/TrainerChat";
 import TrainerFeed from "./src/page/trainners/TrainerFeed";
 import SportFeed from "./src/page/member/SportFeed";
 import headerPage from "./src/page/member/TrainingPlan/Header/page";
@@ -151,6 +152,7 @@ function MainTabs() {
             let name_icon = "";
             if (route.name === "Home") name_icon = focused ? "home" : "home-outline";
             else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
+            else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
             else if (route.name === "Schedule") name_icon = focused ? "calendar" : "calendar-outline";
             else if (route.name === "Members") name_icon = focused ? "people" : "people-outline";
             else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
@@ -192,6 +194,7 @@ function MainTabs() {
       >
         <Tab.Screen name="Home" component={Homepage} options={{ tabBarLabel: "Trang chủ" }} />
         <Tab.Screen name="Feed" component={TrainerFeed} options={{ tabBarLabel: "Bảng tin" }} />
+        <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
         <Tab.Screen name="Schedule" component={Schedule} options={{ tabBarLabel: "Lịch dạy" }} />
         <Tab.Screen name="Members" component={Members} options={{ tabBarLabel: "Học viên" }} />
         <Tab.Screen name="Profile" component={Profile} options={{ tabBarLabel: "Hồ sơ" }} />
@@ -403,6 +406,7 @@ const App = () => {
           <Stack.Screen name="Income" component={Income} />
           <Stack.Screen name="MemberDetail" component={MemberDetail} />
           <Stack.Screen name="Members" component={Members} />
+          <Stack.Screen name="TrainerChat" component={TrainerChat} />
           <Stack.Screen name="Profile" component={Profile} />
           <Stack.Screen name="Schedule" component={Schedule} />
           <Stack.Screen name="SessionHistory" component={SessionHistory} />

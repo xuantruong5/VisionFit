@@ -12,6 +12,7 @@ class DetailRoomClient extends Model
     protected $fillable = [
         'room_client_id',
         'client_id',
+        'participant_type',
         'nickname',
         'role',
         'is_pinned',
