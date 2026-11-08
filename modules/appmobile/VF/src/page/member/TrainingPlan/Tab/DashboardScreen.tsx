@@ -5,6 +5,8 @@ import { useNavigation } from "@react-navigation/native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import apiFitlife from "../../../../general/api";
 import { COLORS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
+import WorkoutStreakCard from "./WorkoutStreakCard";
+import WorkoutFrequencyCard from "./WorkoutFrequencyCard";
 
 const DashboardScreen = () => {
   const navigation = useNavigation<any>();
@@ -86,6 +88,12 @@ const DashboardScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* 1. CHUỖI NGÀY TẬP LUYỆN & THÀNH TÍCH (ĐẨY LÊN ĐẦU TIÊN) */}
+        <WorkoutStreakCard currentStreak={7} highestStreak={14} targetStreak={14} />
+
+        {/* 2. TẦN SUẤT TẬP LUYỆN (THU GỌN / ĐÓNG MỞ THEO Ý USER) */}
+        <WorkoutFrequencyCard weekSessionsCount={5} completedDaysCount={5} />
+
         {/* Mẹo tập luyện */}
         <View style={styles.noticeCard}>
           <Text style={styles.noticeTitle}>Theo dõi buổi tập mỗi ngày</Text>
@@ -281,6 +289,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     paddingVertical: 14,
     paddingHorizontal: 18,
+    marginTop: 16,
   },
   noticeTitle: {
     fontSize: 14.5,
