@@ -90,7 +90,7 @@ const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="DashboardScreen" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="headerPage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
       <MemberWorkoutStack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
@@ -341,7 +341,7 @@ const App = () => {
         }}
       >
         <Stack.Navigator
-          initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+          initialRouteName="Onloading" // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
           screenOptions={{ headerShown: false }}
         >
           <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
