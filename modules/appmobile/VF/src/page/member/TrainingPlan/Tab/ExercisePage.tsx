@@ -7,6 +7,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LinearGradient from "react-native-linear-gradient";
 import { COLORS, SHADOWS } from "../../../../general/theme";
+import { notify } from "../../../../general/notification";
 
 type Exercise = {
   id: number;
@@ -558,6 +559,35 @@ const ExercisePage = ({ navigation, route }: any) => {
         );
       }
 
+      // Kiểm tra chuỗi ngày tập và phần thưởng mới
+      try {
+        console.log("========== KIỂM TRA PHẦN THƯỞNG ==========");
+        const thongKe = await apiFitlife.get("/client/thong-ke-chuoi-ngay-tap",
+          {
+            params: {
+              id_dang_ky_chuong_trinh: idDangKy,
+            },
+          }
+        );
+        console.log("Dữ liệu thống kê:", thongKe.data);
+
+        const phanThuongMoi = thongKe.data.phan_thuong_moi || [];
+        console.log("Danh sách phần thưởng mới:", phanThuongMoi);
+        console.log("Số phần thưởng mới:", phanThuongMoi.length);
+
+        phanThuongMoi.forEach((item: any) => {
+          console.log("Đang gửi thông báo phần thưởng:", item);
+          notify({
+            type: "success",
+            message: `Chúc mừng! Bạn đã hoàn thành chuỗi ${item.so_ngay} ngày tập liên tiếp và đạt được ${item.ten_phan_thuong}!`,
+          });
+          console.log("Đã gọi notify()!");
+        });
+
+      } catch (error) {
+        console.log("Lỗi thống kê chuỗi ngày tập:", error);
+      }
+
       setIsTraining(false);
       setHasStarted(false);
       setShowTimeSummary(true);
@@ -575,7 +605,7 @@ const ExercisePage = ({ navigation, route }: any) => {
       //   return;
       // }
       navigation.navigate("ResultPage", {
-          id_buoi_tap: idBuoiTap,
+        id_buoi_tap: idBuoiTap,
       });
 
 
@@ -588,7 +618,7 @@ const ExercisePage = ({ navigation, route }: any) => {
       //     : `Đã kết thúc buổi tập. Hoàn thành ${data?.phan_tram_hoan_thanh ?? 0
       //     }%.`
       // );
-    
+
     } catch (error: any) {
       Alert.alert(
         "Lỗi",
