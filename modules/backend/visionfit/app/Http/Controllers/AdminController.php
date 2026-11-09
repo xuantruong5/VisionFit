@@ -236,6 +236,12 @@ class AdminController extends Controller
             'is_active' => Trainer::DAKICHHOAT,
             'tinh_trang' => Trainer::DANGHOATDONG,
         ]);
+        $data = [
+            'ho_ten' => $trainer->ho_ten,
+            'email' => $trainer->email,
+            'ma_gioi_thieu' => $maGioiThieu,
+        ];
+        dispatch(new SendMailJob( $data, 'trainer-kich-hoat', 'Chúc mừng! Tài khoản huấn luyện viên VisionFit đã được kích hoạt', $trainer->email));
         return response()->json([
             'success' => true,
             'message' => 'Kích hoạt tài khoản PT thành công.',
