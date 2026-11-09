@@ -233,6 +233,7 @@ Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
 Route::post('/trainer/dang-ky', [TrainerController::class, 'dangKy']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
 
+
     Route::get('/chat/contacts', [ChatController::class, 'getTrainerContacts']);
 
     Route::get('/chat/rooms', [ChatController::class, 'getTrainerRooms']);
@@ -282,6 +283,19 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
     Route::get('/bai-dang-da-luu', [BaiDangController::class, 'savedPosts']);
     Route::post('/bai-dang/{id}',[BaiDangController::class, 'updatePost']);
     Route::delete('/bai-dang/{id}',[BaiDangController::class, 'deletePost']);
+
+
+    // Hồ sơ Trainer
+    Route::get('/profile', [TrainerController::class, 'getProfile']);
+    Route::post('/profile', [TrainerController::class, 'updateProfile']);
+
+    // Quản lý học viên của HLV
+    Route::get('/members', [TrainerController::class, 'getMembers']);
+    Route::get('/members/{id}', [TrainerController::class, 'getMemberDetail']);
+    Route::get('/candidates', [TrainerController::class, 'getCandidates']);
+    Route::post('/add-member', [TrainerController::class, 'addMember']);
+    Route::put('/members/{id}', [TrainerController::class, 'updateMember']);
+    Route::delete('/members/{id}', [TrainerController::class, 'deleteMember']);
 });
 
 

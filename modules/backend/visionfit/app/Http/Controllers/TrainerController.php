@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\Traines\StoreRequest;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Trainer;
 class TrainerController extends Controller
 {
@@ -90,6 +91,8 @@ class TrainerController extends Controller
                 'ho_ten' => $trainer->ho_ten,
                 'email' => $trainer->email,
                 'hinh_anh' => $trainer->hinh_anh,
+                'so_dien_thoai' => $trainer->so_dien_thoai,
+                'ma_gioi_thieu' => $trainer->ma_gioi_thieu ?: ('PT' . str_pad($trainer->id, 6, '0', STR_PAD_LEFT)),
             ]);
 
         } else {
@@ -190,5 +193,496 @@ class TrainerController extends Controller
         ], 201);
     }
 
+    /**
+     * Lấy danh sách học viên của Huấn luyện viên
+     */
+    public function getMembers(Request $request)
+    {
+        // 1. Lấy HLV đang đăng nhập
+        $trainer = Auth::guard('sanctum')->user() ?? $request->trainer;
+        if (!$trainer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
 
+        // 2. Lấy danh sách học viên (Mỗi học viên chỉ lấy bản ghi mới nhất, không bị trùng)
+        $latestDetails = DB::table('chi_tiet_dang_ky_goi as ct')
+            ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+            ->where('ct.id_trainer', $trainer->id)
+            ->whereIn('ct.tinh_trang', [1, 3])
+            ->select('dk.id_hoi_vien', DB::raw('MAX(ct.id) as max_id_chi_tiet'))
+            ->groupBy('dk.id_hoi_vien');
+
+        $danhSach = DB::table('chi_tiet_dang_ky_goi as ct')
+            ->joinSub($latestDetails, 'latest', function ($join) {
+                $join->on('ct.id', '=', 'latest.max_id_chi_tiet');
+            })
+            ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+            ->join('clients as c', 'dk.id_hoi_vien', '=', 'c.id')
+            ->leftJoin('goi_tap as gt', 'ct.id_goi_tap', '=', 'gt.id')
+            ->select(
+                'c.id as id_hoi_vien',
+                'c.ho_ten',
+                'c.email',
+                'c.so_dien_thoai',
+                'c.anh_dai_dien',
+                'c.muc_tieu_hien_tai',
+                'c.chieu_cao_cm',
+                'c.can_nang_kg',
+                'c.ngay_sinh',
+                'ct.id as id_chi_tiet',
+                'ct.id_dang_ky_goi',
+                'ct.id_goi_tap',
+                'gt.ten_goi_tap',
+                'ct.so_buoi',
+                'ct.so_buoi_pt',
+                'ct.tinh_trang',
+                'ct.ngay_bat_dau',
+                'ct.ngay_ket_thuc'
+            )
+            ->orderByDesc('ct.id')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy danh sách học viên thành công.',
+            'data' => $danhSach,
+        ]);
+    }
+
+    /**
+     * Lấy chi tiết 1 học viên
+     */
+    public function getMemberDetail($id, Request $request = null)
+    {
+        // 1. Lấy HLV đang đăng nhập
+        $trainer = Auth::guard('sanctum')->user() ?? ($request ? $request->trainer : null);
+        if (!$trainer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        // 2. Lấy thông tin học viên và gói tập cùng HLV
+        $chiTiet = DB::table('chi_tiet_dang_ky_goi as ct')
+            ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+            ->join('clients as c', 'dk.id_hoi_vien', '=', 'c.id')
+            ->leftJoin('goi_tap as gt', 'ct.id_goi_tap', '=', 'gt.id')
+            ->where('ct.id_trainer', $trainer->id)
+            ->where('c.id', $id)
+            ->select(
+                'c.id as id_hoi_vien',
+                'c.ho_ten',
+                'c.email',
+                'c.so_dien_thoai',
+                'c.anh_dai_dien',
+                'c.muc_tieu_hien_tai',
+                'c.chieu_cao_cm',
+                'c.can_nang_kg',
+                'c.ngay_sinh',
+                'ct.id as id_chi_tiet',
+                'ct.id_dang_ky_goi',
+                'ct.id_goi_tap',
+                'gt.ten_goi_tap',
+                'ct.so_buoi',
+                'ct.so_buoi_pt',
+                'ct.tinh_trang',
+                'ct.ngay_bat_dau',
+                'ct.ngay_ket_thuc'
+            )
+            ->first();
+
+        if (!$chiTiet) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy học viên.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy chi tiết học viên thành công.',
+            'data' => $chiTiet,
+        ]);
+    }
+
+    /**
+     * Lấy danh sách hội viên và gói tập để chọn thêm học viên
+     */
+    public function getCandidates(Request $request)
+    {
+        // 1. Lấy thông tin HLV
+        $trainer = Auth::guard('sanctum')->user() ?? $request->trainer;
+        $trainerCode = $trainer ? ($trainer->ma_gioi_thieu ?? ('PT' . str_pad($trainer->id, 6, '0', STR_PAD_LEFT))) : 'PT000001';
+
+        // Lấy danh sách ID học viên mà HLV này đang quản lý (đang tập hoặc tạm nghỉ)
+        $managedClientIds = [];
+        if ($trainer) {
+            $managedClientIds = DB::table('chi_tiet_dang_ky_goi as ct')
+                ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+                ->where('ct.id_trainer', $trainer->id)
+                ->whereIn('ct.tinh_trang', [1, 3])
+                ->pluck('dk.id_hoi_vien')
+                ->toArray();
+        }
+
+        // 2. Lấy danh sách hội viên (loại trừ những người HLV đã quản lý)
+        $keyword = $request->input('search');
+        $query = DB::table('clients')->where('is_block', 0);
+        if (!empty($managedClientIds)) {
+            $query->whereNotIn('id', $managedClientIds);
+        }
+
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('ho_ten', 'like', "%{$keyword}%")
+                  ->orWhere('so_dien_thoai', 'like', "%{$keyword}%");
+            });
+        }
+        $clients = $query->select('id', 'ho_ten', 'so_dien_thoai', 'anh_dai_dien', 'muc_tieu_hien_tai')->get();
+
+        // 3. Lấy danh sách gói tập có PT
+        $goiTaps = DB::table('goi_tap')
+            ->where('tinh_trang', 1)
+            ->where('so_buoi_pt', '>', 0)
+            ->select('id', 'ten_goi_tap', 'gia', 'so_buoi_pt')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy danh sách thành công.',
+            'data' => [
+                'clients' => $clients,
+                'goi_taps' => $goiTaps,
+                'trainer_code' => $trainerCode,
+            ],
+        ]);
+    }
+
+    /**
+     * Thêm học viên mới cho HLV
+     */
+    public function addMember(Request $request)
+    {
+        // 1. Lấy HLV đang đăng nhập
+        $trainer = Auth::guard('sanctum')->user() ?? $request->trainer;
+        if (!$trainer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        $request->validate([
+            'id_hoi_vien' => 'required|integer',
+            'id_goi_tap' => 'required|integer',
+        ]);
+
+        // Kiểm tra xem học viên đã có trong danh sách của HLV này chưa
+        $daTonTai = DB::table('chi_tiet_dang_ky_goi as ct')
+            ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+            ->where('ct.id_trainer', $trainer->id)
+            ->where('dk.id_hoi_vien', $request->id_hoi_vien)
+            ->whereIn('ct.tinh_trang', [1, 3])
+            ->exists();
+
+        if ($daTonTai) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Học viên này đã có trong danh sách quản lý của bạn.',
+            ], 400);
+        }
+
+        $goiTap = DB::table('goi_tap')->where('id', $request->id_goi_tap)->first();
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gói tập không tồn tại.',
+            ], 404);
+        }
+
+        // 2. Tạo đăng ký gói
+        $idDangKy = DB::table('dang_ky_goi')->insertGetId([
+            'id_hoi_vien' => $request->id_hoi_vien,
+            'ngay_dang_ky' => now(),
+            'tinh_trang' => 1,
+            'phuong_thuc_thanh_toan' => 1,
+            'is_thanh_toan' => 1,
+            'tong_tien' => $goiTap->gia,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 3. Tạo chi tiết đăng ký gói cho HLV
+        DB::table('chi_tiet_dang_ky_goi')->insert([
+            'id_dang_ky_goi' => $idDangKy,
+            'id_goi_tap' => $goiTap->id,
+            'id_trainer' => $trainer->id,
+            'so_buoi' => $goiTap->so_buoi,
+            'so_buoi_pt' => $goiTap->so_buoi_pt,
+            'don_gia' => $goiTap->gia,
+            'thanh_tien' => $goiTap->gia,
+            'ngay_bat_dau' => now(),
+            'ngay_ket_thuc' => now()->addDays($goiTap->thoi_han_ngay ?? 30),
+            'tinh_trang' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Thêm học viên thành công.',
+        ]);
+    }
+
+    /**
+     * Cập nhật trạng thái học viên (Đang tập, Tạm nghỉ, Hoàn thành)
+     */
+    public function updateMember($id, Request $request)
+    {
+        // 1. Lấy HLV đang đăng nhập
+        $trainer = Auth::guard('sanctum')->user() ?? $request->trainer;
+        if (!$trainer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        $request->validate([
+            'tinh_trang' => 'required|integer',
+        ]);
+
+        // 2. Tìm chi tiết đăng ký gói của học viên này với HLV
+        $chiTietIds = DB::table('chi_tiet_dang_ky_goi as ct')
+            ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+            ->where('ct.id_trainer', $trainer->id)
+            ->where('dk.id_hoi_vien', $id)
+            ->pluck('ct.id');
+
+        if ($chiTietIds->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy học viên trong danh sách của bạn.',
+            ], 404);
+        }
+
+        // 3. Cập nhật trạng thái
+        DB::table('chi_tiet_dang_ky_goi')
+            ->whereIn('id', $chiTietIds)
+            ->update([
+                'tinh_trang' => $request->tinh_trang,
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái học viên thành công.',
+        ]);
+    }
+
+    /**
+     * Gỡ học viên khỏi danh sách của HLV
+     */
+    public function deleteMember($id, Request $request = null)
+    {
+        // 1. Lấy HLV đang đăng nhập
+        $trainer = Auth::guard('sanctum')->user() ?? ($request ? $request->trainer : null);
+        if (!$trainer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        // 2. Tìm chi tiết đăng ký gói của học viên này với HLV
+        $chiTietIds = DB::table('chi_tiet_dang_ky_goi as ct')
+            ->join('dang_ky_goi as dk', 'ct.id_dang_ky_goi', '=', 'dk.id')
+            ->where('ct.id_trainer', $trainer->id)
+            ->where('dk.id_hoi_vien', $id)
+            ->pluck('ct.id');
+
+        if ($chiTietIds->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy học viên trong danh sách của bạn.',
+            ], 404);
+        }
+
+        // 3. Gỡ HLV khỏi gói này (set id_trainer = null)
+        DB::table('chi_tiet_dang_ky_goi')
+            ->whereIn('id', $chiTietIds)
+            ->update([
+                'id_trainer' => null,
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã gỡ học viên khỏi danh sách thành công.',
+        ]);
+    }
+
+    /**
+     * Lấy hồ sơ chi tiết của Huấn luyện viên
+     */
+    public function getProfile(Request $request)
+    {
+        $trainer = Auth::guard('sanctum')->user() ?? $request->trainer;
+        if (!$trainer) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        $trainerRecord = DB::table('trainers')->where('id', $trainer->id)->first();
+        if (!$trainerRecord) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy thông tin huấn luyện viên.',
+            ], 404);
+        }
+
+        // Tên phòng tập / cơ sở
+        $coSo = 'VisionFit Center - Quận 1';
+        if ($trainerRecord->id_phong_tap) {
+            $pt = DB::table('phong_taps')->where('id_phong_tap', $trainerRecord->id_phong_tap)->first();
+            if ($pt) {
+                $coSo = $pt->ten_phong_tap;
+            } else {
+                $pg = DB::table('phong_gyms')->where('id', $trainerRecord->id_phong_tap)->first();
+                if ($pg) {
+                    $coSo = $pg->ten_phong_gym;
+                }
+            }
+        }
+
+        // Chuyên môn
+        $chuyenMon = [];
+        if (!empty($trainerRecord->chuyen_mon)) {
+            $decoded = json_decode($trainerRecord->chuyen_mon, true);
+            if (is_array($decoded)) {
+                $chuyenMon = $decoded;
+            } else {
+                $chuyenMon = array_map('trim', explode(',', $trainerRecord->chuyen_mon));
+            }
+        }
+        if (empty($chuyenMon)) {
+            $chuyenMon = ['Strength Training', 'Cardio', 'Giảm mỡ'];
+        }
+
+        // Chứng chỉ
+        $chungChi = [];
+        if (!empty($trainerRecord->chung_chi)) {
+            $decodedCc = json_decode($trainerRecord->chung_chi, true);
+            if (is_array($decodedCc)) {
+                $chungChi = $decodedCc;
+            } else {
+                $chungChi = [['title' => $trainerRecord->chung_chi, 'org' => 'VisionFit']];
+            }
+        }
+        if (empty($chungChi)) {
+            $chungChi = [
+                ['title' => 'NASM Certified Personal Trainer', 'org' => 'NASM • 2021'],
+                ['title' => 'First Aid / CPR / AED', 'org' => 'Red Cross • 2023'],
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Lấy hồ sơ thành công.',
+            'data' => [
+                'id' => $trainerRecord->id,
+                'ma_gioi_thieu' => $trainerRecord->ma_gioi_thieu ?: ('PT' . str_pad($trainerRecord->id, 6, '0', STR_PAD_LEFT)),
+                'ho_ten' => $trainerRecord->ho_ten,
+                'email' => $trainerRecord->email,
+                'so_dien_thoai' => $trainerRecord->so_dien_thoai,
+                'mo_ta' => $trainerRecord->mo_ta ?: '5 năm kinh nghiệm huấn luyện sức mạnh và giảm mỡ. Tập trung vào kỹ thuật chuẩn và lộ trình bền vững.',
+                'hinh_anh' => $trainerRecord->hinh_anh,
+                'chuc_danh' => $trainerRecord->chuc_danh ?: 'Personal Trainer',
+                'so_nam_kinh_nghiem' => $trainerRecord->so_nam_kinh_nghiem ?: '5 năm',
+                'chuyen_mon' => $chuyenMon,
+                'chung_chi' => $chungChi,
+                'co_so' => $coSo,
+            ],
+        ]);
+    }
+
+    /**
+     * Cập nhật hồ sơ Huấn luyện viên vào Database
+     */
+    public function updateProfile(Request $request)
+    {
+        $trainer = Auth::guard('sanctum')->user() ?? $request->trainer;
+        if (!$trainer) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        $request->validate([
+            'ho_ten' => 'nullable|string|max:255',
+            'so_dien_thoai' => 'nullable|string|max:20',
+            'mo_ta' => 'nullable|string|max:1000',
+            'chuc_danh' => 'nullable|string|max:100',
+            'so_nam_kinh_nghiem' => 'nullable|string|max:50',
+            'chuyen_mon' => 'nullable',
+            'chung_chi' => 'nullable',
+            'hinh_anh' => 'nullable',
+        ]);
+
+        $updateData = [];
+
+        if ($request->has('ho_ten')) {
+            $updateData['ho_ten'] = $request->ho_ten;
+        }
+        if ($request->has('so_dien_thoai')) {
+            $updateData['so_dien_thoai'] = $request->so_dien_thoai;
+        }
+        if ($request->has('mo_ta')) {
+            $updateData['mo_ta'] = $request->mo_ta;
+        }
+        if ($request->has('chuc_danh')) {
+            $updateData['chuc_danh'] = $request->chuc_danh;
+        }
+        if ($request->has('so_nam_kinh_nghiem')) {
+            $updateData['so_nam_kinh_nghiem'] = $request->so_nam_kinh_nghiem;
+        }
+
+        // Upload avatar nếu có gửi file
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $updateData['hinh_anh'] = $request->getSchemeAndHttpHost() . Storage::url($path);
+        } elseif ($request->filled('hinh_anh')) {
+            $updateData['hinh_anh'] = $request->hinh_anh;
+        }
+
+        if ($request->has('chuyen_mon')) {
+            $cm = $request->chuyen_mon;
+            $updateData['chuyen_mon'] = is_array($cm) ? json_encode($cm, JSON_UNESCAPED_UNICODE) : $cm;
+        }
+
+        if ($request->has('chung_chi')) {
+            $cc = $request->chung_chi;
+            $updateData['chung_chi'] = is_array($cc) ? json_encode($cc, JSON_UNESCAPED_UNICODE) : $cc;
+        }
+
+        if (!empty($updateData)) {
+            $updateData['updated_at'] = now();
+            DB::table('trainers')->where('id', $trainer->id)->update($updateData);
+        }
+
+        $fresh = DB::table('trainers')->where('id', $trainer->id)->first();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cập nhật hồ sơ thành công!',
+            'data' => $fresh,
+        ]);
+    }
 }

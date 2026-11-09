@@ -1,25 +1,103 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, StatusBar, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, StatusBar, Image, Alert, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TRAINER_COLORS as COLORS, SOFT_SHADOW } from '../../general/theme';
-
-// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
-const CANDIDATES = [
-  { id: '1', name: 'Đỗ Thanh Tùng', phone: '0912 *** 456', goal: 'Tăng cơ', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80' },
-  { id: '2', name: 'Hoàng Mai Linh', phone: '0987 *** 123', goal: 'Giảm cân', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80' },
-  { id: '3', name: 'Bùi Quốc Huy', phone: '0903 *** 789', goal: 'Duy trì', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80' },
-];
-
-const PACKAGES = [
-  { id: '12', name: 'Gói PT 12 buổi', price: '5.400.000 ₫', note: '450k/buổi' },
-  { id: '24', name: 'Gói PT 24 buổi', price: '10.080.000 ₫', note: '420k/buổi • Phổ biến' },
-  { id: '36', name: 'Gói PT 36 buổi', price: '14.400.000 ₫', note: '400k/buổi • Tiết kiệm nhất' },
-];
+import apiFitlife from '../../general/api';
 
 const AddMember = ({ navigation }: any) => {
-  const [selected, setSelected] = useState('1');
-  const [pkg, setPkg] = useState('24');
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [trainerCode, setTrainerCode] = useState('PT000001');
+  const [selected, setSelected] = useState('');
+  const [pkg, setPkg] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [popup, setPopup] = useState<{
+    visible: boolean;
+    type: 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
+
+  const fetchCandidates = async (keyword = '') => {
+    setLoading(true);
+    try {
+      const res = await apiFitlife.get('/trainer/candidates', { params: { search: keyword } });
+      if (res.data?.success && res.data?.data) {
+        const rawClients = res.data.data.clients || [];
+        const rawPackages = res.data.data.goi_taps || [];
+        setCandidates(rawClients);
+        setPackages(rawPackages);
+        if (res.data.data.trainer_code) {
+          setTrainerCode(res.data.data.trainer_code);
+        }
+        if (rawClients.length > 0 && !selected) {
+          setSelected(String(rawClients[0].id));
+        }
+        if (rawPackages.length > 0 && !pkg) {
+          setPkg(String(rawPackages[0].id));
+        }
+      }
+    } catch (error: any) {
+      console.log('Lỗi lấy danh sách:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  const handleSearch = (text: string) => {
+    setSearch(text);
+    fetchCandidates(text);
+  };
+
+  const handleAddMember = async () => {
+    if (!selected) {
+      setPopup({
+        visible: true,
+        type: 'warning',
+        title: 'Chưa chọn học viên',
+        message: 'Vui lòng chọn 1 học viên từ danh sách trước khi thêm.',
+      });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await apiFitlife.post('/trainer/add-member', {
+        id_hoi_vien: Number(selected),
+        id_goi_tap: Number(pkg),
+      });
+      if (res.data?.status || res.data?.success) {
+        setPopup({
+          visible: true,
+          type: 'success',
+          title: 'Thành công!',
+          message: res.data.message || 'Đã thêm học viên vào danh sách thành công!',
+          onConfirm: () => navigation?.goBack?.(),
+        });
+      }
+    } catch (error: any) {
+      setPopup({
+        visible: true,
+        type: 'error',
+        title: 'Không thể thêm học viên',
+        message: error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -41,50 +119,65 @@ const AddMember = ({ navigation }: any) => {
             style={styles.searchInput}
             placeholder="Tìm theo tên hoặc số điện thoại..."
             placeholderTextColor={COLORS.textLight}
+            value={search}
+            onChangeText={handleSearch}
           />
         </View>
 
         {/* CHỌN HỘI VIÊN */}
-        <Text style={styles.sectionTitle}>Hội viên chưa có HLV</Text>
+        <Text style={styles.sectionTitle}>Hội viên trong hệ thống</Text>
         <View style={styles.card}>
-          {CANDIDATES.map((item, index) => {
-            const active = selected === item.id;
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.8}
-                onPress={() => setSelected(item.id)}
-                style={[styles.memberRow, index < CANDIDATES.length - 1 && styles.rowBorder]}>
-                <Image source={{ uri: item.avatar }} style={styles.avatar} />
-                <View style={styles.flex}>
-                  <Text style={styles.memberName}>{item.name}</Text>
-                  <Text style={styles.memberSub}>
-                    {item.phone} • {item.goal}
-                  </Text>
-                </View>
-                <View style={[styles.radio, active && styles.radioActive]}>
-                  {active && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          {loading ? (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={{ marginTop: 8, color: COLORS.textMuted, fontSize: 12 }}>Đang tải danh sách...</Text>
+            </View>
+          ) : candidates.length > 0 ? (
+            candidates.map((item, index) => {
+              const active = String(selected) === String(item.id);
+              const avatar = item.anh_dai_dien || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.8}
+                  onPress={() => setSelected(String(item.id))}
+                  style={[styles.memberRow, index < candidates.length - 1 && styles.rowBorder]}>
+                  <Image source={{ uri: avatar }} style={styles.avatar} />
+                  <View style={styles.flex}>
+                    <Text style={styles.memberName}>{item.ho_ten}</Text>
+                    <Text style={styles.memberSub}>
+                      {item.so_dien_thoai || 'Chưa có SĐT'} • {item.muc_tieu_hien_tai || 'Rèn luyện sức khỏe'}
+                    </Text>
+                  </View>
+                  <View style={[styles.radio, active && styles.radioActive]}>
+                    {active && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Text style={{ color: COLORS.textMuted, fontSize: 13 }}>Không tìm thấy hội viên phù hợp</Text>
+            </View>
+          )}
         </View>
 
         {/* CHỌN GÓI PT */}
         <Text style={styles.sectionTitle}>Gói huấn luyện</Text>
-        {PACKAGES.map((item) => {
-          const active = pkg === item.id;
+        {packages.map((item) => {
+          const active = String(pkg) === String(item.id);
+          const gia = item.gia ? Number(item.gia).toLocaleString('vi-VN') + ' ₫' : 'Miễn phí';
           return (
             <TouchableOpacity
               key={item.id}
               activeOpacity={0.85}
-              onPress={() => setPkg(item.id)}
+              onPress={() => setPkg(String(item.id))}
               style={[styles.pkgCard, active && styles.pkgCardActive]}>
               <View style={styles.flex}>
-                <Text style={styles.pkgName}>{item.name}</Text>
-                <Text style={styles.pkgNote}>{item.note}</Text>
+                <Text style={styles.pkgName}>{item.ten_goi_tap}</Text>
+                <Text style={styles.pkgNote}>{item.so_buoi_pt ? `${item.so_buoi_pt} buổi PT` : 'Gói tập'}</Text>
               </View>
-              <Text style={styles.pkgPrice}>{item.price}</Text>
+              <Text style={styles.pkgPrice}>{gia}</Text>
             </TouchableOpacity>
           );
         })}
@@ -96,16 +189,87 @@ const AddMember = ({ navigation }: any) => {
             <Text style={styles.inviteSub}>Học viên nhập mã trong app để kết nối với bạn</Text>
           </View>
           <View style={styles.codePill}>
-            <Text style={styles.codeText}>VF-NT28</Text>
+            <Text style={styles.codeText}>{trainerCode}</Text>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.saveBtn} activeOpacity={0.85} onPress={() => navigation?.goBack?.()}>
-          <Text style={styles.saveText}>Thêm vào danh sách</Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, (!selected || submitting) && { opacity: 0.6 }]}
+          activeOpacity={0.85}
+          disabled={!selected || submitting}
+          onPress={handleAddMember}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveText}>Thêm vào danh sách</Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      {/* POPUP THÔNG BÁO TÙY BIẾN */}
+      <Modal
+        visible={popup.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          const fn = popup.onConfirm;
+          setPopup((prev) => ({ ...prev, visible: false }));
+          if (fn) fn();
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View
+              style={[
+                styles.modalIconBox,
+                popup.type === 'success' && { backgroundColor: '#ECFDF5' },
+                popup.type === 'warning' && { backgroundColor: '#FEF3C7' },
+                popup.type === 'error' && { backgroundColor: '#FEE2E2' },
+              ]}
+            >
+              <Ionicons
+                name={
+                  popup.type === 'success'
+                    ? 'checkmark-circle'
+                    : popup.type === 'warning'
+                    ? 'alert-circle'
+                    : 'close-circle'
+                }
+                size={40}
+                color={
+                  popup.type === 'success'
+                    ? COLORS.accentGreen
+                    : popup.type === 'warning'
+                    ? '#D97706'
+                    : '#EF4444'
+                }
+              />
+            </View>
+            <Text style={styles.modalTitle}>{popup.title}</Text>
+            <Text style={styles.modalMessage}>{popup.message}</Text>
+            <TouchableOpacity
+              style={[
+                styles.modalBtn,
+                popup.type === 'error' && { backgroundColor: '#EF4444' },
+                popup.type === 'warning' && { backgroundColor: '#D97706' },
+              ]}
+              onPress={() => {
+                const fn = popup.onConfirm;
+                setPopup((prev) => ({ ...prev, visible: false }));
+                if (fn) fn();
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalBtnText}>
+                {popup.type === 'success' ? 'HOÀN TẤT' : 'ĐỒNG Ý'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -295,6 +459,61 @@ const styles = StyleSheet.create({
   saveText: {
     fontSize: 15,
     fontWeight: '700',
+    color: COLORS.white,
+  },
+
+  // POPUP MODAL
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 84, 104, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 24,
+    alignItems: 'center',
+    ...SOFT_SHADOW,
+  },
+  modalIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.8,
     color: COLORS.white,
   },
 });
