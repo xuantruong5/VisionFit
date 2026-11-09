@@ -95,6 +95,27 @@ export function renderSafeMessage(text) {
       continue;
     }
 
+    // Kiểm tra dòng kẻ phân cách: "---", "***", "___"
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      currentList = null;
+      const hr = document.createElement('hr');
+      hr.className = 'vif-divider';
+      fragment.appendChild(hr);
+      continue;
+    }
+
+    // Kiểm tra dòng tiêu đề Markdown: "# ", "## ", "### ", v.v. -> Đổi thành -
+    const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+    if (headingMatch) {
+      currentList = null;
+      const level = headingMatch[1].length;
+      const h = document.createElement('div');
+      h.className = `vif-heading vif-h${level}`;
+      h.innerHTML = `- ` + formatInlineMarkdown(headingMatch[2]);
+      fragment.appendChild(h);
+      continue;
+    }
+
     // Kiểm tra dòng danh sách không thứ tự: "- " hoặc "* "
     const isUlItem = /^[-*]\s+(.*)$/.test(trimmed);
     // Kiểm tra dòng danh sách có thứ tự: "1. ", "2. ", v.v.
