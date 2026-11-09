@@ -1,43 +1,78 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, StatusBar, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, StatusBar, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
-
-// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
-const MEMBERS = [
-  { id: '1', name: 'Nguyễn Văn An', email: 'an.nguyen@email.com', goal: 'Giảm cân', sessions: 18, totalSessions: 24, status: 'Đang tập', next: 'Hôm nay, 09:00', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
-  { id: '2', name: 'Trần Minh Anh', email: 'minhanh@email.com', goal: 'Tăng cơ', sessions: 12, totalSessions: 20, status: 'Đang tập', next: 'Hôm nay, 14:30', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80' },
-  { id: '3', name: 'Lê Hoàng Nam', email: 'nam.le@email.com', goal: 'Duy trì', sessions: 8, totalSessions: 16, status: 'Tạm nghỉ', next: 'Chưa có lịch', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
-  { id: '4', name: 'Phạm Thu Hà', email: 'ha.pham@email.com', goal: 'Giảm cân', sessions: 21, totalSessions: 24, status: 'Đang tập', next: 'Thứ 2, 10:00', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80' },
-  { id: '5', name: 'Võ Minh Khang', email: 'khang.vo@email.com', goal: 'Tăng cơ', sessions: 6, totalSessions: 12, status: 'Tạm nghỉ', next: 'Chưa có lịch', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&auto=format&fit=crop&q=80' },
-];
+import apiFitlife from '../../general/api';
 
 const FILTERS = ['Tất cả', 'Đang tập', 'Tạm nghỉ'];
 
-const HEADER_STATS = [
-  { value: '24', label: 'Tổng học viên' },
-  { value: '19', label: 'Đang tập' },
-  { value: '86%', label: 'Chuyên cần' },
-];
-
 const Members = ({ navigation }: any) => {
+  const [membersList, setMembersList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tất cả');
 
+  const fetchMembers = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const res = await apiFitlife.get('/trainer/members');
+      if (res.data?.success && res.data?.data) {
+        setMembersList(res.data.data);
+      }
+    } catch (error: any) {
+      console.log('Lỗi lấy danh sách học viên:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+    const unsubscribe = navigation?.addListener?.('focus', () => {
+      fetchMembers();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const totalCount = membersList.length;
+  const activeCount = membersList.filter((m) => m.tinh_trang === 1).length;
+  const attendanceRate = totalCount > 0 ? `${Math.round((activeCount / totalCount) * 100)}%` : '0%';
+
   const keyword = search.trim().toLowerCase();
-  const members = MEMBERS.filter(
-    (m) =>
-      (activeFilter === 'Tất cả' || m.status === activeFilter) &&
-      (m.name.toLowerCase().includes(keyword) || m.goal.toLowerCase().includes(keyword))
-  );
+  const members = membersList.filter((m) => {
+    const name = (m.ho_ten || '').toLowerCase();
+    const goal = (m.muc_tieu_hien_tai || '').toLowerCase();
+    const isPaused = m.tinh_trang === 3;
+    const statusText = isPaused ? 'Tạm nghỉ' : 'Đang tập';
+
+    const matchFilter = activeFilter === 'Tất cả' || statusText === activeFilter;
+    const matchSearch = name.includes(keyword) || goal.includes(keyword);
+    return matchFilter && matchSearch;
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => fetchMembers(true)}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
         {/* 1. HEADER GRADIENT */}
         <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <View style={styles.circleLg} />
@@ -47,18 +82,27 @@ const Members = ({ navigation }: any) => {
               <Text style={styles.headerSub}>Quản lý & theo dõi tiến độ</Text>
               <Text style={styles.headerTitle}>Học viên của tôi</Text>
             </View>
+            <TouchableOpacity style={[styles.addBtn, { marginRight: 8 }]} activeOpacity={0.8} onPress={() => navigation?.navigate('TrainerChat')}>
+              <Ionicons name="chatbubbles" size={19} color={COLORS.primary} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.addBtn} activeOpacity={0.8} onPress={() => navigation?.navigate('AddMember')}>
               <Ionicons name="person-add" size={19} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.statRow}>
-            {HEADER_STATS.map((item) => (
-              <View key={item.label} style={styles.statBox}>
-                <Text style={styles.statValue}>{item.value}</Text>
-                <Text style={styles.statLabel}>{item.label}</Text>
-              </View>
-            ))}
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{totalCount}</Text>
+              <Text style={styles.statLabel}>Tổng học viên</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{activeCount}</Text>
+              <Text style={styles.statLabel}>Đang tập</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{attendanceRate}</Text>
+              <Text style={styles.statLabel}>Chuyên cần</Text>
+            </View>
           </View>
         </LinearGradient>
 
@@ -96,69 +140,101 @@ const Members = ({ navigation }: any) => {
             })}
           </View>
 
-          {/* 4. DANH SÁCH */}
-          {members.map((member) => {
-            const progress = Math.round((member.sessions / member.totalSessions) * 100);
-            const paused = member.status === 'Tạm nghỉ';
-            return (
-              <TouchableOpacity
-                key={member.id}
-                activeOpacity={0.85}
-                style={styles.memberCard}
-                onPress={() => navigation?.navigate('MemberDetail', { member })}>
-                <View style={styles.cardTop}>
-                  <View>
-                    <Image source={{ uri: member.avatar }} style={[styles.avatar, paused && styles.avatarPaused]} />
-                    <View style={[styles.statusDot, paused && { backgroundColor: COLORS.accentGold }]} />
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                    <View style={styles.tagRow}>
-                      <View style={styles.goalTag}>
-                        <Ionicons name="flag" size={11} color={COLORS.primary} />
-                        <Text style={styles.goalText}>{member.goal}</Text>
-                      </View>
-                      <Text style={[styles.statusText, paused && { color: COLORS.accentGold }]}>{member.status}</Text>
-                    </View>
-                  </View>
-                  <View style={[styles.percentBadge, paused && styles.percentBadgePaused]}>
-                    <Text style={[styles.percentText, paused && { color: COLORS.textMuted }]}>{progress}%</Text>
-                  </View>
-                </View>
-
-                <View style={styles.progressTrack}>
-                  <LinearGradient
-                    colors={paused ? [COLORS.textLight, COLORS.textLight] : ['#22B8C8', COLORS.primary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.progressFill, { width: `${progress}%` }]}
-                  />
-                </View>
-
-                <View style={styles.cardBottom}>
-                  <View style={styles.metaRow}>
-                    <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
-                    <Text style={styles.metaText}>
-                      {member.sessions}/{member.totalSessions} buổi
-                    </Text>
-                  </View>
-                  <View style={styles.metaRow}>
-                    <Ionicons name="time-outline" size={13} color={paused ? COLORS.textMuted : COLORS.primary} />
-                    <Text style={[styles.metaText, !paused && styles.metaTextActive]}>{member.next}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-
-          {members.length === 0 && (
-            <View style={styles.emptyBox}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="search-outline" size={34} color={COLORS.primary} />
-              </View>
-              <Text style={styles.emptyTitle}>Không tìm thấy học viên</Text>
-              <Text style={styles.metaText}>Thử tìm với tên hoặc từ khoá khác</Text>
+          {/* LOADING STATE */}
+          {loading && !refreshing ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={{ marginTop: 12, color: COLORS.textMuted, fontSize: 13, fontWeight: '500' }}>
+                Đang tải danh sách học viên...
+              </Text>
             </View>
+          ) : (
+            <>
+              {/* 4. DANH SÁCH */}
+              {members.map((item, index) => {
+                const isPaused = item.tinh_trang === 3;
+                const totalSessions = Number(item.so_buoi_pt || 24);
+                const sessions = 0;
+                const progress = Math.min(100, Math.round((sessions / totalSessions) * 100));
+                const avatar = item.anh_dai_dien || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
+
+                return (
+                  <TouchableOpacity
+                    key={`member_${item.id_chi_tiet || item.id_hoi_vien}_${index}`}
+                    activeOpacity={0.85}
+                    style={styles.memberCard}
+                    onPress={() => navigation?.navigate('MemberDetail', { member: item })}>
+                    <View style={styles.cardTop}>
+                      <View>
+                        <Image source={{ uri: avatar }} style={[styles.avatar, isPaused && styles.avatarPaused]} />
+                        <View style={[styles.statusDot, isPaused && { backgroundColor: COLORS.accentGold }]} />
+                      </View>
+                      <View style={styles.flex}>
+                        <Text style={styles.memberName}>{item.ho_ten}</Text>
+                        <View style={styles.tagRow}>
+                          <View style={styles.goalTag}>
+                            <Ionicons name="flag" size={11} color={COLORS.primary} />
+                            <Text style={styles.goalText}>{item.muc_tieu_hien_tai || 'Rèn luyện sức khỏe'}</Text>
+                          </View>
+                          <Text style={[styles.statusText, isPaused && { color: COLORS.accentGold }]}>
+                            {isPaused ? 'Tạm nghỉ' : 'Đang tập'}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={[styles.percentBadge, isPaused && styles.percentBadgePaused]}>
+                        <Text style={[styles.percentText, isPaused && { color: COLORS.textMuted }]}>{progress}%</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.progressTrack}>
+                      <LinearGradient
+                        colors={isPaused ? [COLORS.textLight, COLORS.textLight] : ['#22B8C8', COLORS.primary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={[styles.progressFill, { width: `${progress}%` }]}
+                      />
+                    </View>
+
+                    <View style={styles.cardBottom}>
+                      <View style={styles.metaRow}>
+                        <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
+                        <Text style={styles.metaText}>
+                          {item.ten_goi_tap || `Gói PT ${totalSessions} buổi`}
+                        </Text>
+                      </View>
+                      <View style={styles.metaRow}>
+                        <Ionicons name="time-outline" size={13} color={isPaused ? COLORS.textMuted : COLORS.primary} />
+                        <Text style={[styles.metaText, !isPaused && styles.metaTextActive]}>
+                          {item.ngay_ket_thuc ? `Hạn: ${item.ngay_ket_thuc}` : 'Đang tập'}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
+              {members.length === 0 && (
+                <View style={styles.emptyBox}>
+                  <View style={styles.emptyIcon}>
+                    <Ionicons name={search ? "search-outline" : "people-outline"} size={34} color={COLORS.primary} />
+                  </View>
+                  <Text style={styles.emptyTitle}>
+                    {search ? "Không tìm thấy học viên" : "Chưa có học viên nào"}
+                  </Text>
+                  <Text style={styles.metaText}>
+                    {search ? "Thử tìm với tên hoặc từ khoá khác" : "Học viên khi đăng ký gói tập cùng bạn sẽ xuất hiện tại đây"}
+                  </Text>
+                  {!search && (
+                    <TouchableOpacity
+                      style={{ marginTop: 14, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 }}
+                      onPress={() => navigation?.navigate('AddMember')}
+                    >
+                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>+ Thêm học viên mới</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </>
           )}
         </View>
       </ScrollView>

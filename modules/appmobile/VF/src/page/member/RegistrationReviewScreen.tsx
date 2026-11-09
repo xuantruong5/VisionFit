@@ -207,49 +207,22 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 
     try {
       setSaving(true);
-
       // 1. Chuẩn bị dữ liệu đăng ký
-      const payload = {
-        id_goi_tap: Number(pkg.id),
-
-        id_chuong_trinh_tap:
-          previewData?.chuong_trinh_tap?.id || null,
-
-        id_noi_tap:
-          previewData?.chuong_trinh_tap?.id_noi_tap || null,
-
+      const payload = { id_goi_tap: Number(pkg.id),
+        id_chuong_trinh_tap: previewData?.chuong_trinh_tap?.id || null,
+        id_noi_tap: previewData?.chuong_trinh_tap?.id_noi_tap || null,
         id_trainer: pt?.id || null,
-
-        ma_khuyen_mai:
-          promoCode.trim().toUpperCase() || null,
-
-        ma_gioi_thieu:
-          referralCode.trim().toUpperCase() || null,
-
-        tien_giam_khuyen_mai: Number(
-          promotionData?.tien_giam_khuyen_mai || 0
-        ),
-
-        tien_giam_gioi_thieu: Number(
-          promotionData?.tien_giam_gioi_thieu || 0
-        ),
-
-        lan_dang_ky: Number(
-          promotionData?.lan_dang_ky || 1
-        ),
-
-        phan_tram_giam: Number(
-          promotionData?.phan_tram_giam || 0
-        ),
-
+        ma_khuyen_mai:  promoCode.trim().toUpperCase() || null,
+        ma_gioi_thieu: referralCode.trim().toUpperCase() || null,
+        tien_giam_khuyen_mai: Number( promotionData?.tien_giam_khuyen_mai || 0 ),
+        tien_giam_gioi_thieu: Number( promotionData?.tien_giam_gioi_thieu || 0 ),
+        lan_dang_ky: Number( promotionData?.lan_dang_ky || 1),
+        phan_tram_giam: Number(  promotionData?.phan_tram_giam || 0 ),
         phuong_thuc_thanh_toan: 'VietQR',
       };
 
       // 2. Gọi API tạo đăng ký gói
-      const response = await apiFitlife.post(
-        '/client/dang-ky-goi',
-        payload
-      );
+      const response = await apiFitlife.post( '/client/dang-ky-goi', payload );
 
       if (!response.data.success) {
         Alert.alert(
@@ -261,15 +234,9 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
 
       // 3. Lấy thông tin đăng ký từ Backend
       const dangKy = response.data.data;
-
       // 4. Chuyển sang màn hình thanh toán
       const names = navigation.getState()?.routeNames || [];
-
-      const target = names.includes('Payment')
-        ? 'Payment'
-        : names.includes('PaymentScreen')
-          ? 'PaymentScreen'
-          : 'Payment';
+      const target = names.includes('Payment')  ? 'Payment' : names.includes('PaymentScreen') ? 'PaymentScreen' : 'Payment';
 
       navigation.navigate(target, {
         draft: {

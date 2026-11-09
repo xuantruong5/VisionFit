@@ -12,9 +12,14 @@ use App\Models\ChuongTrinhBaiTapChiTiet;
 use App\Models\DKChuongTrinh;
 use App\Models\TienDoBaiTap;
 use App\Models\BaiTapPhanLoai;
+use App\Models\LichSuHiepTap;
+use App\Models\DangKyChuongTrinhBaiTap;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+
+
+
 
 class BuoiTapController extends Controller
 {
@@ -81,7 +86,7 @@ class BuoiTapController extends Controller
 
             // 2. Lấy chương trình bài tập đã được sinh trước đó
             $chuongTrinhBaiTap = ChuongTrinhBaiTap::where('id', $buoiTap->id_chuong_trinh_bai_tap)
-                ->where('tinh_trang', '1')
+                // ->where('tinh_trang', '1')
                 ->first();
             if (!$chuongTrinhBaiTap) {
                 return response()->json([
@@ -102,9 +107,21 @@ class BuoiTapController extends Controller
                     'message' => 'Hội viên chưa đăng ký chương trình này',
                 ], 404);
             }
+            // 4. Lấy trạng thái từ bảng đăng ký chương trình bài tập
+            $dangKyBaiTap = DangKyChuongTrinhBaiTap::where('id_dang_ky_chuong_trinh', $dangKy->id )
+                ->where('id_chuong_trinh_bai_tap', $chuongTrinhBaiTap->id)
+                ->first();
+
+            if (!$dangKyBaiTap) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy đăng ký chương trình bài tập',
+                ], 404);
+            }
 
             $idCapDo = $dangKy->id_cap_do;
             $idNoiTap = $dangKy->id_noi_tap;
+
             if (!$idCapDo || !$idNoiTap) {
                 return response()->json([
                     'success' => false,
@@ -157,7 +174,7 @@ class BuoiTapController extends Controller
                     'id_bai_tap' => $chiTiet->id_bai_tap,
                     'thu_tu' => $chiTiet->thu_tu,
                     'phan_tram_hoan_thanh' => (float) $tienDo->phan_tram_hoan_thanh,
-                    'tinh_trang' => $tienDo->tinh_trang,
+                    'tinh_trang' => $dangKyBaiTap->tinh_trang,
                 ];
             }
 
@@ -705,23 +722,15 @@ class BuoiTapController extends Controller
 
         // 9. Nếu hoàn thành tất cả bài tập, mở ngày tập tiếp theo
         $ngayTiepTheo = null;
-
         if ($tinhTrang === 2) {
-            $ngayTiepTheo = ChuongTrinhBaiTap::where(
-                'id_chuong_trinh',
-                $chuongTrinhBaiTap->id_chuong_trinh
-            )
-                ->where(
-                    'ngay_thu',
-                    '>',
-                    $chuongTrinhBaiTap->ngay_thu
-                )
+            $ngayTiepTheo = ChuongTrinhBaiTap::where( 'id_chuong_trinh', $chuongTrinhBaiTap->id_chuong_trinh )
+                ->where('ngay_thu', '>', $chuongTrinhBaiTap->ngay_thu)
                 ->orderBy('ngay_thu')
                 ->first();
-
             if ($ngayTiepTheo) {
-                $ngayTiepTheo->tinh_trang = 1;
-                $ngayTiepTheo->save();
+                DangKyChuongTrinhBaiTap::where( 'id_dang_ky_chuong_trinh', $dangKy->id )
+                    ->where( 'id_chuong_trinh_bai_tap', $ngayTiepTheo->id )
+                    ->update(['tinh_trang' => 1, ]);
             }
         }
 
@@ -957,17 +966,18 @@ class BuoiTapController extends Controller
 
     // check quyền tập
 
+    
     public function checkQuyenTap(Request $request)
     {
-        // 1. Lấy hội viên đang đăng nhập
+        // 1. Lấy hội viên đăng nhập
         $user = Auth::guard('sanctum')->user();
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn cần đăng nhập để thực hiện chức năng này ',
+                'message' => 'Bạn cần đăng nhập để thực hiện chức năng này',
             ], 401);
         }
-        // 2. Validate dữ liệu
+        // 2. Validate
         $request->validate([
             'id_dang_ky_chuong_trinh' => 'required|integer',
             'id_chuong_trinh_bai_tap' => 'required|integer',
@@ -997,7 +1007,7 @@ class BuoiTapController extends Controller
             ], 404);
         }
 
-        // 4. Kiểm tra ngày bắt đầu chương trình
+        // 4. Kiểm tra ngày bắt đầu
         if (!$dangKy->ngay_bat_dau) {
             return response()->json([
                 'success' => false,
@@ -1006,45 +1016,83 @@ class BuoiTapController extends Controller
         }
 
         $ngayHienTai = now()->toDateString();
+
         if ($ngayHienTai < $dangKy->ngay_bat_dau) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chương trình chưa đến ngày bắt đầu',
             ], 403);
         }
-        if (
-            $dangKy->ngay_du_kien_ket_thuc &&
-            $ngayHienTai > $dangKy->ngay_du_kien_ket_thuc
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chương trình đã quá ngày dự kiến kết thúc',
-            ], 403);
-        }
 
-        // 5. Kiểm tra ngày tập có thuộc chương trình đăng ký không
-        $chuongTrinhBaiTap = DB::table('chuong_trinh_bai_tap')
-            ->where('id', $request->id_chuong_trinh_bai_tap)
-            ->where('id_chuong_trinh', $dangKy->id_chuong_trinh)
+        // 5. Kiểm tra ngày tập thuộc chương trình
+        $chuongTrinhBaiTap = DB::table('chuong_trinh_bai_tap as ctbt')
+            ->join( 'dang_ky_chuong_trinh_bai_tap as dkbt','ctbt.id','=','dkbt.id_chuong_trinh_bai_tap')
+            ->where('ctbt.id', $request->id_chuong_trinh_bai_tap)
+            ->where('ctbt.id_chuong_trinh', $dangKy->id_chuong_trinh)
+            ->where('dkbt.id_dang_ky_chuong_trinh', $dangKy->id)
+            ->select(
+                'ctbt.id',
+                'ctbt.ngay_thu',
+                'ctbt.ten_ngay_tap',
+                'dkbt.tinh_trang',
+                'dkbt.cho_phep_bo_qua'
+            )
             ->first();
 
         if (!$chuongTrinhBaiTap) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ngày tập không thuộc chương trình này',
+                'message' => 'Ngày tập không thuộc chương trình đăng ký.',
             ], 404);
         }
 
-        if ($chuongTrinhBaiTap->tinh_trang != 1) {
+        // Kiểm tra trạng thái riêng của hội viên
+        if ((int) $chuongTrinhBaiTap->tinh_trang !== 1) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ngày tập đã ngừng hoạt động hoặc bạn chưa hoàn thành ngày tập trên ',
+                'message' => 'Ngày tập chưa được mở khóa.',
+            ], 403);
+        }
+
+        // 6. Lấy ngày tập cuối cùng trong lịch đã sinh
+        $ngayHetLich = DB::table('lich_tap')
+            ->where('id_dang_ky_chuong_trinh', $dangKy->id)
+            ->where('id_hoi_vien', $user->id)
+            ->max('ngay_tap');
+
+        if (!$ngayHetLich) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình chưa có lịch tập',
             ], 404);
         }
 
-        // 6. Kiểm tra hội viên đã có gói tập hợp lệ chưa
-        $coGoiTap = DB::table('dang_ky_goi as dkg')
-            ->join( 'chi_tiet_dang_ky_goi as ct','dkg.id', '=','ct.id_dang_ky_goi')
+        // Không cho tập vượt quá ngày cuối cùng trong lịch
+        if ($ngayHienTai > $ngayHetLich) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình đã vượt quá lịch tập. Vui lòng đăng ký chương trình mới',
+            ], 403);
+        }
+
+        // 7. Kiểm tra số buổi đã hoàn thành
+        $soBuoiDaTap = DB::table('buoi_tap as bt')
+            ->join('lich_tap as lt', 'bt.id_lich_tap', '=', 'lt.id')
+            ->where('bt.id_hoi_vien', $user->id)
+            ->where('lt.id_dang_ky_chuong_trinh', $dangKy->id)
+            ->whereNotNull('bt.thoi_gian_ket_thuc')
+            ->where('bt.phan_tram_hoan_thanh', '>=', 100)
+            ->distinct()
+            ->count('bt.id_lich_tap');
+
+        // 8. Kiểm tra gói tập còn hạn
+        $goiConHan = DB::table('dang_ky_goi as dkg')
+            ->join(
+                'chi_tiet_dang_ky_goi as ct',
+                'dkg.id',
+                '=',
+                'ct.id_dang_ky_goi'
+            )
             ->where('dkg.id_hoi_vien', $user->id)
             ->where('dkg.tinh_trang', 1)
             ->where('dkg.is_thanh_toan', 1)
@@ -1053,55 +1101,451 @@ class BuoiTapController extends Controller
             ->whereDate('ct.ngay_ket_thuc', '>=', $ngayHienTai)
             ->exists();
 
-        // 7. Nếu có gói hợp lệ thì được tập tất cả các ngày
-        if ($coGoiTap) {
+        // 9. Có gói còn hạn thì được tập các chương trình
+        if ($goiConHan) {
             return response()->json([
                 'success' => true,
-                'message' => 'Bạn đã có gói tập, được phép tiếp tục',
+                'message' => 'Bạn có gói tập còn hạn, được phép tiếp tục',
                 'data' => [
                     'duoc_phep_tap' => true,
                     'mien_phi' => false,
                     'so_buoi_mien_phi' => 3,
+                    'so_buoi_da_su_dung' => $soBuoiDaTap,
+                    'so_buoi_con_lai' => 0,
                     'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
+                    'can_dang_ky_goi' => false,
+                    'goi_con_han' => true,
+                ],
+            ]);
+        }
+
+        // 10. Kiểm tra 3 buổi miễn phí đầu tiên
+        $soBuoiMienPhi = 3;
+
+        if ($chuongTrinhBaiTap->ngay_thu <= $soBuoiMienPhi) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn đang được tập luyện miễn phí',
+                'data' => [
+                    'duoc_phep_tap' => true,
+                    'mien_phi' => true,
+                    'so_buoi_mien_phi' => $soBuoiMienPhi,
+                    'so_buoi_da_su_dung' => $soBuoiDaTap,
+                    'so_buoi_con_lai' => max(
+                        0,
+                        $soBuoiMienPhi - $soBuoiDaTap
+                    ),
+                    'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
+                    'can_dang_ky_goi' => false,
+                    'goi_con_han' => false,
+                ],
+            ]);
+        }
+
+        // 11. Kiểm tra gói đã mua và chương trình được chọn
+        // Chỉ cho phép tiếp tục nếu:
+        // - Đã thanh toán.
+        // - Đăng ký gói cho đúng chương trình hiện tại.
+        // - Gói được đăng ký tại nhà (id_noi_tap = 1).
+
+        $goiDuocTiepTuc = DB::table('dang_ky_goi as dkg')
+            ->join(
+                'chi_tiet_dang_ky_goi as ct',
+                'dkg.id',
+                '=',
+                'ct.id_dang_ky_goi'
+            )
+            ->where('dkg.id_hoi_vien', $user->id)
+            ->where('dkg.is_thanh_toan', 1)
+            ->where('ct.id_chuong_trinh_tap', $dangKy->id_chuong_trinh)
+            ->where('ct.id_noi_tap', 1)
+            ->whereNotNull('ct.ngay_bat_dau')
+            ->whereNotNull('ct.ngay_ket_thuc')
+            ->orderByDesc('ct.ngay_ket_thuc')
+            ->first();
+
+        // 12. Nếu đã hết hạn gói nhưng chương trình được chọn
+        // là chương trình tập tại nhà thì vẫn được hoàn thành lịch.
+
+        if ($goiDuocTiepTuc) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Gói tập đã hết hạn nhưng bạn được phép hoàn thành chương trình tại nhà đã đăng ký',
+                'data' => [
+                    'duoc_phep_tap' => true,
+                    'mien_phi' => false,
+                    'so_buoi_mien_phi' => $soBuoiMienPhi,
+                    'so_buoi_da_su_dung' => $soBuoiDaTap,
+                    'so_buoi_con_lai' => 0,
+                    'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
+                    'ngay_bat_dau' => $dangKy->ngay_bat_dau,
+                    'ngay_het_lich' => $ngayHetLich,
+                    'goi_con_han' => false,
+                    'duoc_tiep_tuc_hoan_thanh' => true,
                     'can_dang_ky_goi' => false,
                 ],
             ]);
         }
 
-        // 8. Đếm số buổi tập đã hoàn thành thuộc lần đăng ký chương trình
-        $soBuoiDaTap = DB::table('buoi_tap as bt')
-            ->join( 'chuong_trinh_bai_tap as ctb','bt.id_chuong_trinh_bai_tap', '=', 'ctb.id')
-            ->join( 'dang_ky_chuong_trinh as dk','ctb.id_chuong_trinh','=', 'dk.id_chuong_trinh')
-            ->where('bt.id_hoi_vien', $user->id)
-            ->where('dk.id', $dangKy->id)
-            ->whereNotNull('bt.thoi_gian_ket_thuc')
-            ->where('bt.phan_tram_hoan_thanh', '>=', 100)
-            ->whereDate('bt.ngay_tap', '>=', $dangKy->ngay_bat_dau)
-            ->whereDate('bt.ngay_tap', '<=', $dangKy->ngay_du_kien_ket_thuc)
-            ->distinct()
-            ->count('bt.id_chuong_trinh_bai_tap');
-
-        // 9. Kiểm tra quyền tập miễn phí theo ngày tập
-        $soBuoiMienPhi = 3;
-        // Ngày tập thứ 1, 2, 3 được miễn phí
-        // Từ ngày tập thứ 4 phải đăng ký gói
-        $duocPhepTap = $chuongTrinhBaiTap->ngay_thu <= $soBuoiMienPhi;
+        // 13. Không có gói hợp lệ hoặc không thuộc chương trình được chọn
         return response()->json([
             'success' => true,
-            'message' => $duocPhepTap
-                ? 'Bạn đang được tập luyện miễn phí'
-                : 'Bạn đã hết 3 buổi tập miễn phí. Vui lòng đăng ký gói tập để tiếp tục',
+            'message' => 'Bạn đã hết hạn tập thử miễn phí 3 ngày, hoặc hết hạn gói tập hoặc chương trình này không thuộc gói đã đăng ký . Vui lòng đăng ký hoặc gia hạn gói tập để tiếp tục',
             'data' => [
-                'duoc_phep_tap' => $duocPhepTap,
-                'mien_phi' => $duocPhepTap,
+                'duoc_phep_tap' => false,
+                'mien_phi' => false,
                 'so_buoi_mien_phi' => $soBuoiMienPhi,
                 'so_buoi_da_su_dung' => $soBuoiDaTap,
-                'so_buoi_con_lai' => max(0, $soBuoiMienPhi - $soBuoiDaTap),
+                'so_buoi_con_lai' => 0,
                 'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
                 'ngay_bat_dau' => $dangKy->ngay_bat_dau,
-                'ngay_du_kien_ket_thuc' => $dangKy->ngay_du_kien_ket_thuc,
-                'can_dang_ky_goi' => !$duocPhepTap,
+                'ngay_het_lich' => $ngayHetLich,
+                'goi_con_han' => false,
+                'duoc_tiep_tuc_hoan_thanh' => false,
+                'can_dang_ky_goi' => true,
             ],
         ]);
     }
+
+
+
+
+
+
+
+
+    public function luuLichSuHiep(Request $request, $id, $idTienDo)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+
+        $request->validate([
+            'loai_ghi_nhan' => 'required|in:phut,rep,giay',
+            'so_rep_thuc_te' => 'nullable|integer|min:0',
+            'so_phut_thuc_te' => 'nullable|integer|min:0',
+            'thoi_gian_thuc_te_giay' => 'nullable|integer|min:0',
+            'trong_luong_ta_thuc_te' => 'nullable|numeric|min:0',
+            'ghi_chu' => 'nullable|string',
+        ]);
+
+        // 1. Kiểm tra buổi tập
+        $buoiTap = BuoiTap::where('id', $id)
+            ->where('id_hoi_vien', $user->id)
+            ->where('tinh_trang', 1)
+            ->first();
+
+        if (!$buoiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy buổi tập đang thực hiện',
+            ], 404);
+        }
+
+        // 2. Kiểm tra tiến độ bằng JOIN
+        $tienDo = DB::table('tien_do_bai_taps')
+            ->join('dang_ky_chuong_trinh','tien_do_bai_taps.id_dang_ky_chuong_trinh','=','dang_ky_chuong_trinh.id')
+            ->where('tien_do_bai_taps.id', $idTienDo)
+            ->where('tien_do_bai_taps.id_chuong_trinh_bai_tap', $buoiTap->id_chuong_trinh_bai_tap )
+            ->where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+            ->select('tien_do_bai_taps.id')
+            ->first();
+
+        if (!$tienDo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy tiến độ bài tập',
+            ], 404);
+        }
+
+        // 3. Xác định loại ghi nhận
+        $loai = $request->loai_ghi_nhan;
+        // 4. Nếu là bài tập tính phút thì không có hiệp
+        $soHiep = null;
+        if ($loai != 'phut') {
+            $soHiep = LichSuHiepTap::where('id_tien_do_bai_tap', $idTienDo )
+                ->where('id_buoi_tap', $buoiTap->id)
+                ->where('loai_ghi_nhan', $loai)
+                ->count() + 1;
+        }
+
+        // 5. Lưu lịch sử
+        $lichSu = LichSuHiepTap::create([
+            'id_tien_do_bai_tap' => $idTienDo,
+            'id_buoi_tap' => $buoiTap->id,
+            'loai_ghi_nhan' => $loai,
+            'so_hiep' => $soHiep,
+            'so_rep_thuc_te' => $loai == 'rep' ? $request->so_rep_thuc_te : null,
+            'so_phut_thuc_te' => $loai == 'phut' ? $request->so_phut_thuc_te : null,
+            'thoi_gian_thuc_te_giay' => $loai == 'giay'? $request->thoi_gian_thuc_te_giay : null,
+            'trong_luong_ta_thuc_te' => $request->trong_luong_ta_thuc_te,
+            'ghi_chu' => $request->ghi_chu,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lưu lịch sử tập luyện thành công',
+            'data' => $lichSu,
+        ], 201);
+    }
+
+
+    public function getLichSuHiep($idTienDo)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chưa đăng nhập',
+            ], 401);
+        }
+        // Kiểm tra tiến độ thuộc hội viên
+        $tienDo = DB::table('tien_do_bai_taps')
+            ->join('dang_ky_chuong_trinh', 'tien_do_bai_taps.id_dang_ky_chuong_trinh','=', 'dang_ky_chuong_trinh.id' )
+            ->where('tien_do_bai_taps.id', $idTienDo)
+            ->where('dang_ky_chuong_trinh.id_hoi_vien', $user->id)
+            ->select('tien_do_bai_taps.id')
+            ->first();
+
+        if (!$tienDo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy tiến độ',
+            ], 404);
+        }
+
+        // Lấy lịch sử và thông tin ngày tập
+        $lichSu = DB::table('lich_su_hiep_taps')
+            ->join('buoi_tap', 'lich_su_hiep_taps.id_buoi_tap', '=', 'buoi_tap.id')
+            ->where('lich_su_hiep_taps.id_tien_do_bai_tap', $idTienDo)
+            ->select(
+                'lich_su_hiep_taps.*',
+                'buoi_tap.ngay_tap',
+                DB::raw("
+                    CASE DAYOFWEEK(buoi_tap.ngay_tap)
+                        WHEN 1 THEN 'Chủ nhật'
+                        WHEN 2 THEN 'Thứ 2'
+                        WHEN 3 THEN 'Thứ 3'
+                        WHEN 4 THEN 'Thứ 4'
+                        WHEN 5 THEN 'Thứ 5'
+                        WHEN 6 THEN 'Thứ 6'
+                        WHEN 7 THEN 'Thứ 7'
+                    END AS thu_tap
+                "),
+                DB::raw("DATE_FORMAT(buoi_tap.ngay_tap, '%d/%m/%Y') AS ngay_thang_nam"),
+                DB::raw("DATE_FORMAT(lich_su_hiep_taps.created_at, '%H:%i:%s') AS gio_tao")
+            )
+            ->orderByDesc('buoi_tap.ngay_tap')
+            ->orderByDesc('lich_su_hiep_taps.created_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $lichSu,
+        ]);
+    }
+
+
+    // báo cáo 
+   
+
+    public function baoCaoBuoiTap($id)
+    {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn cần đăng nhập',
+            ], 401);
+        }
+        // 1. Lấy thông tin buổi tập
+        $buoiTap = DB::table('buoi_tap') 
+            ->where('id', $id) 
+            ->where('id_hoi_vien', $user->id)
+            ->first();
+        if (!$buoiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy buổi tập không có quyền xem',
+            ], 404);
+        }
+        // 2. Lấy chương trình bài tập và chương trình tập
+        $chuongTrinh = DB::table('chuong_trinh_bai_tap as ctbt')
+            ->join( 'chuong_trinh_tap as ct', 'ctbt.id_chuong_trinh', '=', 'ct.id' )
+            ->where('ctbt.id', $buoiTap->id_chuong_trinh_bai_tap)
+            ->select( 'ctbt.id', 'ctbt.ten_ngay_tap','ctbt.ngay_thu', 'ct.id as id_chuong_trinh', 'ct.id_cap_do', 'ct.id_noi_tap' )
+            ->first();
+        if (!$chuongTrinh) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy chương trình bài tập',
+            ], 404);
+        }
+        // 3. Chuyển JSON nơi tập thành mảng ID
+        $noiTap = json_decode($chuongTrinh->id_noi_tap, true);
+        $idNoiTap = collect($noiTap)
+            ->pluck('id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+        if (empty($idNoiTap)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình chưa có nơi tập hợp lệ',
+            ], 400);
+        }
+
+        // 4. Lấy danh sách bài tập yêu cầu
+        $baiTaps = DB::table('chuong_trinh_bai_tap_chi_tiet as ctbtct')
+            ->join('bai_tap as bt', 'ctbtct.id_bai_tap', '=', 'bt.id')
+            ->join('bai_tap_phan_loai as btpl', 'bt.id', '=', 'btpl.id_bai_tap')
+            ->where('ctbtct.id_chuong_trinh_bai_tap', $chuongTrinh->id)
+            ->where('btpl.id_cap_do', $chuongTrinh->id_cap_do)
+            ->whereIn('btpl.id_noi_tap', $idNoiTap)
+            ->select(
+                'bt.id',
+                'bt.ten_bai_tap',
+                'bt.rep_yeu_cau',
+                'bt.set_yeu_cau',
+                'bt.giay_yeu_cau',
+                'bt.thoi_gian_phut',
+                'bt.muc_ta_toi_thieu'
+            )
+            ->distinct()
+            ->get();
+
+        // 5. Tính tổng yêu cầu
+
+        // Tổng rep yêu cầu
+        $tongRepYeuCau = $baiTaps->sum(function ($item) { return ($item->rep_yeu_cau ?? 0) * ($item->set_yeu_cau ?? 0); });
+
+        // Tổng tạ tối thiểu = kg * số hiệp
+        $tongTaYeuCau = $baiTaps->sum(function ($item) {
+            if (empty($item->muc_ta_toi_thieu)) {
+                return 0;
+            }
+            $ta = 0;
+            if (preg_match('/([\d.]+)\s*kg/i', $item->muc_ta_toi_thieu, $match)) {
+                $ta = (float) $match[1];
+            }
+            return $ta * ($item->set_yeu_cau ?? 1);
+        });
+        // Tổng giây yêu cầu
+        $tongGiayYeuCau = $baiTaps->sum('giay_yeu_cau');
+        // Tổng phút yêu cầu
+        $tongThoiGianPhut = $baiTaps->sum('thoi_gian_phut');
+        // 6. Lấy lịch sử hiệp tập của buổi tập
+        $lichSuHiepTaps = DB::table('lich_su_hiep_taps as ls')
+            ->join( 'tien_do_bai_taps as td', 'ls.id_tien_do_bai_tap', '=', 'td.id' )
+            ->join( 'bai_tap as bt', 'td.id_bai_tap','=', 'bt.id')
+            ->where('ls.id_buoi_tap', $buoiTap->id)
+            ->select(
+                'ls.id',
+                'ls.id_tien_do_bai_tap',
+                'ls.id_buoi_tap',
+                'ls.so_hiep',
+                'ls.so_rep_thuc_te',
+                'ls.so_phut_thuc_te',
+                'ls.thoi_gian_thuc_te_giay',
+                'ls.trong_luong_ta_thuc_te',
+                'ls.ghi_chu',
+                'td.id_bai_tap',
+                'bt.ten_bai_tap',
+                'bt.anh_dai_dien'
+            )
+            ->orderBy('ls.id_tien_do_bai_tap')
+            ->orderBy('ls.so_hiep')
+            ->get();
+
+
+        // 7. Gom các lịch sử hiệp theo từng bài tập
+        $baiTapThucTe = $lichSuHiepTaps
+            ->groupBy('id_tien_do_bai_tap')
+            ->map(function ($hieps) {
+                $baiTap = $hieps->first();
+                return [
+                    'id_tien_do_bai_tap' => $baiTap->id_tien_do_bai_tap,
+                    'id_bai_tap' => $baiTap->id_bai_tap,
+                    'ten_bai_tap' => $baiTap->ten_bai_tap,
+                    'anh_dai_dien' => $baiTap->anh_dai_dien,
+
+                    // Tổng thực tế của bài tập
+                    'tong_so_hiep' => $hieps->count(),
+                    'tong_rep_thuc_te' => $hieps->sum('so_rep_thuc_te'),
+                    'tong_phut_thuc_te' => $hieps->sum('so_phut_thuc_te'),
+                    'tong_giay_thuc_te' => $hieps->sum('thoi_gian_thuc_te_giay'),
+                    'tong_ta_thuc_te' => $hieps->sum('trong_luong_ta_thuc_te'),
+                    // Chi tiết từng hiệp
+                    'lich_su_hiep_tap' => $hieps->map(function ($hiep) {
+                        return [
+                            'id' => $hiep->id,
+                            'so_hiep' => $hiep->so_hiep,
+                            'so_rep_thuc_te' => $hiep->so_rep_thuc_te,
+                            'so_phut_thuc_te' => $hiep->so_phut_thuc_te,
+                            'thoi_gian_thuc_te_giay' => $hiep->thoi_gian_thuc_te_giay,
+                            'trong_luong_ta_thuc_te' => $hiep->trong_luong_ta_thuc_te,
+                            'ghi_chu' => $hiep->ghi_chu,
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values();
+
+        // 8. Tính tổng thực tế từ lịch sử hiệp tập
+        $tongSoHiepThucTe = $lichSuHiepTaps->count();
+        $tongRepThucTe = $lichSuHiepTaps->sum('so_rep_thuc_te');
+        $tongPhutThucTe = $lichSuHiepTaps->sum('so_phut_thuc_te');
+        $tongGiayThucTe = $lichSuHiepTaps->sum('thoi_gian_thuc_te_giay');
+        $tongTaThucTe = $lichSuHiepTaps->sum('trong_luong_ta_thuc_te');
+        // 9. Trả kết quả
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy chi tiết buổi tập thành công',
+            'data' => [
+                // Thông tin buổi tập
+                'id_buoi_tap' => $buoiTap->id,
+                'ngay_tap' => \Carbon\Carbon::parse($buoiTap->ngay_tap)->locale('vi')->translatedFormat('j \t\h\á\n\g n \nă\m Y'),
+                'id_chuong_trinh' => $chuongTrinh->id_chuong_trinh,
+                'id_chuong_trinh_bai_tap' => $chuongTrinh->id,
+                'ten_ngay_tap' => $chuongTrinh->ten_ngay_tap,
+                'ngay_thu' => $chuongTrinh->ngay_thu,
+                'id_cap_do' => $chuongTrinh->id_cap_do,
+                'id_noi_tap' => $idNoiTap,
+
+                // Thông tin thực tế buổi tập
+                'phan_tram_hoan_thanh' => $buoiTap->phan_tram_hoan_thanh,
+                'tong_thoi_gian_giay' => $buoiTap->tong_thoi_gian_giay,
+                'tong_thoi_gian_nghi' => $buoiTap->tong_thoi_gian_nghi,
+                'calo_tieu_thu' => $buoiTap->calo_tieu_thu,
+
+                // Tổng yêu cầu
+                'tong_so_bai_tap_yeu_cau' => $baiTaps->count(),
+                'tong_rep_yeu_cau' => $tongRepYeuCau,
+                'tong_ta_yeu_cau' => $tongTaYeuCau,
+                'tong_giay_yeu_cau' => $tongGiayYeuCau,
+                'tong_thoi_gian_phut_yeu_cau' => $tongThoiGianPhut,
+
+                // Tổng thực tế lấy từ lịch sử hiệp tập
+                // 'tong_so_bai_tap_thuc_te' => $baiTapThucTe->count(),
+                // 'tong_so_hiep_thuc_te' => $tongSoHiepThucTe,
+                'tong_rep_thuc_te' => $tongRepThucTe,
+                'tong_phut_thuc_te' => $tongPhutThucTe,
+                'tong_giay_thuc_te' => $tongGiayThucTe,
+                'tong_ta_thuc_te' => $tongTaThucTe,
+
+                // Danh sách bài tập đã thực sự tập
+                'bai_tap_thuc_te' => $baiTapThucTe,
+            ],
+        ]);
+    }
+
+
+
+
+
 }

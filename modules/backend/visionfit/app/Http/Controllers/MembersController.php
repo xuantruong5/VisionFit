@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ChuongTrinhTap;
 use App\Models\NoiTap;
+use Carbon\Carbon;
 
 use Illuminate\Support\Facades\DB;
 
@@ -275,47 +276,75 @@ class MembersController extends Controller
 
     public function getProfile(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
+        $hoiVien = Auth::guard('sanctum')->user();
 
-        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
-
-        if (!$client) {
+        if (!$hoiVien) {
             return response()->json([
-                'status' => false,
-                'message' => 'Không tìm thấy thông tin hội viên'
-            ], 404);
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
         }
 
-        $data = [
-            'id' => $client->id,
-            'ho_ten' => $client->ho_ten ?? 'Lê Hoàng Nam',
-            'email' => $client->email ?? 'nam.le@visionfit.vn',
-            'so_dien_thoai' => $client->so_dien_thoai ?? '0901 234 567',
-            'anh_dai_dien' => $client->anh_dai_dien,
-            'ngay_sinh' => $client->ngay_sinh ?? '15/08/1998',
-            'gioi_tinh' => ((int)$client->gioi_tinh === 1) ? 'Nữ' : 'Nam',
-            'chieu_cao_cm' => $client->chieu_cao_cm ?? 175,
-            'can_nang_kg' => $client->can_nang_kg ?? 68,
-            'dang_nguoi' => $client->dang_nguoi ?? 'Cân đối',
-            'muc_tieu_hien_tai' => $client->muc_tieu_hien_tai ?? 'Tăng cơ & Giảm mỡ',
-            'cap_do_hien_tai' => $client->cap_do_hien_tai ?? 'Trung cấp',
-            'noi_tap_uu_tien' => $client->noi_tap_uu_tien ?? 'Phòng gym',
-            'hang_thanh_vien' => 'Hội viên Premium',
-            'goi_tap' => 'Gói Hội Viên Toàn Diện 12 Tháng',
-            'ngay_het_han' => '18/12/2026',
-            'so_ngay_con_lai' => 92,
-            'hlv_phu_trach' => 'Trần Minh Tuấn (HLV Chuyên sâu)',
-            'thong_ke' => [
-                'so_buoi_tap' => 32,
-                'tong_gio_tap' => 48,
-                'tuan_duy_tri' => 8,
-                'calo_tieu_thu' => 14250,
-            ]
-        ];
+        // Lấy thông tin gói tập
+        $chiTietGoi = DB::table('dang_ky_goi')
+            ->join('chi_tiet_dang_ky_goi', 'dang_ky_goi.id', '=', 'chi_tiet_dang_ky_goi.id_dang_ky_goi')
+            ->leftJoin('goi_tap', 'chi_tiet_dang_ky_goi.id_goi_tap', '=', 'goi_tap.id')
+            ->leftJoin('trainers', 'chi_tiet_dang_ky_goi.id_trainer', '=', 'trainers.id')
+            ->where('dang_ky_goi.id_hoi_vien', $hoiVien->id)
+            ->where('dang_ky_goi.is_thanh_toan', 1)
+            ->where('dang_ky_goi.tinh_trang', 1)
+            ->where('chi_tiet_dang_ky_goi.tinh_trang', 1)
+            ->whereDate('chi_tiet_dang_ky_goi.ngay_ket_thuc', '>=', Carbon::today())
+            ->orderByDesc('chi_tiet_dang_ky_goi.ngay_ket_thuc')
+            ->select(
+                'dang_ky_goi.id as id_dang_ky_goi',
+                'goi_tap.ten_goi_tap',
+                'chi_tiet_dang_ky_goi.ngay_bat_dau',
+                'chi_tiet_dang_ky_goi.ngay_ket_thuc',
+                'trainers.ho_ten',
+                'trainers.chuc_danh'
+            )
+            ->first();
+
+        // Tính số ngày còn lại
+        $ngayConLai = null;
+
+        if ($chiTietGoi && $chiTietGoi->ngay_ket_thuc) {
+            $ngayConLai = max(0, Carbon::today()->diffInDays(
+                Carbon::parse($chiTietGoi->ngay_ket_thuc)->startOfDay(),
+                false
+            ));
+        }
 
         return response()->json([
-            'status' => true,
-            'data' => $data
+            'success' => true,
+            'message' => 'Lấy thông tin hồ sơ thành công.',
+            'data' => [
+                'ho_ten' => $hoiVien->ho_ten,
+                'email' => $hoiVien->email,
+                'so_dien_thoai' => $hoiVien->so_dien_thoai,
+                'anh_dai_dien' => $hoiVien->anh_dai_dien,
+                'ngay_sinh' => $hoiVien->ngay_sinh,
+                'gioi_tinh' => $hoiVien->gioi_tinh,
+                'chieu_cao_cm' => $hoiVien->chieu_cao_cm,
+                'can_nang_kg' => $hoiVien->can_nang_kg,
+                'dang_nguoi' => $hoiVien->dang_nguoi,
+
+                'id' => $hoiVien->id,
+                'ma_thanh_vien' => $chiTietGoi ? 'VF-' . str_pad($chiTietGoi->id_dang_ky_goi, 6, '0', STR_PAD_LEFT): null,
+                'ma_gioi_thieu' => $hoiVien->ma_gioi_thieu,
+
+                'muc_tieu_hien_tai' => $hoiVien->muc_tieu_hien_tai,
+                'cap_do_hien_tai' => $hoiVien->cap_do_hien_tai,
+                'noi_tap_uu_tien' => $hoiVien->noi_tap_uu_tien,
+
+                'ten_goi_tap' => $chiTietGoi ? $chiTietGoi->ten_goi_tap : null,
+                'ngay_bat_dau' => $chiTietGoi ? $chiTietGoi->ngay_bat_dau : null,
+                'ngay_ket_thuc' => $chiTietGoi ? $chiTietGoi->ngay_ket_thuc : null,
+                'so_ngay_con_lai' => $ngayConLai,
+                'ho_ten_hlv' => $chiTietGoi ? $chiTietGoi->ho_ten : null,
+                'chuc_danh' => $chiTietGoi ? $chiTietGoi->chuc_danh : null,
+            ],
         ]);
     }
 

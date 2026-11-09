@@ -7,6 +7,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LinearGradient from "react-native-linear-gradient";
 import { COLORS, SHADOWS } from "../../../../general/theme";
+import { notify } from "../../../../general/notification";
 
 type Exercise = {
   id: number;
@@ -69,32 +70,102 @@ const ExercisePage = ({ navigation, route }: any) => {
 
 
 
+  // const fetchExercises = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await apiFitlife.get(`/client/list-program-exercises/${idNgayTap}`);
+  //     if (res.data.success && Array.isArray(res.data.data)) {
+  //       setTotalExercises(Number(res.data.total_exercises ?? 0));
+  //       const dataNgayTap = res.data.data.filter(
+  //         (item: any) =>
+  //           Number(item.id_chuong_trinh_bai_tap) === Number(idNgayTap)
+  //       );
+
+  //       const danhSachBaiTap: Exercise[] = dataNgayTap.map(
+  //         (item: any) => ({
+  //           id: Number(item.id_bai_tap ?? item.id),
+  //           id_bai_tap: Number(item.id_bai_tap ?? item.id),
+  //           name: item.ten_bai_tap,
+  //           sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${String(item.muc_ta_toi_thieu ?? "0").match(/\d+(?:\.\d+)?/)?.[0] ?? "0"} kg`,
+  //           duration: `${item.thoi_gian_phut ?? 0} phút`,
+  //           image: item.anh_bai_tap ?? "",
+  //           video: item.video_huong_dan ?? "",
+  //           completed: false,
+  //           ten_bai_tap: item.ten_bai_tap ?? "",
+  //           thoi_gian_phut: item.thoi_gian_phut ?? 0,
+  //           rep_yeu_cau: item.rep_yeu_cau ?? 0,
+  //           set_yeu_cau: item.set_yeu_cau ?? 0,
+  //           giay_yeu_cau: item.giay_yeu_cau ?? 0,
+  //           muc_ta_toi_thieu: item.muc_ta_toi_thieu ?? "",
+  //           thiet_bi: item.thiet_bi ?? "",
+  //           video_huong_dan: item.video_huong_dan ?? "",
+  //           video_sai: item.video_sai ?? "",
+  //           huong_dan: item.huong_dan ?? "",
+  //           canh_bao: item.canh_bao ?? "",
+  //           noi_tap: item.noi_tap ?? "",
+  //           mo_ta: item.mo_ta ?? "",
+  //           thu_tu: Number(item.thu_tu ?? 0),
+  //           total_exercises: Number(res.data.total_exercises ?? 0),
+  //         }))
+  //         .sort((a: any, b: any) => a.thu_tu - b.thu_tu);
+  //       setExercises(danhSachBaiTap);
+  //       console.log(
+  //         "DANH SÁCH BÀI TẬP SAU KHI MAP:",
+  //         danhSachBaiTap.map((e) => ({
+  //           id: e.id,
+  //           id_bai_tap: e.id_bai_tap,
+  //           ten_bai_tap: e.ten_bai_tap,
+  //           thu_tu: e.thu_tu,
+  //         }))
+  //       );
+  //     } else {
+  //       setExercises([]);
+  //     }
+  //   } catch (error: any) {
+  //     console.log("LỖI API:", error.response?.data ?? error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const fetchExercises = async () => {
     try {
       setLoading(true);
-      const res = await apiFitlife.get(`/client/list-program-exercises/${idNgayTap}`);
-      if (res.data.success && Array.isArray(res.data.data)) {
-        setTotalExercises(Number(res.data.total_exercises ?? 0));
-        const dataNgayTap = res.data.data.filter(
-          (item: any) =>
-            Number(item.id_chuong_trinh_bai_tap) === Number(idNgayTap)
+
+      console.log("ROUTE PARAMS:", route?.params);
+      console.log("ID NGÀY TẬP:", idNgayTap);
+
+      const res = await apiFitlife.get(
+        `/client/list-program-exercises/${idNgayTap}`
+      );
+
+      console.log("DỮ LIỆU API BÀI TẬP:", res.data);
+
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        const data = res.data.data;
+
+        setTotalExercises(
+          Number(res.data.total_exercises ?? data.length)
         );
 
-        const danhSachBaiTap: Exercise[] = dataNgayTap.map(
-          (item: any) => ({
+        const danhSachBaiTap: Exercise[] = data
+          .map((item: any) => ({
             id: Number(item.id_bai_tap ?? item.id),
             id_bai_tap: Number(item.id_bai_tap ?? item.id),
-            name: item.ten_bai_tap,
-            sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${String(item.muc_ta_toi_thieu ?? "0").match(/\d+(?:\.\d+)?/)?.[0] ?? "0"} kg`,
+            name: item.ten_bai_tap ?? "",
+            sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${String(item.muc_ta_toi_thieu ?? "0")
+              .match(/\d+(?:\.\d+)?/)?.[0] ?? "0"
+              } kg`,
             duration: `${item.thoi_gian_phut ?? 0} phút`,
             image: item.anh_bai_tap ?? "",
             video: item.video_huong_dan ?? "",
             completed: false,
             ten_bai_tap: item.ten_bai_tap ?? "",
-            thoi_gian_phut: item.thoi_gian_phut ?? 0,
-            rep_yeu_cau: item.rep_yeu_cau ?? 0,
-            set_yeu_cau: item.set_yeu_cau ?? 0,
-            giay_yeu_cau: item.giay_yeu_cau ?? 0,
+            thoi_gian_phut: Number(item.thoi_gian_phut ?? 0),
+            rep_yeu_cau: Number(item.rep_yeu_cau ?? 0),
+            set_yeu_cau: Number(item.set_yeu_cau ?? 0),
+            giay_yeu_cau: Number(item.giay_yeu_cau ?? 0),
             muc_ta_toi_thieu: item.muc_ta_toi_thieu ?? "",
             thiet_bi: item.thiet_bi ?? "",
             video_huong_dan: item.video_huong_dan ?? "",
@@ -104,28 +175,30 @@ const ExercisePage = ({ navigation, route }: any) => {
             noi_tap: item.noi_tap ?? "",
             mo_ta: item.mo_ta ?? "",
             thu_tu: Number(item.thu_tu ?? 0),
-            total_exercises: Number(res.data.total_exercises ?? 0),
+            total_exercises: Number(
+              res.data.total_exercises ?? data.length
+            ),
           }))
           .sort((a: any, b: any) => a.thu_tu - b.thu_tu);
+
         setExercises(danhSachBaiTap);
-        console.log(
-          "DANH SÁCH BÀI TẬP SAU KHI MAP:",
-          danhSachBaiTap.map((e) => ({
-            id: e.id,
-            id_bai_tap: e.id_bai_tap,
-            ten_bai_tap: e.ten_bai_tap,
-            thu_tu: e.thu_tu,
-          }))
-        );
+
+        console.log("DANH SÁCH BÀI TẬP:", danhSachBaiTap);
       } else {
         setExercises([]);
+        console.log("API KHÔNG TRẢ VỀ DANH SÁCH BÀI TẬP");
       }
     } catch (error: any) {
-      console.log("LỖI API:", error.response?.data ?? error.message);
+      console.log("LỖI API:", error.response?.status);
+      console.log("CHI TIẾT LỖI:", error.response?.data ?? error.message);
+      setExercises([]);
     } finally {
       setLoading(false);
     }
   };
+
+
+
 
 
   const taoBuoiTap = async () => {
@@ -199,14 +272,72 @@ const ExercisePage = ({ navigation, route }: any) => {
 
 
   const handleSkip = async () => {
-    try {
-      await apiFitlife.post(`/client/chuong-trinh-bai-tap/${idNgayTap}/bo-qua`, {
-        cho_phep_bo_qua: 1,
-      });
-      navigation.goBack();
-    } catch (error) {
-      console.log("Lỗi bỏ qua:", error);
+    if (!idNgayTap || !idDangKy || skipping || hasStarted) {
+      return;
     }
+
+    Alert.alert(
+      "Xác nhận bỏ qua",
+      "Bạn có chắc chắn muốn bỏ qua ngày tập này không?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+        {
+          text: "Bỏ qua",
+          onPress: async () => {
+            try {
+              setSkipping(true);
+
+              console.log("ID đăng ký:", idDangKy);
+              console.log("ID ngày tập:", idNgayTap);
+
+              const res = await apiFitlife.post(
+                `/client/chuong-trinh-bai-tap/${idNgayTap}/bo-qua`,
+                {
+                  cho_phep_bo_qua: 1,
+                  id_dang_ky_chuong_trinh: Number(idDangKy),
+                }
+              );
+
+              console.log("KẾT QUẢ BỎ QUA:", res.data);
+
+              if (res.data?.success) {
+                Alert.alert(
+                  "Thành công",
+                  res.data?.message || "Đã bỏ qua ngày tập.",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => navigation.goBack(),
+                    },
+                  ]
+                );
+              } else {
+                Alert.alert(
+                  "Thông báo",
+                  res.data?.message || "Không thể bỏ qua ngày tập."
+                );
+              }
+            } catch (error: any) {
+              console.log(
+                "LỖI BỎ QUA:",
+                error.response?.data ?? error.message
+              );
+
+              Alert.alert(
+                "Lỗi",
+                error.response?.data?.message ||
+                "Không thể bỏ qua ngày tập. Vui lòng thử lại."
+              );
+            } finally {
+              setSkipping(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
 
@@ -227,65 +358,64 @@ const ExercisePage = ({ navigation, route }: any) => {
     { id_bai_tap: number; phan_tram_hoan_thanh: number; tinh_trang: number; }[]>([]);
 
   // Tách API thành hàm để gọi lại khi quay về màn hình
-  const getLatestProgress = useCallback(async () => 
-  {
-      if (!idLichTap || !idNgayTap) {
-        return;
-      }
+  const getLatestProgress = useCallback(async () => {
+    if (!idLichTap || !idNgayTap) {
+      return;
+    }
 
-      try {
-        const response = await apiFitlife.get(
-          "/client/buoi-tap/phan-tram-hoan-thanh",
-          {
-            params: {
-              id_lich_tap: Number(idLichTap),
-              id_chuong_trinh_bai_tap: Number(idNgayTap),
-            },
-          }
-        );
-
-        console.log("API TIẾN ĐỘ BUỔI TẬP:", response.data);
-
-        if (response.data?.success) {
-          const data = response.data.data;
-
-          setProgressPercent(
-            Number(data?.phan_tram_hoan_thanh) || 0
-          );
-
-          setCompletedCount(
-            Number(data?.so_bai_hoan_thanh) || 0
-          );
-
-          setTotalCount(
-            Number(data?.tong_so_bai) || 0
-          );
-
-          setExerciseProgress(
-            Array.isArray(data?.danh_sach_bai_tap)
-              ? data.danh_sach_bai_tap
-              : []
-          );
-
-          // Cập nhật map trạng thái để giao diện dùng dữ liệu mới
-          const newStatusMap: Record<number, number> = {};
-
-          (data?.danh_sach_bai_tap ?? []).forEach((item: any) => {
-            newStatusMap[Number(item.id_bai_tap)] =
-              Number(item.tinh_trang ?? 0);
-          });
-
-          setProgressStatusByExercise(newStatusMap);
+    try {
+      const response = await apiFitlife.get(
+        "/client/buoi-tap/phan-tram-hoan-thanh",
+        {
+          params: {
+            id_lich_tap: Number(idLichTap),
+            id_chuong_trinh_bai_tap: Number(idNgayTap),
+          },
         }
-      } catch (error: any) {
-        console.log(
-          "LỖI LẤY TIẾN ĐỘ TẬP LUYỆN:",
-          error.response?.data ?? error.message
-        );
-      }
-    }, [idLichTap, idNgayTap]);
+      );
 
-  
+      console.log("API TIẾN ĐỘ BUỔI TẬP:", response.data);
+
+      if (response.data?.success) {
+        const data = response.data.data;
+
+        setProgressPercent(
+          Number(data?.phan_tram_hoan_thanh) || 0
+        );
+
+        setCompletedCount(
+          Number(data?.so_bai_hoan_thanh) || 0
+        );
+
+        setTotalCount(
+          Number(data?.tong_so_bai) || 0
+        );
+
+        setExerciseProgress(
+          Array.isArray(data?.danh_sach_bai_tap)
+            ? data.danh_sach_bai_tap
+            : []
+        );
+
+        // Cập nhật map trạng thái để giao diện dùng dữ liệu mới
+        const newStatusMap: Record<number, number> = {};
+
+        (data?.danh_sach_bai_tap ?? []).forEach((item: any) => {
+          newStatusMap[Number(item.id_bai_tap)] =
+            Number(item.tinh_trang ?? 0);
+        });
+
+        setProgressStatusByExercise(newStatusMap);
+      }
+    } catch (error: any) {
+      console.log(
+        "LỖI LẤY TIẾN ĐỘ TẬP LUYỆN:",
+        error.response?.data ?? error.message
+      );
+    }
+  }, [idLichTap, idNgayTap]);
+
+
   useFocusEffect(
     useCallback(() => {
       if (!idNgayTap) {
@@ -429,6 +559,35 @@ const ExercisePage = ({ navigation, route }: any) => {
         );
       }
 
+      // Kiểm tra chuỗi ngày tập và phần thưởng mới
+      try {
+        console.log("========== KIỂM TRA PHẦN THƯỞNG ==========");
+        const thongKe = await apiFitlife.get("/client/thong-ke-chuoi-ngay-tap",
+          {
+            params: {
+              id_dang_ky_chuong_trinh: idDangKy,
+            },
+          }
+        );
+        console.log("Dữ liệu thống kê:", thongKe.data);
+
+        const phanThuongMoi = thongKe.data.phan_thuong_moi || [];
+        console.log("Danh sách phần thưởng mới:", phanThuongMoi);
+        console.log("Số phần thưởng mới:", phanThuongMoi.length);
+
+        phanThuongMoi.forEach((item: any) => {
+          console.log("Đang gửi thông báo phần thưởng:", item);
+          notify({
+            type: "success",
+            message: `Chúc mừng! Bạn đã hoàn thành chuỗi ${item.so_ngay} ngày tập liên tiếp và đạt được ${item.ten_phan_thuong}!`,
+          });
+          console.log("Đã gọi notify()!");
+        });
+
+      } catch (error) {
+        console.log("Lỗi thống kê chuỗi ngày tập:", error);
+      }
+
       setIsTraining(false);
       setHasStarted(false);
       setShowTimeSummary(true);
@@ -438,23 +597,28 @@ const ExercisePage = ({ navigation, route }: any) => {
       DeviceEventEmitter.emit("workout-session-finish");
 
       // Hoàn thành tất cả bài: quay về kế hoạch, không hỏi thêm.
-      if (quayVeKeHoach) {
-        navigation.navigate("headerPage", {
-          // initialTab: "WorkoutExercisePlan",
-          screen: "WorkoutExercisePlan",
-        });
-        return;
-      }
+      // if (quayVeKeHoach) {
+      //   navigation.navigate("headerPage", {
+      //     // initialTab: "WorkoutExercisePlan",
+      //     screen: "WorkoutExercisePlan",
+      //   });
+      //   return;
+      // }
+      navigation.navigate("ResultPage", {
+        id_buoi_tap: idBuoiTap,
+      });
+
 
       const data = res.data.data;
 
-      Alert.alert(
-        "Thành công",
-        data?.da_mo_ngay_tiep_theo
-          ? `Đã kết thúc buổi tập. Ngày tập ${data.ngay_tiep_theo.ngay_thu} đã được mở.`
-          : `Đã kết thúc buổi tập. Hoàn thành ${data?.phan_tram_hoan_thanh ?? 0
-          }%.`
-      );
+      // Alert.alert(
+      //   "Thành công",
+      //   data?.da_mo_ngay_tiep_theo
+      //     ? `Đã kết thúc buổi tập. Ngày tập ${data.ngay_tiep_theo.ngay_thu} đã được mở.`
+      //     : `Đã kết thúc buổi tập. Hoàn thành ${data?.phan_tram_hoan_thanh ?? 0
+      //     }%.`
+      // );
+
     } catch (error: any) {
       Alert.alert(
         "Lỗi",
@@ -657,244 +821,244 @@ const ExercisePage = ({ navigation, route }: any) => {
       <StatusBar barStyle="dark-content" />
 
       <View style={styles.body}>
-      {/* ================= HEADER GRADIENT ================= */}
-      <LinearGradient
-        colors={[COLORS.primary, COLORS.primaryDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <View style={styles.circleLg} />
-        <View style={styles.circleSm} />
+        {/* ================= HEADER GRADIENT ================= */}
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.circleLg} />
+          <View style={styles.circleSm} />
 
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.glassButton}
-            onPress={() => navigation?.goBack()}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="chevron-back" size={22} color={COLORS.white} />
-          </TouchableOpacity>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.glassButton}
+              onPress={() => navigation?.goBack()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
 
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerSub}>Kế hoạch tập luyện</Text>
-            <Text style={styles.headerTitle} numberOfLines={1}>Bài tập hôm nay</Text>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerSub}>Kế hoạch tập luyện</Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>Bài tập hôm nay</Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.moreButton, hasStarted && styles.moreButtonActive]}
+              onPress={handleSkip}
+              disabled={skipping || hasStarted}
+            >
+              {skipping ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : hasStarted ? (
+                <View style={styles.timerRow}>
+                  <View style={styles.timerDot} />
+                  <Text style={styles.timerText}>
+                    {formatTime(elapsedSeconds)}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.skipText}>Bỏ qua</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* ================= SESSION CARD (nổi) ================= */}
+        <View style={styles.sessionCard}>
+          {/* Left: Progress circle */}
+          <View style={styles.progressCircleWrapper}>
+            <View style={styles.progressCircleBg}>
+              <View
+                style={[styles.progressCircleFill, { borderColor: progressColor, },]} />
+              <View style={styles.progressCircleCenter}>
+                <Text style={[styles.progressText, { color: progressColor, },]}>
+                  {progressPercent}%
+                </Text>
+              </View>
+            </View>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.moreButton, hasStarted && styles.moreButtonActive]}
-            onPress={handleSkip}
-            disabled={skipping || hasStarted}
-          >
-            {skipping ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : hasStarted ? (
-              <View style={styles.timerRow}>
-                <View style={styles.timerDot} />
-                <Text style={styles.timerText}>
+          {/* Middle: Info */}
+          <View style={styles.sessionInfo}>
+            <Text style={styles.sessionDayLabel}>Ngày tập {route.params?.ngayThu ?? 1}</Text>
+            <Text style={styles.sessionType} numberOfLines={1}>{route.params?.dayType ?? "Ngày tập luyện"}</Text>
+            <View style={styles.sessionMeta}>
+              <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
+              <Text style={styles.sessionMetaText}>~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
+              <View style={styles.metaDivider} />
+              <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
+              <Text style={styles.sessionMetaText}>
+                {totalExercises} bài
+              </Text>
+            </View>
+          </View>
+
+          {/* Right: Completed badge */}
+          <View style={styles.completedBadge}>
+            <Text style={styles.completedCount}>{completedCount}</Text>
+            <Text style={styles.completedLabel}>bài xong</Text>
+          </View>
+        </View>
+
+        {/* ================= CONTENT ================= */}
+
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* ================= SECTION TITLE ================= */}
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionSubtitle}>
+                {completedCount}/{totalCount} hoàn thành
+              </Text>
+            </View>
+          </View>
+
+          {/* ================= EXERCISE LIST ================= */}
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
+          ) : exercises.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>
+                Ngày tập này chưa có bài tập.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.exerciseList}>
+              {exercises.map((exercise, index) => (
+                <View key={exercise.id}>
+                  <TouchableOpacity activeOpacity={0.75} style={styles.exerciseItem} onPress={() => handleExercisePress(exercise)}>
+                    {/* Image */}
+                    <View style={styles.exerciseImageWrapper}>
+                      <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain" />
+                      <View style={styles.orderBadge}>
+                        <Text style={styles.orderText}>{index + 1}</Text>
+                      </View>
+                    </View>
+
+                    {/* Info */}
+                    <View style={styles.exerciseInfo}>
+                      <Text style={styles.exerciseName} numberOfLines={2}>
+                        {exercise.name}
+                      </Text>
+
+                      <View style={styles.exerciseTags}>
+                        <View style={styles.tagPill}>
+                          <Ionicons name="repeat-outline" size={11} color={COLORS.primary} />
+                          <Text style={styles.tagText}>{exercise.sets}</Text>
+                        </View>
+
+                        <View style={[styles.tagPill, styles.tagPillGray]}>
+                          <Ionicons name="time-outline" size={11} color={COLORS.textMuted} />
+                          <Text style={[styles.tagText, styles.tagTextGray]}>
+                            {exercise.duration}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    {/* Phần trăm hoàn thành */}
+                    {(() => {
+                      const progress = exerciseProgress.find((item) => Number(item.id_bai_tap) === Number(exercise.id_bai_tap));
+                      const percent = Number(progress?.phan_tram_hoan_thanh ?? 0);
+                      if (percent <= 0) return null;
+                      const exerciseColor = percent <= 50 ? "#E3B04B" : "#3F8FA6";
+                      return (
+                        <Text style={[styles.exercisePercent, { color: exerciseColor }]}>
+                          {percent}%
+                        </Text>
+                      );
+                    })()}
+                  </TouchableOpacity>
+
+                  {/* Divider: không hiển thị sau bài cuối */}
+                  {index < exercises.length - 1 && (
+                    <View style={styles.divider} />
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ================= TIPS CARD ================= */}
+
+          <View style={styles.tipsCard}>
+            <View style={styles.tipsHeader}>
+              <View style={styles.tipsIcon}>
+                <Ionicons name="bulb-outline" size={18} color="#E8A020" />
+              </View>
+              <Text style={styles.tipsTitle}>Lưu ý buổi tập</Text>
+            </View>
+            <Text style={styles.tipsText}>
+              Khởi động kỹ trước khi bắt đầu. Nghỉ giữa hiệp 30–60 giây. Uống đủ
+              nước trong suốt buổi tập để duy trì năng lượng tốt nhất.
+            </Text>
+          </View>
+
+          {/* nhap tinh thoi gian  */}
+          {showTimeSummary && (
+            <View style={styles.timeSummary}>
+              <View style={styles.timeSummaryItem}>
+                <View style={[styles.timeSummaryIcon, { backgroundColor: COLORS.surfaceTeal }]}>
+                  <Ionicons
+                    name="barbell-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                </View>
+                <Text style={styles.timeSummaryLabel}>
+                  Tổng thời gian tập
+                </Text>
+                <Text style={styles.timeSummaryValue}>
                   {formatTime(elapsedSeconds)}
                 </Text>
               </View>
-            ) : (
-              <Text style={styles.skipText}>Bỏ qua</Text>
-            )}
+
+              <View style={styles.timeSummaryDivider} />
+
+              <View style={styles.timeSummaryItem}>
+                <View style={[styles.timeSummaryIcon, { backgroundColor: "#FFF7ED" }]}>
+                  <Ionicons
+                    name="pause-circle-outline"
+                    size={20}
+                    color="#E8A020"
+                  />
+                </View>
+                <Text style={styles.timeSummaryLabel}>
+                  Tổng thời gian nghỉ
+                </Text>
+                <Text style={[styles.timeSummaryValue, { color: "#E8A020" }]}>
+                  {formatTime(totalRestSeconds)}
+                </Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* ================= BOTTOM AREA ================= */}
+
+        <View style={styles.bottomArea}>
+          <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, isTraining && styles.startButtonStop,]} onPress={handleStart} >
+            <LinearGradient
+              colors={isTraining ? ["#F05252", "#C62828"] : [COLORS.primary, COLORS.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.startGradient}
+            >
+              <Ionicons name={isTraining ? "stop-circle" : "play"} size={20} color="#FFFFFF" style={styles.startIcon} />
+              <Text style={styles.startButtonText}>
+                {endingSession ? "ĐANG LƯU..." : isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
-
-      {/* ================= SESSION CARD (nổi) ================= */}
-      <View style={styles.sessionCard}>
-        {/* Left: Progress circle */}
-        <View style={styles.progressCircleWrapper}>
-          <View style={styles.progressCircleBg}>
-            <View
-              style={[styles.progressCircleFill, { borderColor: progressColor, },]} />
-            <View style={styles.progressCircleCenter}>
-              <Text style={[styles.progressText, { color: progressColor, },]}>
-                {progressPercent}%
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Middle: Info */}
-        <View style={styles.sessionInfo}>
-          <Text style={styles.sessionDayLabel}>Ngày tập {route.params?.ngayThu ?? 1}</Text>
-          <Text style={styles.sessionType} numberOfLines={1}>{route.params?.dayType ?? "Ngày tập luyện"}</Text>
-          <View style={styles.sessionMeta}>
-            <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
-            <Text style={styles.sessionMetaText}>~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
-            <View style={styles.metaDivider} />
-            <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
-            <Text style={styles.sessionMetaText}>
-              {totalExercises} bài
-            </Text>
-          </View>
-        </View>
-
-        {/* Right: Completed badge */}
-        <View style={styles.completedBadge}>
-          <Text style={styles.completedCount}>{completedCount}</Text>
-          <Text style={styles.completedLabel}>bài xong</Text>
-        </View>
-      </View>
-
-      {/* ================= CONTENT ================= */}
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* ================= SECTION TITLE ================= */}
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
-          <View style={styles.sectionBadge}>
-            <Text style={styles.sectionSubtitle}>
-              {completedCount}/{totalCount} hoàn thành
-            </Text>
-          </View>
-        </View>
-
-        {/* ================= EXERCISE LIST ================= */}
-        {loading ? (
-          <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
-        ) : exercises.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>
-              Ngày tập này chưa có bài tập.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.exerciseList}>
-            {exercises.map((exercise, index) => (
-              <View key={exercise.id}>
-                <TouchableOpacity activeOpacity={0.75} style={styles.exerciseItem} onPress={() => handleExercisePress(exercise)}>
-                  {/* Image */}
-                  <View style={styles.exerciseImageWrapper}>
-                    <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain" />
-                    <View style={styles.orderBadge}>
-                      <Text style={styles.orderText}>{index + 1}</Text>
-                    </View>
-                  </View>
-
-                  {/* Info */}
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseName} numberOfLines={2}>
-                      {exercise.name}
-                    </Text>
-
-                    <View style={styles.exerciseTags}>
-                      <View style={styles.tagPill}>
-                        <Ionicons name="repeat-outline" size={11} color={COLORS.primary} />
-                        <Text style={styles.tagText}>{exercise.sets}</Text>
-                      </View>
-
-                      <View style={[styles.tagPill, styles.tagPillGray]}>
-                        <Ionicons name="time-outline" size={11} color={COLORS.textMuted} />
-                        <Text style={[styles.tagText, styles.tagTextGray]}>
-                          {exercise.duration}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  {/* Phần trăm hoàn thành */}
-                  {(() => {
-                    const progress = exerciseProgress.find((item) => Number(item.id_bai_tap) === Number(exercise.id_bai_tap));
-                    const percent = Number(progress?.phan_tram_hoan_thanh ?? 0);
-                    if (percent <= 0) return null;
-                    const exerciseColor = percent <= 50 ? "#E3B04B" : "#3F8FA6";
-                    return (
-                      <Text style={[styles.exercisePercent, { color: exerciseColor }]}>
-                        {percent}%
-                      </Text>
-                    );
-                  })()}
-                </TouchableOpacity>
-
-                {/* Divider: không hiển thị sau bài cuối */}
-                {index < exercises.length - 1 && (
-                  <View style={styles.divider} />
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* ================= TIPS CARD ================= */}
-
-        <View style={styles.tipsCard}>
-          <View style={styles.tipsHeader}>
-            <View style={styles.tipsIcon}>
-              <Ionicons name="bulb-outline" size={18} color="#E8A020" />
-            </View>
-            <Text style={styles.tipsTitle}>Lưu ý buổi tập</Text>
-          </View>
-          <Text style={styles.tipsText}>
-            Khởi động kỹ trước khi bắt đầu. Nghỉ giữa hiệp 30–60 giây. Uống đủ
-            nước trong suốt buổi tập để duy trì năng lượng tốt nhất.
-          </Text>
-        </View>
-
-        {/* nhap tinh thoi gian  */}
-        {showTimeSummary && (
-          <View style={styles.timeSummary}>
-            <View style={styles.timeSummaryItem}>
-              <View style={[styles.timeSummaryIcon, { backgroundColor: COLORS.surfaceTeal }]}>
-                <Ionicons
-                  name="barbell-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              </View>
-              <Text style={styles.timeSummaryLabel}>
-                Tổng thời gian tập
-              </Text>
-              <Text style={styles.timeSummaryValue}>
-                {formatTime(elapsedSeconds)}
-              </Text>
-            </View>
-
-            <View style={styles.timeSummaryDivider} />
-
-            <View style={styles.timeSummaryItem}>
-              <View style={[styles.timeSummaryIcon, { backgroundColor: "#FFF7ED" }]}>
-                <Ionicons
-                  name="pause-circle-outline"
-                  size={20}
-                  color="#E8A020"
-                />
-              </View>
-              <Text style={styles.timeSummaryLabel}>
-                Tổng thời gian nghỉ
-              </Text>
-              <Text style={[styles.timeSummaryValue, { color: "#E8A020" }]}>
-                {formatTime(totalRestSeconds)}
-              </Text>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* ================= BOTTOM AREA ================= */}
-
-      <View style={styles.bottomArea}>
-        <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, isTraining && styles.startButtonStop,]} onPress={handleStart} >
-          <LinearGradient
-            colors={isTraining ? ["#F05252", "#C62828"] : [COLORS.primary, COLORS.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.startGradient}
-          >
-            <Ionicons name={isTraining ? "stop-circle" : "play"} size={20} color="#FFFFFF" style={styles.startIcon} />
-            <Text style={styles.startButtonText}>
-              {endingSession ? "ĐANG LƯU..." : isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
       </View>
     </SafeAreaView>
   );

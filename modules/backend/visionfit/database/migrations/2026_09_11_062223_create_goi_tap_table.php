@@ -24,6 +24,8 @@ return new class extends Migration
             $table->integer('so_buoi')->default(0);
             $table->integer('so_buoi_pt')->default(0);
             $table->text('mo_ta')->nullable();
+            $table->boolean('co_ai')->default(false);
+            $table->boolean('co_trainer_review')->default(false);
             $table->integer('tinh_trang')->default(1);
             $table->timestamps();
         });

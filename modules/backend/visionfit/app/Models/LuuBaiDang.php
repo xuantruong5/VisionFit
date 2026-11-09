@@ -13,5 +13,6 @@ class LuuBaiDang extends Model
     protected $fillable = [
         'id_bai_dang',
         'id_nguoi_dung',
+        'loai_nguoi_dung',
     ];
 }

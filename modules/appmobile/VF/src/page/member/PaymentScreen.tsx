@@ -7,6 +7,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 import AppHeader from '../../components/AppHeader';
 import { COLORS, SHADOWS } from '../../general/theme';
+import apiFitlife from '../../general/api';
 
 
 
@@ -54,6 +55,9 @@ type PaymentDraft = {
 
     tongTienTamTinh?: number;
     paymentMethod?: PaymentMethod;
+    idDangKyGoi?: number;
+    idChiTietDangKy?: number;
+    isThanhToan?: number;
 };
 
 const paymentMethods: { id: PaymentMethod; title: string; description: string; icon: string; }[] = [
@@ -85,6 +89,8 @@ const PaymentScreen = ({ navigation, route }: any) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    const orderId = draft?.idDangKyGoi;
+
     useEffect(() => {
         const data = route?.params?.draft;
 
@@ -110,48 +116,59 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
 
 
-    const handleConfirm = async () => {
-        if (!draft || saving) return;
-        setSaving(true);
-        try {
-            // TODO: Gọi API Backend để tạo đăng ký và lưu phương thức thanh toán.
-            // Ví dụ:
-            // const response = await apiFitlife.post('/client/dang-ky-goi', {
-            //     id_goi_tap: draft.selectedPackage.id,
-            //     id_trainer: draft.selectedTrainer?.id || null,
-            //     phuong_thuc_thanh_toan: method,
-            // });
+    useEffect(() => {
+    if (!orderId || method !== 'bank') return;
 
-            const routeNames = navigation.getState()?.routeNames || [];
+    let isMounted = true;
+    let isChecking = false;
+    let isPaid = false;
 
-            const target = routeNames.includes('RegistrationSuccess')
-                ? 'RegistrationSuccess'
-                : routeNames.includes('RegistrationSuccessScreen')
-                    ? 'RegistrationSuccessScreen'
-                    : 'RegistrationSuccess';
+    const checkPayment = async () => {
+            if (isChecking || isPaid) return;
+            isChecking = true;
+            try { const response = await apiFitlife.get(`/client/auto-thanh-toan-goi/${orderId}` );
+                if (!isMounted) return;
+                if (Number(response.data.is_thanh_toan) === 1) {
+                    isPaid = true;
+                    const routeNames = navigation.getState()?.routeNames || [];
+                    const target = routeNames.includes('RegistrationSuccess')
+                        ? 'RegistrationSuccess'
+                        : 'RegistrationSuccessScreen';
 
-            navigation.replace(target, {
-                draft: {
-                    ...draft,
-                    paymentMethod: method,
-                },
-            });
+                   navigation.replace(target, {
+                    draft: {
+                        idDangKyGoi: draft?.idDangKyGoi,
+                        idChiTietDangKy: draft?.idChiTietDangKy,
 
-        } catch (error: any) {
-            console.log(
-                'Lỗi xác nhận đăng ký:',
-                error.response?.data || error.message
-            );
+                        selectedPackage: draft?.selectedPackage,
+                        selectedTrainer: draft?.selectedTrainer,
 
-            Alert.alert(
-                'Lỗi',
-                error.response?.data?.message || 'Không thể xác nhận đăng ký.'
-            );
-        } finally {
-            setSaving(false);
-        }
-    };
+                        paymentMethod: method,
 
+                        tongTienTamTinh: total,
+                        chiTietUuDai: draft?.chiTietUuDai,
+
+                        isThanhToan: 1,
+                    },
+                });
+                }
+            } catch (error: any) {
+                console.log(
+                    'Lỗi kiểm tra thanh toán:',
+                    error.response?.data || error.message
+                );
+            } finally {
+                isChecking = false;
+            }
+        };
+
+        checkPayment();
+        const interval = setInterval(checkPayment, 5000);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [orderId, method]);
 
     return (
         <SafeAreaView style={s.container} edges={['top', 'bottom']}>
@@ -286,17 +303,25 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                 </TouchableOpacity>
                             );
                         })}
+                 
                         {/* Mã QR chuyển khoản */}
                         {method === 'bank' && (
                             <View style={s.qrCard}>
                                 <Text style={s.qrTitle}>Quét mã QR để thanh toán</Text>
-                                <Image
-                                    source={{
-                                        uri: `https://img.vietqr.io/image/MB-0813559551-compact.png?amount=${Math.round(total)}&addInfo=${encodeURIComponent(draft?.orderCode || 'THANH TOAN VISIONFIT')}&accountName=TRAN%20XUAN%20TRUONG`,
-                                    }}
-                                    resizeMode="contain"
-                                    style={s.qrImage}
-                                />
+
+                                {orderId ? (
+                                    <Image
+                                        source={{
+                                            uri: `https://img.vietqr.io/image/MB-0813559551-compact.png?amount=${Math.round(total)}&addInfo=${encodeURIComponent(`VF${orderId}`)}&accountName=TRAN%20XUAN%20TRUONG`,
+                                        }}
+                                        resizeMode="contain"
+                                        style={s.qrImage}
+                                    />
+                                ) : (
+                                    <Text style={s.qrNotice}>
+                                        Không tìm thấy mã đăng ký. Vui lòng quay lại kiểm tra đơn hàng.
+                                    </Text>
+                                )}
 
                                 <Text style={s.qrText}>
                                     Sử dụng ứng dụng ngân hàng để quét mã QR
@@ -308,8 +333,15 @@ const PaymentScreen = ({ navigation, route }: any) => {
                                 </View>
 
                                 <Text style={s.qrNotice}>
-                                    Vui lòng chuyển đúng số tiền và kiểm tra nội dung chuyển khoản trước khi xác nhận.
+                                    Nội dung chuyển khoản: VF{orderId}
                                 </Text>
+
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+                                    <ActivityIndicator size="small" color={COLORS.primary} />
+                                    <Text style={[s.qrText, { marginLeft: 8 }]}>
+                                        Đang chờ hệ thống xác nhận thanh toán...
+                                    </Text>
+                                </View>
                             </View>
                         )}
 
@@ -401,7 +433,7 @@ const PaymentScreen = ({ navigation, route }: any) => {
                         <View style={s.notice}>
                             <Ionicons name="shield-checkmark" size={20} color={COLORS.primary} />
                             <Text style={s.noticeText}>
-                                Thông tin đăng ký và chi phí sẽ được hệ thống kiểm tra trước khi xác nhận.Vui lòng kiểm tra kỹ gói tập, ưu đãi và số tiền thanh toán trước thanh toán .
+                                Sau khi chuyển khoản thành công, hệ thống sẽ tự động xác nhận và chuyển bạn đến trang hoàn tất đăng ký.
                             </Text>
                         </View>
 
@@ -417,15 +449,15 @@ const PaymentScreen = ({ navigation, route }: any) => {
 
                             <View style={s.safeRow}>
                                 <Ionicons name="shield-checkmark" size={15} color={COLORS.accentGreen} />
-                                <Text style={s.safeText}>Chế độ Demo</Text>
+                                <Text style={s.safeText}>Thanh toán MB Bank</Text>
                             </View>
                         </View>
 
                         <TouchableOpacity
                             style={[s.confirmWrap, saving && s.disabledButton]}
-                            activeOpacity={0.85}
-                            onPress={handleConfirm}
-                            disabled={saving}
+                            // activeOpacity={0.85}
+                            // onPress={handleConfirm}
+                            // disabled={saving}
                         >
                             <LinearGradient
                                 colors={[COLORS.primary, COLORS.primaryDark]}

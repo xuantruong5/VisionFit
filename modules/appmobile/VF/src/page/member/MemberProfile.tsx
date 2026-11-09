@@ -1,42 +1,36 @@
-import React, { useState } from 'react';
-import {
-    StyleSheet,
-    Text,
-    View,
-    TouchableOpacity,
-    ScrollView,
-    Image,
-    Modal,
-    TextInput,
-    Alert,
-    StatusBar,
-    Switch,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert, StatusBar, Switch,} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
+import apiFitlife from '../../general/api';
+import QRCode from 'react-native-qrcode-svg';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 // Dữ liệu mẫu hồ sơ ban đầu (Frontend Mock Data)
 const INITIAL_MEMBER = {
-    ho_ten: 'Lê Hoàng Nam',
-    email: 'nam.le@visionfit.vn',
-    so_dien_thoai: '0901 234 567',
-    anh_dai_dien: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    ngay_sinh: '15/08/1998',
-    gioi_tinh: 'Nam',
-    chieu_cao_cm: '175',
-    can_nang_kg: '68',
-    dang_nguoi: 'Cân đối',
-    muc_tieu_hien_tai: 'Tăng cơ & Giảm mỡ',
-    cap_do_hien_tai: 'Trung cấp (Intermediate)',
-    noi_tap_uu_tien: 'Phòng gym VisionFit',
+    ho_ten: '',
+    email: '',
+    so_dien_thoai: '',
+    anh_dai_dien: '',
+    ngay_sinh: '',
+    gioi_tinh: '',
+    chieu_cao_cm: '',
+    can_nang_kg: '',
+    dang_nguoi: '',
+    muc_tieu_hien_tai: '',
+    cap_do_hien_tai: '',
+    noi_tap_uu_tien: '',
+    goi_tap: '',
+    ngay_bat_dau: '',
+    ngay_het_han: '',
+    so_ngay_con_lai: 0,
+    hlv_phu_trach: '',
+    ma_thanh_vien: '',
+    ma_gioi_thieu: '',
     hang_thanh_vien: 'Hội viên VIP Premium',
-    goi_tap: 'Gói VIP Toàn Diện 12 Tháng',
-    ngay_het_han: '18/12/2026',
-    so_ngay_con_lai: 92,
-    hlv_phu_trach: 'Trần Minh Tuấn (HLV Thể hình)',
-    ma_thanh_vien: 'VF-892147',
     co_so: 'VisionFit Center - Quận 1, TP.HCM',
     thong_ke: {
         so_buoi_tap: 32,
@@ -105,6 +99,72 @@ const MemberProfile = ({ navigation }: any) => {
 
     const bmiData = getBMIData();
 
+    const formatDate = (date?: string | null) => {
+        if (!date) return null;
+        const parts = date.split('-');
+        if (parts.length !== 3) return date;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    // Chuyển giới tính từ API
+    const formatGender = (gender?: string | number | null) => {
+        if (gender === null || gender === undefined) return null;
+        const value = String(gender);
+        if (value === '1') return 'Nam';
+        if (value === '2') return 'Nữ';
+        return value;
+    };
+
+    const fetchProfile = async () => {
+        try {
+            const response = await apiFitlife.get('/client/profile');
+            if (!response.data.success) {
+                return;
+            }
+            const data = response.data.data;
+            setMember((prev) => ({
+                ...prev,
+                ho_ten: data.ho_ten ?? prev.ho_ten,
+                email: data.email ?? prev.email,
+                so_dien_thoai: data.so_dien_thoai ?? prev.so_dien_thoai,
+                anh_dai_dien: data.anh_dai_dien ?? prev.anh_dai_dien,
+                ngay_sinh: formatDate(data.ngay_sinh) ?? prev.ngay_sinh,
+                gioi_tinh: formatGender(data.gioi_tinh) ?? prev.gioi_tinh,
+
+                chieu_cao_cm: data.chieu_cao_cm ?? prev.chieu_cao_cm,
+                can_nang_kg: data.can_nang_kg ?? prev.can_nang_kg,
+                dang_nguoi: data.dang_nguoi ?? prev.dang_nguoi,
+
+                muc_tieu_hien_tai: data.muc_tieu_hien_tai ?? prev.muc_tieu_hien_tai,
+                cap_do_hien_tai: data.cap_do_hien_tai ?? prev.cap_do_hien_tai,
+                noi_tap_uu_tien: data.noi_tap_uu_tien ?? prev.noi_tap_uu_tien,
+
+                ma_thanh_vien: data.ma_thanh_vien ?? prev.ma_thanh_vien,
+                ma_gioi_thieu: data.ma_gioi_thieu ?? prev.ma_gioi_thieu,
+
+                goi_tap: data.ten_goi_tap ?? prev.goi_tap,
+                ngay_bat_dau: formatDate(data.ngay_bat_dau) ?? prev.ngay_bat_dau,
+                ngay_het_han: formatDate(data.ngay_ket_thuc) ?? prev.ngay_het_han,
+                so_ngay_con_lai: data.so_ngay_con_lai ?? prev.so_ngay_con_lai,
+
+                hlv_phu_trach: data.ho_ten_hlv
+                    ? `${data.ho_ten_hlv}${data.chuc_danh ? ` (${data.chuc_danh})` : ''}`
+                    : prev.hlv_phu_trach,
+
+                // Chưa có API thì giữ dữ liệu mẫu
+                hang_thanh_vien: prev.hang_thanh_vien,
+                co_so: prev.co_so,
+                thong_ke: prev.thong_ke,
+            }));
+
+        } catch (error) {
+            console.log('Lỗi lấy hồ sơ hội viên:', error);
+        }
+    };
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
     // Lưu thông tin chỉnh sửa
     const handleSaveProfile = () => {
         if (!editForm.ho_ten.trim()) {
@@ -130,7 +190,16 @@ const MemberProfile = ({ navigation }: any) => {
 
     // Sao chép mã hội viên
     const handleCopyMemberCode = () => {
-        Alert.alert('Mã hội viên', `Đã sao chép mã thẻ: ${member.ma_thanh_vien}`);
+        if (!member.ma_thanh_vien) {
+            Alert.alert('Thông báo', 'Bạn chưa có mã thành viên!');
+            return;
+        }
+        Clipboard.setString(member.ma_thanh_vien);
+
+        Alert.alert(
+            'Thành công',
+            `Đã sao chép mã thẻ: ${member.ma_thanh_vien}`
+        );
     };
 
     // Xử lý Đăng xuất
@@ -139,14 +208,34 @@ const MemberProfile = ({ navigation }: any) => {
             'Xác nhận đăng xuất',
             'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản VisionFit?',
             [
-                { text: 'Ở lại', style: 'cancel' },
+                {
+                    text: 'Ở lại',
+                    style: 'cancel',
+                },
                 {
                     text: 'Đăng xuất',
                     style: 'destructive',
-                    onPress: () => {
-                        Alert.alert('Đã đăng xuất', 'Hẹn gặp lại bạn tại buổi tập tiếp theo!');
-                        if (navigation?.navigate) {
-                            navigation.navigate('AuthScreen');
+                    onPress: async () => {
+                        try {
+                            // Gọi API đăng xuất hội viên
+                            const response = await apiFitlife.post('/client/logout');
+
+                            console.log('LOGOUT CLIENT =', response.data);
+                        } catch (error: any) {
+                            console.log(
+                                'Lỗi API đăng xuất:',
+                                error.response?.data || error.message
+                            );
+                        } finally {
+                            // Xóa thông tin đăng nhập
+                            await AsyncStorage.removeItem("token");
+                            await AsyncStorage.removeItem("role");
+
+                            // Quay về màn hình đăng nhập
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
                         }
                     },
                 },
@@ -782,12 +871,7 @@ const MemberProfile = ({ navigation }: any) => {
             </Modal>
 
             {/* MODAL 2: THẺ VIP THÀNH VIÊN ĐIỆN TỬ */}
-            <Modal
-                visible={showCardModal}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setShowCardModal(false)}
-            >
+            <Modal visible={showCardModal} animationType="fade" transparent={true} onRequestClose={() => setShowCardModal(false)} >
                 <View style={styles.modalOverlay}>
                     <View style={styles.vipCardContainer}>
                         {/* Thẻ thành viên thiết kế sang trọng */}
@@ -803,10 +887,7 @@ const MemberProfile = ({ navigation }: any) => {
                                     <Text style={styles.vipCardBrand}>VISIONFIT GYM & FITNESS</Text>
                                     <Text style={styles.vipCardTier}>{member.hang_thanh_vien.toUpperCase()}</Text>
                                 </View>
-                                <TouchableOpacity
-                                    style={styles.vipCardCloseBtn}
-                                    onPress={() => setShowCardModal(false)}
-                                >
+                                <TouchableOpacity style={styles.vipCardCloseBtn} onPress={() => setShowCardModal(false)} >
                                     <Ionicons name="close" size={20} color={COLORS.white} />
                                 </TouchableOpacity>
                             </View>
@@ -834,7 +915,21 @@ const MemberProfile = ({ navigation }: any) => {
                         {/* QR Code Check-in */}
                         <View style={styles.qrCodeWrap}>
                             <View style={styles.qrBox}>
-                                <Ionicons name="qr-code" size={140} color={COLORS.textPrimary} />
+                                {member.ma_thanh_vien ? (
+                                    <QRCode value={JSON.stringify({
+                                                ma_thanh_vien: member.ma_thanh_vien,
+                                                ho_ten: member.ho_ten,
+                                                so_dien_thoai: member.so_dien_thoai,
+                                                email: member.email,
+                                                goi_tap: member.goi_tap,
+                                                ngay_bat_dau: member.ngay_bat_dau,
+                                                ngay_het_han: member.ngay_het_han,
+                                            })} size={180}  color="#102F3A" backgroundColor="#FFFFFF" />
+                                ) : (
+                                    <Text style={styles.qrCodeNote}>
+                                        Chưa có mã thành viên
+                                    </Text>
+                                )}
                             </View>
                             <Text style={styles.qrCodeNote}>
                                 Đưa mã này trước máy quét tại cổng để check-in
