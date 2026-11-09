@@ -21,6 +21,7 @@ class RoomHistoryChat extends Model
         'reactions',
         'status',
         'is_seen',
+        
     ];
 
     const IS_SEEN  = 1;
