@@ -8,6 +8,9 @@ export const BASE_URL = "http://192.168.1.49:8000";
 // cái ni của Ngọc đừng xóa :)) comment nó lại giùm đi. 
 // export const BASE_URL = "http://192.168.1.152:8000"; 
 
+// export const BASE_URL = "http://192.168.1.171:8000"; 
+
+
 // Cái này của Hùng xóa là t chém.
 // export const BASE_URL = "http://localhost:8000";
 
