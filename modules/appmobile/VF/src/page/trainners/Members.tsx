@@ -156,7 +156,9 @@ const Members = ({ navigation }: any) => {
                 const totalSessions = Number(item.so_buoi_pt || 24);
                 const sessions = 0;
                 const progress = Math.min(100, Math.round((sessions / totalSessions) * 100));
-                const avatar = item.anh_dai_dien || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
+                const avatar = item.anh_dai_dien && (item.anh_dai_dien.startsWith('http') || item.anh_dai_dien.startsWith('file://'))
+                  ? item.anh_dai_dien
+                  : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
 
                 return (
                   <TouchableOpacity

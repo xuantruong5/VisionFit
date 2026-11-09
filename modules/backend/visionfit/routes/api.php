@@ -96,6 +96,10 @@ Route::get('/phong-gym', [PhongGymController::class,'danhSach']);
 
 
 Route::post('client/login', [MembersController::class, 'login']);
+Route::post('client/register', [MembersController::class, 'register']);
+Route::post('client/dang-ky', [MembersController::class, 'register']);
+Route::post('client/quen-mat-khau', [MembersController::class, 'forgotPassword']);
+Route::post('client/dat-lai-mat-khau', [MembersController::class, 'resetPassword']);
 Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
     Route::get('/user', [BaiDangController::class, 'getUser']);
     Route::get('/bai-dang', [BaiDangController::class, 'index']);
@@ -192,6 +196,9 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
 
     Route::get('/profile', [MembersController::class, 'getProfile']);
+    Route::post('/profile', [MembersController::class, 'updateProfile']);
+    Route::post('/profile/avatar', [MembersController::class, 'uploadAvatar']);
+    Route::post('/doi-mat-khau', [MembersController::class, 'changePassword']);
 
     // tần suất tập và thưởng 
     Route::get('/thong-ke-chuoi-ngay-tap', [TanSuatThuongController::class, 'thongKeChuoiNgayTap']);

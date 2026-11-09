@@ -45,6 +45,7 @@ const EditTrainerProfile = ({ navigation }: any) => {
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [certificates, setCertificates] = useState<Array<{ title: string; org: string }>>([]);
   const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
+  const [avatarError, setAvatarError] = useState(false);
   const [newAvatarAsset, setNewAvatarAsset] = useState<any>(null);
 
   // Modal thêm chứng chỉ
@@ -236,7 +237,11 @@ const EditTrainerProfile = ({ navigation }: any) => {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           {/* 1. ẢNH ĐẠI DIỆN */}
           <View style={styles.avatarWrap}>
-            <Image source={{ uri: avatar }} style={styles.avatar} />
+            <Image
+              source={{ uri: !avatarError && avatar && (avatar.startsWith('http') || avatar.startsWith('file://')) ? avatar : DEFAULT_AVATAR }}
+              onError={() => setAvatarError(true)}
+              style={styles.avatar}
+            />
             <TouchableOpacity style={styles.cameraBtn} activeOpacity={0.8} onPress={handlePickAvatar}>
               <Ionicons name="camera" size={17} color={COLORS.white} />
             </TouchableOpacity>
