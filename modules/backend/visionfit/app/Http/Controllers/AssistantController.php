@@ -296,6 +296,45 @@ class AssistantController extends Controller
     }
 
     /**
+     * Helper định dạng ngày giờ Việt Nam: HH:mm dd/mm/yyyy
+     */
+    protected function formatVNTime($isoStr, $dateStr = null): string
+    {
+        if ($isoStr) {
+            try {
+                $d = \Carbon\Carbon::parse($isoStr);
+                return $d->format('H:i d/m/Y');
+            } catch (\Throwable $e) {}
+        }
+        if ($dateStr) {
+            try {
+                $d = \Carbon\Carbon::parse($dateStr);
+                return $d->format('d/m/Y');
+            } catch (\Throwable $e) {
+                return (string) $dateStr;
+            }
+        }
+        return 'Chưa có thời gian';
+    }
+
+    /**
+     * Helper định dạng ngày Việt Nam: dd/mm/yyyy
+     */
+    protected function formatVNDate($dateStr): string
+    {
+        if (!$dateStr) {
+            return 'Chưa có dữ liệu';
+        }
+        try {
+            $clean = explode('T', (string) $dateStr)[0];
+            $d = \Carbon\Carbon::parse($clean);
+            return $d->format('d/m/Y');
+        } catch (\Throwable $e) {
+            return (string) $dateStr;
+        }
+    }
+
+    /**
      * Gọi Gemini AI API với System Prompt kèm dữ liệu ngữ cảnh thực tế của Hội viên
      */
     protected function queryGemini(string $message, array $context, string $species): ?string
@@ -309,45 +348,73 @@ class AssistantController extends Controller
             ? 'Bạn là Mèo VIF 🐱 - trợ lý linh vật thể hình VisionFit tinh nghịch, đáng yêu, thông minh, nói chuyện thân thiện (có thể chêm "Meo meo!" nhẹ nhàng).'
             : 'Bạn là Gấu VIF 🐻 - trợ lý linh vật thể hình VisionFit khỏe khoắn, tràn đầy năng lượng, vững chãi, luôn khích lệ tinh thần người tập.';
 
+        // Chuẩn hóa dữ liệu ngày giờ sang định dạng Việt Nam trước khi gửi sang AI
+        $formattedContext = $context;
+        if (!empty($formattedContext['schedule']) && is_array($formattedContext['schedule'])) {
+            $formattedContext['schedule'] = array_map(function ($s) {
+                return [
+                    'name' => $s['name'] ?? 'Buổi tập',
+                    'time' => $this->formatVNTime($s['starts_at'] ?? null, $s['scheduled_date'] ?? null),
+                    'trainer' => $s['trainer'] ?? 'Chưa có PT',
+                ];
+            }, $formattedContext['schedule']);
+        }
+        if (!empty($formattedContext['packages']) && is_array($formattedContext['packages'])) {
+            $formattedContext['packages'] = array_map(function ($p) {
+                return [
+                    'name' => $p['name'] ?? 'Gói tập',
+                    'total_sessions' => $p['total_sessions'] ?? null,
+                    'remaining_sessions' => $p['remaining_sessions'] ?? null,
+                    'expires_at' => $this->formatVNDate($p['expires_at'] ?? null),
+                ];
+            }, $formattedContext['packages']);
+        }
+
         $systemPrompt = "{$roleText}\n" .
-            "Bạn là trợ lý AI chuyên nghiệp về Thể hình, Sức khỏe và Dinh dưỡng của hệ sinh thái VisionFit.\n" .
+            "Bạn là trợ lý AI thông minh chuyên về Thể hình, Sức khỏe và Dinh dưỡng của hệ sinh thái VisionFit.\n" .
             "QUY TẮC BẮT BUỘC:\n" .
             "1. Dùng tiếng Việt chuẩn, ấm áp, ngắn gọn, súc tích (dưới 150 từ), dễ đọc trên màn hình điện thoại di động.\n" .
-            "2. Khi trả lời về CHỈ SỐ DINH DƯỠNG (BMI/BMR/TDEE/Calo/Macros), THỰC ĐƠN MÓN ĂN, BÀI TẬP, GÓI TẬP hoặc LỊCH TẬP, hãy ưu tiên trình bày dạng danh sách gạch đầu dòng rõ ràng.\n" .
-            "3. Bám sát DỮ LIỆU THỰC TẾ ĐƯỢC CẤP của hội viên bên dưới:\n" .
-            json_encode($context, JSON_UNESCAPED_UNICODE) . "\n" .
-            "4. Nếu hội viên báo đau mỏi hoặc chấn thương: Khuyên dừng ngay bài tập, chườm lạnh nếu sưng và hỏi ý kiến Huấn luyện viên (PT) hoặc bác sĩ.\n" .
-            "5. Không tự chế số buổi gói tập hay ngày hết hạn nếu không có trong dữ liệu.";
+            "2. QUY TẮC BẢNG DỮ LIỆU (TỐI ƯU CHO ĐIỆN THOẠI):\n" .
+            "Khi trả lời về CHỈ SỐ DINH DƯỠNG (BMI/BMR/TDEE/Calo/Macros), THỰC ĐƠN MÓN ĂN, BÀI TẬP, GÓI TẬP hoặc LỊCH TẬP, bạn BẮT BUỘC phải trình bày kết quả dưới dạng BẢNG Markdown (| Cột 1 | Cột 2 | ...) rõ ràng, có tiêu đề cột và hàng phân cách.\n" .
+            "Để bảng dễ xem và thân thiện trên điện thoại:\n" .
+            "- Giới hạn bảng tối đa từ 3 đến 4 cột chính (ví dụ: | STT | Tên bài tập | Sets x Reps | Ghi chú |).\n" .
+            "- Nội dung từng ô cần súc tích, ngắn gọn.\n" .
+            "3. QUY TẮC ĐỊNH DẠNG NGÀY GIỜ VIỆT NAM (BẮT BUỘC):\n" .
+            "Khi hiển thị ngày giờ trong bảng Markdown hoặc câu trả lời, bạn BẮT BUỘC phải định dạng theo chuẩn Việt Nam: \"HH:mm dd/mm/yyyy\" (ví dụ: \"06:00 11/11/2026\") hoặc \"dd/mm/yyyy\" (ví dụ: \"11/11/2026\"). TUYỆT ĐỐI KHÔNG để chuỗi ISO như \"2026-11-11T06:00:00+07:00\" hay \"+00:00\".\n" .
+            "4. QUY TẮC TIÊU ĐỀ & ĐỀ MỤC (BẮT BUỘC):\n" .
+            "TUYỆT ĐỐI KHÔNG dùng các dấu thăng markdown thô như '###', '####', '#####', '##', '#'.\n" .
+            "BẮT BUỘC thay các dấu đó bằng dấu gạch ngang '-' kèm in đậm:\n" .
+            "- Tiêu đề chính / buổi tập: Dùng dấu gạch ngang: - **🏋️ LỊCH TẬP HÔM NAY: NGỰC & XÔ**\n" .
+            "- Các phần bài tập (Khởi động, Bài tập chính, Giãn cơ): - **⏱️ 1. Khởi động (5 - 10 phút)**\n" .
+            "- Nhóm cơ / phân mục chi tiết: - **NHÓM CƠ NGỰC (CHEST):**\n" .
+            "- Không dùng đường kẻ '---' thô; dùng khoảng cách dòng thoáng.\n" .
+            "5. Bám sát DỮ LIỆU THỰC TẾ ĐƯỢC CẤP của hội viên bên dưới:\n" .
+            json_encode($formattedContext, JSON_UNESCAPED_UNICODE) . "\n" .
+            "6. Nếu hội viên báo đau mỏi hoặc chấn thương: Khuyên dừng ngay bài tập, chườm lạnh nếu sưng và hỏi ý kiến Huấn luyện viên (PT) hoặc bác sĩ.\n" .
+            "7. Không tự chế số buổi gói tập hay ngày hết hạn nếu không có trong dữ liệu.";
 
         try {
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=' . urlencode($apiKey);
+            $url = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
             $payload = [
-                'system_instruction' => [
-                    'parts' => [
-                        ['text' => $systemPrompt]
-                    ]
+                'model' => 'gemini-3.5-flash-lite',
+                'max_completion_tokens' => 1500,
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $message],
                 ],
-                'contents' => [
-                    [
-                        'role' => 'user',
-                        'parts' => [
-                            ['text' => $message]
-                        ]
-                    ]
-                ],
-                'generationConfig' => [
-                    'maxOutputTokens' => 600,
-                    'temperature' => 0.7,
-                ]
             ];
 
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
-                CURLOPT_TIMEOUT => 6,
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_TIMEOUT => 7,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $apiKey,
+                ],
                 CURLOPT_POSTFIELDS => json_encode($payload),
+                CURLOPT_SSL_VERIFYPEER => false,
             ]);
 
             $res = curl_exec($ch);
@@ -356,7 +423,7 @@ class AssistantController extends Controller
 
             if ($httpCode === 200 && $res) {
                 $decoded = json_decode($res, true);
-                $content = $decoded['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                $content = $decoded['choices'][0]['message']['content'] ?? null;
                 if ($content && is_string($content)) {
                     return trim($content);
                 }
@@ -382,79 +449,101 @@ class AssistantController extends Controller
             return "{$prefix}Hãy dừng ngay bài tập đang gây khó chịu nhé! Chườm lạnh trong 15-20 phút nếu bị sưng và tuyệt đối đừng cố gắng tập tiếp. Hãy báo ngay cho Huấn luyện viên (PT) hoặc bác sĩ thể thao để được kiểm tra kỹ càng! 🛡️";
         }
 
-        // 2. Chỉ số thể trạng & dinh dưỡng
+        // 2. Chỉ số thể trạng & dinh dưỡng -> Dạng bảng Markdown tối ưu cho mobile
         if (preg_match('/dinh dưỡng|dinh duong|chỉ số|chi so|bmi|bmr|tdee|calo|macro|protein|thể trạng|the trang|cân nặng|can nang|chieu cao|chiều cao/ui', $q)) {
             if (!empty($context['nutrition'])) {
                 $n = $context['nutrition'];
-                return "{$prefix}Bảng chỉ số thể trạng & dinh dưỡng cá nhân của bạn:\n" .
-                    "• Cân nặng: " . ($n['can_nang'] ?? '—') . " kg · Chiều cao: " . ($n['chieu_cao_cm'] ?? '—') . " cm\n" .
-                    "• Chỉ số BMI: " . ($n['bmi'] ?? '—') . " (Thể trạng cân đối)\n" .
-                    "• Năng lượng tiêu hao TDEE: " . ($n['tdee'] ?? '—') . " kcal/ngày\n" .
-                    "• Năng lượng mục tiêu: " . ($n['kcal_muc_tieu'] ?? '—') . " kcal/ngày\n" .
-                    "• Đạm (Protein): " . ($n['protein'] ?? '—') . " g/ngày\n" .
-                    "• Tinh bột (Carb): " . ($n['carb'] ?? '—') . " g/ngày\n" .
-                    "• Chất béo (Fat): " . ($n['fat'] ?? '—') . " g/ngày";
+                return "{$prefix}Bảng chỉ số thể trạng & dinh dưỡng cá nhân:\n\n" .
+                    "| Chỉ số thể trạng | Giá trị | Đơn vị / Đánh giá |\n" .
+                    "| :--- | :--- | :--- |\n" .
+                    "| Cân nặng | " . ($n['can_nang'] ?? '—') . " | kg |\n" .
+                    "| Chiều cao | " . ($n['chieu_cao_cm'] ?? '—') . " | cm |\n" .
+                    "| Chỉ số BMI | " . ($n['bmi'] ?? '—') . " | Thể trạng cân đối |\n" .
+                    "| Tiêu hao TDEE | " . ($n['tdee'] ?? '—') . " | kcal/ngày |\n" .
+                    "| Năng lượng mục tiêu | " . ($n['kcal_muc_tieu'] ?? '—') . " | kcal/ngày |\n" .
+                    "| Đạm (Protein) | " . ($n['protein'] ?? '—') . " | g/ngày |\n" .
+                    "| Tinh bột (Carb) | " . ($n['carb'] ?? '—') . " | g/ngày |\n" .
+                    "| Chất béo (Fat) | " . ($n['fat'] ?? '—') . " | g/ngày |";
             }
             return "{$prefix}Để duy trì vóc dáng lý tưởng, bạn nên nạp 1.6 - 2.0g Protein/kg cân nặng, uống đủ 2-2.5 lít nước mỗi ngày và bổ sung nhiều rau xanh nhé!";
         }
 
-        // 3. Gợi ý thực đơn món ăn từ cơ sở dữ liệu
+        // 3. Gợi ý thực đơn món ăn -> Dạng bảng Markdown tối ưu cho mobile
         if (preg_match('/ăn gì|an gi|thực đơn|thuc don|món ăn|mon an|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi|eat clean|giảm cân|giam can|giảm mỡ|giam mo|tăng cơ|tang co/ui', $q)) {
             $meals = $context['suggestions']['meals'] ?? [];
             if (!empty($meals)) {
-                $res = "{$prefix}Gợi ý món ăn phù hợp với mục tiêu của bạn:\n";
-                foreach (array_slice($meals, 0, 3) as $m) {
-                    $cal = $m['calories'] ?? '—';
-                    $pro = $m['protein'] ?? '—';
-                    $diet = $m['diet_type'] ?? 'Healthy';
-                    $res .= "• {$m['name']}: {$cal} kcal, {$pro}g đạm ({$diet})\n";
+                $res = "{$prefix}Gợi ý thực đơn dinh dưỡng cho bạn:\n\n" .
+                    "| Bữa ăn | Tên món ăn | Năng lượng | Đạm (Protein) |\n" .
+                    "| :--- | :--- | :--- | :--- |\n";
+                foreach (array_slice($meals, 0, 4) as $m) {
+                    $cal = !empty($m['calories']) ? "{$m['calories']} kcal" : '—';
+                    $pro = !empty($m['protein']) ? "{$m['protein']}g" : '—';
+                    $type = $m['meal_type'] ?? 'Món chính';
+                    $name = $m['name'] ?? 'Món ăn';
+                    $res .= "| {$type} | {$name} | {$cal} | {$pro} |\n";
                 }
                 return trim($res);
             }
             return "{$prefix}Gợi ý thực đơn Eat Clean chuẩn thể hình:\n• Sáng: Yến mạch + sữa chua Hy Lạp + chuối chín\n• Trưa: 150g Ức gà áp chảo + cơm gạo lứt + bông cải xanh\n• Tối: Cá hồi hoặc thịt nạc bò sốt tiêu + salad dầu oliu! 🥗";
         }
 
-        // 4. Lịch tập & Gói tập
+        // 4. Lịch tập -> Dạng bảng Markdown chuẩn Việt Nam
         if (preg_match('/lịch|lich|hôm nay|hom nay|tiếp theo|tiep theo|khi nào tập|khi nao tap|ngày mai|ngay mai/ui', $q)) {
             $schedule = $context['schedule'] ?? [];
             if (!empty($schedule)) {
-                $res = "{$prefix}Lịch tập sắp tới của bạn trên hệ thống:\n";
-                foreach (array_slice($schedule, 0, 3) as $s) {
-                    $time = $s['starts_at'] ?? $s['scheduled_date'] ?? 'Theo lịch cá nhân';
-                    $pt = !empty($s['trainer']) ? " (PT: {$s['trainer']})" : '';
-                    $res .= "• {$s['name']}: {$time}{$pt}\n";
+                $res = "{$prefix}Bảng lịch tập sắp tới của bạn trên hệ thống:\n\n" .
+                    "| Buổi tập | Thời gian | Huấn luyện viên (PT) |\n" .
+                    "| :--- | :--- | :--- |\n";
+                foreach (array_slice($schedule, 0, 5) as $s) {
+                    $time = $this->formatVNTime($s['starts_at'] ?? null, $s['scheduled_date'] ?? null);
+                    $pt = !empty($s['trainer']) ? $s['trainer'] : 'Chưa có PT';
+                    $name = $s['name'] ?? 'Buổi tập';
+                    $res .= "| {$name} | {$time} | {$pt} |\n";
                 }
-                return trim($res) . "\nHãy chuẩn bị nước và đồ tập đầy đủ nhé! 💪";
+                return trim($res) . "\n\nHãy chuẩn bị nước và đồ tập đầy đủ nhé! 💪";
             }
             return "{$prefix}Bạn hãy mở tab \"Kế hoạch tập\" trên ứng dụng để xem chi tiết bài tập được giao cho hôm nay nhé!";
         }
 
-        // 5. Gói tập
+        // 5. Gói tập -> Dạng bảng Markdown chuẩn Việt Nam
         if (preg_match('/gói|goi|hạn|han|buổi còn|buoi con|bao nhiêu buổi|bao nhieu buoi|thẻ|the/ui', $q)) {
             $packages = $context['packages'] ?? [];
             if (!empty($packages)) {
-                $res = "{$prefix}Thông tin gói tập hiện tại của bạn:\n";
+                $res = "{$prefix}Thông tin gói tập hiện tại của bạn:\n\n" .
+                    "| Gói tập | Buổi còn lại | Hạn sử dụng |\n" .
+                    "| :--- | :--- | :--- |\n";
                 foreach ($packages as $p) {
-                    $rem = $p['remaining_sessions'] ?? $p['total_sessions'] ?? 'Đang cập nhật';
-                    $exp = $p['expires_at'] ?? 'Không giới hạn';
-                    $res .= "• {$p['name']}: {$rem} buổi · Hạn dùng: {$exp}\n";
+                    $name = $p['name'] ?? 'Gói tập';
+                    $rem = isset($p['remaining_sessions']) ? "{$p['remaining_sessions']} buổi" : 'Chưa có dữ liệu';
+                    $exp = !empty($p['expires_at']) ? $this->formatVNDate($p['expires_at']) : 'Không giới hạn';
+                    $res .= "| {$name} | {$rem} | {$exp} |\n";
                 }
                 return trim($res);
             }
             return "{$prefix}Bạn có thể xem số buổi tập còn lại và hạn thẻ tập trong mục \"Hồ sơ cá nhân\" > \"Gói tập của tôi\" nhé!";
         }
 
-        // 6. Bài tập & Khởi động
+        // 6. Bài tập & Khởi động -> Dạng bảng Markdown chuẩn Việt Nam
         if (preg_match('/khởi động|khoi dong|bài tập|bai tap|động tác|dong tac|tập gì|tap gi|ngực|nguc|lưng|lung|chân|chan|tay|bụng|bung/ui', $q)) {
             if (preg_match('/khởi động|khoi dong/ui', $q)) {
-                return "{$prefix}4 bước khởi động chuẩn 5 phút:\n1. Xoay tròn cổ tay, cổ chân, khớp vai và khớp hông (2 phút)\n2. Jumping Jacks hoặc chạy gót chạm mông nhẹ (1 phút)\n3. Giãn cơ động Dynamic Stretching (1 phút)\n4. Đẩy 1 set tạ nhẹ 30% để làm nóng cơ khớp trước khi vào bài chính! 🔥";
+                return "{$prefix}- **⏱️ 4 bước khởi động chuẩn (5 - 10 phút)**\n\n" .
+                    "1. Xoay tròn cổ tay, cổ chân, khớp vai và khớp hông (2 phút)\n" .
+                    "2. Jumping Jacks hoặc chạy gót chạm mông nhẹ (1 phút)\n" .
+                    "3. Giãn cơ động Dynamic Stretching (1 phút)\n" .
+                    "4. Đẩy 1 set tạ nhẹ 30% để làm nóng cơ khớp trước khi vào bài chính! 🔥";
             }
             $exercises = $context['suggestions']['exercises'] ?? [];
             if (!empty($exercises)) {
-                $res = "{$prefix}Bài tập gợi ý phù hợp cho bạn:\n";
-                foreach (array_slice($exercises, 0, 3) as $e) {
-                    $equip = !empty($e['equipment']) ? " ({$e['equipment']})" : '';
-                    $res .= "• {$e['name']}{$equip}\n";
+                $res = "{$prefix}Bảng bài tập gợi ý phù hợp cho bạn:\n\n" .
+                    "| STT | Tên bài tập | Nhóm cơ | Thiết bị |\n" .
+                    "| :--- | :--- | :--- | :--- |\n";
+                $idx = 1;
+                foreach (array_slice($exercises, 0, 4) as $e) {
+                    $name = $e['name'] ?? 'Bài tập';
+                    $muscle = $e['muscle_group'] ?? 'Toàn thân';
+                    $equip = $e['equipment'] ?? 'Tự do';
+                    $res .= "| {$idx} | {$name} | {$muscle} | {$equip} |\n";
+                    $idx++;
                 }
                 return trim($res);
             }

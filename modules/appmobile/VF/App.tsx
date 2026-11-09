@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
+import { navigationRef } from "./src/general/rootNavigation";
 import { Alert, Animated, View, Text } from "react-native";
 import React, { useEffect, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -83,7 +84,6 @@ import TrainerSettings from "./src/page/trainners/TrainerSettings";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const navigationRef = createNavigationContainerRef();
 
 const MemberWorkoutStack = createNativeStackNavigator();
 

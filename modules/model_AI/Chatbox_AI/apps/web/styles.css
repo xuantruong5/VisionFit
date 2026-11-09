@@ -11,3 +11,9 @@
 .vif-table tr:last-child td{border-bottom:0}
 .vif-table tr:nth-child(even) td{background:#fbfdfc}
 .vif-table tr:hover td{background:#f2f7f4}
+
+/* Markdown Headings & Dividers */
+.vif-heading{margin:12px 0 6px 0;font-weight:700;line-height:1.4;color:#15372a;display:flex;align-items:center}
+.vif-h1,.vif-h2,.vif-h3{font-size:14px;padding:7px 12px;background:linear-gradient(135deg,rgba(33,77,60,.08),rgba(211,242,162,.18));border-left:3.5px solid #214d3c;border-radius:6px}
+.vif-h4,.vif-h5,.vif-h6{font-size:13px;color:#1b8a5a;padding:3px 0 3px 8px;border-left:2.5px solid #80b65b}
+.vif-divider{border:none;height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.12),transparent);margin:12px 0}

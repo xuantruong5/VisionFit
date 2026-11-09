@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, StatusBar, DeviceEventEmitter } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import DashboardScreen from "../Tab/DashboardScreen";
@@ -23,6 +23,14 @@ const HeaderPage = ({ navigation, route }: any) => {
       navigation.setParams({ initialTab: undefined });
     }
   }, [route?.params?.initialTab, navigation]);
+
+  // Lắng nghe sự kiện chuyển trực tiếp sang tab Kế hoạch tập từ Mascot hoặc nơi khác
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('SWITCH_TO_WORKOUT_PLAN', () => {
+      setActiveTab("Kế hoạch tập");
+    });
+    return () => sub.remove();
+  }, []);
 
   const tabs = [
     { id: "Trang tổng quan", label: "Tổng quan", icon: "grid-outline" },
