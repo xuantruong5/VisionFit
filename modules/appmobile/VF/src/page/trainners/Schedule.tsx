@@ -33,7 +33,7 @@ const STATUS = {
   cho_duyet: { label: 'Đang chờ duyệt đổi lịch', color: '#D97706', bg: '#FEF3C7' },
 };
 
-const Schedule = ({ navigation }: any) => {
+const Schedule = ({ navigation, route }: any) => {
   const [schedules, setSchedules] = useState(INITIAL_SCHEDULES);
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const [selectedSession, setSelectedSession] = useState<any>(null);
@@ -96,6 +96,21 @@ const Schedule = ({ navigation }: any) => {
           <View style={styles.circleLg} />
 
           <View style={styles.headerRow}>
+            {(navigation?.canGoBack?.() || route?.params?.fromMember) ? (
+              <TouchableOpacity
+                style={[styles.glassBtn, { marginRight: 12 }]}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (navigation?.canGoBack?.()) {
+                    navigation.goBack();
+                  } else {
+                    navigation?.navigate?.('MainTabs', { screen: 'Members' });
+                  }
+                }}
+              >
+                <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+              </TouchableOpacity>
+            ) : null}
             <View style={styles.flex}>
               <Text style={styles.headerSub}>Lịch huấn luyện</Text>
               <Text style={styles.headerTitle}>Tháng 10, 2026</Text>
