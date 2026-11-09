@@ -196,10 +196,9 @@
                                 <th>Ứng viên PT</th>
                                 <th>Liên hệ</th>
                                 <th>Người giới thiệu</th>
-                                <th>Ngày đăng ký</th>
-                                <th>Lịch hẹn test kỹ năng</th>
+                                                                <th>Lịch hẹn test kỹ năng</th>
                                 <th>Trạng thái</th>
-                                <th>Hành động</th>
+                                <th class="col-actions">Hành động</th>
                             </tr>
                         </thead>
 
@@ -207,12 +206,12 @@
                             <tr v-for="app in pt_applicants" :key="app.id">
                                 <td>
                                     <div class="user-cell">
-                                        <div class="user-avatar" style="background: #EAF9FB; color: #0d7f8d;">
+                                        <div class="user-avatar alt">
                                             {{ getInitial(app.ho_ten) }}
                                         </div>
                                         <div>
                                             <strong>{{ app.ho_ten }}</strong>
-                                            <span>#{{ app.id }}</span>
+                                            <span>#{{ app.id }} · {{ app.ngay_dang_ky }}</span>
                                         </div>
                                     </div>
                                 </td>
@@ -226,15 +225,12 @@
 
                                 <td>
                                     <div v-if="app.nguoi_gioi_thieu">
-                                        <strong style="color: #11343a; font-size: 13.5px;">{{ app.nguoi_gioi_thieu }}</strong>
-                                        <div style="color: #71949a; font-size: 12px; margin-top: 2px;">{{ app.ma_gioi_thieu }}</div>
+                                        <strong class="ref-name">{{ app.nguoi_gioi_thieu }}</strong>
+                                        <div class="ref-sub">{{ app.ma_gioi_thieu }}</div>
                                     </div>
-                                    <span v-else style="color: #9bb8bd; font-size: 12.5px;">—</span>
+                                    <span v-else class="muted">—</span>
                                 </td>
 
-                                <td>
-                                    <span style="font-size: 13px; color: #51777d;">{{ app.ngay_dang_ky }}</span>
-                                </td>
                                 <td>
                                     <div v-if="app.gio_hen || app.ngay_phong_van" class="schedule-brief">
                                         <strong>
@@ -244,7 +240,7 @@
                                             📍 {{ app.dia_chi_test || 'Chưa có địa chỉ test' }}
                                         </small>
                                     </div>
-                                    <span v-else  style="color: #9bb8bd; font-size: 12.5px; font-style: italic;"  >
+                                    <span v-else class="muted italic">
                                         Chưa lên lịch test
                                     </span>
                                 </td>
@@ -260,20 +256,47 @@
                                     </span>
                                 </td>
 
-                                <td>
+                                <td class="col-actions">
                                     <div class="action-btn-group">
-                                        <button class="btn-detail" @click="openProfileModal(app)">📄 Xem hồ sơ</button>
-                                        <button v-if="app.trang_thai === 0" class="btn-email" @click="openEmailModal(app)" >
-                                                ✉️ Gửi Email hẹn test
+                                        <button class="btn-action btn-detail" @click="openProfileModal(app)" title="Xem chi tiết hồ sơ & CV">
+                                            <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            </svg>
+                                            <span>Xem hồ sơ</span>
+                                        </button>
+
+                                        <button v-if="app.trang_thai === 0" class="btn-action btn-email" @click="openEmailModal(app)" title="Gửi thư mời phỏng vấn & kiểm tra">
+                                            <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                <polyline points="22 6 12 13 2 6"></polyline>
+                                            </svg>
+                                            <span>Hẹn lịch test</span>
+                                        </button>
+
+                                        <div v-if="app.trang_thai === 1" class="decision-group">
+                                            <button class="btn-action btn-approve" @click="capNhatKetQuaPhongVan(app, 2)" title="Đánh giá đạt phỏng vấn">
+                                                <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                                <span>Đạt</span>
                                             </button>
-                                        <button v-if="app.trang_thai === 1" class="btn-approve" @click="capNhatKetQuaPhongVan(app, 2)" >
-                                            ✓ Đạt
-                                        </button>
-                                        <button v-if="app.trang_thai === 1" class="btn-reject" @click="capNhatKetQuaPhongVan(app, 3)">
-                                            ✕ Rớt
-                                        </button>
-                                        <button v-if="app.trang_thai === 2 && !app.da_kich_hoat" class="btn-approve" @click="approveApplicant(app)">
-                                            ✓ Kích hoạt PT
+                                            <button class="btn-action btn-reject" @click="capNhatKetQuaPhongVan(app, 3)" title="Đánh giá không đạt">
+                                                <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                                <span>Rớt</span>
+                                            </button>
+                                        </div>
+
+                                        <button v-if="app.trang_thai === 2 && !app.da_kich_hoat" class="btn-action btn-activate" @click="approveApplicant(app)" title="Phê duyệt & kích hoạt tài khoản PT">
+                                            <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                            </svg>
+                                            <span>Kích hoạt PT</span>
                                         </button>
                                     </div>
                                 </td>
@@ -336,7 +359,7 @@
             </div>
 
             <!-- BẢNG LƯƠNG CHI TIẾT -->
-            <div class="content-card" style="margin-top: 16px;">
+            <div class="content-card mt-16">
                 <div class="tab-intro-row">
                     <div>
                         <h3 class="tab-inner-title">Bảng tính lương Trainer tháng 10/2026</h3>
@@ -353,15 +376,15 @@
                         <thead>
                             <tr>
                                 <th>Huấn luyện viên</th>
-                                <th>Lương cơ bản</th>
+                                <th class="num">Lương cơ bản</th>
                                 <th>Ca hoàn thành</th>
-                                <th>Tiền ca dạy</th>
+                                <th class="num">Tiền ca dạy</th>
                                 <th>Học viên nhập mã</th>
-                                <th>Tiền hoa hồng ({{ salary_config.hoa_hong_phan_tram }}%)</th>
+                                <th class="num">Hoa hồng ({{ salary_config.hoa_hong_phan_tram }}%)</th>
                                 <th>Thưởng / Phạt</th>
-                                <th>Tổng Thực Lĩnh</th>
+                                <th class="num">Tổng Thực Lĩnh</th>
                                 <th>Trạng thái</th>
-                                <th>Hành động</th>
+                                <th class="col-actions">Hành động</th>
                             </tr>
                         </thead>
 
@@ -374,33 +397,33 @@
                                     </div>
                                 </td>
 
-                                <td>{{ formatCurrency(payroll.luong_co_ban) }}</td>
+                                <td class="num">{{ formatCurrency(payroll.luong_co_ban) }}</td>
 
                                 <td>
                                     <span class="count-pill">{{ payroll.so_ca_day }} ca</span>
                                 </td>
 
-                                <td>
-                                    <strong style="color: #0d7f8d;">{{ formatCurrency(calcTienCa(payroll)) }}</strong>
+                                <td class="num">
+                                    <strong class="money-teal">{{ formatCurrency(calcTienCa(payroll)) }}</strong>
                                 </td>
 
                                 <td>
-                                    <span class="count-pill" style="background: #FDF2F8; color: #DB2777;">{{ payroll.so_hoc_vien_gioi_thieu }} HV</span>
+                                    <span class="count-pill pink">{{ payroll.so_hoc_vien_gioi_thieu }} HV</span>
+                                </td>
+
+                                <td class="num">
+                                    <strong class="money-pink">{{ formatCurrency(calcTienHoaHong(payroll)) }}</strong>
                                 </td>
 
                                 <td>
-                                    <strong style="color: #DB2777;">{{ formatCurrency(calcTienHoaHong(payroll)) }}</strong>
-                                </td>
-
-                                <td>
-                                    <div style="font-size: 12.5px;">
-                                        <span v-if="payroll.thuong > 0" style="color: #10B981;">+{{ formatCurrency(payroll.thuong) }}</span>
-                                        <span v-if="payroll.phat > 0" style="color: #EF4444; margin-left: 4px;">-{{ formatCurrency(payroll.phat) }}</span>
-                                        <span v-if="payroll.thuong === 0 && payroll.phat === 0" style="color: #9BB8BD;">0 đ</span>
+                                    <div class="bonus-cell">
+                                        <span v-if="payroll.thuong > 0" class="bonus-plus">+{{ formatCurrency(payroll.thuong) }}</span>
+                                        <span v-if="payroll.phat > 0" class="bonus-minus">-{{ formatCurrency(payroll.phat) }}</span>
+                                        <span v-if="payroll.thuong === 0 && payroll.phat === 0" class="muted">0 đ</span>
                                     </div>
                                 </td>
 
-                                <td>
+                                <td class="num">
                                     <strong class="total-salary-text">{{ formatCurrency(calcTongThucLinh(payroll)) }}</strong>
                                 </td>
 
@@ -417,18 +440,18 @@
                                     </span>
                                 </td>
 
-                                <td>
+                                <td class="col-actions">
                                     <div class="action-btn-group">
                                         <button
                                             v-if="payroll.trang_thai === 'tam_tinh'"
-                                            class="btn-approve"
+                                            class="btn-action btn-approve"
                                             @click="chotLuong(payroll)"
                                         >
                                             Chốt lương
                                         </button>
                                         <button
                                             v-if="payroll.trang_thai === 'da_chot'"
-                                            class="btn-paid"
+                                            class="btn-action btn-paid"
                                             @click="thanhToanLuong(payroll)"
                                         >
                                             Chuyển khoản
@@ -453,7 +476,7 @@
                     <button class="btn-close" @click="showProfileModal = false">×</button>
                 </div>
 
-                <p style="margin: 0 0 12px;"><strong>Người giới thiệu:</strong> {{ selectedApplicant.nguoi_gioi_thieu || 'Không có' }}</p>
+                <p class="profile-ref"><strong>Người giới thiệu:</strong> {{ selectedApplicant.nguoi_gioi_thieu || 'Không có' }}</p>
 
                 <iframe class="cv-frame" :src="selectedApplicant.cv_url"></iframe>
             </div>
@@ -473,7 +496,7 @@
                 <div class="form-grid">
                     <div class="form-group full">
                         <label>Người nhận (Ứng viên PT)</label>
-                        <input type="text" :value="emailForm.applicantName + ' <' + emailForm.recipient + '>'" disabled style="background: #F8FAFC;" />
+                        <input type="text" :value="emailForm.applicantName + ' <' + emailForm.recipient + '>'" disabled />
                     </div>
 
                     <div class="form-group full">
@@ -498,7 +521,7 @@
 
                     <!-- PREVIEW EMAIL -->
                     <div class="form-group full">
-                        <label style="color: #0d7f8d; font-weight: 800;">👁️ Xem trước nội dung thư gửi đi:</label>
+                        <label class="preview-label">👁️ Xem trước nội dung thư gửi đi:</label>
                         <div class="email-preview-box">
                             <p><strong>Kính gửi bạn {{ emailForm.applicantName }},</strong></p>
                             <p>Cảm ơn bạn đã đăng ký gia nhập đội ngũ Huấn luyện viên thể hình cá nhân (PT) của hệ thống VisionFit.</p>
@@ -509,7 +532,7 @@
                                 <li><strong>Lưu ý:</strong> {{ emailForm.note }}</li>
                             </ul>
                             <p>Hệ thống sẽ gửi thông báo kết quả kích hoạt tài khoản HLV qua email trong vòng 2 ngày làm việc sau buổi test.</p>
-                            <p style="margin-bottom: 0;"><em>Trân trọng,<br>Ban Tuyển dụng & Quản lý HLV VisionFit</em></p>
+                            <p class="mb-0"><em>Trân trọng,<br>Ban Tuyển dụng & Quản lý HLV VisionFit</em></p>
                         </div>
                     </div>
                 </div>
@@ -1165,6 +1188,11 @@ export default {
     transition: 0.18s ease;
 }
 
+.trainer-nav-tab:not(.active):hover {
+    background: rgba(255, 255, 255, 0.6);
+    color: #0d7f8d;
+}
+
 .trainer-nav-tab.active {
     background: #0d7f8d;
     color: white;
@@ -1212,7 +1240,8 @@ export default {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 26px;
+    font-size: 28px;
+    font-weight: 800;
 }
 
 /* CONTENT CARD */
@@ -1278,7 +1307,14 @@ export default {
     color: #11343a;
 }
 
+.search-box:focus-within {
+    border-color: #0d7f8d;
+    box-shadow: 0 0 0 3px rgba(13, 127, 141, 0.08);
+}
+
 .filter-bar select {
+    min-width: 170px;
+    cursor: pointer;
     height: 42px;
     padding: 0 12px;
     border: 1px solid #d3e9ec;
@@ -1302,14 +1338,45 @@ export default {
 .trainer-table th {
     padding: 12px 14px;
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    color: #71949a;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #5f8b92;
+    background: #f4fafb;
     border-bottom: 1.5px solid #e1eff1;
 }
+.trainer-table th:first-child { border-radius: 10px 0 0 10px; }
+.trainer-table th:last-child { border-radius: 0 10px 10px 0; }
+.trainer-table tbody tr { transition: background 0.15s ease; }
+.trainer-table tbody tr:hover { background: #f8fcfd; }
+.trainer-table tbody tr:last-child td { border-bottom: none; }
+.empty-state {
+    padding: 36px 0;
+    text-align: center;
+    color: #8faeb4;
+    font-size: 14px;
+}
+
+/* tiện ích thay cho style inline */
+.mt-16 { margin-top: 16px; }
+.mb-0 { margin-bottom: 0; }
+.muted { color: #9bb8bd; font-size: 12.5px; }
+.italic { font-style: italic; }
+.date-text { font-size: 13px; color: #51777d; white-space: nowrap; }
+.ref-name { color: #11343a; font-size: 13.5px; }
+.ref-sub { color: #71949a; font-size: 12px; margin-top: 2px; }
+.money-teal { color: #0d7f8d; }
+.money-pink { color: #db2777; }
+.bonus-cell { font-size: 12.5px; white-space: nowrap; }
+.bonus-plus { color: #10b981; font-weight: 700; }
+.bonus-minus { color: #ef4444; font-weight: 700; margin-left: 4px; }
+.profile-ref { margin: 0 0 12px; color: #2e5057; }
+.preview-label { color: #0d7f8d !important; font-weight: 800 !important; }
 
 .trainer-table td {
-    padding: 14px;
+    padding: 14px 12px;
     vertical-align: middle;
     border-bottom: 1px solid #edf6f7;
     font-size: 14px;
@@ -1322,10 +1389,11 @@ export default {
 }
 
 .user-avatar {
+    flex-shrink: 0;
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #0d7f8d;
+    background: linear-gradient(135deg, #0d7f8d, #14a3b4);
     color: white;
     display: flex;
     align-items: center;
@@ -1334,8 +1402,15 @@ export default {
     font-weight: 800;
 }
 
+.user-avatar.alt {
+    background: #eaf9fb;
+    color: #0d7f8d;
+    border: 1px solid #bcecf0;
+}
+
 .user-cell strong {
     display: block;
+    white-space: nowrap;
     color: #11343a;
     font-size: 14.5px;
 }
@@ -1396,6 +1471,7 @@ export default {
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .status-dot {
@@ -1441,47 +1517,119 @@ export default {
 .btn-detail:hover { background: #eaf9fb; }
 
 /* APPLICANT ACTIONS */
+.trainer-table .col-actions {
+    width: 1%;
+    white-space: nowrap;
+}
+.trainer-table .num {
+    text-align: right;
+    white-space: nowrap;
+}
+
 .action-btn-group {
-    display: flex;
-    flex-wrap: wrap;
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
 }
 
-.btn-email {
-    padding: 6px 12px;
-    border: 1px solid #0d7f8d;
-    background: #eaf9fb;
+.decision-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    white-space: nowrap;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    line-height: 1.2;
+    outline: none;
+}
+
+.btn-action .btn-icon {
+    flex-shrink: 0;
+}
+
+/* Xem hồ sơ */
+.btn-action.btn-detail {
+    background: #ffffff;
+    border: 1px solid #cce5e8;
     color: #0d7f8d;
-    border-radius: 8px;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(13, 127, 141, 0.05);
 }
-.btn-email:hover { background: #d3f3f6; }
+.btn-action.btn-detail:hover {
+    background: #eaf9fb;
+    border-color: #0d7f8d;
+    color: #08606b;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(13, 127, 141, 0.15);
+}
 
-.btn-approve {
-    padding: 6px 12px;
-    border: 1px solid #10b981;
-    background: #ecfdf5;
+/* Gửi email hẹn test */
+.btn-action.btn-email {
+    background: linear-gradient(135deg, #0d7f8d, #085f6a);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(13, 127, 141, 0.2);
+}
+.btn-action.btn-email:hover {
+    background: linear-gradient(135deg, #0a6c78, #064a53);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 127, 141, 0.35);
+}
+
+/* Đạt */
+.btn-action.btn-approve {
+    background: #ffffff;
+    border: 1px solid #86efac;
     color: #059669;
-    border-radius: 8px;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
 }
-.btn-approve:hover { background: #d1fae5; }
+.btn-action.btn-approve:hover {
+    background: #10b981;
+    border-color: #10b981;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transform: translateY(-1px);
+}
 
-.btn-reject {
-    padding: 6px 12px;
-    border: 1px solid #ef4444;
-    background: #fef2f2;
+/* Rớt */
+.btn-action.btn-reject {
+    background: #ffffff;
+    border: 1px solid #fca5a5;
     color: #dc2626;
-    border-radius: 8px;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
 }
-.btn-reject:hover { background: #fee2e2; }
+.btn-action.btn-reject:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Kích hoạt PT */
+.btn-action.btn-activate {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+.btn-action.btn-activate:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
 
 .modal-profile-box { max-width: 820px; }
 .cv-frame {
@@ -1491,14 +1639,28 @@ export default {
     border-radius: 12px;
 }
 
+.schedule-brief {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 7px 11px;
+    border-radius: 9px;
+    display: inline-block;
+    min-width: 200px;
+    max-width: 250px;
+}
 .schedule-brief strong {
     display: block;
+    white-space: nowrap;
     color: #1d4ed8;
     font-size: 12.5px;
+    font-weight: 700;
+    margin-bottom: 2px;
 }
 .schedule-brief small {
-    color: #71949a;
+    display: block;
+    color: #64748b;
     font-size: 11.5px;
+    line-height: 1.35;
 }
 
 /* QUICK SALARY SETUP */
@@ -1617,12 +1779,18 @@ export default {
 }
 
 .count-pill {
+    display: inline-block;
     background: #eaf9fb;
     color: #0d7f8d;
     font-weight: 700;
-    padding: 3px 8px;
+    padding: 3px 9px;
     border-radius: 8px;
     font-size: 12px;
+    white-space: nowrap;
+}
+.count-pill.pink {
+    background: #fdf2f8;
+    color: #db2777;
 }
 
 .total-salary-text {
@@ -1631,15 +1799,17 @@ export default {
     font-weight: 800;
 }
 
-.btn-paid {
-    padding: 5px 10px;
-    border: 1px solid #3b82f6;
+.btn-action.btn-paid {
     background: #eff6ff;
+    border: 1px solid #93c5fd;
     color: #1d4ed8;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
+}
+.btn-action.btn-paid:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
 }
 
 /* MODAL */
@@ -1657,6 +1827,8 @@ export default {
 .modal-box {
     width: 90%;
     max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
     background: white;
     border-radius: 20px;
     padding: 24px;
@@ -1689,12 +1861,19 @@ export default {
 }
 
 .btn-close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
     border: none;
-    background: none;
-    font-size: 24px;
-    color: #8faeb4;
+    border-radius: 50%;
+    background: #f0f7f8;
+    font-size: 20px;
+    line-height: 1;
+    color: #71949a;
     cursor: pointer;
+    transition: 0.15s ease;
 }
+.btn-close:hover { background: #fee2e2; color: #dc2626; }
 
 .form-grid {
     display: grid;
@@ -1724,6 +1903,16 @@ export default {
     outline: none;
     color: #11343a;
     font-size: 14px;
+    font-family: inherit;
+    background: #fbfeff;
+    box-sizing: border-box;
+    transition: 0.15s ease;
+}
+
+.form-group input:disabled {
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
 }
 
 .form-group input,
@@ -1763,6 +1952,9 @@ export default {
     gap: 10px;
     margin-top: 20px;
 }
+
+.btn-cancel:hover { background: #eaf9fb; }
+.btn-save:hover { background: #075e68; }
 
 .btn-cancel {
     padding: 9px 16px;
@@ -1812,6 +2004,18 @@ export default {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+@media (max-width: 700px) {
+    .page-header,
+    .quick-setup-header,
+    .tab-intro-row { flex-direction: column; }
+    .trainer-nav-tabs { flex-direction: column; }
+    .stat-row,
+    .quick-setup-inputs,
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: auto; }
+    .total-payout-box { text-align: left; margin-top: 10px; }
 }
 
 @media (max-width: 1100px) {

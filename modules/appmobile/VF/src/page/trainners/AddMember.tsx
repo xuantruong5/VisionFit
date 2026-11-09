@@ -135,7 +135,9 @@ const AddMember = ({ navigation }: any) => {
           ) : candidates.length > 0 ? (
             candidates.map((item, index) => {
               const active = String(selected) === String(item.id);
-              const avatar = item.anh_dai_dien || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
+              const avatar = item.anh_dai_dien && (item.anh_dai_dien.startsWith('http') || item.anh_dai_dien.startsWith('file://'))
+                ? item.anh_dai_dien
+                : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
               return (
                 <TouchableOpacity
                   key={item.id}

@@ -90,7 +90,7 @@ class TrainerController extends Controller
                 'message' => 'Token hợp lệ',
                 'ho_ten' => $trainer->ho_ten,
                 'email' => $trainer->email,
-                'hinh_anh' => $trainer->hinh_anh,
+                'hinh_anh' => self::formatAvatar($trainer->hinh_anh, $trainer->gioi_tinh ?? 0),
                 'so_dien_thoai' => $trainer->so_dien_thoai,
                 'ma_gioi_thieu' => $trainer->ma_gioi_thieu ?: ('PT' . str_pad($trainer->id, 6, '0', STR_PAD_LEFT)),
             ]);
@@ -173,7 +173,33 @@ class TrainerController extends Controller
             'tinh_trang' => Trainer::CHUAKICHHOAT,
         ]);
 
-        // 4. Trả kết quả
+        // 4. Gửi email xác nhận ứng tuyển kèm tệp CV về Gmail của Trainer
+        try {
+            $dataMail = [
+                'ho_ten' => $trainer->ho_ten,
+                'email' => $trainer->email,
+                'so_dien_thoai' => $trainer->so_dien_thoai,
+                'cv_name' => basename($cv),
+            ];
+            \Illuminate\Support\Facades\Mail::send('trainer_dang_ky_thanh_cong', ['data' => $dataMail], function ($message) use ($trainer, $cv) {
+                $message->to($trainer->email)
+                        ->subject('[VisionFit] Xác nhận tiếp nhận hồ sơ ứng tuyển Huấn Luyện Viên');
+
+                // Đính kèm tệp file CV
+                $cvFullPath = storage_path('app/public/' . $cv);
+                if (file_exists($cvFullPath)) {
+                    $ext = pathinfo($cvFullPath, PATHINFO_EXTENSION);
+                    $cleanName = 'CV_' . preg_replace('/[^\w\-]+/u', '_', $trainer->ho_ten) . ($ext ? '.' . $ext : '');
+                    $message->attach($cvFullPath, [
+                        'as' => $cleanName,
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Lỗi gửi mail ứng tuyển Trainer: ' . $e->getMessage());
+        }
+
+        // 5. Trả kết quả
         return response()->json([
             'success' => true,
             'message' => 'Đăng ký ứng tuyển Trainer thành công. Vui lòng chờ Admin liên hệ.',
@@ -245,6 +271,11 @@ class TrainerController extends Controller
             ->orderByDesc('ct.id')
             ->get();
 
+        $danhSach = $danhSach->map(function ($item) {
+            $item->anh_dai_dien = self::formatAvatar($item->anh_dai_dien, 0);
+            return $item;
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Lấy danh sách học viên thành công.',
@@ -302,6 +333,8 @@ class TrainerController extends Controller
             ], 404);
         }
 
+        $chiTiet->anh_dai_dien = self::formatAvatar($chiTiet->anh_dai_dien, 0);
+
         return response()->json([
             'success' => true,
             'message' => 'Lấy chi tiết học viên thành công.',
@@ -343,6 +376,11 @@ class TrainerController extends Controller
             });
         }
         $clients = $query->select('id', 'ho_ten', 'so_dien_thoai', 'anh_dai_dien', 'muc_tieu_hien_tai')->get();
+
+        $clients = $clients->map(function ($c) {
+            $c->anh_dai_dien = self::formatAvatar($c->anh_dai_dien, 0);
+            return $c;
+        });
 
         // 3. Lấy danh sách gói tập có PT
         $goiTaps = DB::table('goi_tap')
@@ -602,7 +640,7 @@ class TrainerController extends Controller
                 'email' => $trainerRecord->email,
                 'so_dien_thoai' => $trainerRecord->so_dien_thoai,
                 'mo_ta' => $trainerRecord->mo_ta ?: '5 năm kinh nghiệm huấn luyện sức mạnh và giảm mỡ. Tập trung vào kỹ thuật chuẩn và lộ trình bền vững.',
-                'hinh_anh' => $trainerRecord->hinh_anh,
+                'hinh_anh' => self::formatAvatar($trainerRecord->hinh_anh, $trainerRecord->gioi_tinh ?? 0),
                 'chuc_danh' => $trainerRecord->chuc_danh ?: 'Personal Trainer',
                 'so_nam_kinh_nghiem' => $trainerRecord->so_nam_kinh_nghiem ?: '5 năm',
                 'chuyen_mon' => $chuyenMon,
@@ -684,5 +722,49 @@ class TrainerController extends Controller
             'message' => 'Cập nhật hồ sơ thành công!',
             'data' => $fresh,
         ]);
+    }
+
+    /**
+     * Định dạng đường dẫn ảnh đại diện chuẩn và có fallback ảnh đẹp
+     */
+    public static function formatAvatar($path, $gioiTinh = 0)
+    {
+        if (empty($path)) {
+            return $gioiTinh == 1
+                ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80';
+        }
+
+        // Nếu đã là link đầy đủ http / https
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        // Nếu là file upload trong storage (bắt đầu bằng avatars/ hoặc storage/)
+        if (str_starts_with($path, 'avatars/') || str_starts_with($path, 'storage/')) {
+            $cleanPath = ltrim(preg_replace('/^storage\//', '', $path), '/');
+            return url(Storage::url($cleanPath));
+        }
+
+        // Bộ ảnh đại diện chất lượng cao tương ứng với các mã trainer1.jpg -> trainer6.jpg từ Seeder
+        $dummyAvatars = [
+            'trainer1.jpg' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+            'trainer2.jpg' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+            'trainer3.jpg' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
+            'trainer4.jpg' => 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80',
+            'trainer5.jpg' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
+            'trainer6.jpg' => 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&auto=format&fit=crop&q=80',
+        ];
+
+        if (isset($dummyAvatars[$path])) {
+            return $dummyAvatars[$path];
+        }
+
+        // Nếu file thực sự tồn tại trong thư mục public
+        if (file_exists(public_path($path))) {
+            return url($path);
+        }
+
+        return 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80';
     }
 }
