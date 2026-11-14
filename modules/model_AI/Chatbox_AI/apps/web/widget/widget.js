@@ -175,15 +175,27 @@ export class MascotWidget {
 
     const handleSend = () => {
       const text = inputEl.value.trim();
-      if (text) this.sendMessage(text);
+      if (text) {
+        inputEl.style.height = 'auto';
+        this.sendMessage(text);
+      }
     };
 
     sendBtn.addEventListener('click', handleSend);
     inputEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
+      if (e.key === 'Enter') {
+        if (!e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          handleSend();
+        }
+        // Khi Shift + Enter: cho phép xuống hàng bình thường
       }
+    });
+
+    // Tự động giãn chiều cao textarea khi xuống dòng bằng Shift + Enter
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
     });
 
     // Câu hỏi gợi ý nhanh
@@ -355,12 +367,15 @@ export class MascotWidget {
 
     input.value = '';
     sendBtn.disabled = true;
-    typing.hidden = false;
-    typing.style.display = 'flex';
 
-    // 1. Bật thinking state ngay lập tức!
-    this.headerMascot.setState('thinking');
-    this.launcherMascot.setState('thinking');
+    // Chỉ hiển thị 'VIF đang suy nghĩ' khi câu hỏi liên quan đến tra cứu dữ liệu
+    const isDataQuery = /lịch|lich|gói|goi|tập|tap|dinh dưỡng|dinh duong|calo|món|mon|ăn|an|chỉ số|chi so|tiến độ|tien do|buổi|buoi|bài|bai/i.test(query);
+    if (isDataQuery) {
+      typing.hidden = false;
+      typing.style.display = 'flex';
+      this.headerMascot.setState('thinking');
+      this.launcherMascot.setState('thinking');
+    }
 
     // Thêm tin nhắn của User vào giao diện
     const userMsg = document.createElement('div');
