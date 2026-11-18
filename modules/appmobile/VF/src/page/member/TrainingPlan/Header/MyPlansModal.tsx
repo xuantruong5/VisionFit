@@ -140,11 +140,7 @@ const MyPlansModal = ({ visible, onClose, navigation }: any) => {
 
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                     {/* 2 nút chọn */}
-                    <TouchableOpacity style={styles.btnPrimary}
-                        onPress={() => {
-                            onClose();
-                            navigation?.navigate("WorkoutPlanScreen");
-                        }}>
+                    <TouchableOpacity style={styles.btnPrimary} onPress={() => {  onClose(); navigation?.navigate("WorkoutPlanScreen"); }}>
                         <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnGradient}>
                             <Ionicons name="add-circle-outline" size={20} color={COLORS.white} />
                             <Text style={styles.btnPrimaryText}>THÊM KẾ HOẠCH TẬP MẶC ĐỊNH</Text>

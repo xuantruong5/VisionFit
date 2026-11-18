@@ -68,6 +68,21 @@ function formatSafeHTML(text) {
       parts.push('</tbody></table></div>');
       continue;
     }
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      if (inUl) { parts.push('</ul>'); inUl = false; }
+      if (inOl) { parts.push('</ol>'); inOl = false; }
+      parts.push('<hr class="vif-divider" />');
+      continue;
+    }
+    const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+    if (headingMatch) {
+      if (inUl) { parts.push('</ul>'); inUl = false; }
+      if (inOl) { parts.push('</ol>'); inOl = false; }
+      const level = headingMatch[1].length;
+      const content = formatInline(headingMatch[2]);
+      parts.push(`<div class="vif-heading vif-h${level}">- ${content}</div>`);
+      continue;
+    }
     const isUl = /^[-*]\s+(.*)$/.test(trimmed);
     const isOl = /^(\d+)\.\s+(.*)$/.test(trimmed);
     if (isUl || isOl) {
@@ -109,14 +124,65 @@ function card(label, title, lines = []) {
   for (const line of lines) { const p = document.createElement('p'); p.textContent = line; el.append(p); }
   $('context-content').append(el); return el;
 }
+function formatVNDate(dateStr) {
+  if (!dateStr) return 'Chưa có dữ liệu';
+  const clean = String(dateStr).split('T')[0];
+  const p = clean.split('-');
+  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+  return dateStr;
+}
+
+function formatVNTime(isoStr, dateStr) {
+  if (isoStr) {
+    const d = new Date(isoStr);
+    if (!Number.isNaN(d.getTime())) {
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const MM = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${hh}:${mm} ${dd}/${MM}/${yyyy}`;
+    }
+  }
+  if (dateStr) {
+    const p = String(dateStr).split('-');
+    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]} · Chưa có giờ tập`;
+    return dateStr;
+  }
+  return 'Chưa có thời gian';
+}
+
 function renderContext(c) {
   $('context-content').replaceChildren();
   card('Mục tiêu hiện tại', c.profile.goal || 'Chưa có dữ liệu', [c.profile.level || '']);
-  if (c.packages.length) { const p = c.packages[0]; card('Gói tập của bạn', p.name || 'Chưa có tên gói', [p.remaining_sessions !== null ? `Còn ${p.remaining_sessions} buổi` : 'Chưa có dữ liệu số buổi còn lại', ...(p.total_sessions !== null && p.total_sessions !== undefined ? [`Đã đăng ký: ${p.total_sessions} buổi`] : []), `Hết hạn: ${p.expires_at || 'Chưa có dữ liệu'}`]); }
-  else card('Gói tập', 'Chưa có dữ liệu');
-  if (c.schedule.length) { const s = c.schedule[0]; const date = s.starts_at ? new Date(s.starts_at) : null; card('Lịch tập được cấp', s.name || 'Buổi tập', [date && !Number.isNaN(date.getTime()) ? date.toLocaleString('vi-VN') : s.scheduled_date ? `${s.scheduled_date} · Chưa có giờ tập` : 'Chưa có thời gian', s.trainer || '']); }
+  if (c.packages.length) {
+    const p = c.packages[0];
+    card('Gói tập của bạn', p.name || 'Chưa có tên gói', [
+      p.remaining_sessions !== null ? `Còn ${p.remaining_sessions} buổi` : 'Chưa có dữ liệu số buổi còn lại',
+      ...(p.total_sessions !== null && p.total_sessions !== undefined ? [`Đã đăng ký: ${p.total_sessions} buổi`] : []),
+      `Hết hạn: ${formatVNDate(p.expires_at)}`
+    ]);
+  } else {
+    card('Gói tập', 'Chưa có dữ liệu');
+  }
+  if (c.schedule.length) {
+    const s = c.schedule[0];
+    card('Lịch tập được cấp', s.name || 'Buổi tập', [
+      formatVNTime(s.starts_at, s.scheduled_date),
+      s.trainer || 'Chưa có PT'
+    ]);
+  }
   const progress = card('Tiến độ', `${c.progress.sessions_this_week ?? '—'} buổi trong tuần`);
-  if (c.progress.completion_percent !== null) { const bar = document.createElement('progress'); bar.max = 100; bar.value = Math.max(0, Math.min(100, c.progress.completion_percent)); bar.setAttribute('aria-label', 'Tỷ lệ hoàn thành'); progress.append(bar); const p = document.createElement('p'); p.textContent = `Hoàn thành ${c.progress.completion_percent}%`; progress.append(p); }
+  if (c.progress.completion_percent !== null) {
+    const bar = document.createElement('progress');
+    bar.max = 100;
+    bar.value = Math.max(0, Math.min(100, c.progress.completion_percent));
+    bar.setAttribute('aria-label', 'Tỷ lệ hoàn thành');
+    progress.append(bar);
+    const p = document.createElement('p');
+    p.textContent = `Hoàn thành ${c.progress.completion_percent}%`;
+    progress.append(p);
+  }
   if (c.summary) card('Phạm vi quản lý', `${c.summary.assigned_members ?? '—'} hội viên`, c.summary.expiring_members !== null ? [`${c.summary.expiring_members} hội viên sắp hết hạn`] : []);
   $('context-source').textContent = `${state.dataMode === 'demo' ? 'Nguồn: dữ liệu minh họa' : 'Nguồn: API VisionFit'} · ${new Date().toLocaleTimeString('vi-VN')}`;
 }

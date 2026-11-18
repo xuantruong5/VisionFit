@@ -17,6 +17,12 @@ use App\Http\Controllers\BuoiTapController;
 use App\Http\Controllers\GoiTapController;
 use App\Http\Controllers\ThanhToanController;
 use App\Http\Controllers\TrainersController;
+use App\Http\Controllers\TanSuatThuongController;
+use App\Http\Controllers\ThongBaoController;
+
+
+
+
 
 
 
@@ -90,6 +96,10 @@ Route::get('/phong-gym', [PhongGymController::class,'danhSach']);
 
 
 Route::post('client/login', [MembersController::class, 'login']);
+Route::post('client/register', [MembersController::class, 'register']);
+Route::post('client/dang-ky', [MembersController::class, 'register']);
+Route::post('client/quen-mat-khau', [MembersController::class, 'forgotPassword']);
+Route::post('client/dat-lai-mat-khau', [MembersController::class, 'resetPassword']);
 Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function () {
     Route::get('/user', [BaiDangController::class, 'getUser']);
     Route::get('/bai-dang', [BaiDangController::class, 'index']);
@@ -106,17 +116,9 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/binh-luan/{id}/like', [BaiDangController::class, 'likeComment']);
     Route::delete('/binh-luan/{id}/like',[BaiDangController::class, 'unlikeComment']);
 
-
     Route::get('/bai-dang-da-luu', [BaiDangController::class, 'savedPosts']);
     Route::post('/bai-dang/{id}',[BaiDangController::class, 'updatePost']);
     Route::delete('/bai-dang/{id}',[BaiDangController::class, 'deletePost']);
-
-
-
-
-
-
-
 
 
 
@@ -155,7 +157,6 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/hoan-thanh',[BuoiTapController::class, 'hoanThanhBaiTap']);
     Route::post('/buoi-tap/{id}/ket-thuc',[BuoiTapController::class, 'ketThuc']);
 
-
     Route::post('/buoi-tap/{id}/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'luuLichSuHiep']);
     Route::get('/tien-do/{idTienDo}/lich-su-hiep',[BuoiTapController::class, 'getLichSuHiep']);
 
@@ -187,7 +188,6 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
     Route::get('/auto-thanh-toan-goi/{id}', [ThanhToanController::class, 'autoThanhToanGoi']);
 
-
     Route::post('/test-mail', [ThanhToanController::class, 'testGuiMail']);
 
     // lấy danh sách đã đăng ký gói
@@ -196,6 +196,22 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
 
     Route::get('/profile', [MembersController::class, 'getProfile']);
+    Route::post('/profile', [MembersController::class, 'updateProfile']);
+    Route::post('/profile/avatar', [MembersController::class, 'uploadAvatar']);
+    Route::post('/doi-mat-khau', [MembersController::class, 'changePassword']);
+
+    // tần suất tập và thưởng 
+    Route::get('/thong-ke-chuoi-ngay-tap', [TanSuatThuongController::class, 'thongKeChuoiNgayTap']);
+    Route::post('/nhan-phan-thuong', [TanSuatThuongController::class, 'nhanPhanThuong']);
+
+
+    // thong bao 
+    Route::get('/thong-bao', [ThongBaoController::class, 'danhSach']);
+    Route::post('/thong-bao/{id}/da-doc', [ThongBaoController::class, 'danhDauDaDoc']);
+    Route::post('/thong-bao/da-doc-tat-ca', [ThongBaoController::class, 'danhDauTatCaDaDoc']);
+    Route::delete('/thong-bao/{id}', [ThongBaoController::class, 'xoa']);
+    Route::delete('/thong-bao', [ThongBaoController::class, 'xoaTatCa']);
+
 
 
 
@@ -224,6 +240,7 @@ Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
 Route::post('/trainer/dang-ky', [TrainerController::class, 'dangKy']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
 
+
     Route::get('/chat/contacts', [ChatController::class, 'getTrainerContacts']);
 
     Route::get('/chat/rooms', [ChatController::class, 'getTrainerRooms']);
@@ -246,9 +263,9 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
 
     Route::post('/chat/upload', [ChatController::class, 'uploadMedia']);
 
-    Route::get('/chat/room/{id}', [ChatController::class, 'getTrainerRoom']);
-    Route::get('/chat/rooms', [ChatController::class, 'getTrainerRooms']);
-    Route::get('/chat/contacts', [ChatController::class, 'getTrainerContacts']);
+
+
+
     Route::get('/user', [BaiDangController::class, 'getUser']);
     Route::get('/check-token', [TrainerController::class, 'checkTokenTrainer']);
     Route::post('logout', [TrainerController::class, 'logoutTrainer']);
@@ -273,6 +290,19 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
     Route::get('/bai-dang-da-luu', [BaiDangController::class, 'savedPosts']);
     Route::post('/bai-dang/{id}',[BaiDangController::class, 'updatePost']);
     Route::delete('/bai-dang/{id}',[BaiDangController::class, 'deletePost']);
+
+
+    // Hồ sơ Trainer
+    Route::get('/profile', [TrainerController::class, 'getProfile']);
+    Route::post('/profile', [TrainerController::class, 'updateProfile']);
+
+    // Quản lý học viên của HLV
+    Route::get('/members', [TrainerController::class, 'getMembers']);
+    Route::get('/members/{id}', [TrainerController::class, 'getMemberDetail']);
+    Route::get('/candidates', [TrainerController::class, 'getCandidates']);
+    Route::post('/add-member', [TrainerController::class, 'addMember']);
+    Route::put('/members/{id}', [TrainerController::class, 'updateMember']);
+    Route::delete('/members/{id}', [TrainerController::class, 'deleteMember']);
 });
 
 

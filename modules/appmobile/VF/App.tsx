@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
+import { navigationRef } from "./src/general/rootNavigation";
 import { Alert, Animated, View, Text } from "react-native";
 import React, { useEffect, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -84,13 +85,12 @@ import TrainerSettings from "./src/page/trainners/TrainerSettings";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const navigationRef = createNavigationContainerRef();
 
 const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="DashboardScreen" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="headerPage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
       <MemberWorkoutStack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
@@ -341,7 +341,7 @@ const App = () => {
         }}
       >
         <Stack.Navigator
-          initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+          initialRouteName="Onloading" // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
           screenOptions={{ headerShown: false }}
         >
           <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />

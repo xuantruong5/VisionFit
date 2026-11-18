@@ -37,6 +37,8 @@ class Client extends Authenticatable
         'tinh_trang',
         'is_active',
         'is_block',
+        'hash_reset',
+        'hash_active',
     ];
 
     public function baiDang()

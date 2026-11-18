@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert, StatusBar, Switch,} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert, StatusBar, Switch, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -68,6 +68,19 @@ const MemberProfile = ({ navigation }: any) => {
     const [showCardModal, setShowCardModal] = useState(false);
     const [showAvatarPicker, setShowAvatarPicker] = useState(false);
     const [editForm, setEditForm] = useState({ ...INITIAL_MEMBER });
+    const [saving, setSaving] = useState(false);
+
+    // Modal đổi mật khẩu
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+    });
+    const [changingPassword, setChangingPassword] = useState(false);
+    const [showOldPass, setShowOldPass] = useState(false);
+    const [showNewPass, setShowNewPass] = useState(false);
+    const [showConfirmPass, setShowConfirmPass] = useState(false);
 
     // Tính chỉ số BMI và xếp loại thể trạng
     const getBMIData = () => {
@@ -109,16 +122,17 @@ const MemberProfile = ({ navigation }: any) => {
     // Chuyển giới tính từ API
     const formatGender = (gender?: string | number | null) => {
         if (gender === null || gender === undefined) return null;
-        const value = String(gender);
-        if (value === '1') return 'Nam';
-        if (value === '2') return 'Nữ';
-        return value;
+        const value = String(gender).trim().toLowerCase();
+        if (value === '0' || value === 'nam') return 'Nam';
+        if (value === '1' || value === 'nu' || value === 'nữ') return 'Nữ';
+        if (value === '2') return 'Khác';
+        return String(gender);
     };
 
     const fetchProfile = async () => {
         try {
             const response = await apiFitlife.get('/client/profile');
-            if (!response.data.success) {
+            if (!response.data.success && !response.data.status) {
                 return;
             }
             const data = response.data.data;
@@ -131,8 +145,8 @@ const MemberProfile = ({ navigation }: any) => {
                 ngay_sinh: formatDate(data.ngay_sinh) ?? prev.ngay_sinh,
                 gioi_tinh: formatGender(data.gioi_tinh) ?? prev.gioi_tinh,
 
-                chieu_cao_cm: data.chieu_cao_cm ?? prev.chieu_cao_cm,
-                can_nang_kg: data.can_nang_kg ?? prev.can_nang_kg,
+                chieu_cao_cm: data.chieu_cao_cm ? String(data.chieu_cao_cm) : prev.chieu_cao_cm,
+                can_nang_kg: data.can_nang_kg ? String(data.can_nang_kg) : prev.can_nang_kg,
                 dang_nguoi: data.dang_nguoi ?? prev.dang_nguoi,
 
                 muc_tieu_hien_tai: data.muc_tieu_hien_tai ?? prev.muc_tieu_hien_tai,
@@ -165,8 +179,8 @@ const MemberProfile = ({ navigation }: any) => {
         fetchProfile();
     }, []);
 
-    // Lưu thông tin chỉnh sửa
-    const handleSaveProfile = () => {
+    // Lưu thông tin chỉnh sửa vào Database
+    const handleSaveProfile = async () => {
         if (!editForm.ho_ten.trim()) {
             Alert.alert('Thông báo', 'Họ và tên không được để trống!');
             return;
@@ -176,16 +190,92 @@ const MemberProfile = ({ navigation }: any) => {
             return;
         }
 
-        setMember({ ...editForm });
-        setShowEditModal(false);
-        Alert.alert('Cập nhật thành công', 'Thông tin hồ sơ hội viên của bạn đã được cập nhật!');
+        setSaving(true);
+        try {
+            const payload: any = {
+                ho_ten: editForm.ho_ten.trim(),
+                so_dien_thoai: editForm.so_dien_thoai.trim(),
+                email: editForm.email ? editForm.email.trim() : undefined,
+                chieu_cao_cm: editForm.chieu_cao_cm ? parseFloat(String(editForm.chieu_cao_cm)) : undefined,
+                can_nang_kg: editForm.can_nang_kg ? parseFloat(String(editForm.can_nang_kg)) : undefined,
+                ngay_sinh: editForm.ngay_sinh,
+                gioi_tinh: editForm.gioi_tinh,
+                muc_tieu_hien_tai: editForm.muc_tieu_hien_tai,
+                cap_do_hien_tai: editForm.cap_do_hien_tai,
+                noi_tap_uu_tien: editForm.noi_tap_uu_tien,
+                dang_nguoi: editForm.dang_nguoi,
+            };
+
+            const response = await apiFitlife.post('/client/profile', payload);
+            if (response.data && (response.data.success || response.data.status)) {
+                setMember((prev) => ({ ...prev, ...editForm }));
+                setShowEditModal(false);
+                Alert.alert('Cập nhật thành công', 'Thông tin hồ sơ hội viên của bạn đã được lưu vào hệ thống!');
+                fetchProfile();
+            } else {
+                Alert.alert('Lỗi cập nhật', response.data?.message || 'Không thể lưu hồ sơ.');
+            }
+        } catch (error: any) {
+            console.log('Lỗi API cập nhật hồ sơ hội viên:', error.response?.data || error.message);
+            Alert.alert('Lỗi kết nối', error.response?.data?.message || 'Không thể lưu thông tin vào cơ sở dữ liệu. Vui lòng thử lại!');
+        } finally {
+            setSaving(false);
+        }
     };
 
-    // Đổi ảnh đại diện
-    const handleSelectAvatar = (url: string) => {
+    // Đổi ảnh đại diện và lưu vào Database
+    const handleSelectAvatar = async (url: string) => {
         setMember((prev) => ({ ...prev, anh_dai_dien: url }));
         setShowAvatarPicker(false);
-        Alert.alert('Thành công', 'Đã thay đổi ảnh đại diện!');
+        try {
+            await apiFitlife.post('/client/profile/avatar', { url });
+            Alert.alert('Thành công', 'Đã lưu ảnh đại diện mới vào hệ thống!');
+            fetchProfile();
+        } catch (error: any) {
+            console.log('Lỗi cập nhật avatar:', error.response?.data || error.message);
+        }
+    };
+
+    // Đổi mật khẩu tài khoản
+    const handleChangePassword = async () => {
+        if (!passwordForm.currentPassword.trim()) {
+            Alert.alert('Thông báo', 'Vui lòng nhập mật khẩu hiện tại!');
+            return;
+        }
+        if (!passwordForm.newPassword.trim()) {
+            Alert.alert('Thông báo', 'Vui lòng nhập mật khẩu mới!');
+            return;
+        }
+        if (passwordForm.newPassword.length < 6) {
+            Alert.alert('Thông báo', 'Mật khẩu mới phải có ít nhất 6 ký tự!');
+            return;
+        }
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            Alert.alert('Thông báo', 'Mật khẩu xác nhận không trùng khớp!');
+            return;
+        }
+
+        setChangingPassword(true);
+        try {
+            const response = await apiFitlife.post('/client/doi-mat-khau', {
+                mat_khau_cu: passwordForm.currentPassword,
+                mat_khau_moi: passwordForm.newPassword,
+                xac_nhan_mat_khau: passwordForm.confirmPassword,
+            });
+
+            if (response.data && (response.data.success || response.data.status)) {
+                Alert.alert('Thành công', 'Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.');
+                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                setShowPasswordModal(false);
+            } else {
+                Alert.alert('Lỗi', response.data?.message || 'Không thể đổi mật khẩu.');
+            }
+        } catch (error: any) {
+            const msg = error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại!';
+            Alert.alert('Thất bại', msg);
+        } finally {
+            setChangingPassword(false);
+        }
     };
 
     // Sao chép mã hội viên
@@ -285,7 +375,7 @@ const MemberProfile = ({ navigation }: any) => {
                 {/* 1. HERO PROFILE CARD */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatarContainer}>
-                        <Image source={{ uri: member.anh_dai_dien }} style={styles.avatarImage} />
+                        <Image source={{ uri: member.anh_dai_dien || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80' }} style={styles.avatarImage} />
                         <TouchableOpacity
                             style={styles.cameraBadge}
                             onPress={() => setShowAvatarPicker(true)}
@@ -682,7 +772,10 @@ const MemberProfile = ({ navigation }: any) => {
                             <SettingItem
                                 icon="lock-closed-outline"
                                 title="Bảo mật & Đổi mật khẩu tài khoản"
-                                onPress={() => Alert.alert('Bảo mật', 'Tính năng đổi mật khẩu tài khoản đã sẵn sàng!')}
+                                onPress={() => {
+                                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                    setShowPasswordModal(true);
+                                }}
                             />
 
                             {/* Điều hướng: CSKH */}
@@ -850,8 +943,9 @@ const MemberProfile = ({ navigation }: any) => {
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                    style={styles.saveBtnWrap}
+                                    style={[styles.saveBtnWrap, saving && { opacity: 0.7 }]}
                                     onPress={handleSaveProfile}
+                                    disabled={saving}
                                     activeOpacity={0.85}
                                 >
                                     <LinearGradient
@@ -860,8 +954,14 @@ const MemberProfile = ({ navigation }: any) => {
                                         end={{ x: 1, y: 0 }}
                                         style={styles.saveBtn}
                                     >
-                                        <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.white} />
-                                        <Text style={styles.saveBtnText}>Lưu thay đổi</Text>
+                                        {saving ? (
+                                            <ActivityIndicator size="small" color={COLORS.white} />
+                                        ) : (
+                                            <>
+                                                <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.white} />
+                                                <Text style={styles.saveBtnText}>Lưu thay đổi</Text>
+                                            </>
+                                        )}
                                     </LinearGradient>
                                 </TouchableOpacity>
                             </View>
@@ -1004,6 +1104,118 @@ const MemberProfile = ({ navigation }: any) => {
                             <Ionicons name="images-outline" size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
                             <Text style={styles.customUploadBtnText}>Tải ảnh từ điện thoại</Text>
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* MODAL 4: BẢO MẬT & ĐỔI MẬT KHẨU */}
+            <Modal
+                visible={showPasswordModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowPasswordModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.dragHandle} />
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
+                                <Text style={styles.modalSubtitle}>Cập nhật mật khẩu bảo vệ tài khoản của bạn</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.modalCloseBtn}
+                                onPress={() => setShowPasswordModal(false)}
+                            >
+                                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Mật khẩu hiện tại *</Text>
+                                <View style={styles.passwordInputWrap}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        secureTextEntry={!showOldPass}
+                                        value={passwordForm.currentPassword}
+                                        onChangeText={(val) => setPasswordForm({ ...passwordForm, currentPassword: val })}
+                                        placeholder="Nhập mật khẩu hiện tại..."
+                                        placeholderTextColor={COLORS.textLight}
+                                    />
+                                    <TouchableOpacity onPress={() => setShowOldPass(!showOldPass)} style={styles.eyeBtn}>
+                                        <Ionicons name={showOldPass ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textSecondary} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Mật khẩu mới (tối thiểu 6 ký tự) *</Text>
+                                <View style={styles.passwordInputWrap}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        secureTextEntry={!showNewPass}
+                                        value={passwordForm.newPassword}
+                                        onChangeText={(val) => setPasswordForm({ ...passwordForm, newPassword: val })}
+                                        placeholder="Nhập mật khẩu mới..."
+                                        placeholderTextColor={COLORS.textLight}
+                                    />
+                                    <TouchableOpacity onPress={() => setShowNewPass(!showNewPass)} style={styles.eyeBtn}>
+                                        <Ionicons name={showNewPass ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textSecondary} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Xác nhận mật khẩu mới *</Text>
+                                <View style={styles.passwordInputWrap}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        secureTextEntry={!showConfirmPass}
+                                        value={passwordForm.confirmPassword}
+                                        onChangeText={(val) => setPasswordForm({ ...passwordForm, confirmPassword: val })}
+                                        placeholder="Nhập lại mật khẩu mới..."
+                                        placeholderTextColor={COLORS.textLight}
+                                    />
+                                    <TouchableOpacity onPress={() => setShowConfirmPass(!showConfirmPass)} style={styles.eyeBtn}>
+                                        <Ionicons name={showConfirmPass ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textSecondary} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <View style={styles.modalActionRow}>
+                                <TouchableOpacity
+                                    style={styles.cancelBtn}
+                                    onPress={() => setShowPasswordModal(false)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.cancelBtnText}>Hủy</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.saveBtnWrap, changingPassword && { opacity: 0.7 }]}
+                                    onPress={handleChangePassword}
+                                    disabled={changingPassword}
+                                    activeOpacity={0.85}
+                                >
+                                    <LinearGradient
+                                        colors={[COLORS.primary, COLORS.primaryDark]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.saveBtn}
+                                    >
+                                        {changingPassword ? (
+                                            <ActivityIndicator size="small" color={COLORS.white} />
+                                        ) : (
+                                            <>
+                                                <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.white} />
+                                                <Text style={styles.saveBtnText}>Cập nhật mật khẩu</Text>
+                                            </>
+                                        )}
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -1878,6 +2090,28 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: COLORS.primary,
+    },
+
+    passwordInputWrap: {
+        height: 50,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
+    passwordInput: {
+        flex: 1,
+        fontSize: 14,
+        color: COLORS.textPrimary,
+        height: '100%',
+    },
+
+    eyeBtn: {
+        padding: 6,
     },
 });
 

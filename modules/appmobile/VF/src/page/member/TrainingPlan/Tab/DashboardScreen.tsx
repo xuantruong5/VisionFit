@@ -5,6 +5,14 @@ import { useNavigation } from "@react-navigation/native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import apiFitlife from "../../../../general/api";
 import { COLORS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
+import WorkoutStreakCard from "./WorkoutStreakCard";
+import WorkoutFrequencyCard from "./WorkoutFrequencyCard";
+import ConfettiCannon from "react-native-confetti-cannon";
+import { Dimensions } from "react-native";
+
+
+// pháo hoa 
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const DashboardScreen = () => {
   const navigation = useNavigation<any>();
@@ -14,22 +22,32 @@ const DashboardScreen = () => {
   const [tongNgayTap, setTongNgayTap] = useState(0);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [thongKeChuoiTap, setThongKeChuoiTap] = useState<any>(null);
+  const [fireworkRound, setFireworkRound] = useState(0);
+
+  // pháo hoa 
+  const [showFireworks, setShowFireworks] = useState(false);
 
   const getListPrograms = async () => {
     try {
       const res = await apiFitlife.get("/client/list-programs");
+
       if (res.data.success && res.data.data.length > 0) {
-        setProgram(res.data.data[0]);
+        const currentProgram = res.data.data[0];
+
+        setProgram(currentProgram);
+
         const dates = res.data.data
           .map((item: any) => item.ngay_tap)
           .filter((date: any) => typeof date === "string");
+
         setTrainingDates(dates);
       } else {
         setProgram(null);
         setTrainingDates([]);
       }
-    } catch (error) {
-      console.log("Lỗi lấy chương trình tập:", error);
+    } catch (error: any) {
+      console.log("Lỗi lấy chương trình tập:", error.response?.data || error.message);
     }
   };
 
@@ -49,10 +67,46 @@ const DashboardScreen = () => {
     }
   };
 
+
+  const getThongKeChuoiTap = async (id: number) => {
+    try {
+      const res = await apiFitlife.get("/client/thong-ke-chuoi-ngay-tap", {
+        params: {
+          id_dang_ky_chuong_trinh: id,
+        },
+      });
+
+      console.log("THỐNG KÊ CHUỖI TẬP:", res.data);
+
+      if (res.data.success) {
+        setThongKeChuoiTap(res.data);
+
+        // Kiểm tra có phần thưởng mới hay không
+        if (
+          Array.isArray(res.data.phan_thuong_moi) &&
+          res.data.phan_thuong_moi.length > 0
+        ) {
+          setFireworkRound(1);
+        }
+      }
+    } catch (error: any) {
+      console.log(
+        "Lỗi lấy thống kê chuỗi ngày tập:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
   useEffect(() => {
     getListPrograms();
     getHuanLuyenTiepTheo();
   }, []);
+
+  useEffect(() => {
+    if (program?.id) {
+      getThongKeChuoiTap(program.id);
+    }
+  }, [program]);
 
   LocaleConfig.locales["vi"] = {
     monthNames: ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"],
@@ -77,15 +131,75 @@ const DashboardScreen = () => {
     selectedTextColor: COLORS.white,
   };
 
-  const progressPercent =
-    tongNgayTap > 0 ? Math.round((tongNgayDaHoanThanh / tongNgayTap) * 100) : 0;
+  const progressPercent = tongNgayTap > 0 ? Math.round((tongNgayDaHoanThanh / tongNgayTap) * 100) : 0;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+
+        {/* 1. CHUỖI NGÀY TẬP LUYỆN */}
+        {thongKeChuoiTap && (
+          <WorkoutStreakCard
+            currentStreak={thongKeChuoiTap.chuoi_tap.chuoi_dang_duy_tri}
+            highestStreak={thongKeChuoiTap.chuoi_tap.chuoi_dai_nhat}
+            targetStreak={thongKeChuoiTap.chuoi_tap.moc_tiep_theo}
+            milestones={thongKeChuoiTap.cac_moc_phan_thuong.map((item: any) => {
+              const statusMap: any = {
+                da_dat: {
+                  status: "achieved",
+                  statusText: item.da_nhan ? "Đã nhận" : "Đã đạt",
+                  icon: "ribbon",
+                  badgeBg: "#ECFDF5",
+                  badgeColor: "#10B981",
+                },
+                dang_chinh_phuc: {
+                  status: "in_progress",
+                  statusText: `Còn ${item.so_ngay_con_lai} ngày`,
+                  icon: "flame",
+                  badgeBg: "#FEF3C7",
+                  badgeColor: "#D97706",
+                },
+                chua_mo: {
+                  status: "locked",
+                  statusText: "Chưa đạt",
+                  icon: "trophy",
+                  badgeBg: "#F3F4F6",
+                  badgeColor: "#9CA3AF",
+                },
+              };
+              const status = statusMap[item.trang_thai] || statusMap.chua_mo;
+              return {
+                id: String(item.id_moc_phan_thuong),
+                days: Number(item.so_ngay),
+                title: item.ten_phan_thuong,
+                desc: item.mo_ta,
+                ...status,
+                rewardPoints: 0,
+              };
+            })} />
+        )}
+
+        {/* 2. TẦN SUẤT TẬP LUYỆN */}
+        {thongKeChuoiTap && (
+          <WorkoutFrequencyCard
+            weekSessionsCount={thongKeChuoiTap.tan_suat_tuan.tong_buoi_tap}
+            completedDaysCount={thongKeChuoiTap.tan_suat_tuan.so_ngay_da_tap}
+            dailyData={thongKeChuoiTap.tan_suat_tuan.chi_tiet_theo_ngay.map(
+              (item: any) => ({
+                dayName: item.ten_thu,
+                count: item.so_buoi,
+                isToday: item.la_hom_nay,
+              }))} />
+        )}
+
+
+
+
+
+
+
+
         {/* Mẹo tập luyện */}
         <View style={styles.noticeCard}>
           <Text style={styles.noticeTitle}>Theo dõi buổi tập mỗi ngày</Text>
@@ -93,18 +207,10 @@ const DashboardScreen = () => {
             Hoàn thành đầy đủ các hiệp để hệ thống tự động ghi nhận tiến độ
           </Text>
         </View>
-
         {/* Chương trình hiện tại */}
         <View style={styles.programCard}>
-          <Image
-            source={{
-              uri:
-                program?.anh_dai_dien ||
-                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-            }}
-            style={styles.programImage}
-            resizeMode="cover"
-          />
+          <Image source={{ uri: program?.anh_dai_dien || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80", }}
+            style={styles.programImage} resizeMode="cover" />
           <View style={styles.programBody}>
             <View style={styles.chipRow}>
               <View style={[styles.chip, { backgroundColor: PASTEL.tealSoft }]}>
@@ -152,11 +258,7 @@ const DashboardScreen = () => {
               return (
                 <View key={item.id} style={[styles.workoutRow, isLocked && styles.workoutRowLocked]}>
                   <View style={[styles.workoutIcon, isLocked && styles.workoutIconLocked]}>
-                    <Ionicons
-                      name={isLocked ? "lock-closed-outline" : "play"}
-                      size={16}
-                      color={isLocked ? PASTEL.inkMuted : PASTEL.teal}
-                    />
+                    <Ionicons name={isLocked ? "lock-closed-outline" : "play"} size={16} color={isLocked ? PASTEL.inkMuted : PASTEL.teal} />
                   </View>
                   <View style={styles.flex}>
                     <Text style={styles.workoutTitle} numberOfLines={1}>
@@ -175,11 +277,7 @@ const DashboardScreen = () => {
         {/* Lịch tập luyện */}
         <View style={styles.calendarHeaderRow}>
           <Text style={styles.sectionTitle}>Lịch tập trong tháng</Text>
-          <TouchableOpacity
-            style={styles.changeScheduleQuickBtn}
-            onPress={() => navigation.navigate("ChangeWorkoutScheduleScreen")}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.changeScheduleQuickBtn} onPress={() => navigation.navigate("ChangeWorkoutScheduleScreen")} activeOpacity={0.8}>
             <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
             <Text style={styles.changeScheduleQuickText}>Đổi lịch tập</Text>
           </TouchableOpacity>
@@ -199,22 +297,8 @@ const DashboardScreen = () => {
               const isOther = state === "disabled";
               return (
                 <TouchableOpacity activeOpacity={0.8} onPress={() => onPress?.(date)} style={styles.dayCell}>
-                  <View
-                    style={[
-                      styles.dayCircle,
-                      hasTraining && styles.dayCircleTraining,
-                      isToday && styles.dayCircleToday,
-                      isSelected && styles.dayCircleSelected,
-                      isOther && styles.dayCircleOther,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayNumber,
-                        hasTraining && styles.dayNumberTraining,
-                        isSelected && styles.dayNumberSelected,
-                      ]}
-                    >
+                  <View style={[styles.dayCircle, hasTraining && styles.dayCircleTraining, isToday && styles.dayCircleToday, isSelected && styles.dayCircleSelected, isOther && styles.dayCircleOther,]}>
+                    <Text style={[styles.dayNumber, hasTraining && styles.dayNumberTraining, isSelected && styles.dayNumberSelected,]} >
                       {date.day}
                     </Text>
                   </View>
@@ -237,24 +321,36 @@ const DashboardScreen = () => {
           <View style={styles.selectedRow}>
             <Text style={styles.selectedLabel}>Ngày đang chọn</Text>
             <Text style={styles.selectedValue}>{selectedDate}</Text>
-            <View
-              style={[
-                styles.statusPill,
-                trainingDates.includes(selectedDate) ? styles.statusPillActive : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusPillText,
-                  trainingDates.includes(selectedDate) ? styles.statusPillTextActive : null,
-                ]}
-              >
+            <View style={[styles.statusPill, trainingDates.includes(selectedDate) ? styles.statusPillActive : null,]} >
+              <Text style={[styles.statusPillText, trainingDates.includes(selectedDate) ? styles.statusPillTextActive : null,]} >
                 {trainingDates.includes(selectedDate) ? "Có lịch tập" : "Nghỉ ngơi"}
               </Text>
             </View>
           </View>
         </View>
       </ScrollView>
+      {fireworkRound > 0 && (
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <ConfettiCannon key={fireworkRound} count={150}
+         origin={{ x: SCREEN_WIDTH / 2, y: 0, }}
+          explosionSpeed={350}
+          fallSpeed={2500}
+          fadeOut={true}
+          autoStart={true}
+          onAnimationEnd={() => {
+            if (fireworkRound < 5) {
+              setTimeout(() => {
+                setFireworkRound((prev) => prev + 1);
+              }, 500);
+            } else {
+              setFireworkRound(0);
+            }
+          }}
+        />
+      </View>
+    )}
+
+
     </View>
   );
 };
@@ -281,6 +377,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     paddingVertical: 14,
     paddingHorizontal: 18,
+    marginTop: 16,
   },
   noticeTitle: {
     fontSize: 14.5,

@@ -36,6 +36,26 @@ class ThanhToanController extends Controller
                 'message' => 'Gói tập không tồn tại.'
             ], 404);
         }
+        // 2.1 Kiểm tra chương trình tập đã có gói đăng ký còn hạn chưa
+        $kiemTraDangKy = ChiTietDangKyGoi::join(
+            'dang_ky_goi',
+            'chi_tiet_dang_ky_goi.id_dang_ky_goi',
+            '=',
+            'dang_ky_goi.id'
+        )
+        ->where('dang_ky_goi.id_hoi_vien', $hoiVien->id)
+        ->where('dang_ky_goi.is_thanh_toan', 1)
+        ->where('chi_tiet_dang_ky_goi.id_chuong_trinh_tap', $request->id_chuong_trinh_tap)
+        ->where('chi_tiet_dang_ky_goi.ngay_ket_thuc', '>=', now()->toDateString())
+        ->exists();
+
+        if ($kiemTraDangKy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chương trình tập này đã có gói đăng ký và chưa hết hạn.'
+            ], 422);
+        }
+
 
         // 3. Tính tiền
         $donGia = (float) $goiTap->gia;

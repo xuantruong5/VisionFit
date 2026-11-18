@@ -20,7 +20,8 @@ import { getMascotImage } from './mascotImages';
 import { getAIResponse } from './mascotChatService';
 import { MascotSelectorModal } from './MascotSelectorModal';
 import { MascotVectorRig } from './MascotVectorRig';
-import { triggerMascotState } from './mascotEvents';
+import { triggerMascotState, triggerWorkoutStart } from './mascotEvents';
+import { navigateToWorkoutPlan } from '../../general/rootNavigation';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 interface MascotChatModalProps {
@@ -33,6 +34,7 @@ interface MascotChatModalProps {
 }
 
 const QUICK_SUGGESTIONS = [
+  { label: '🏋️ Tôi muốn tập luyện', query: 'Tôi muốn tập luyện' },
   { label: '📊 Chỉ số dinh dưỡng', query: 'Cho tôi biết chỉ số thể trạng và dinh dưỡng calo của tôi' },
   { label: '🥗 Thực đơn giảm mỡ', query: 'Gợi ý thực đơn ăn giảm mỡ Eat Clean' },
   { label: '📅 Lịch tập hôm nay', query: 'Lịch tập hôm nay của tôi' },
@@ -123,6 +125,29 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
     setMessages((prev) => [...prev, userMsg]);
     if (!customQuery) setInputText('');
+
+    // Kiểm tra ý định tập luyện -> tự động chuyển trang Kế hoạch tập
+    const isWorkoutIntent = /tập luyện|muốn tập|bắt đầu tập|vào tập|kế hoạch tập|tập ngay|đi tập|luyện tập|^tập$/i.test(textToSend.trim().toLowerCase());
+    if (isWorkoutIntent) {
+      triggerWorkoutStart();
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: currentSpecies === 'cat'
+          ? 'Meo meo! Tuyệt vời quá! Hãy cùng khởi động và bắt đầu buổi tập nào 🐱💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!'
+          : 'Tuyệt vời! Khởi động kỹ và bùng nổ năng lượng buổi tập hôm nay nào 🐻💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsTyping(false);
+
+      setTimeout(() => {
+        navigateToWorkoutPlan();
+        onClose();
+      }, 700);
+      return;
+    }
+
     setIsTyping(true);
     triggerMascotState('thinking');
 
@@ -158,6 +183,110 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   };
 
   const headerMascotImg = getMascotImage(currentSpecies, currentStage);
+
+  const renderFormattedAiMessage = (rawText: string) => {
+    if (!rawText) return null;
+    const lines = rawText.split('\n');
+    const elements: React.ReactNode[] = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Kiểm tra Bảng Markdown
+      const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
+      const isNextSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
+
+      if (isTableRow && isNextSep) {
+        const headers = trimmed.slice(1, -1).split('|').map((c) => c.trim().replace(/\*\*/g, ''));
+        i += 2; // Bỏ qua header và separator
+        const rows: string[][] = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          const cells = lines[i].trim().slice(1, -1).split('|').map((c) => c.trim());
+          rows.push(cells);
+          i++;
+        }
+
+        elements.push(
+          <View key={`tbl-${i}`} style={styles.tableWrapper}>
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={true}
+              contentContainerStyle={styles.tableScrollContent}
+            >
+              <View style={styles.tableBox}>
+                <View style={styles.tableHeaderRow}>
+                  {headers.map((h, hIdx) => (
+                    <View key={`th-${hIdx}`} style={[styles.tableThCell, hIdx === 0 && styles.tableColFirst]}>
+                      <Text style={styles.tableThText} numberOfLines={2}>{h}</Text>
+                    </View>
+                  ))}
+                </View>
+                {rows.map((row, rIdx) => (
+                  <View key={`tr-${rIdx}`} style={[styles.tableTrRow, rIdx % 2 === 1 && styles.tableTrEven]}>
+                    {row.map((cell, cIdx) => (
+                      <View key={`td-${cIdx}`} style={[styles.tableTdCell, cIdx === 0 && styles.tableColFirst]}>
+                        <Text style={styles.tableTdText}>{cell.replace(/\*\*/g, '')}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        );
+        continue;
+      }
+
+      // 1. Phân cách ngang: '---', '***'
+      if (/^[-*_]{3,}$/.test(trimmed)) {
+        elements.push(<View key={`div-${i}`} style={styles.dividerLine} />);
+        i++;
+        continue;
+      }
+
+      // 2. Tiêu đề Markdown: '# ', '## ', '### ', v.v. -> Tự động chuyển dấu ### thành -
+      const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+      if (headingMatch) {
+        const cleanText = headingMatch[2].replace(/\*\*/g, '');
+        elements.push(
+          <View key={`h-${i}`} style={styles.headingBadge}>
+            <Text style={styles.headingBadgeText}>- {cleanText}</Text>
+          </View>
+        );
+        i++;
+        continue;
+      }
+
+      // 3. Tiêu đề đóng khung dạng 【 TIÊU ĐỀ 】
+      if (trimmed.startsWith('【') && trimmed.endsWith('】')) {
+        elements.push(
+          <View key={`badge-${i}`} style={styles.headingBadge}>
+            <Text style={styles.headingBadgeText}>{trimmed}</Text>
+          </View>
+        );
+        i++;
+        continue;
+      }
+
+      // 4. Dòng thông thường
+      const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1');
+      if (!trimmed) {
+        elements.push(<View key={`sp-${i}`} style={{ height: 4 }} />);
+      } else {
+        elements.push(
+          <Text key={`txt-${i}`} style={[styles.bubbleText, styles.bubbleTextAi]}>
+            {cleanLine}
+          </Text>
+        );
+      }
+      i++;
+    }
+
+    return elements;
+  };
 
   if (!visible) return null;
 
@@ -246,14 +375,13 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                         isUser ? styles.bubbleUser : styles.bubbleAi,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.bubbleText,
-                          isUser ? styles.bubbleTextUser : styles.bubbleTextAi,
-                        ]}
-                      >
-                        {msg.text}
-                      </Text>
+                      {isUser ? (
+                        <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
+                          {msg.text}
+                        </Text>
+                      ) : (
+                        renderFormattedAiMessage(msg.text)
+                      )}
                       <Text
                         style={[
                           styles.msgTime,
@@ -505,6 +633,32 @@ const styles = StyleSheet.create({
   bubbleTextAi: {
     color: COLORS.textDark,
   },
+  headingBadge: {
+    backgroundColor: '#EAF5F2',
+    borderLeftWidth: 3.5,
+    borderLeftColor: COLORS.primary,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginVertical: 4,
+  },
+  headingBadgeText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  subheadingText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#15803D',
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  dividerLine: {
+    height: 1,
+    backgroundColor: '#E6EFF1',
+    marginVertical: 6,
+  },
   msgTime: {
     fontSize: 9.5,
     marginTop: 4,
@@ -553,12 +707,73 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 18 : 14,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 26,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#EEF4F6',
     gap: 10,
+  },
+  tableWrapper: {
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D8E8E4',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  tableScrollContent: {
+    paddingRight: 8,
+  },
+  tableBox: {
+    minWidth: '100%',
+  },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#0E6642',
+  },
+  tableThCell: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRightWidth: 0.5,
+    borderRightColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  tableThText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  tableTrRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E6EFF1',
+    backgroundColor: '#FFFFFF',
+  },
+  tableTrEven: {
+    backgroundColor: '#F8FCFA',
+  },
+  tableTdCell: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    minWidth: 80,
+    justifyContent: 'center',
+    borderRightWidth: 0.5,
+    borderRightColor: '#EDF3F1',
+  },
+  tableTdText: {
+    color: COLORS.textDark,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  tableColFirst: {
+    minWidth: 42,
+    maxWidth: 52,
   },
   input: {
     flex: 1,

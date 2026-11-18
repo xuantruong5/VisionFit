@@ -220,6 +220,11 @@ const RegistrationReviewScreen = ({ navigation, route }: any) => {
         phan_tram_giam: Number(  promotionData?.phan_tram_giam || 0 ),
         phuong_thuc_thanh_toan: 'VietQR',
       };
+     console.log('===== KIỂM TRA ĐĂNG KÝ GÓI =====');
+    console.log('ID GÓI:', payload.id_goi_tap);
+    console.log('ID CHƯƠNG TRÌNH:', payload.id_chuong_trinh_tap);
+    console.log('ID NƠI TẬP:', payload.id_noi_tap);
+    console.log('PAYLOAD:', JSON.stringify(payload, null, 2));
 
       // 2. Gọi API tạo đăng ký gói
       const response = await apiFitlife.post( '/client/dang-ky-goi', payload );
