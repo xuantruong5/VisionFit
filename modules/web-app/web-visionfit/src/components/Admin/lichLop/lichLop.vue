@@ -1431,13 +1431,17 @@ export default {
 }
 
 .ref-code-badge {
-    background: #eaf9fb;
+    display: inline-block;
+    white-space: nowrap;
+    background: #f0fdfa;
     color: #0d7f8d;
-    font-weight: 800;
+    font-weight: 700;
     padding: 3px 8px;
     border-radius: 6px;
     font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     border: 1px solid #bcecf0;
+    letter-spacing: 0.3px;
 }
 
 .schedule-old-box strong {

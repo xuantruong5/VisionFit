@@ -82,6 +82,12 @@ class MembersController extends Controller
 
         if($check) {
             $client = Auth::guard('client')->user();
+            if ($client->is_block == 1 || $client->tinh_trang == 0) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động. Vui lòng liên hệ ban quản lý!',
+                ], 403);
+            }
             $token     = $client->createToken('Token_client')->plainTextToken;
             return response()->json([
                 'status'    => true,
