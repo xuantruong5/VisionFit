@@ -214,6 +214,14 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
 
 
+    Route::post('/luu-ho-so-ban-dau', [MembersController::class, 'luuHoSoBanDau']);
+    Route::get('/check-cap-nhat-chi-so', [MembersController::class, 'checkCapNhatChiSo']);
+
+
+    
+
+
+
 
 
 

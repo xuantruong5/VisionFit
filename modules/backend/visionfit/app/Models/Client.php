@@ -34,11 +34,21 @@ class Client extends Authenticatable
         'ngan_sach_ban_dau',
         'note',
         'di_ung',
+        'che_do_an_ua_thich',
+        'muc_ngan_sach_an_uong',
         'tinh_trang',
         'is_active',
         'is_block',
         'hash_reset',
         'hash_active',
+        'ngay_cap_nhat_chi_so'
+    ];
+
+    protected $casts = [
+        'ngay_sinh' => 'date:Y-m-d',
+        'ngay_cap_nhat_chi_so' => 'datetime',
+        'di_ung' => 'array',
+        'che_do_an_ua_thich' => 'array',
     ];
 
     public function baiDang()
