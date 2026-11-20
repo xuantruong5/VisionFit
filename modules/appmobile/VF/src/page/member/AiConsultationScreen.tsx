@@ -1,31 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  ActivityIndicator,
-  Alert,
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert, StatusBar, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
 
 import AppHeader from '../../components/AppHeader';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
 
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Platform } from 'react-native';
+
+
 // Định nghĩa các tùy chọn
+
 const ACTIVITY_LEVELS = [
-  { id: 1.2, title: 'Ít vận động', desc: 'Làm việc văn phòng, ít đi lại' },
-  { id: 1.375, title: 'Vận động nhẹ', desc: 'Tập nhẹ 1-3 ngày/tuần' },
-  { id: 1.55, title: 'Vận động vừa', desc: 'Tập 3-5 ngày/tuần' },
-  { id: 1.725, title: 'Vận động nhiều', desc: 'Tập nặng 6-7 ngày/tuần' },
+  { id: 1, title: 'Ít vận động', desc: 'Làm việc văn phòng, ít đi lại' },
+  { id: 2, title: 'Vận động nhẹ', desc: 'Tập nhẹ 1-3 ngày/tuần' },
+  { id: 3, title: 'Vận động vừa', desc: 'Tập 3-5 ngày/tuần' },
+  { id: 4, title: 'Vận động nhiều', desc: 'Tập nặng 6-7 ngày/tuần' },
 ];
 
 const GOALS = [
@@ -58,95 +51,35 @@ const ALLERGIES_LIST = [
 ];
 
 const BUDGET_LEVELS = [
-  { id: 'tiet_kiem', title: 'Tiết kiệm', desc: '< 50k / ngày (Sinh viên, bình dân)' },
-  { id: 'vua_phai', title: 'Vừa phải', desc: '50k - 100k / ngày (Đầy đủ đạm, rau củ)' },
-  { id: 'thoai_mai', title: 'Thoải mái', desc: '> 100k / ngày (Thực phẩm cao cấp, whey...)' },
+  { id: 1, title: 'Tiết kiệm', desc: '< 50k / ngày (Sinh viên, bình dân)' },
+  { id: 2, title: 'Vừa phải', desc: '50k - 100k / ngày (Đầy đủ đạm, rau củ)' },
+  { id: 3, title: 'Thoải mái', desc: '> 100k / ngày (Thực phẩm cao cấp, whey...)' },
 ];
 
+
 const AiConsultationScreen = ({ navigation, route }: any) => {
-  // 1. Chỉ số cơ thể & Vận động (gộp cả Giới tính + Tuổi + Chiều cao + Cân nặng)
   const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [age, setAge] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [activityLevel, setActivityLevel] = useState(1.375);
+  const [activityLevel, setActivityLevel] = useState(2);
 
-  // 2. Mục tiêu & Địa điểm
+  // 2. Mục tiêu và nơi tập
   const [goal, setGoal] = useState('tang_co');
   const [location, setLocation] = useState('phong_gym');
-  const [daysPerWeek, setDaysPerWeek] = useState('4');
 
-  // 3. Chế độ ăn & Dị ứng
-  const [dietType, setDietType] = useState('Eat Clean');
+  // 3. Dinh dưỡng và dị ứng
+  const [dietType, setDietType] = useState<string[]>(['Eat Clean']);
   const [allergies, setAllergies] = useState<string[]>([]);
 
-  // 4. Ngân sách & Ghi chú tự do
-  const [budget, setBudget] = useState('vua_phai');
+  // 4. Ngân sách và ghi chú
+  const [budget, setBudget] = useState(2);
   const [specialNotes, setSpecialNotes] = useState('');
 
-  // Trạng thái modal mô phỏng AI
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  // Trạng thái lưu dữ liệu
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Tự động kiểm tra và điền thông tin người dùng nếu đã có sẵn trong API/AsyncStorage
-  useEffect(() => {
-    loadExistingUserInfo();
-  }, []);
-
-  const loadExistingUserInfo = async () => {
-    try {
-      // 1. Kiểm tra thông tin từ params truyền sang (nếu có)
-      if (route?.params) {
-        if (route.params.gender) {
-          setGender(route.params.gender === 'Nữ' || route.params.gender === 1 ? 'female' : 'male');
-        }
-        if (route.params.chieu_cao_cm) setHeight(String(route.params.chieu_cao_cm));
-        if (route.params.can_nang_kg) setWeight(String(route.params.can_nang_kg));
-        if (route.params.tuoi) setAge(String(route.params.tuoi));
-      }
-
-      // 2. Kiểm tra nếu có lưu user trong AsyncStorage
-      const savedUserStr = await AsyncStorage.getItem('user_info');
-      if (savedUserStr) {
-        const u = JSON.parse(savedUserStr);
-        if (u.gioi_tinh !== undefined) setGender(Number(u.gioi_tinh) === 1 ? 'female' : 'male');
-        if (u.chieu_cao_cm) setHeight(String(u.chieu_cao_cm));
-        if (u.can_nang_kg) setWeight(String(u.can_nang_kg));
-        if (u.ngay_sinh) {
-          const birthYear = new Date(u.ngay_sinh).getFullYear();
-          const curYear = new Date().getFullYear();
-          if (!isNaN(birthYear) && curYear > birthYear) {
-            setAge(String(curYear - birthYear));
-          }
-        }
-      }
-
-      // 3. Thử gọi API lấy profile (nếu đã login token) - bọc try catch an toàn không lo lỗi
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        try {
-          const res = await apiFitlife.get('/client/profile');
-          const data = res.data?.data || res.data?.client;
-          if (data) {
-            if (data.gioi_tinh !== undefined) setGender(Number(data.gioi_tinh) === 1 ? 'female' : 'male');
-            if (data.chieu_cao_cm) setHeight(String(data.chieu_cao_cm));
-            if (data.can_nang_kg) setWeight(String(data.can_nang_kg));
-            if (data.ngay_sinh) {
-              const birthYear = new Date(data.ngay_sinh).getFullYear();
-              const curYear = new Date().getFullYear();
-              if (!isNaN(birthYear) && curYear > birthYear) {
-                setAge(String(curYear - birthYear));
-              }
-            }
-          }
-        } catch {
-          // Bỏ qua nếu endpoint chưa có hoặc chưa đăng nhập, để trống cho user tự nhập
-        }
-      }
-    } catch (err) {
-      console.log('Lỗi đọc thông tin cơ thể trước đó (bỏ qua):', err);
-    }
-  };
 
   const toggleAllergy = (item: string) => {
     if (allergies.includes(item)) {
@@ -155,78 +88,93 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
       setAllergies([...allergies, item]);
     }
   };
+  const toggleDiet = (item: string) => {
+    if (dietType.includes(item)) {
+      setDietType(dietType.filter(d => d !== item));
+    } else {
+      setDietType([...dietType, item]);
+    }
+  };
 
-  const handleStartAnalysis = () => {
-    if (!age.trim() || !height.trim() || !weight.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ Tuổi, Chiều cao và Cân nặng để AI phân tích!');
+
+  const handleSaveProfile = async () => {
+    if (!birthDate.trim() || !height.trim() || !weight.trim()) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập ngày sinh, chiều cao và cân nặng.');
+      return;
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      Alert.alert('Thông báo', 'Ngày sinh phải có định dạng YYYY-MM-DD.');
       return;
     }
 
     const payload = {
-      gender: gender === 'male' ? 0 : 1, // 0: Nam, 1: Nữ
-      genderLabel: gender === 'male' ? 'Nam' : 'Nữ',
-      age: Number(age),
-      height: Number(height),
-      weight: Number(weight),
-      activityLevel,
-      goal,
-      location,
-      daysPerWeek: Number(daysPerWeek),
-      dietType,
-      allergies,
-      budget,
-      specialNotes,
+      ngay_sinh: birthDate,
+      gioi_tinh: gender === 'male' ? 0 : 1,
+      chieu_cao_cm: Number(height),
+      can_nang_kg: Number(weight),
+
+      muc_tieu_hoat_dong: activityLevel,
+      muc_tieu_hien_tai: goal,
+      noi_tap_uu_tien: location,
+
+      // Gửi trực tiếp dạng mảng
+      che_do_an_ua_thich: dietType,
+
+      muc_ngan_sach_an_uong: budget,
+      note: specialNotes.trim() || null,
+
+      // Gửi trực tiếp dạng mảng, không dùng join()
+      di_ung: allergies,
     };
 
-    console.log('--- DỮ LIỆU ĐÃ GOM ĐỦ CHUẨN BỊ GỬI AI ---', payload);
+    try {
+      setIsSaving(true);
 
-    // Mở popup mô phỏng AI phân tích (frontend-only)
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      // Công thức tính BMR & TDEE giả lập để minh họa
-      const w = Number(weight);
-      const h = Number(height);
-      const a = Number(age);
-      const bmr = gender === 'male' 
-        ? 10 * w + 6.25 * h - 5 * a + 5 
-        : 10 * w + 6.25 * h - 5 * a - 161;
-      const tdee = Math.round(bmr * activityLevel);
+      const res = await apiFitlife.post(
+        '/client/luu-ho-so-ban-dau',
+        payload
+      );
 
-      let targetKcal = tdee;
-      if (goal === 'giam_can') targetKcal = tdee - 400;
-      else if (goal === 'tang_co') targetKcal = tdee + 300;
+      if (res.data?.success) {
+        Alert.alert(
+          'Thành công',
+          'Hồ sơ thể lực và dinh dưỡng đã được lưu.',
+          [
+            {
+              text: 'Hoàn tất',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.log('Lỗi lưu hồ sơ:', error.response?.data || error.message);
 
-      const protein = Math.round(w * 2);
-      const fat = Math.round((targetKcal * 0.25) / 9);
-      const carb = Math.round((targetKcal - (protein * 4 + fat * 9)) / 4);
+      const errors = error.response?.data?.errors;
 
-      setAnalysisResult({
-        tdee,
-        targetKcal,
-        protein,
-        fat,
-        carb,
-        suggestion: goal === 'tang_co'
-          ? 'Lộ trình gợi ý: Tập trung các bài compound tạ tự do 4 buổi/tuần, bổ sung ức gà/trứng và duy trì dư thừa calo nhẹ.'
-          : 'Lộ trình gợi ý: Kết hợp kháng lực và cardio ngắt quãng, ăn thâm hụt calo kiểm soát tinh bột.',
-      });
-      setIsAnalyzing(false);
-    }, 2000);
+      if (errors) {
+        const firstError = Object.values(errors)[0] as string[];
+        Alert.alert('Lỗi dữ liệu', firstError?.[0] || 'Vui lòng kiểm tra lại.');
+      } else {
+        Alert.alert(
+          'Lỗi',
+          error.response?.data?.message || 'Không thể lưu hồ sơ.'
+        );
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       {/* HEADER */}
-      <AppHeader
-        title="Hồ Sơ & Yêu Cầu AI"
-        onBack={() => (navigation?.canGoBack() ? navigation.goBack() : null)}
-      />
+      <AppHeader title="Hồ Sơ & Yêu Cầu AI" onBack={() => (navigation?.canGoBack() ? navigation.goBack() : null)} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} >
         {/* BANNER GIỚI THIỆU */}
         <LinearGradient
           colors={[COLORS.primary, COLORS.primaryDark]}
@@ -258,29 +206,15 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           {/* Chọn giới tính */}
           <Text style={styles.fieldLabel}>Giới tính sinh học</Text>
           <View style={styles.genderRow}>
-            <TouchableOpacity
-              style={[styles.genderBtn, gender === 'male' && styles.genderBtnActive]}
-              onPress={() => setGender('male')}
-            >
-              <Ionicons
-                name="male"
-                size={18}
-                color={gender === 'male' ? COLORS.white : COLORS.primary}
-              />
+            <TouchableOpacity style={[styles.genderBtn, gender === 'male' && styles.genderBtnActive]} onPress={() => setGender('male')} >
+              <Ionicons name="male" size={18} color={gender === 'male' ? COLORS.white : COLORS.primary} />
               <Text style={[styles.genderText, gender === 'male' && styles.genderTextActive]}>
                 Nam
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.genderBtn, gender === 'female' && styles.genderBtnActive]}
-              onPress={() => setGender('female')}
-            >
-              <Ionicons
-                name="female"
-                size={18}
-                color={gender === 'female' ? COLORS.white : COLORS.primary}
-              />
+            <TouchableOpacity style={[styles.genderBtn, gender === 'female' && styles.genderBtnActive]} onPress={() => setGender('female')} >
+              <Ionicons name="female" size={18} color={gender === 'female' ? COLORS.white : COLORS.primary} />
               <Text style={[styles.genderText, gender === 'female' && styles.genderTextActive]}>
                 Nữ
               </Text>
@@ -290,17 +224,38 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           {/* 3 Chỉ số */}
           <View style={styles.metricsRow}>
             <View style={styles.metricInputBox}>
-              <Text style={styles.metricLabel}>Tuổi</Text>
-              <TextInput
-                style={styles.metricInput}
-                keyboardType="numeric"
-                placeholder="-- (năm)"
-                placeholderTextColor={COLORS.textLight}
-                value={age}
-                onChangeText={setAge}
-                maxLength={3}
-              />
+              <Text style={styles.metricLabel}>Ngày sinh</Text>
+
+              <TouchableOpacity style={styles.metricInput} activeOpacity={0.7} onPress={() => setShowDatePicker(true)} >
+                <Text style={{ color: birthDate ? COLORS.text : COLORS.textLight, fontSize: 13, }}>
+                  {birthDate
+                    ? birthDate.split('-').reverse().join('/')
+                    : 'Chọn ngày sinh'}
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={birthDate ? new Date(`${birthDate}T00:00:00`) : new Date(2000, 0, 1)}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+                maximumDate={new Date()}
+                onChange={(event, selectedDate) => {
+                  if (Platform.OS === 'android') {
+                    setShowDatePicker(false);
+                  }
+
+                  if (selectedDate) {
+                    const year = selectedDate.getFullYear();
+                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(selectedDate.getDate()).padStart(2, '0');
+
+                    setBirthDate(`${year}-${month}-${day}`);
+                  }
+                }}
+              />
+            )}
             <View style={styles.metricInputBox}>
               <Text style={styles.metricLabel}>Chiều cao (cm)</Text>
               <TextInput
@@ -415,15 +370,17 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
 
           <Text style={styles.fieldLabel}>Chế độ ăn ưa thích</Text>
           <View style={styles.tagWrap}>
-            {DIET_TYPES.map(d => (
-              <TouchableOpacity
-                key={d}
-                style={[styles.tagItem, dietType === d && styles.tagItemActive]}
-                onPress={() => setDietType(d)}
-              >
-                <Text style={[styles.tagText, dietType === d && styles.tagTextActive]}>{d}</Text>
-              </TouchableOpacity>
-            ))}
+            {DIET_TYPES.map(d => {
+              const selected = dietType.includes(d);
+              return (
+                <TouchableOpacity key={d} style={[  styles.tagItem,  selected && styles.tagItemActive, ]}
+                  onPress={() => toggleDiet(d)} >
+                  <Text style={[ styles.tagText, selected && styles.tagTextActive, ]}  >
+                    {d}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Thực phẩm dị ứng / Kiêng cử (chọn nhiều)</Text>
@@ -494,25 +451,30 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
         </View>
 
         {/* NÚT SUBMIT / TIẾP TỤC */}
-        <TouchableOpacity
-          style={styles.submitBtnWrap}
-          activeOpacity={0.88}
-          onPress={handleStartAnalysis}
-        >
+        <TouchableOpacity style={styles.submitBtnWrap} activeOpacity={0.88} onPress={handleSaveProfile} disabled={isSaving} >
           <LinearGradient
             colors={[COLORS.primary, COLORS.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.submitBtn}
-          >
-            <Ionicons name="sparkles" size={20} color={COLORS.white} style={styles.submitIcon} />
-            <Text style={styles.submitBtnText}>Gửi cho AI Phân Tích & Đề Xuất</Text>
+            style={styles.submitBtn} >
+            {isSaving ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <>
+                <Ionicons name="save-outline" size={20} color={COLORS.white} style={styles.submitIcon} />
+                <Text style={styles.submitBtnText}>
+                  Lưu hồ sơ của tôi
+                </Text>
+              </>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
 
       {/* MODAL MÔ PHỎNG QUÁ TRÌNH PHÂN TÍCH VÀ KẾT QUẢ AI */}
-      <Modal visible={isAnalyzing || analysisResult !== null} transparent animationType="fade">
+
+
+      {/* <Modal visible={isAnalyzing || analysisResult !== null} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             {isAnalyzing ? (
@@ -535,10 +497,10 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                     <Ionicons name="checkmark-done" size={26} color={COLORS.white} />
                   </LinearGradient>
                   <Text style={styles.modalTitle}>Kết Quả AI Đề Xuất Sơ Bộ</Text>
-                </View>
+                </View> */}
 
-                {/* Khối Macro */}
-                <View style={styles.calcBox}>
+      {/* Khối Macro */}
+      {/* <View style={styles.calcBox}>
                   <View style={styles.calcRow}>
                     <Text style={styles.calcLabel}>Năng lượng tiêu hao (TDEE):</Text>
                     <Text style={styles.calcValue}>{analysisResult?.tdee} kcal</Text>
@@ -563,9 +525,9 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
                       <Text style={styles.macroBadgeVal}>{analysisResult?.fat}g</Text>
                     </View>
                   </View>
-                </View>
+                </View> */}
 
-                <Text style={styles.resultSuggestionTitle}>Gợi ý từ AI:</Text>
+      {/* <Text style={styles.resultSuggestionTitle}>Gợi ý từ AI:</Text>
                 <Text style={styles.resultSuggestionText}>{analysisResult?.suggestion}</Text>
 
                 <TouchableOpacity
@@ -578,7 +540,11 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
             )}
           </View>
         </View>
-      </Modal>
+      </Modal> */}
+
+
+
+
     </SafeAreaView>
   );
 };
