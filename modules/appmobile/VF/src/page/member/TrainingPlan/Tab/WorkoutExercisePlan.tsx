@@ -156,6 +156,29 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
         );
         return;
       }
+      // Đã hoàn thành chương trình khác trong hôm nay
+      if (data?.can_khuyen_cao) {
+          Alert.alert(
+              "Khuyến cáo tập luyện",
+              data?.noi_dung_khuyen_cao ||
+                  "Bạn đã hoàn thành một chương trình tập luyện khác hôm nay. Hãy dành thời gian cho cơ thể phục hồi.",
+              [
+                  {
+                      text: "Quay lại",
+                      style: "cancel",
+                  },
+                  {
+                      text: "Vẫn tiếp tục",
+                      onPress: () => {
+                          navigation.navigate("ExercisePage", params);
+                      },
+                  },
+              ],
+              { cancelable: true }
+          );
+          return;
+      }
+
       // Được phép tập thì chuyển sang ExercisePage
       const params = {
         ngayThu: day.ngay_thu,
