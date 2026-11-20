@@ -100,7 +100,7 @@ export function basicReply(question, context, user) {
   const prefix = '\n\n';
   if (/user|người khác|hội viên khác|khách hàng khác|token|mật khẩu|sql|database|bỏ qua|ignore/i.test(q)) return prefix + 'Tôi chỉ tra cứu dữ liệu đã được cấp cho tài khoản hiện tại. Không hỗ trợ chọn người dùng khác hoặc truy vấn tùy ý.';
   if (/đau|chấn thương|chóng mặt/.test(q)) return prefix + 'Hãy dừng động tác gây khó chịu và liên hệ huấn luyện viên hoặc nhân viên y tế để được hỗ trợ phù hợp.';
-  if (/gói|hạn|buổi còn|bao nhiêu buổi/.test(q)) {
+  if (/gói|goi|hạn|han|buổi còn|buoi con|bao nhiêu buổi|bao nhieu buoi|thẻ|the/i.test(q)) {
     if (!context.packages.length) return prefix + 'Backend chưa trả về gói tập trong phạm vi tài khoản này.';
     return prefix + 'Bảng thông tin gói tập của bạn:\n\n' +
       '| Tên gói tập | Số buổi đăng ký | Số buổi còn lại | Hạn sử dụng |\n' +
@@ -111,7 +111,7 @@ export function basicReply(question, context, user) {
         return `| ${p.name || 'Gói tập'} | ${reg} | ${rem} | ${formatVNDate(p.expires_at)} |`;
       }).join('\n');
   }
-  if (/lịch|hôm nay|tiếp theo/.test(q)) {
+  if (/lịch|lich|hôm nay|hom nay|tiếp theo|tiep theo|khi nào tập|khi nao tap|ngày mai|ngay mai/i.test(q)) {
     if (!context.schedule.length) return prefix + 'Chưa có lịch tập sắp tới trong dữ liệu được cấp.';
     return prefix + 'Bảng lịch tập được backend cung cấp (không mặc định là hôm nay):\n\n' +
       '| Buổi tập | Thời gian | Huấn luyện viên (PT) |\n' +
@@ -121,10 +121,10 @@ export function basicReply(question, context, user) {
         return `| ${s.name || 'Buổi tập'} | ${time} | ${s.trainer || 'Chưa có PT'} |`;
       }).join('\n');
   }
-  if (/tiến độ|tuần|hoàn thành/.test(q)) return prefix + `Số buổi đã kết thúc trong tuần: ${context.progress.sessions_this_week ?? 'chưa có dữ liệu'}.\nTỷ lệ hoàn thành trung bình các buổi đó: ${context.progress.completion_percent === null ? 'chưa có dữ liệu' : context.progress.completion_percent + '%'}.`;
-  if (/hội viên|học viên|quản lý/.test(q) && context.summary) return prefix + `Số hội viên trong phạm vi ${user.role === 'trainer' ? 'PT được phân công' : 'phòng đã xác minh'}: ${context.summary.assigned_members ?? 'chưa có dữ liệu'}.${context.summary.expiring_members === null ? '' : ` Có ${context.summary.expiring_members} hội viên có gói hết hạn trong 7 ngày tới.`}`;
-  if (/mục tiêu|hồ sơ|cấp độ/.test(q)) return prefix + `Mục tiêu: ${context.profile.goal || 'chưa có dữ liệu'}.\nCấp độ: ${context.profile.level || 'chưa có dữ liệu'}.`;
-  if (/dinh dưỡng|chỉ số|bmi|bmr|tdee|calo|macro|protein|thể trạng/.test(q)) {
+  if (/tiến độ|tien do|tuần|tuan|hoàn thành|hoan thanh/i.test(q)) return prefix + `Số buổi đã kết thúc trong tuần: ${context.progress.sessions_this_week ?? 'chưa có dữ liệu'}.\nTỷ lệ hoàn thành trung bình các buổi đó: ${context.progress.completion_percent === null ? 'chưa có dữ liệu' : context.progress.completion_percent + '%'}.`;
+  if (/hội viên|học viên|quản lý|hoi vien|hoc vien|quan ly/i.test(q) && context.summary) return prefix + `Số hội viên trong phạm vi ${user.role === 'trainer' ? 'PT được phân công' : 'phòng đã xác minh'}: ${context.summary.assigned_members ?? 'chưa có dữ liệu'}.${context.summary.expiring_members === null ? '' : ` Có ${context.summary.expiring_members} hội viên có gói hết hạn trong 7 ngày tới.`}`;
+  if (/mục tiêu|muc tieu|hồ sơ|ho so|cấp độ|cap do/i.test(q)) return prefix + `Mục tiêu: ${context.profile.goal || 'chưa có dữ liệu'}.\nCấp độ: ${context.profile.level || 'chưa có dữ liệu'}.`;
+  if (/dinh dưỡng|dinh duong|chỉ số|chi so|bmi|bmr|tdee|calo|macro|protein|thể trạng|the trang|cân nặng|can nang|chiều cao|chieu cao/i.test(q)) {
     if (context.nutrition) {
       return prefix + 'Bảng chỉ số thể trạng & dinh dưỡng cá nhân:\n\n' +
         '| Chỉ số dinh dưỡng | Giá trị | Đơn vị / Ý nghĩa |\n' +
@@ -141,16 +141,16 @@ export function basicReply(question, context, user) {
     }
     return prefix + 'Hệ thống chưa ghi nhận chỉ số dinh dưỡng gần nhất của bạn. Bạn hãy cập nhật chiều cao, cân nặng và mục tiêu nhé.';
   }
-  if (/chế độ ăn|thực đơn|món ăn|ăn gì|dị ứng|bữa sáng|bữa trưa|bữa tối|eat clean|keto|chay/.test(q)) {
+  if (/chế độ ăn|che do an|thực đơn|thuc don|món ăn|mon an|ăn gì|an gi|dị ứng|di ung|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi|eat clean|keto|chay/i.test(q)) {
     if (context.suggestions?.meals?.length) {
       let filtered = context.suggestions.meals;
-      if (/sáng/.test(q)) {
+      if (/sáng|sang/i.test(q)) {
         const matched = filtered.filter(m => (m.meal_type || '').toLowerCase().includes('sang') || (m.name || '').toLowerCase().includes('sáng'));
         if (matched.length) filtered = matched;
-      } else if (/trưa/.test(q)) {
+      } else if (/trưa|trua/i.test(q)) {
         const matched = filtered.filter(m => (m.meal_type || '').toLowerCase().includes('trua') || (m.name || '').toLowerCase().includes('trưa'));
         if (matched.length) filtered = matched;
-      } else if (/tối/.test(q)) {
+      } else if (/tối|toi/i.test(q)) {
         const matched = filtered.filter(m => (m.meal_type || '').toLowerCase().includes('toi') || (m.name || '').toLowerCase().includes('tối'));
         if (matched.length) filtered = matched;
       }
@@ -161,7 +161,7 @@ export function basicReply(question, context, user) {
     }
     return prefix + 'Chưa có thực đơn món ăn phù hợp với thể trạng trong dữ liệu.';
   }
-  if (/chương trình|bài tập|tập gì|gợi ý tập|động tác|ngực|chân|lưng|bụng|tay|vai/.test(q)) {
+  if (/chương trình|chuong trinh|bài tập|bai tap|tập gì|tap gi|gợi ý tập|goi y tap|động tác|dong tac|ngực|nguc|chân|chan|lưng|lung|bụng|bung|tay|vai|tập luyện|tap luyen|muốn tập|muon tap|luyện tập|luyen tap|kế hoạch tập|ke hoach tap/i.test(q)) {
     let out = prefix;
     if (context.suggestions?.programs?.length) {
       out += 'Bảng chương trình tập đề xuất:\n\n' +
@@ -171,13 +171,13 @@ export function basicReply(question, context, user) {
     }
     if (context.suggestions?.exercises?.length) {
       let exs = context.suggestions.exercises;
-      if (/ngực|chest|bench/.test(q)) {
+      if (/ngực|nguc|chest|bench/i.test(q)) {
         const matched = exs.filter(e => /ngực|chest|bench|press/i.test(e.name));
         if (matched.length) exs = matched;
-      } else if (/chân|squat|đùi/.test(q)) {
+      } else if (/chân|chan|squat|đùi|dui/i.test(q)) {
         const matched = exs.filter(e => /chân|squat|đùi|leg/i.test(e.name));
         if (matched.length) exs = matched;
-      } else if (/lưng|back|xô|pull/.test(q)) {
+      } else if (/lưng|lung|back|xô|xo|pull/i.test(q)) {
         const matched = exs.filter(e => /lưng|back|xô|pull/i.test(e.name));
         if (matched.length) exs = matched;
       }
@@ -198,6 +198,9 @@ export async function answer(c, user, context, history, question) {
   }
   const system = `Bạn là VIF, trợ lý tiếng Việt của VisionFit. Trả lời thân thiện, ngắn gọn, chính xác. Vai trò đã được server xác thực: ${user.role}.
 Chỉ dùng dữ liệu được cung cấp để trả lời về cá nhân/phòng tập, tư vấn dinh dưỡng, chế độ ăn, chương trình tập và bài tập.
+KHẢ NĂNG NHẬN BIẾT NGÔN NGỮ TỰ NHIÊN (BẮT BUỘC):
+- Bạn hiểu xuất sắc tiếng Việt mọi hình thức: KHÔNG DẤU (ví dụ: "lich tap", "tap luyen", "toi muon tap", "an gi", "calo", "the trang", "goi tap", "thuc don", "khoi dong"), có dấu, viết tắt, từ lóng gym (bulking, cutting, rep, set, bench, squat, pull), lỗi chính tả nhẹ hoặc câu hỏi cụt lủn.
+- Luôn thấu hiểu ý định người dùng và nhiệt tình giải đáp chi tiết, khích lệ tinh thần tập luyện.
 QUY TẮC BẮT BUỘC VỀ BẢNG DỮ LIỆU (TỐI ƯU CHO ĐIỆN THOẠI):
 Khi người dùng hỏi tra cứu chỉ số dinh dưỡng (BMI/BMR/TDEE/Calo/Macros), thực đơn món ăn, bài tập, chương trình tập, gói tập hoặc lịch tập, bạn BẮT BUỘC phải trình bày kết quả dưới dạng BẢNG Markdown (| Cột 1 | Cột 2 | ...) rõ ràng, có tiêu đề cột và hàng ngăn cách.
 Để bảng dễ xem và thân thiện trên màn hình điện thoại di động:

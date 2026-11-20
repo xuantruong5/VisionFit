@@ -105,8 +105,12 @@ const queryGeminiAI = async (
 
   const systemPrompt = `${mascotRole}
 Bạn là trợ lý AI thông minh chuyên về Thể hình, Sức khỏe và Dinh dưỡng của hệ sinh thái VisionFit.
+KHẢ NĂNG NHẬN BIẾT NGÔN NGỮ TỰ NHIÊN (BẮT BUỘC):
+- Bạn hiểu xuất sắc tiếng Việt mọi hình thức: KHÔNG DẤU (vd: "lich tap", "tap luyen", "toi muon tap", "an gi", "calo"), có dấu, viết tắt, từ lóng gym (vd: "bulking", "cutting", "macro", "rep", "set", "press"), lỗi chính tả nhẹ hoặc câu hỏi cụt lủn.
+- Hiểu ý định của người dùng một cách tự nhiên và hào hứng giải đáp ngay.
+
 QUY TẮC BẮT BUỘC:
-1. Dùng tiếng Việt chuẩn, ấm áp, ngắn gọn, súc tích (dưới 150 từ), dễ đọc trên màn hình điện thoại di động.
+1. Dùng tiếng Việt chuẩn, ấm áp, ngắn gọn, súc tích (dưới 180 từ), dễ đọc trên màn hình điện thoại di động.
 2. QUY TẮC BẢNG DỮ LIỆU (TỐI ƯU CHO ĐIỆN THOẠI):
 Khi trả lời về CHỈ SỐ DINH DƯỠNG (BMI/BMR/TDEE/Calo/Macros), THỰC ĐƠN MÓN ĂN, BÀI TẬP, GÓI TẬP hoặc LỊCH TẬP, bạn BẮT BUỘC phải trình bày kết quả dưới dạng BẢNG Markdown (| Cột 1 | Cột 2 | ...) rõ ràng, có tiêu đề cột và hàng phân cách.
 Để bảng dễ xem và thân thiện trên điện thoại:
@@ -128,7 +132,7 @@ ${formattedContext ? JSON.stringify(formattedContext) : 'Chưa đăng nhập / d
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
@@ -139,8 +143,8 @@ ${formattedContext ? JSON.stringify(formattedContext) : 'Chưa đăng nhập / d
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gemini-3.5-flash-lite',
-          max_completion_tokens: 1200,
+          model: 'gemini-flash-lite-latest',
+          max_completion_tokens: 1500,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: question },
@@ -160,8 +164,9 @@ ${formattedContext ? JSON.stringify(formattedContext) : 'Chưa đăng nhập / d
       }
     }
   } catch (err) {
-    // Gemini offline hoặc timeout -> Fallback mượt mà sang bộ não dữ liệu thực tế
+    // Không ném lỗi ra ngoài, chuyển xuống fallback quy tắc
   }
+
   return null;
 };
 
@@ -176,12 +181,12 @@ const replyFromRealContext = (
   const prefix = isCat ? 'Meo meo! 🐱 ' : 'Gấu VIF đây! 🐻 ';
 
   // 1. Kiểm tra chấn thương / đau mỏi
-  if (/đau|chấn thương|chuột rút|chóng mặt|buốt|ngất|khớp/.test(q)) {
+  if (/đau|dau|chấn thương|chan thuong|chuột rút|chuot rut|chóng mặt|chong mat|buốt|buot|ngất|ngat|khớp|khop/i.test(q)) {
     return `${prefix}Hãy dừng ngay bài tập đang gây đau nhé! Chườm lạnh trong 15-20 phút nếu bị sưng và tuyệt đối đừng cố gắng tập tiếp. Hãy báo ngay cho Huấn luyện viên (PT) hoặc bác sĩ thể thao để được kiểm tra kỹ càng! 🛡️`;
   }
 
   // 2. Tra cứu gói tập & hạn sử dụng -> Dạng bảng Markdown tối ưu cho điện thoại
-  if (/gói|hạn|buổi còn|bao nhiêu buổi|thẻ/.test(q)) {
+  if (/gói|goi|hạn|han|buổi còn|buoi con|bao nhiêu buổi|bao nhieu buoi|thẻ|the/i.test(q)) {
     if (context?.packages && context.packages.length > 0) {
       let msg = `${prefix}Thông tin gói tập hiện tại của bạn:\n\n` +
         `| Gói tập | Buổi còn lại | Hạn sử dụng |\n` +
@@ -198,7 +203,7 @@ const replyFromRealContext = (
   }
 
   // 3. Tra cứu lịch tập -> Dạng bảng Markdown tối ưu cho điện thoại
-  if (/lịch|hôm nay|tiếp theo|khi nào tập|ngày mai/.test(q)) {
+  if (/lịch|lich|hôm nay|hom nay|tiếp theo|tiep theo|khi nào tập|khi nao tap|ngày mai|ngay mai/i.test(q)) {
     if (context?.schedule && context.schedule.length > 0) {
       let msg = `${prefix}Bảng lịch tập sắp tới của bạn trên hệ thống:\n\n` +
         `| Buổi tập | Thời gian | Huấn luyện viên (PT) |\n` +
@@ -210,13 +215,13 @@ const replyFromRealContext = (
         msg += `| ${name} | ${time} | ${trainer} |\n`;
       });
       msg += `\nHãy chuẩn bị nước và đồ tập đầy đủ nhé! 💪`;
-      return msg;
+      return msg.trim();
     }
     return `${prefix}Lịch tập tuần này của bạn gồm 3-4 buổi cách ngày. Bạn hãy mở tab "Kế hoạch tập" trên ứng dụng để xem chi tiết bài tập hôm nay nhé!`;
   }
 
   // 4. Tra cứu chỉ số thể trạng & dinh dưỡng (BMI, BMR, TDEE, Calo, Macros) -> Dạng bảng Markdown
-  if (/dinh dưỡng|chỉ số|bmi|bmr|tdee|calo|macro|protein|thể trạng|cân nặng/.test(q)) {
+  if (/dinh dưỡng|dinh duong|chỉ số|chi so|bmi|bmr|tdee|calo|macro|protein|thể trạng|the trang|cân nặng|can nang|chieu cao|chiều cao/i.test(q)) {
     if (context?.nutrition) {
       const n = context.nutrition;
       return `${prefix}Bảng chỉ số thể trạng & dinh dưỡng cá nhân:\n\n` +
@@ -235,12 +240,12 @@ const replyFromRealContext = (
   }
 
   // 5. Gợi ý thực đơn & món ăn -> Dạng bảng Markdown
-  if (/ăn gì|thực đơn|món ăn|bữa sáng|bữa trưa|bữa tối|eat clean|giảm cân|giảm mỡ|tăng cơ/.test(q)) {
+  if (/ăn gì|an gi|thực đơn|thuc don|món ăn|mon an|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi|eat clean|giảm cân|giam can|giảm mỡ|giam mo|tăng cơ|tang co/i.test(q)) {
     if (context?.suggestions?.meals && context.suggestions.meals.length > 0) {
       let meals = context.suggestions.meals;
-      if (/sáng/.test(q)) meals = meals.filter((m: any) => (m.meal_type || '').includes('sang') || (m.name || '').includes('sáng'));
-      else if (/trưa/.test(q)) meals = meals.filter((m: any) => (m.meal_type || '').includes('trua') || (m.name || '').includes('trưa'));
-      else if (/tối/.test(q)) meals = meals.filter((m: any) => (m.meal_type || '').includes('toi') || (m.name || '').includes('tối'));
+      if (/sáng|sang/i.test(q)) meals = meals.filter((m: any) => (m.meal_type || '').includes('sang') || (m.name || '').includes('sáng'));
+      else if (/trưa|trua/i.test(q)) meals = meals.filter((m: any) => (m.meal_type || '').includes('trua') || (m.name || '').includes('trưa'));
+      else if (/tối|toi/i.test(q)) meals = meals.filter((m: any) => (m.meal_type || '').includes('toi') || (m.name || '').includes('tối'));
 
       const list = (meals.length > 0 ? meals : context.suggestions.meals).slice(0, 4);
       let res = `${prefix}Gợi ý thực đơn dinh dưỡng cho bạn:\n\n` +
@@ -258,9 +263,9 @@ const replyFromRealContext = (
     return `${prefix}Gợi ý thực đơn Eat Clean chuẩn thể hình:\n• Sáng: Yến mạch + sữa chua Hy Lạp + chuối chín\n• Trưa: 150g Ức gà áp chảo + cơm gạo lứt + bông cải xanh\n• Phụ xế: 1 muỗng Whey hoặc 1 quả táo\n• Tối: Cá hồi hoặc thịt nạc bò sốt tiêu + salad dầu oliu! 🥗`;
   }
 
-  // 6. Gợi ý bài tập & Khởi động
-  if (/khởi động|bài tập|động tác|tập gì|ngực|lưng|chân|tay|bụng/.test(q)) {
-    if (/khởi động/.test(q)) {
+  // 6. Gợi ý bài tập, tập luyện & Khởi động
+  if (/khởi động|khoi dong|bài tập|bai tap|động tác|dong tac|tập gì|tap gi|ngực|nguc|lưng|lung|chân|chan|tay|bụng|bung|tập luyện|tap luyen|muốn tập|muon tap|luyện tập|luyen tap|kế hoạch tập|ke hoach tap/i.test(q)) {
+    if (/khởi động|khoi dong/i.test(q)) {
       return `${prefix}- **⏱️ 4 bước khởi động chuẩn (5 - 10 phút)**\n\n` +
         `1. Xoay tròn cổ tay, cổ chân, khớp vai và khớp hông (2 phút)\n` +
         `2. Jumping Jacks hoặc chạy gót chạm mông nhẹ (1 phút)\n` +

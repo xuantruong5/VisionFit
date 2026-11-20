@@ -44,29 +44,55 @@ function formatSafeHTML(text) {
   const lines = escaped.split(/\r?\n/);
   const parts = [];
   let inUl = false, inOl = false;
+  const isPipeRow = (l) => {
+    const t = l.trim();
+    return t.includes('|') && (t.startsWith('|') || t.endsWith('|') || t.split('|').length >= 3);
+  };
+  const isSepRow = (l) => {
+    const t = l.trim();
+    return t.includes('|') && /^\|?[\s:\-+|]+\|?$/.test(t) && t.includes('-');
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
-    const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
-    const isNextTableSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
 
-    if (isTableRow && isNextTableSep) {
-      if (inUl) { parts.push('</ul>'); inUl = false; }
-      if (inOl) { parts.push('</ol>'); inOl = false; }
-      const headers = trimmed.slice(1, -1).split('|').map(c => c.trim());
-      parts.push('<div class="vif-table-wrapper"><table class="vif-table"><thead><tr>');
-      headers.forEach(h => parts.push(`<th>${formatInline(h)}</th>`));
-      parts.push('</tr></thead><tbody>');
-      i++;
-      while (i + 1 < lines.length && lines[i + 1].trim().startsWith('|') && lines[i + 1].trim().endsWith('|')) {
-        i++;
-        const rowCells = lines[i].trim().slice(1, -1).split('|').map(c => c.trim());
-        parts.push('<tr>');
-        rowCells.forEach(cell => parts.push(`<td>${formatInline(cell)}</td>`));
-        parts.push('</tr>');
+    if (isPipeRow(trimmed)) {
+      let sepIdx = -1;
+      for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
+        if (!lines[j].trim()) continue;
+        if (isSepRow(lines[j].trim())) { sepIdx = j; break; }
+        break;
       }
-      parts.push('</tbody></table></div>');
-      continue;
+
+      if (sepIdx !== -1) {
+        if (inUl) { parts.push('</ul>'); inUl = false; }
+        if (inOl) { parts.push('</ol>'); inOl = false; }
+        const rawHeader = trimmed.startsWith('|') ? trimmed.slice(1) : trimmed;
+        const cleanHeader = rawHeader.endsWith('|') ? rawHeader.slice(0, -1) : rawHeader;
+        const headers = cleanHeader.split('|').map(c => c.trim().replace(/\*\*/g, ''));
+        parts.push('<div class="vif-table-wrapper"><table class="vif-table"><thead><tr>');
+        headers.forEach(h => parts.push(`<th>${formatInline(h)}</th>`));
+        parts.push('</tr></thead><tbody>');
+        i = sepIdx;
+        while (i + 1 < lines.length) {
+          const nextTrim = lines[i + 1].trim();
+          if (!nextTrim) { i++; continue; }
+          if (isPipeRow(nextTrim) && !isSepRow(nextTrim)) {
+            i++;
+            const rawRow = nextTrim.startsWith('|') ? nextTrim.slice(1) : nextTrim;
+            const cleanRow = rawRow.endsWith('|') ? rawRow.slice(0, -1) : rawRow;
+            const rowCells = cleanRow.split('|').map(c => c.trim());
+            parts.push('<tr>');
+            rowCells.forEach(cell => parts.push(`<td>${formatInline(cell)}</td>`));
+            parts.push('</tr>');
+          } else {
+            break;
+          }
+        }
+        parts.push('</tbody></table></div>');
+        continue;
+      }
     }
     if (/^[-*_]{3,}$/.test(trimmed)) {
       if (inUl) { parts.push('</ul>'); inUl = false; }
@@ -211,7 +237,11 @@ function updateBusy() {
 async function send(message) {
   if (state.busy || !message.trim() || !state.user) return;
   const question = message.trim(), generation = state.generation;
-  state.busy = true; updateBusy(); $('chat-error').textContent = ''; $('typing').hidden = false; $('typing').style.display = 'block';
+  state.busy = true; updateBusy(); $('chat-error').textContent = '';
+  const isDataQuery = /lịch|lich|gói|goi|tập|tap|dinh dưỡng|dinh duong|calo|món|mon|ăn|an|chỉ số|chi so|tiến độ|tien do|buổi|buoi|bài|bai/i.test(question);
+  if (isDataQuery) {
+    $('typing').hidden = false; $('typing').style.display = 'block';
+  }
   if ($('welcome')) $('welcome').hidden = true;
   const userRow = document.createElement('div'); userRow.className = 'bubble-row user';
   const userBubble = document.createElement('div'); userBubble.className = 'bubble';
@@ -236,7 +266,12 @@ $('login-form').addEventListener('submit', async e => {
 });
 $('chat-form').addEventListener('submit', e => { e.preventDefault(); send($('message').value); });
 $('message').addEventListener('input', () => { $('char-count').textContent = `${$('message').value.length} / 2000`; $('message').rows = Math.min(4, $('message').value.split('\n').length); });
-$('message').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !matchMedia('(pointer: coarse)').matches) { e.preventDefault(); send($('message').value); } });
+$('message').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    send($('message').value);
+  }
+});
 for (const el of document.querySelectorAll('[data-prompt]')) el.addEventListener('click', () => send(el.dataset.prompt));
 $('logout').addEventListener('click', async () => {
   $('logout').disabled = true;

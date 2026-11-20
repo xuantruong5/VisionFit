@@ -48,51 +48,74 @@ export function renderSafeMessage(text) {
   let currentList = null;
   let isOrderedList = false;
 
+  const isPipeRow = (l) => {
+    const t = l.trim();
+    return t.includes('|') && (t.startsWith('|') || t.endsWith('|') || t.split('|').length >= 3);
+  };
+  const isSepRow = (l) => {
+    const t = l.trim();
+    return t.includes('|') && /^\|?[\s:\-+|]+\|?$/.test(t) && t.includes('-');
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
     const trimmed = rawLine.trim();
 
-    // 0. Kiểm tra Markdown Table: bắt đầu/kết thúc bằng | và tiếp theo là separator | :--- |
-    const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
-    const isNextTableSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
-
-    if (isTableRow && isNextTableSep) {
-      currentList = null;
-      const wrap = document.createElement('div');
-      wrap.className = 'vif-table-wrapper';
-      const table = document.createElement('table');
-      table.className = 'vif-table';
-
-      const thead = document.createElement('thead');
-      const headerTr = document.createElement('tr');
-      const headers = trimmed.slice(1, -1).split('|').map(c => c.trim());
-      headers.forEach(h => {
-        const th = document.createElement('th');
-        th.innerHTML = formatInlineMarkdown(h);
-        headerTr.appendChild(th);
-      });
-      thead.appendChild(headerTr);
-      table.appendChild(thead);
-
-      // Bỏ qua dòng phân cách
-      i++;
-
-      const tbody = document.createElement('tbody');
-      while (i + 1 < lines.length && lines[i + 1].trim().startsWith('|') && lines[i + 1].trim().endsWith('|')) {
-        i++;
-        const rowCells = lines[i].trim().slice(1, -1).split('|').map(c => c.trim());
-        const tr = document.createElement('tr');
-        rowCells.forEach(cell => {
-          const td = document.createElement('td');
-          td.innerHTML = formatInlineMarkdown(cell);
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
+    // 0. Kiểm tra Markdown Table đàn hồi (không kẹt khi có dòng trống hoặc dấu pipe thiếu)
+    if (isPipeRow(trimmed)) {
+      let sepIdx = -1;
+      for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
+        if (!lines[j].trim()) continue;
+        if (isSepRow(lines[j].trim())) { sepIdx = j; break; }
+        break;
       }
-      table.appendChild(tbody);
-      wrap.appendChild(table);
-      fragment.appendChild(wrap);
-      continue;
+
+      if (sepIdx !== -1) {
+        currentList = null;
+        const wrap = document.createElement('div');
+        wrap.className = 'vif-table-wrapper';
+        const table = document.createElement('table');
+        table.className = 'vif-table';
+
+        const thead = document.createElement('thead');
+        const headerTr = document.createElement('tr');
+        const rawHeader = trimmed.startsWith('|') ? trimmed.slice(1) : trimmed;
+        const cleanHeader = rawHeader.endsWith('|') ? rawHeader.slice(0, -1) : rawHeader;
+        const headers = cleanHeader.split('|').map(c => c.trim().replace(/\*\*/g, ''));
+        headers.forEach(h => {
+          const th = document.createElement('th');
+          th.innerHTML = formatInlineMarkdown(h);
+          headerTr.appendChild(th);
+        });
+        thead.appendChild(headerTr);
+        table.appendChild(thead);
+
+        i = sepIdx;
+        const tbody = document.createElement('tbody');
+        while (i + 1 < lines.length) {
+          const nextTrim = lines[i + 1].trim();
+          if (!nextTrim) { i++; continue; }
+          if (isPipeRow(nextTrim) && !isSepRow(nextTrim)) {
+            i++;
+            const rawRow = nextTrim.startsWith('|') ? nextTrim.slice(1) : nextTrim;
+            const cleanRow = rawRow.endsWith('|') ? rawRow.slice(0, -1) : rawRow;
+            const rowCells = cleanRow.split('|').map(c => c.trim());
+            const tr = document.createElement('tr');
+            rowCells.forEach(cell => {
+              const td = document.createElement('td');
+              td.innerHTML = formatInlineMarkdown(cell);
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          } else {
+            break;
+          }
+        }
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+        fragment.appendChild(wrap);
+        continue;
+      }
     }
 
     // Kiểm tra dòng kẻ phân cách: "---", "***", "___"
