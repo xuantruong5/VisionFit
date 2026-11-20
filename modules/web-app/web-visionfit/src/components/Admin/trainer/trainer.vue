@@ -118,7 +118,7 @@
                                     </div>
                                 </td>
 
-                                <td>
+                                <td class="ref-code-cell">
                                     <span class="ref-code-badge">{{ trainer.ma_gioi_thieu || 'PT-HOANGNAM-88' }}</span>
                                 </td>
 
@@ -146,6 +146,9 @@
                                     <span
                                         class="status"
                                         :class="trainer.trang_thai"
+                                        @click="doiTrangThai(trainer)"
+                                        style="cursor: pointer;"
+                                        title="Nhấn để Khóa / Mở khóa tài khoản"
                                     >
                                         <span class="status-dot"></span>
                                         {{
@@ -639,6 +642,44 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL XÁC NHẬN ĐỔI TRẠNG THÁI -->
+        <div
+            v-if="confirmModal.show"
+            class="modal-overlay"
+            @click.self="confirmModal.show = false"
+        >
+            <div class="confirm-box">
+                <div
+                    class="confirm-icon"
+                    :class="confirmModal.isLock ? 'lock' : 'unlock'"
+                >
+                    {{ confirmModal.isLock ? '🔒' : '🔓' }}
+                </div>
+                <h3>{{ confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}</h3>
+                <p>
+                    Bạn có chắc chắn muốn {{ confirmModal.isLock ? 'khóa' : 'mở khóa' }} tài khoản của HLV
+                    <strong>{{ confirmModal.target?.ho_ten }}</strong>?
+                    <span v-if="confirmModal.isLock"><br>HLV sẽ tạm thời không thể đăng nhập hệ thống.</span>
+                </p>
+
+                <div class="modal-actions center">
+                    <button
+                        class="btn-cancel"
+                        @click="confirmModal.show = false"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        :class="confirmModal.isLock ? 'btn-danger' : 'btn-save'"
+                        :disabled="confirmModal.loading"
+                        @click="thucHienDoiTrangThai"
+                    >
+                        {{ confirmModal.loading ? 'Đang xử lý...' : (confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa') }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -722,56 +763,14 @@ export default {
                 },
             ],
 
-            list_trainer: [
-                {
-                    id: '0012',
-                    ho_ten: 'Trần Quốc Huy',
-                    email: 'huytran@visionfit.vn',
-                    so_dien_thoai: '0905 221 820',
-                    chuyen_mon: 'Strength',
-                    kinh_nghiem: 5,
-                    so_gymmer: 14,
-                    so_review: 38,
-                    trang_thai: 'active',
-                    ma_gioi_thieu: 'PT-QUOCHUY-88',
-                },
-                {
-                    id: '0011',
-                    ho_ten: 'Lê Hoàng Nam',
-                    email: 'namle@visionfit.vn',
-                    so_dien_thoai: '0935 440 121',
-                    chuyen_mon: 'Fitness',
-                    kinh_nghiem: 4,
-                    so_gymmer: 11,
-                    so_review: 31,
-                    trang_thai: 'active',
-                    ma_gioi_thieu: 'PT-HOANGNAM-88',
-                },
-                {
-                    id: '0009',
-                    ho_ten: 'Nguyễn Khánh Linh',
-                    email: 'linhnguyen@visionfit.vn',
-                    so_dien_thoai: '0777 109 335',
-                    chuyen_mon: 'Functional',
-                    kinh_nghiem: 3,
-                    so_gymmer: 9,
-                    so_review: 24,
-                    trang_thai: 'active',
-                    ma_gioi_thieu: 'PT-KHANHLINH-99',
-                },
-                {
-                    id: '0006',
-                    ho_ten: 'Phạm Quốc Bảo',
-                    email: 'baopham@visionfit.vn',
-                    so_dien_thoai: '0914 672 019',
-                    chuyen_mon: 'Bodybuilding',
-                    kinh_nghiem: 6,
-                    so_gymmer: 0,
-                    so_review: 12,
-                    trang_thai: 'inactive',
-                    ma_gioi_thieu: 'PT-QUOCBAO-66',
-                }
-            ],
+            list_trainer: [],
+            loading_trainers: false,
+            confirmModal: {
+                show: false,
+                loading: false,
+                isLock: false,
+                target: null,
+            },
 
             create_trainer: {
                 ho_ten: '',
@@ -854,38 +853,79 @@ export default {
             this.showCreateModal = false;
         },
 
-        themMoiTrainer() {
-            if (!this.create_trainer.ho_ten) {
-                alert('Vui lòng nhập họ tên Trainer');
+        async layDanhSachTrainer() {
+            try {
+                this.loading_trainers = true;
+                const response = await baseRequestAdmin.get('admin/trainers');
+                if (response.data.status || response.data.success) {
+                    this.list_trainer = response.data.data;
+                }
+            } catch (error) {
+                console.error('Lỗi tải danh sách Trainer:', error);
+            } finally {
+                this.loading_trainers = false;
+            }
+        },
+
+        async themMoiTrainer() {
+            if (!this.create_trainer.ho_ten.trim()) {
+                alert('Vui lòng nhập họ và tên Trainer!');
+                return;
+            }
+            if (!this.create_trainer.email.trim()) {
+                alert('Vui lòng nhập địa chỉ email!');
                 return;
             }
 
-            const lastName = this.create_trainer.ho_ten.trim().split(' ').pop().toUpperCase();
-            const trainer = {
-                id: Date.now().toString().slice(-4),
-                ...this.create_trainer,
-                so_gymmer: 0,
-                so_review: 0,
-                trang_thai: 'active',
-                ma_gioi_thieu: `PT-${lastName}-${Math.floor(10 + Math.random() * 90)}`,
+            try {
+                const response = await baseRequestAdmin.post('admin/trainers', this.create_trainer);
+                if (response.data.status || response.data.success) {
+                    alert('Thêm Huấn luyện viên thành công!\nMật khẩu mặc định là: 123456');
+                    this.closeCreateModal();
+                    this.create_trainer = {
+                        ho_ten: '',
+                        email: '',
+                        so_dien_thoai: '',
+                        chuyen_mon: 'Fitness',
+                        kinh_nghiem: '',
+                        mo_ta: ''
+                    };
+                    this.layDanhSachTrainer();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Có lỗi xảy ra khi thêm HLV!');
+            }
+        },
+
+        doiTrangThai(trainer) {
+            this.confirmModal = {
+                show: true,
+                loading: false,
+                isLock: trainer.trang_thai === 'active',
+                target: trainer,
             };
+        },
 
-            this.list_trainer.unshift(trainer);
+        async thucHienDoiTrangThai() {
+            const trainer = this.confirmModal.target;
+            if (!trainer) return;
 
-            this.create_trainer = {
-                ho_ten: '',
-                email: '',
-                so_dien_thoai: '',
-                chuyen_mon: 'Fitness',
-                kinh_nghiem: '',
-                mo_ta: ''
-            };
-
-            this.closeCreateModal();
+            try {
+                this.confirmModal.loading = true;
+                const response = await baseRequestAdmin.post(`admin/trainers/${trainer.raw_id || trainer.id}/trang-thai`);
+                if (response.data.status || response.data.success) {
+                    trainer.trang_thai = response.data.trang_thai;
+                    this.confirmModal.show = false;
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Không thể cập nhật trạng thái!');
+            } finally {
+                this.confirmModal.loading = false;
+            }
         },
 
         viewTrainer(trainer) {
-            this.$router.push('/admin/trainer/' + trainer.id);
+            this.$router.push('/admin/trainer/' + (trainer.raw_id || trainer.id));
         },
 
         openProfileModal(applicant) {
@@ -1117,6 +1157,7 @@ export default {
         },
     },
     mounted() {
+        this.layDanhSachTrainer();
         this.layDanhSachUngVien();
     },
 }
@@ -1420,15 +1461,22 @@ export default {
     color: #8faeb4;
 }
 
+.ref-code-cell {
+    white-space: nowrap;
+}
+
 .ref-code-badge {
-    background: #eaf9fb;
+    display: inline-block;
+    white-space: nowrap;
+    background: #f0fdfa;
     color: #0d7f8d;
-    font-weight: 800;
-    padding: 4px 9px;
-    border-radius: 8px;
-    font-size: 12.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     border: 1px solid #bcecf0;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 .contact span {
@@ -1993,6 +2041,90 @@ export default {
 .btn-send-email:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* CONFIRM MODAL */
+.confirm-box {
+    width: 90%;
+    max-width: 420px;
+    padding: 28px 24px;
+    border-radius: 22px;
+    background: white;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(13, 127, 141, 0.2);
+    animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirm-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.confirm-icon.lock {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.confirm-icon.unlock {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.confirm-box h3 {
+    margin: 0 0 8px;
+    color: #11343a;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.confirm-box p {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+.confirm-box p strong {
+    color: #11343a;
+}
+
+.modal-actions.center {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-danger {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #ef4444;
+    color: white;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes showModal {

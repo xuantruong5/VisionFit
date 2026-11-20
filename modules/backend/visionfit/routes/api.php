@@ -311,10 +311,33 @@ Route::post('admin/login', [AdminController::class, 'loginAdmin']);
 Route::group(['prefix' => 'admin', 'middleware' => 'AdminMiddleware'], function () {
     Route::post('logout', [AdminController::class, 'logoutAdmin']);
     Route::get('/check-token', [AdminController::class, 'checkTokenAdmin']);
+
+    // Thống kê Bảng điều khiển (Dashboard)
+    Route::get('/dashboard-stats', [AdminController::class, 'thongKeDashboard']);
+
+    // Quản lý Huấn luyện viên (Trainer)
+    Route::get('/trainers', [AdminController::class, 'danhSachTrainer']);
+    Route::post('/trainers', [AdminController::class, 'themMoiTrainer']);
     Route::get('/trainers/ung-vien',[AdminController::class, 'danhSachUngVien']);
     Route::post( '/gui-thu-moi-phong-van', [AdminController::class, 'guiThuMoiPhongVan']);
     Route::post('/trainers/{id}/ket-qua-phong-van',[AdminController::class, 'capNhatKetQuaPhongVan']);
     Route::post('/trainers/{id}/kich-hoat', [AdminController::class, 'kichHoatTrainer']);
+    Route::get('/trainers/{id}', [AdminController::class, 'chiTietTrainer']);
+    Route::match(['put', 'post'], '/trainers/{id}', [AdminController::class, 'capNhatTrainer']);
+    Route::post('/trainers/{id}/trang-thai', [AdminController::class, 'doiTrangThaiTrainer']);
+
+    // Quản lý Gymmer (Hội viên)
+    Route::get('/gymmers', [AdminController::class, 'danhSachGymmer']);
+    Route::post('/gymmers', [AdminController::class, 'themMoiGymmer']);
+    Route::match(['put', 'post'], '/gymmers/{id}', [AdminController::class, 'capNhatGymmer']);
+    Route::post('/gymmers/{id}/trang-thai', [AdminController::class, 'doiTrangThaiGymmer']);
+    Route::get('/gymmers/{id}', [AdminController::class, 'chiTietGymmer']);
+
+    // Phân công Huấn luyện viên
+    Route::get('/phan-cong', [AdminController::class, 'danhSachPhanCong']);
+    Route::post('/phan-cong', [AdminController::class, 'themMoiPhanCong']);
+    Route::match(['put', 'post'], '/phan-cong/{id}', [AdminController::class, 'capNhatPhanCong']);
+    Route::post('/phan-cong/{id}/trang-thai', [AdminController::class, 'doiTrangThaiPhanCong']);
 });
 
 

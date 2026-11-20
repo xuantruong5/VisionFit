@@ -29,7 +29,7 @@
 
             <div class="mini-card">
                 <span>Sắp hết hạn gói</span>
-                <strong>4</strong>
+                <strong>{{ countExpiring }}</strong>
             </div>
         </div>
 
@@ -122,6 +122,9 @@
                                 <span
                                     class="status"
                                     :class="gymmer.trang_thai"
+                                    @click="doiTrangThai(gymmer)"
+                                    style="cursor: pointer;"
+                                    title="Nhấn để đổi trạng thái"
                                 >
                                     <span class="status-dot"></span>
 
@@ -133,7 +136,13 @@
                                 </span>
                             </td>
 
-                            <td>
+                            <td class="action-cell">
+                                <button
+                                    class="btn-edit-sm"
+                                    @click="openEditModal(gymmer)"
+                                >
+                                    Sửa
+                                </button>
                                 <button
                                     class="btn-detail"
                                     @click="viewGymmer(gymmer)"
@@ -156,18 +165,18 @@
         </div>
 
         <div
-            v-if="showCreateModal"
+            v-if="showModal"
             class="modal-overlay"
-            @click.self="closeCreateModal"
+            @click.self="closeModal"
         >
             <div class="modal-box">
                 <div class="modal-header">
                     <div>
-                        <h3>Thêm Gymmer</h3>
-                        <p>Tạo mới người tập trong VisionFit</p>
+                        <h3>{{ isEdit ? 'Chỉnh sửa Gymmer' : 'Thêm Gymmer' }}</h3>
+                        <p>{{ isEdit ? 'Cập nhật thông tin người tập' : 'Tạo mới người tập trong VisionFit' }}</p>
                     </div>
 
-                    <button class="btn-close" @click="closeCreateModal">
+                    <button class="btn-close" @click="closeModal">
                         ×
                     </button>
                 </div>
@@ -176,7 +185,7 @@
                     <div class="form-group full">
                         <label>Họ và tên</label>
                         <input
-                            v-model="create_gymmer.ho_ten"
+                            v-model="form_gymmer.ho_ten"
                             type="text"
                             placeholder="Nhập họ và tên"
                         >
@@ -185,7 +194,7 @@
                     <div class="form-group">
                         <label>Email</label>
                         <input
-                            v-model="create_gymmer.email"
+                            v-model="form_gymmer.email"
                             type="email"
                             placeholder="example@gmail.com"
                         >
@@ -194,7 +203,7 @@
                     <div class="form-group">
                         <label>Số điện thoại</label>
                         <input
-                            v-model="create_gymmer.so_dien_thoai"
+                            v-model="form_gymmer.so_dien_thoai"
                             type="text"
                             placeholder="0905..."
                         >
@@ -203,7 +212,7 @@
                     <div class="form-group">
                         <label>Ngày sinh</label>
                         <input
-                            v-model="create_gymmer.ngay_sinh"
+                            v-model="form_gymmer.ngay_sinh"
                             type="date"
                         >
                     </div>
@@ -211,7 +220,7 @@
                     <div class="form-group">
                         <label>Giới tính</label>
 
-                        <select v-model="create_gymmer.gioi_tinh">
+                        <select v-model="form_gymmer.gioi_tinh">
                             <option value="Nam">Nam</option>
                             <option value="Nữ">Nữ</option>
                             <option value="Khác">Khác</option>
@@ -220,12 +229,50 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button class="btn-cancel" @click="closeCreateModal">
+                    <button class="btn-cancel" @click="closeModal">
                         Hủy
                     </button>
 
-                    <button class="btn-save" @click="themMoiGymmer">
-                        Thêm Gymmer
+                    <button class="btn-save" :disabled="loading" @click="luuGymmer">
+                        {{ isEdit ? 'Lưu thay đổi' : 'Thêm Gymmer' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL XÁC NHẬN ĐỔI TRẠNG THÁI -->
+        <div
+            v-if="confirmModal.show"
+            class="modal-overlay"
+            @click.self="confirmModal.show = false"
+        >
+            <div class="confirm-box">
+                <div
+                    class="confirm-icon"
+                    :class="confirmModal.isLock ? 'lock' : 'unlock'"
+                >
+                    {{ confirmModal.isLock ? '🔒' : '🔓' }}
+                </div>
+                <h3>{{ confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}</h3>
+                <p>
+                    Bạn có chắc chắn muốn {{ confirmModal.isLock ? 'khóa' : 'mở khóa' }} tài khoản của
+                    <strong>{{ confirmModal.target?.ho_ten }}</strong>?
+                    <span v-if="confirmModal.isLock"><br>Hội viên sẽ tạm thời không thể đăng nhập app.</span>
+                </p>
+
+                <div class="modal-actions center">
+                    <button
+                        class="btn-cancel"
+                        @click="confirmModal.show = false"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        :class="confirmModal.isLock ? 'btn-danger' : 'btn-save'"
+                        :disabled="confirmModal.loading"
+                        @click="thucHienDoiTrangThai"
+                    >
+                        {{ confirmModal.loading ? 'Đang xử lý...' : (confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa') }}
                     </button>
                 </div>
             </div>
@@ -234,6 +281,8 @@
 </template>
 
 <script>
+import baseRequestAdmin from '@/core/baseRequestAdmin';
+
 export default {
     name: "AdminGymmer",
 
@@ -241,59 +290,28 @@ export default {
         return {
             search: '',
             statusFilter: '',
-            showCreateModal: false,
+            showModal: false,
+            isEdit: false,
+            loading: false,
 
-            list_gymmer: [
-                {
-                    id: '00128',
-                    ho_ten: 'Nguyễn Minh Anh',
-                    email: 'minhanh@gmail.com',
-                    so_dien_thoai: '0905 221 889',
-                    goi_tap: 'Personal 12 buổi',
-                    trainer: 'Trần Quốc Huy',
-                    phien_ai: 16,
-                    trang_thai: 'active'
-                },
-                {
-                    id: '00127',
-                    ho_ten: 'Phạm Gia Hân',
-                    email: 'hanpham@gmail.com',
-                    so_dien_thoai: '0935 440 120',
-                    goi_tap: 'Gym + AI 3 tháng',
-                    trainer: 'Lê Hoàng Nam',
-                    phien_ai: 22,
-                    trang_thai: 'active'
-                },
-                {
-                    id: '00122',
-                    ho_ten: 'Võ Thanh Tùng',
-                    email: 'tungvo@gmail.com',
-                    so_dien_thoai: '0777 109 333',
-                    goi_tap: 'Gym + AI 1 tháng',
-                    trainer: null,
-                    phien_ai: 8,
-                    trang_thai: 'active'
-                },
-                {
-                    id: '00119',
-                    ho_ten: 'Hoàng Ngọc Vy',
-                    email: 'vyhoang@gmail.com',
-                    so_dien_thoai: '0914 672 018',
-                    goi_tap: null,
-                    trainer: 'Nguyễn Khánh Linh',
-                    phien_ai: 12,
-                    trang_thai: 'inactive'
-                }
-            ],
+            confirmModal: {
+                show: false,
+                loading: false,
+                isLock: false,
+                target: null,
+            },
 
-            create_gymmer: {
+            list_gymmer: [],
+
+            form_gymmer: {
+                id: null,
                 ho_ten: '',
                 email: '',
                 so_dien_thoai: '',
                 ngay_sinh: '',
                 gioi_tinh: 'Nam'
             }
-        }
+        };
     },
 
     computed: {
@@ -304,7 +322,7 @@ export default {
                 const matchSearch =
                     gymmer.ho_ten.toLowerCase().includes(keyword) ||
                     gymmer.email.toLowerCase().includes(keyword) ||
-                    gymmer.so_dien_thoai.includes(keyword);
+                    (gymmer.so_dien_thoai && gymmer.so_dien_thoai.includes(keyword));
 
                 const matchStatus =
                     !this.statusFilter ||
@@ -324,12 +342,18 @@ export default {
             return this.list_gymmer.filter(
                 gymmer => !gymmer.trainer
             ).length;
+        },
+
+        countExpiring() {
+            return this.list_gymmer.filter(
+                gymmer => gymmer.sap_het_han
+            ).length;
         }
     },
 
     methods: {
         getInitial(name) {
-            const words = name.trim().split(' ');
+            const words = (name || '').trim().split(' ');
 
             return words
                 .slice(-2)
@@ -339,46 +363,109 @@ export default {
         },
 
         openCreateModal() {
-            this.showCreateModal = true;
+            this.isEdit = false;
+            this.form_gymmer = { id: null, ho_ten: '', email: '', so_dien_thoai: '', ngay_sinh: '', gioi_tinh: 'Nam' };
+            this.showModal = true;
         },
 
-        closeCreateModal() {
-            this.showCreateModal = false;
+        openEditModal(gymmer) {
+            this.isEdit = true;
+            this.form_gymmer = {
+                id: gymmer.raw_id,
+                ho_ten: gymmer.ho_ten || '',
+                email: gymmer.email || '',
+                so_dien_thoai: (gymmer.so_dien_thoai && gymmer.so_dien_thoai !== 'Chưa cập nhật') ? gymmer.so_dien_thoai : '',
+                ngay_sinh: gymmer.ngay_sinh ? gymmer.ngay_sinh.substring(0, 10) : '',
+                gioi_tinh: gymmer.gioi_tinh == 1 ? 'Nữ' : 'Nam',
+            };
+            this.showModal = true;
         },
 
-        themMoiGymmer() {
-            if (!this.create_gymmer.ho_ten) {
-                alert('Vui lòng nhập họ tên');
+        closeModal() {
+            this.showModal = false;
+        },
+
+        async layDanhSachGymmer() {
+            try {
+                this.loading = true;
+                const response = await baseRequestAdmin.get('admin/gymmers');
+                if (response.data.status || response.data.success) {
+                    this.list_gymmer = response.data.data;
+                }
+            } catch (error) {
+                console.error('Lỗi lấy danh sách gymmer:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async luuGymmer() {
+            if (!this.form_gymmer.ho_ten.trim()) {
+                alert('Vui lòng nhập họ và tên Gymmer!');
+                return;
+            }
+            if (!this.form_gymmer.email.trim()) {
+                alert('Vui lòng nhập địa chỉ email!');
                 return;
             }
 
-            const gymmer = {
-                id: Date.now().toString().slice(-5),
-                ...this.create_gymmer,
-                goi_tap: null,
-                trainer: null,
-                phien_ai: 0,
-                trang_thai: 'active'
+            try {
+                this.loading = true;
+                let res;
+                if (this.isEdit) {
+                    res = await baseRequestAdmin.put(`admin/gymmers/${this.form_gymmer.id}`, this.form_gymmer);
+                } else {
+                    res = await baseRequestAdmin.post('admin/gymmers', this.form_gymmer);
+                }
+
+                if (res.data.status || res.data.success) {
+                    alert(this.isEdit ? 'Cập nhật Gymmer thành công!' : 'Thêm Gymmer thành công!\nMật khẩu mặc định là: 123456');
+                    this.closeModal();
+                    this.layDanhSachGymmer();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Có lỗi xảy ra!');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        doiTrangThai(gymmer) {
+            this.confirmModal = {
+                show: true,
+                loading: false,
+                isLock: gymmer.trang_thai === 'active',
+                target: gymmer,
             };
+        },
 
-            this.list_gymmer.unshift(gymmer);
+        async thucHienDoiTrangThai() {
+            const gymmer = this.confirmModal.target;
+            if (!gymmer) return;
 
-            this.create_gymmer = {
-                ho_ten: '',
-                email: '',
-                so_dien_thoai: '',
-                ngay_sinh: '',
-                gioi_tinh: 'Nam'
-            };
-
-            this.closeCreateModal();
+            try {
+                this.confirmModal.loading = true;
+                const response = await baseRequestAdmin.post(`admin/gymmers/${gymmer.raw_id}/trang-thai`);
+                if (response.data.status || response.data.success) {
+                    gymmer.trang_thai = response.data.trang_thai;
+                    this.confirmModal.show = false;
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Không thể cập nhật trạng thái!');
+            } finally {
+                this.confirmModal.loading = false;
+            }
         },
 
         viewGymmer(gymmer) {
-            this.$router.push('/admin/gymmer/' + gymmer.id);
+            this.$router.push('/admin/gymmer/' + gymmer.raw_id);
         }
+    },
+
+    mounted() {
+        this.layDanhSachGymmer();
     }
-}
+};
 </script>
 
 <style scoped>
@@ -618,6 +705,28 @@ export default {
     font-size: 13.5px;
 }
 
+.action-cell {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-edit-sm {
+    border: 1px solid #cfe8eb;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: #edf8f9;
+    color: #0d7f8d;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-edit-sm:hover {
+    background: #0d7f8d;
+    color: white;
+}
+
 .btn-detail {
     border: 1px solid #9ed9df;
     padding: 6px 9px;
@@ -749,6 +858,90 @@ export default {
     border: 1px solid #0d7f8d;
     background: #0d7f8d;
     color: white;
+}
+
+/* CONFIRM MODAL */
+.confirm-box {
+    width: 90%;
+    max-width: 420px;
+    padding: 28px 24px;
+    border-radius: 22px;
+    background: white;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(13, 127, 141, 0.2);
+    animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirm-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.confirm-icon.lock {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.confirm-icon.unlock {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.confirm-box h3 {
+    margin: 0 0 8px;
+    color: #11343a;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.confirm-box p {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+.confirm-box p strong {
+    color: #11343a;
+}
+
+.modal-actions.center {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-danger {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #ef4444;
+    color: white;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @media (max-width: 1000px) {

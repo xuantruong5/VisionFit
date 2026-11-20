@@ -10,7 +10,7 @@
             </div>
 
             <div class="header-actions">
-                <button class="btn-outline">Chỉnh sửa</button>
+                <button class="btn-outline" @click="openEditModal">Chỉnh sửa</button>
                 <button class="btn-primary">Gia hạn gói</button>
             </div>
         </div>
@@ -22,7 +22,15 @@
             <div class="profile-info">
                 <div class="name-row">
                     <h3>{{ gymmer.name }}</h3>
-                    <span class="status-pill active">● Đang hoạt động</span>
+                    <span
+                        class="status-pill"
+                        :class="isClientActive ? 'active' : 'inactive'"
+                        @click="doiTrangThai"
+                        style="cursor: pointer;"
+                        title="Nhấn để Khóa / Mở khóa tài khoản"
+                    >
+                        ● {{ isClientActive ? 'Đang hoạt động' : 'Ngừng hoạt động' }}
+                    </span>
                 </div>
                 <p class="code">{{ gymmer.code }} • Tham gia {{ gymmer.joined }}</p>
 
@@ -48,30 +56,31 @@
             <!-- GÓI TẬP -->
             <div class="content-card">
                 <h4>Gói tập hiện tại</h4>
-                <div class="package-box">
+                <div v-if="subscription && subscription.ten_goi_tap" class="package-box">
                     <div>
-                        <span class="package-type">GYM + AI</span>
-                        <h5>Gym + AI 3 tháng</h5>
-                        <p>01/09/2026 → 30/11/2026</p>
+                        <span class="package-type">GÓI TẬP</span>
+                        <h5>{{ subscription.ten_goi_tap }}</h5>
+                        <p>{{ subscription.ngay_bat_dau || '—' }} → {{ subscription.ngay_ket_thuc || '—' }}</p>
                     </div>
-                    <div class="package-days">
-                        <strong>29</strong>
+                    <div class="package-days" v-if="subscription.ngay_ket_thuc">
+                        <strong>{{ tinhSoNgayConLai(subscription.ngay_ket_thuc) }}</strong>
                         <span>ngày còn lại</span>
                     </div>
                 </div>
-                <div class="progress-track">
-                    <div class="progress-fill" style="width: 68%"></div>
+                <div v-else class="package-box" style="background: #f8fafc; border: 1px dashed #cbd5e1; justify-content: center; padding: 18px;">
+                    <p class="muted" style="margin: 0;">Chưa đăng ký gói tập nào.</p>
                 </div>
-                <p class="muted">Đã dùng 61/90 ngày</p>
 
                 <h4 class="mt">Huấn luyện viên phụ trách</h4>
-                <div class="trainer-row">
-                    <div class="avatar small">LN</div>
+                <div v-if="subscription && subscription.trainer_name" class="trainer-row">
+                    <div class="avatar small">{{ getInitial(subscription.trainer_name) }}</div>
                     <div class="flex">
-                        <strong>Lê Hoàng Nam</strong>
-                        <p class="muted">Strength Training • 4.9 ★</p>
+                        <strong>{{ subscription.trainer_name }}</strong>
+                        <p class="muted">Huấn luyện viên cá nhân</p>
                     </div>
-                    <button class="btn-outline small">Đổi HLV</button>
+                </div>
+                <div v-else class="trainer-row" style="background: #f8fafc; border: 1px dashed #cbd5e1; padding: 14px;">
+                    <p class="muted" style="margin: 0;">Chưa được phân công Huấn luyện viên.</p>
                 </div>
             </div>
 
@@ -137,53 +146,324 @@
                         <td>{{ item.package }}</td>
                         <td>{{ item.date }}</td>
                         <td><strong>{{ item.amount }}</strong></td>
-                        <td><span class="status-pill active">Đã thanh toán</span></td>
+                        <td><span class="status-pill" :class="item.statusClass">{{ item.status }}</span></td>
+                    </tr>
+                    <tr v-if="invoices.length === 0">
+                        <td colspan="5" style="text-align: center; color: #71949a; padding: 20px;">
+                            Chưa có lịch sử thanh toán hóa đơn.
+                        </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- MODAL CHỈNH SỬA GYMMER -->
+        <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <div>
+                        <h3>Chỉnh sửa Gymmer</h3>
+                        <p>Cập nhật hồ sơ và chỉ số cơ thể hội viên</p>
+                    </div>
+                    <button class="btn-close" @click="closeEditModal">×</button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Họ và tên</label>
+                        <input v-model="edit_form.ho_ten" type="text" placeholder="Họ và tên">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input v-model="edit_form.email" type="email" placeholder="example@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input v-model="edit_form.so_dien_thoai" type="text" placeholder="0905...">
+                    </div>
+                    <div class="form-group">
+                        <label>Ngày sinh</label>
+                        <input v-model="edit_form.ngay_sinh" type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>Giới tính</label>
+                        <select v-model="edit_form.gioi_tinh">
+                            <option :value="0">Nam</option>
+                            <option :value="1">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Chiều cao (cm)</label>
+                        <input v-model.number="edit_form.chieu_cao_cm" type="number" placeholder="170">
+                    </div>
+                    <div class="form-group">
+                        <label>Cân nặng (kg)</label>
+                        <input v-model.number="edit_form.can_nang_kg" type="number" placeholder="65">
+                    </div>
+                    <div class="form-group full">
+                        <label>Mục tiêu tập luyện</label>
+                        <input v-model="edit_form.muc_tieu_hien_tai" type="text" placeholder="Ví dụ: Tăng cơ giảm mỡ, Siết cơ...">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" @click="closeEditModal">Hủy</button>
+                    <button class="btn-save" :disabled="saving" @click="capNhatGymmer">
+                        {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL XÁC NHẬN ĐỔI TRẠNG THÁI -->
+        <div
+            v-if="confirmModal.show"
+            class="modal-overlay"
+            @click.self="confirmModal.show = false"
+        >
+            <div class="confirm-box">
+                <div
+                    class="confirm-icon"
+                    :class="confirmModal.isLock ? 'lock' : 'unlock'"
+                >
+                    {{ confirmModal.isLock ? '🔒' : '🔓' }}
+                </div>
+                <h3>{{ confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}</h3>
+                <p>
+                    Bạn có chắc chắn muốn {{ confirmModal.isLock ? 'khóa' : 'mở khóa' }} tài khoản của
+                    <strong>{{ gymmer.name }}</strong>?
+                    <span v-if="confirmModal.isLock"><br>Hội viên sẽ tạm thời không thể đăng nhập app.</span>
+                </p>
+
+                <div class="modal-actions center">
+                    <button
+                        class="btn-cancel"
+                        @click="confirmModal.show = false"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        :class="confirmModal.isLock ? 'btn-danger' : 'btn-save'"
+                        :disabled="confirmModal.loading"
+                        @click="thucHienDoiTrangThai"
+                    >
+                        {{ confirmModal.loading ? 'Đang xử lý...' : (confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa') }}
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
-// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
+import baseRequestAdmin from '@/core/baseRequestAdmin';
+
 export default {
     data() {
         return {
+            loading: false,
+            showEditModal: false,
+            saving: false,
+            confirmModal: {
+                show: false,
+                loading: false,
+                isLock: false,
+            },
+            rawClient: {},
+            edit_form: {
+                ho_ten: '',
+                email: '',
+                so_dien_thoai: '',
+                ngay_sinh: '',
+                gioi_tinh: 0,
+                chieu_cao_cm: null,
+                can_nang_kg: null,
+                muc_tieu_hien_tai: '',
+            },
+            subscription: null,
             gymmer: {
-                initials: 'GH',
-                name: 'Phạm Gia Hân',
-                code: '#GM00127',
-                joined: '01/09/2026',
+                initials: 'GM',
+                name: 'Đang tải...',
+                code: '',
+                joined: '',
                 contact: [
-                    { label: 'Email', value: 'hanpham@gmail.com' },
-                    { label: 'Số điện thoại', value: '0935 440 120' },
-                    { label: 'Giới tính / Tuổi', value: 'Nữ • 24 tuổi' },
+                    { label: 'Email', value: '—' },
+                    { label: 'Số điện thoại', value: '—' },
+                    { label: 'Giới tính', value: '—' },
                     { label: 'Cơ sở', value: 'VisionFit Quận 1' },
                 ],
             },
             stats: [
-                { label: 'Buổi đã tập', value: '22', note: 'Tháng này: 9 buổi' },
-                { label: 'Phiên AI', value: '22', note: '18 hoàn tất' },
-                { label: 'Độ chính xác TB', value: '89%', note: '↑ 4% so với tháng trước' },
-                { label: 'Tổng chi tiêu', value: '3.050.000đ', note: '2 hóa đơn' },
+                { label: 'Buổi đã tập', value: '0', note: 'Tổng số buổi' },
+                { label: 'Phiên AI', value: '0', note: 'Hoàn tất' },
+                { label: 'Độ chính xác TB', value: '90%', note: 'Chuẩn form' },
+                { label: 'Tổng chi tiêu', value: '0đ', note: 'Gói tập' },
             ],
             body: [
-                { label: 'Chiều cao', value: '162 cm' },
-                { label: 'Cân nặng', value: '68 kg' },
-                { label: 'BMI', value: '25.9' },
-                { label: 'Mỡ cơ thể', value: '24%' },
+                { label: 'Chiều cao', value: '—' },
+                { label: 'Cân nặng', value: '—' },
+                { label: 'BMI', value: '—' },
+                { label: 'Mỡ cơ thể', value: '—' },
             ],
             sessions: [
                 { id: '#AI02045', time: '02/09/2026 09:52', exercise: 'Deadlift', reps: '8', score: '89%', status: 'Hoàn tất', statusClass: 'active' },
-                { id: '#AI02031', time: '30/08/2026 18:20', exercise: 'Squat', reps: '12', score: '92%', status: 'Hoàn tất', statusClass: 'active' },
-                { id: '#AI02017', time: '28/08/2026 07:45', exercise: 'Push-up', reps: '—', score: '—', status: 'Đang xử lý', statusClass: 'pending' },
             ],
-            invoices: [
-                { id: '#HD10231', package: 'Gym + AI 3 tháng', date: '01/09/2026', amount: '2.200.000đ' },
-                { id: '#HD10087', package: 'Gym + AI 1 tháng', date: '01/08/2026', amount: '850.000đ' },
-            ],
+            invoices: [],
         };
+    },
+
+    computed: {
+        isClientActive() {
+            return this.rawClient && this.rawClient.is_block != 1 && this.rawClient.tinh_trang != 0;
+        },
+    },
+
+    methods: {
+        async layChiTietGymmer() {
+            const id = this.$route.params.id;
+            if (!id) return;
+            try {
+                this.loading = true;
+                const response = await baseRequestAdmin.get(`admin/gymmers/${id}`);
+                if (response.data.status && response.data.data) {
+                    const client = response.data.data.client;
+                    this.rawClient = client;
+                    const sub = response.data.data.subscription;
+                    const invoices = response.data.data.invoices || [];
+
+                    const initials = (client.ho_ten || '')
+                        .trim()
+                        .split(' ')
+                        .slice(-2)
+                        .map(w => w.charAt(0))
+                        .join('')
+                        .toUpperCase();
+
+                    const joinDate = client.created_at ? new Date(client.created_at).toLocaleDateString('vi-VN') : '—';
+                    const genderStr = client.gioi_tinh == 1 ? 'Nữ' : 'Nam';
+
+                    this.gymmer = {
+                        initials: initials || 'GM',
+                        name: client.ho_ten,
+                        code: `#GM${String(client.id).padStart(5, '0')}`,
+                        joined: joinDate,
+                        contact: [
+                            { label: 'Email', value: client.email },
+                            { label: 'Số điện thoại', value: client.so_dien_thoai || 'Chưa cập nhật' },
+                            { label: 'Giới tính', value: genderStr },
+                            { label: 'Cơ sở', value: 'VisionFit Quận 1' },
+                        ],
+                    };
+
+                    const height = Number(client.chieu_cao_cm || 0);
+                    const weight = Number(client.can_nang_kg || 0);
+                    const bmi = (height > 0 && weight > 0) ? (weight / Math.pow(height / 100, 2)).toFixed(1) : '—';
+
+                    this.body = [
+                        { label: 'Chiều cao', value: height > 0 ? `${height} cm` : '—' },
+                        { label: 'Cân nặng', value: weight > 0 ? `${weight} kg` : '—' },
+                        { label: 'BMI', value: bmi },
+                        { label: 'Mục tiêu', value: client.muc_tieu_hien_tai || 'Tập duy trì' },
+                    ];
+
+                    this.subscription = sub;
+
+                    if (invoices.length > 0) {
+                        this.invoices = invoices.map(inv => ({
+                            id: `#HD${inv.id}`,
+                            package: inv.ten_goi_tap || 'Gói tập',
+                            date: inv.ngay_dang_ky || '—',
+                            amount: Number(inv.tong_tien || 0).toLocaleString('vi-VN') + 'đ',
+                            status: inv.is_thanh_toan == 1 ? 'Đã thanh toán' : 'Chờ thanh toán',
+                            statusClass: inv.is_thanh_toan == 1 ? 'active' : 'pending',
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.error('Lỗi tải chi tiết gymmer:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        openEditModal() {
+            this.edit_form = {
+                ho_ten: this.rawClient.ho_ten || '',
+                email: this.rawClient.email || '',
+                so_dien_thoai: (this.rawClient.so_dien_thoai && this.rawClient.so_dien_thoai !== 'Chưa cập nhật') ? this.rawClient.so_dien_thoai : '',
+                ngay_sinh: this.rawClient.ngay_sinh ? this.rawClient.ngay_sinh.substring(0, 10) : '',
+                gioi_tinh: this.rawClient.gioi_tinh ?? 0,
+                chieu_cao_cm: this.rawClient.chieu_cao_cm || null,
+                can_nang_kg: this.rawClient.can_nang_kg || null,
+                muc_tieu_hien_tai: this.rawClient.muc_tieu_hien_tai || '',
+            };
+            this.showEditModal = true;
+        },
+
+        closeEditModal() {
+            this.showEditModal = false;
+        },
+
+        async capNhatGymmer() {
+            if (!this.edit_form.ho_ten.trim()) return alert('Vui lòng nhập họ và tên!');
+            if (!this.edit_form.email.trim()) return alert('Vui lòng nhập email!');
+
+            try {
+                this.saving = true;
+                const id = this.$route.params.id;
+                const res = await baseRequestAdmin.put(`admin/gymmers/${id}`, this.edit_form);
+                if (res.data.status || res.data.success) {
+                    alert('Cập nhật thông tin Gymmer thành công!');
+                    this.closeEditModal();
+                    this.layChiTietGymmer();
+                }
+            } catch (err) {
+                alert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        doiTrangThai() {
+            this.confirmModal = {
+                show: true,
+                loading: false,
+                isLock: this.isClientActive,
+            };
+        },
+
+        async thucHienDoiTrangThai() {
+            try {
+                this.confirmModal.loading = true;
+                const id = this.$route.params.id;
+                const response = await baseRequestAdmin.post(`admin/gymmers/${id}/trang-thai`);
+                if (response.data.status || response.data.success) {
+                    this.rawClient.is_block = response.data.trang_thai === 'inactive' ? 1 : 0;
+                    this.rawClient.tinh_trang = response.data.trang_thai === 'inactive' ? 0 : 1;
+                    this.confirmModal.show = false;
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Không thể cập nhật trạng thái!');
+            } finally {
+                this.confirmModal.loading = false;
+            }
+        },
+
+        getInitial(name) {
+            const words = (name || '').trim().split(' ');
+            return words.slice(-2).map(w => w.charAt(0)).join('').toUpperCase() || 'HLV';
+        },
+
+        tinhSoNgayConLai(endDateStr) {
+            if (!endDateStr) return 0;
+            const diff = new Date(endDateStr) - new Date();
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            return days > 0 ? days : 0;
+        },
+    },
+
+    mounted() {
+        this.layChiTietGymmer();
     },
 };
 </script>
@@ -561,5 +841,211 @@ export default {
 .status-pill.pending {
     background: #e6f5f6;
     color: #0d7f8d;
+}
+
+.status-pill.inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* MODAL CHỈNH SỬA */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(17, 52, 58, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    width: 90%;
+    max-width: 520px;
+    padding: 22px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 20px 50px rgba(13, 127, 141, 0.18);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #11343a;
+    font-size: 20px;
+}
+
+.modal-header p {
+    margin: 4px 0 0;
+    color: #71949a;
+    font-size: 14px;
+}
+
+.btn-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 9px;
+    background: #edf8f9;
+    color: #51777d;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #51777d;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    height: 40px;
+    padding: 0 11px;
+    border: 1px solid #cfe8eb;
+    border-radius: 10px;
+    outline: none;
+    color: #11343a;
+    font-size: 14.5px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #0d7f8d;
+    box-shadow: 0 0 0 3px rgba(13, 127, 141, 0.08);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 18px;
+}
+
+.btn-cancel,
+.btn-save {
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    border: 1px solid #9ed9df;
+    background: white;
+    color: #0d7f8d;
+}
+
+.btn-save {
+    border: 1px solid #0d7f8d;
+    background: #0d7f8d;
+    color: white;
+}
+
+/* CONFIRM MODAL */
+.confirm-box {
+    width: 90%;
+    max-width: 420px;
+    padding: 28px 24px;
+    border-radius: 22px;
+    background: white;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(13, 127, 141, 0.2);
+    animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirm-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.confirm-icon.lock {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.confirm-icon.unlock {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.confirm-box h3 {
+    margin: 0 0 8px;
+    color: #11343a;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.confirm-box p {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+.confirm-box p strong {
+    color: #11343a;
+}
+
+.modal-actions.center {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-danger {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #ef4444;
+    color: white;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 </style>
