@@ -55,6 +55,14 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<any>(null);
+  const inputRef = useRef<TextInput>(null);
+  const isShiftRef = useRef(false);
+  const justSentRef = useRef(false);
+
+  const clearInput = () => {
+    setInputText('');
+    inputRef.current?.clear();
+  };
 
   // Lắng nghe độ cao bàn phím ảo để đẩy ô chatbox lên trên mép bàn phím một khoảng an toàn
   useEffect(() => {
@@ -112,9 +120,65 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     });
   }, [currentSpecies]);
 
+  const handleKeyPress = (e: any) => {
+    const key = e.nativeEvent?.key;
+    const isShift = Boolean(
+      e.nativeEvent?.shiftKey ||
+      (e.nativeEvent as any)?.modifiers?.includes?.('shift')
+    );
+    isShiftRef.current = isShift;
+
+    if (key === 'Enter') {
+      if (!isShift) {
+        // Nhấn Enter thuần túy: Gửi tin nhắn ngay
+        const query = inputText.trim();
+        if (query && !isTyping) {
+          justSentRef.current = true;
+          clearInput();
+          handleSend(query);
+        }
+      }
+      // Nhấn Shift + Enter: Xuống hàng tự nhiên
+    }
+  };
+
+  const handleInputChange = (text: string) => {
+    // Nếu vừa gửi qua Enter, chặn native event append \n sau đó
+    if (justSentRef.current) {
+      justSentRef.current = false;
+      clearInput();
+      return;
+    }
+
+    const isSingleNewlineAdded =
+      text.length === inputText.length + 1 &&
+      (text.endsWith('\n') || text.endsWith('\r\n'));
+
+    // Nếu người dùng nhấn Enter không kèm Shift (từ bàn phím ảo hoặc bàn phím cứng)
+    if (!isShiftRef.current && isSingleNewlineAdded) {
+      const trimmed = text.replace(/[\r\n]+$/, '').trim();
+      clearInput();
+      if (trimmed && !isTyping) {
+        handleSend(trimmed);
+      }
+      return;
+    }
+
+    if (text === '\n' || text === '\r\n') {
+      clearInput();
+      return;
+    }
+
+    setInputText(text);
+    isShiftRef.current = false;
+  };
+
   const handleSend = async (customQuery?: string) => {
     const textToSend = customQuery || inputText.trim();
     if (!textToSend || isTyping) return;
+
+    // Luôn luôn dọn dẹp sạch ô nhập liệu trên mọi nền tảng
+    clearInput();
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -124,6 +188,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     };
 
     setMessages((prev) => [...prev, userMsg]);
+<<<<<<< HEAD
     if (!customQuery) setInputText('');
 
     // Kiểm tra ý định tập luyện -> tự động chuyển trang Kế hoạch tập
@@ -147,6 +212,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       }, 700);
       return;
     }
+=======
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
     setIsTyping(true);
     triggerMascotState('thinking');
@@ -190,10 +257,23 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     const elements: React.ReactNode[] = [];
     let i = 0;
 
+<<<<<<< HEAD
+=======
+    const isPipeRow = (l: string) => {
+      const t = l.trim();
+      return t.includes('|') && (t.startsWith('|') || t.endsWith('|') || t.split('|').length >= 3);
+    };
+    const isSepRow = (l: string) => {
+      const t = l.trim();
+      return t.includes('|') && /^\|?[\s:\-+|]+\|?$/.test(t) && t.includes('-');
+    };
+
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
     while (i < lines.length) {
       const line = lines[i];
       const trimmed = line.trim();
 
+<<<<<<< HEAD
       // Kiểm tra Bảng Markdown
       const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
       const isNextSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
@@ -238,6 +318,69 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
           </View>
         );
         continue;
+=======
+      // Kiểm tra Bảng Markdown đàn hồi (không kẹt khi có dòng trống hoặc dấu pipe thiếu)
+      if (isPipeRow(trimmed)) {
+        let sepIdx = -1;
+        for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
+          if (!lines[j].trim()) continue;
+          if (isSepRow(lines[j].trim())) { sepIdx = j; break; }
+          break;
+        }
+
+        if (sepIdx !== -1) {
+          const rawHeader = trimmed.startsWith('|') ? trimmed.slice(1) : trimmed;
+          const cleanHeader = rawHeader.endsWith('|') ? rawHeader.slice(0, -1) : rawHeader;
+          const headers = cleanHeader.split('|').map((c) => c.trim().replace(/\*\*/g, ''));
+
+          i = sepIdx + 1;
+          const rows: string[][] = [];
+          while (i < lines.length) {
+            const rowTrim = lines[i].trim();
+            if (!rowTrim) { i++; continue; }
+            if (isPipeRow(rowTrim) && !isSepRow(rowTrim)) {
+              const rawRow = rowTrim.startsWith('|') ? rowTrim.slice(1) : rowTrim;
+              const cleanRow = rawRow.endsWith('|') ? rawRow.slice(0, -1) : rawRow;
+              const cells = cleanRow.split('|').map((c) => c.trim());
+              rows.push(cells);
+              i++;
+            } else {
+              break;
+            }
+          }
+
+          elements.push(
+            <View key={`tbl-${i}`} style={styles.tableWrapper}>
+              <ScrollView
+                horizontal
+                nestedScrollEnabled
+                showsHorizontalScrollIndicator={true}
+                contentContainerStyle={styles.tableScrollContent}
+              >
+                <View style={styles.tableBox}>
+                  <View style={styles.tableHeaderRow}>
+                    {headers.map((h, hIdx) => (
+                      <View key={`th-${hIdx}`} style={[styles.tableThCell, hIdx === 0 && styles.tableColFirst]}>
+                        <Text style={styles.tableThText} numberOfLines={2}>{h}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  {rows.map((row, rIdx) => (
+                    <View key={`tr-${rIdx}`} style={[styles.tableTrRow, rIdx % 2 === 1 && styles.tableTrEven]}>
+                      {row.map((cell, cIdx) => (
+                        <View key={`td-${cIdx}`} style={[styles.tableTdCell, cIdx === 0 && styles.tableColFirst]}>
+                          <Text style={styles.tableTdText}>{cell.replace(/\*\*/g, '')}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          );
+          continue;
+        }
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
       }
 
       // 1. Phân cách ngang: '---', '***'
@@ -380,7 +523,26 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                           {msg.text}
                         </Text>
                       ) : (
+<<<<<<< HEAD
                         renderFormattedAiMessage(msg.text)
+=======
+                        <>
+                          {renderFormattedAiMessage(msg.text)}
+                          {(msg.text.includes('kế hoạch tập') || msg.text.includes('Kế hoạch tập') || msg.text.includes('bài tập')) && msg.id !== 'welcome' && (
+                            <TouchableOpacity
+                              style={styles.workoutActionBtn}
+                              onPress={() => {
+                                triggerWorkoutStart();
+                                navigateToWorkoutPlan();
+                                onClose();
+                              }}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={styles.workoutActionBtnText}>🏋️ Mở Kế hoạch tập ngay ➔</Text>
+                            </TouchableOpacity>
+                          )}
+                        </>
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
                       )}
                       <Text
                         style={[
@@ -434,11 +596,14 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
             {/* KHUNG NHẬP CÂU HỎI */}
             <View style={styles.composerContainer}>
               <TextInput
+                ref={inputRef}
                 style={styles.input}
                 placeholder="Hỏi VIF điều bạn đang quan tâm..."
                 placeholderTextColor={COLORS.textMuted}
                 value={inputText}
-                onChangeText={setInputText}
+                onChangeText={handleInputChange}
+                onKeyPress={handleKeyPress}
+                blurOnSubmit={false}
                 multiline
                 maxLength={500}
                 returnKeyType="send"
@@ -775,6 +940,24 @@ const styles = StyleSheet.create({
     minWidth: 42,
     maxWidth: 52,
   },
+<<<<<<< HEAD
+=======
+  workoutActionBtn: {
+    marginTop: 8,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  workoutActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
   input: {
     flex: 1,
     backgroundColor: '#F4F8F9',

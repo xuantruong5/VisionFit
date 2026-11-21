@@ -22,7 +22,15 @@
             <div class="profile-info">
                 <div class="name-row">
                     <h3>{{ trainer.name }}</h3>
-                    <span class="status-pill" :class="trainer.trang_thai === 'active' ? 'active' : 'inactive'">● {{ trainer.trang_thai === 'active' ? 'Đang làm việc' : 'Đã nghỉ' }}</span>
+                    <span
+                        class="status-pill"
+                        :class="trainer.trang_thai === 'active' ? 'active' : 'inactive'"
+                        @click="doiTrangThai"
+                        style="cursor: pointer;"
+                        title="Nhấn để Khóa / Mở khóa tài khoản"
+                    >
+                        ● {{ trainer.trang_thai === 'active' ? 'Đang làm việc' : 'Đã nghỉ' }}
+                    </span>
                     <span v-if="trainer.bi_khoa" class="status-pill inactive">🔒 Đã khóa tài khoản</span>
                 </div>
                 <p class="code">{{ trainer.code }} • {{ trainer.role }}</p>
@@ -140,29 +148,79 @@
 
                 <div class="form-grid">
                     <div class="form-group full">
+                        <label>Họ và tên</label>
+                        <input type="text" v-model="editForm.ho_ten" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input type="text" v-model="editForm.so_dien_thoai" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Chuyên môn</label>
+                        <input type="text" v-model="editForm.chuyen_mon" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số năm kinh nghiệm</label>
+                        <input type="number" min="0" v-model.number="editForm.so_nam_kinh_nghiem" />
+                    </div>
+
+                    <div class="form-group">
                         <label>Cơ sở làm việc</label>
                         <input type="text" v-model="editForm.coSo" />
                     </div>
 
                     <div class="form-group full">
-                        <label>Trạng thái làm việc</label>
-                        <select v-model="editForm.trang_thai">
-                            <option value="active">Đang làm việc</option>
-                            <option value="inactive">Đã nghỉ</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group full">
-                        <label class="check-line">
-                            <input type="checkbox" v-model="editForm.bi_khoa" />
-                            Khóa tài khoản (trainer không đăng nhập được)
-                        </label>
+                        <label>Giới thiệu ngắn</label>
+                        <textarea v-model="editForm.mo_ta" rows="3" placeholder="Nhập tóm tắt kinh nghiệm..."></textarea>
                     </div>
                 </div>
 
                 <div class="modal-actions">
                     <button class="btn-cancel" @click="showEditModal = false">Hủy</button>
-                    <button class="btn-save" @click="saveEdit">Lưu thay đổi</button>
+                    <button class="btn-save" :disabled="saving" @click="saveEdit">
+                        {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL XÁC NHẬN ĐỔI TRẠNG THÁI -->
+        <div
+            v-if="confirmModal.show"
+            class="modal-overlay"
+            @click.self="confirmModal.show = false"
+        >
+            <div class="confirm-box">
+                <div
+                    class="confirm-icon"
+                    :class="confirmModal.isLock ? 'lock' : 'unlock'"
+                >
+                    {{ confirmModal.isLock ? '🔒' : '🔓' }}
+                </div>
+                <h3>{{ confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}</h3>
+                <p>
+                    Bạn có chắc chắn muốn {{ confirmModal.isLock ? 'khóa' : 'mở khóa' }} tài khoản của HLV
+                    <strong>{{ trainer.name }}</strong>?
+                    <span v-if="confirmModal.isLock"><br>HLV sẽ tạm thời không thể đăng nhập hệ thống.</span>
+                </p>
+
+                <div class="modal-actions center">
+                    <button
+                        class="btn-cancel"
+                        @click="confirmModal.show = false"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        :class="confirmModal.isLock ? 'btn-danger' : 'btn-save'"
+                        :disabled="confirmModal.loading"
+                        @click="thucHienDoiTrangThai"
+                    >
+                        {{ confirmModal.loading ? 'Đang xử lý...' : (confirmModal.isLock ? 'Khóa tài khoản' : 'Mở khóa') }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -170,36 +228,43 @@
 </template>
 
 <script>
-// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
+import baseRequestAdmin from '@/core/baseRequestAdmin';
+
 export default {
     data() {
         return {
+            loading: false,
+            saving: false,
+            rawTrainer: {},
             showEditModal: false,
+            confirmModal: {
+                show: false,
+                loading: false,
+                isLock: false,
+            },
             editForm: {},
             trainer: {
-                initials: 'TH',
-                name: 'Trần Quốc Huy',
-                code: '#HLV0012',
-                role: 'Personal Trainer • 5 năm kinh nghiệm',
-                mo_ta: '5 năm kinh nghiệm huấn luyện sức mạnh và giảm mỡ. Tập trung vào kỹ thuật chuẩn và lộ trình bền vững.',
-                certificates: [
-                    { name: 'NASM Certified Personal Trainer', issuer: 'NASM • 2021', verified: true },
-                    { name: 'First Aid / CPR / AED', issuer: 'Red Cross • 2023', verified: false },
-                ],
-                specialties: ['Strength Training', 'Cardio', 'Giảm mỡ'],
+                initials: 'HLV',
+                name: 'Đang tải...',
+                code: '',
+                role: 'Huấn luyện viên',
+                mo_ta: '',
+                certificates: [],
+                specialties: [],
                 trang_thai: 'active',
                 bi_khoa: false,
                 contact: [
-                    { label: 'Email', value: 'huy.tran@visionfit.vn' },
-                    { label: 'Số điện thoại', value: '0908 123 456' },
+                    { label: 'Email', value: '—' },
+                    { label: 'Số điện thoại', value: '—' },
                     { label: 'Cơ sở', value: 'VisionFit Quận 1' },
+                    { label: 'Mã giới thiệu', value: '—' },
                 ],
             },
             stats: [
-                { label: 'Học viên phụ trách', value: '18', note: '15 đang tập' },
-                { label: 'Buổi dạy tháng này', value: '64', note: '↑ 12% so với tháng trước' },
-                { label: 'Review AI đã duyệt', value: '142', note: '6 đang chờ duyệt' },
-                { label: 'Thu nhập tháng', value: '28.5tr', note: 'Đã thanh toán 24tr' },
+                { label: 'Học viên phụ trách', value: '0', note: 'Đang tập' },
+                { label: 'Buổi dạy tháng này', value: '0', note: 'Tổng ca dạy' },
+                { label: 'Review AI đã duyệt', value: '0', note: 'Đánh giá' },
+                { label: 'Thu nhập tháng', value: '0đ', note: 'Bảng lương' },
             ],
             schedule: [
                 { date: '02', day: 'T2', sessions: 4, detail: '07:00 • 09:00 • 14:30 • 18:00' },
@@ -211,31 +276,136 @@ export default {
                 { name: 'Nguyễn Minh Anh', stars: '★★★★★', text: 'HLV chỉnh form rất kỹ, kết hợp báo cáo AI dễ hiểu.' },
                 { name: 'Võ Thanh Tùng', stars: '★★★★☆', text: 'Lịch tập hợp lý, mong có thêm buổi cuối tuần.' },
             ],
-            members: [
-                { name: 'Nguyễn Minh Anh', code: '#GM00128', package: 'Personal 12 buổi', progress: 75, sessions: 16, active: true },
-                { name: 'Võ Thanh Tùng', code: '#GM00122', package: 'Gym + AI 1 tháng', progress: 40, sessions: 8, active: true },
-                { name: 'Đỗ Minh Khoa', code: '#GM00110', package: 'Gym + AI 3 tháng', progress: 20, sessions: 5, active: false },
-            ],
+            members: [],
         };
     },
 
     methods: {
+        async layChiTietTrainer() {
+            const id = this.$route.params.id;
+            if (!id) return;
+            try {
+                this.loading = true;
+                const response = await baseRequestAdmin.get(`admin/trainers/${id}`);
+                if (response.data.status && response.data.data) {
+                    const tr = response.data.data.trainer;
+                    this.rawTrainer = tr;
+                    const members = response.data.data.members || [];
+
+                    const initials = (tr.ho_ten || '')
+                        .trim()
+                        .split(' ')
+                        .slice(-2)
+                        .map(w => w.charAt(0))
+                        .join('')
+                        .toUpperCase() || 'HLV';
+
+                    const isActive = (tr.tinh_trang == 1 && tr.is_block != 1);
+
+                    this.trainer = {
+                        initials: initials,
+                        name: tr.ho_ten,
+                        code: `#TR${String(tr.id).padStart(4, '0')}`,
+                        role: `${tr.chuyen_mon || 'Personal Trainer'} • ${tr.so_nam_kinh_nghiem || 1} năm kinh nghiệm`,
+                        mo_ta: tr.mo_ta || 'Huấn luyện viên thể hình chuyên nghiệp tại VisionFit.',
+                        certificates: [
+                            { name: 'Chứng chỉ HLV Chuyên nghiệp', issuer: 'VisionFit Certified', verified: true },
+                        ],
+                        specialties: (tr.chuyen_mon ? tr.chuyen_mon.split(',').map(s => s.trim()) : ['Fitness']),
+                        trang_thai: isActive ? 'active' : 'inactive',
+                        bi_khoa: tr.is_block == 1,
+                        contact: [
+                            { label: 'Email', value: tr.email },
+                            { label: 'Số điện thoại', value: tr.so_dien_thoai || 'Chưa cập nhật' },
+                            { label: 'Cơ sở', value: 'VisionFit Quận 1' },
+                            { label: 'Mã giới thiệu', value: tr.ma_gioi_thieu || '—' },
+                        ],
+                    };
+
+                    this.members = members;
+
+                    this.stats[0] = {
+                        label: 'Học viên phụ trách',
+                        value: String(members.length),
+                        note: `${members.filter(m => m.active).length} đang tập`,
+                    };
+                }
+            } catch (error) {
+                console.error('Lỗi tải chi tiết Trainer:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
         openEditModal() {
-            // copy ra form để bấm Hủy thì không bị đổi
             this.editForm = {
-                coSo: this.trainer.contact[2].value,
-                trang_thai: this.trainer.trang_thai,
-                bi_khoa: this.trainer.bi_khoa,
+                ho_ten: this.rawTrainer.ho_ten || this.trainer.name,
+                so_dien_thoai: this.rawTrainer.so_dien_thoai || '',
+                chuyen_mon: this.rawTrainer.chuyen_mon || 'Fitness',
+                so_nam_kinh_nghiem: this.rawTrainer.so_nam_kinh_nghiem || 1,
+                mo_ta: this.rawTrainer.mo_ta || '',
+                coSo: 'VisionFit Quận 1',
             };
             this.showEditModal = true;
         },
 
-        saveEdit() {
-            this.trainer.contact[2].value = this.editForm.coSo;
-            this.trainer.trang_thai = this.editForm.trang_thai;
-            this.trainer.bi_khoa = this.editForm.bi_khoa;
-            this.showEditModal = false;
+        async saveEdit() {
+            if (!this.editForm.ho_ten?.trim()) {
+                alert('Vui lòng nhập họ và tên Trainer!');
+                return;
+            }
+            try {
+                this.saving = true;
+                const id = this.$route.params.id;
+                const payload = {
+                    ho_ten: this.editForm.ho_ten.trim(),
+                    email: this.rawTrainer.email,
+                    so_dien_thoai: this.editForm.so_dien_thoai,
+                    chuyen_mon: this.editForm.chuyen_mon,
+                    so_nam_kinh_nghiem: this.editForm.so_nam_kinh_nghiem,
+                    mo_ta: this.editForm.mo_ta,
+                };
+                const res = await baseRequestAdmin.put(`admin/trainers/${id}`, payload);
+                if (res.data.status || res.data.success) {
+                    alert('Cập nhật thông tin Huấn luyện viên thành công!');
+                    this.showEditModal = false;
+                    this.layChiTietTrainer();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
+            } finally {
+                this.saving = false;
+            }
         },
+
+        doiTrangThai() {
+            this.confirmModal = {
+                show: true,
+                loading: false,
+                isLock: this.trainer.trang_thai === 'active',
+            };
+        },
+
+        async thucHienDoiTrangThai() {
+            try {
+                this.confirmModal.loading = true;
+                const id = this.$route.params.id;
+                const response = await baseRequestAdmin.post(`admin/trainers/${id}/trang-thai`);
+                if (response.data.status || response.data.success) {
+                    this.trainer.trang_thai = response.data.trang_thai;
+                    this.trainer.bi_khoa = (response.data.trang_thai === 'inactive');
+                    this.confirmModal.show = false;
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Không thể cập nhật trạng thái!');
+            } finally {
+                this.confirmModal.loading = false;
+            }
+        },
+    },
+
+    mounted() {
+        this.layChiTietTrainer();
     },
 };
 </script>
@@ -751,5 +921,89 @@ export default {
 .status-pill.inactive {
     background: #fff7ed;
     color: #b7791f;
+}
+
+/* CONFIRM MODAL */
+.confirm-box {
+    width: 90%;
+    max-width: 420px;
+    padding: 28px 24px;
+    border-radius: 22px;
+    background: white;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(13, 127, 141, 0.2);
+    animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirm-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.confirm-icon.lock {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.confirm-icon.unlock {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.confirm-box h3 {
+    margin: 0 0 8px;
+    color: #11343a;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.confirm-box p {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+.confirm-box p strong {
+    color: #11343a;
+}
+
+.modal-actions.center {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-danger {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #ef4444;
+    color: white;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 </style>

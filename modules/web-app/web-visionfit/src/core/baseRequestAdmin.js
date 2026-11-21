@@ -1,9 +1,16 @@
 import axios from "axios";
 
+<<<<<<< HEAD
 const apiUrl = "http://172.29.192.1:8000/api/";
 
 // const apiUrl = "http://172.29.192.1:8000/api/";
 
+=======
+// const apiUrl = "http://192.168.1.8:8000/api/";
+
+const apiUrl = "http://172.29.192.1:8000/api/";
+
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
 // của Ngọc
 // const apiUrl = "http://192.168.1.171:8000/api/";

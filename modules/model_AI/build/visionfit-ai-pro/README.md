@@ -17,7 +17,7 @@ PoseNet của VisionFit (pose_model.py)
        ▼
 ActionNet của VisionFit (visionfit.py) / Temporal CNN
        │
-       ├── squat / push_up / lunge / standing / unknown (ngưỡng)
+       ├── squat / push_up / lunge / standing / unknown 
        └── bộ đếm rep cơ bản + lọc nhãn dao động
 ```
 

@@ -45,7 +45,8 @@ export function createApp(c, { logger = console.info } = {}) {
       const method = req.method;
       if (path.startsWith('/api/')) {
         if (!['GET','POST','DELETE'].includes(method)) throw new AppError(405, 'Phương thức không được hỗ trợ.');
-        if (method !== 'GET' && req.headers.origin !== c.origin) throw new AppError(403, 'Nguồn yêu cầu không hợp lệ.');
+        const isAllowedOrigin = req.headers.origin === c.origin || (!c.production && (req.headers.origin === 'http://localhost:3000' || req.headers.origin === 'http://127.0.0.1:3000'));
+        if (method !== 'GET' && !isAllowedOrigin) throw new AppError(403, 'Nguồn yêu cầu không hợp lệ.');
         const config = { dataMode: c.dataMode, aiMode: c.aiMode };
         if (path === '/api/config' && method === 'GET') return json(config);
         const match = (req.headers.cookie || '').split(';').map(x=>x.trim()).find(x=>x.startsWith(`${cookieName}=`));
