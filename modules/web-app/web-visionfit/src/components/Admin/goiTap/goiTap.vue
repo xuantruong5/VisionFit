@@ -75,7 +75,7 @@
                                 {{ getTypeName(goi.loai) }}
                             </span>
 
-                            <h3>{{ goi.ten_goi }}</h3>
+                            <h3>{{ goi.ten_goi_tap || goi.ten_goi_tap}}</h3>
                         </div>
 
                         <span class="status" :class="goi.trang_thai">
@@ -311,18 +311,15 @@ export default {
     computed: {
         filteredPackages() {
             return this.list_goi_tap.filter((goi) => {
-                const keyword = this.search.toLowerCase();
+                const keyword = (this.search || '').trim().toLowerCase();
+                const name = (goi.ten_goi || goi.ten_goi_tap || '').toLowerCase();
+                const matchSearch = !keyword || name.includes(keyword);
 
-                const matchSearch =
-                    goi.ten_goi && goi.ten_goi.toLowerCase().includes(keyword);
+                const loai = goi.loai || (goi.so_buoi_pt > 0 ? 'pt' : (goi.co_ai ? 'ai' : 'gym'));
+                const matchType = !this.typeFilter || loai === this.typeFilter;
 
-                const matchType =
-                    !this.typeFilter ||
-                    goi.loai === this.typeFilter;
-
-                const matchStatus =
-                    !this.statusFilter ||
-                    goi.trang_thai === this.statusFilter;
+                const status = goi.trang_thai || (goi.tinh_trang == 1 ? 'active' : 'inactive');
+                const matchStatus = !this.statusFilter || status === this.statusFilter;
 
                 return matchSearch && matchType && matchStatus;
             });
@@ -330,19 +327,19 @@ export default {
 
         countActive() {
             return this.list_goi_tap.filter(
-                goi => goi.trang_thai === 'active'
+                goi => goi.trang_thai === 'active' || goi.tinh_trang == 1
             ).length;
         },
 
         countAI() {
             return this.list_goi_tap.filter(
-                goi => goi.co_ai
+                goi => !!goi.co_ai
             ).length;
         },
 
         countPT() {
             return this.list_goi_tap.filter(
-                goi => goi.loai === 'pt'
+                goi => goi.loai === 'pt' || (goi.so_buoi_pt && goi.so_buoi_pt > 0)
             ).length;
         }
     },
@@ -368,7 +365,15 @@ export default {
                 this.loading = true;
                 const res = await baseRequestAdmin.get('admin/goi-tap');
                 if (res.data && (res.data.status || res.data.success)) {
-                    this.list_goi_tap = res.data.data;
+                    const rawList = res.data.data || [];
+                    this.list_goi_tap = rawList.map(item => ({
+                        ...item,
+                        ten_goi: item.ten_goi || item.ten_goi_tap,
+                        thoi_han: item.thoi_han || item.thoi_han_ngay || item.thoi_han_mua || 30,
+                        trang_thai: item.trang_thai || (item.tinh_trang == 1 ? 'active' : 'inactive'),
+                        loai: item.loai || (item.so_buoi_pt > 0 ? 'pt' : (item.co_ai ? 'ai' : 'gym')),
+                        da_ban: item.da_ban !== undefined ? item.da_ban : 0,
+                    }));
                 }
             } catch (e) {
                 console.error('Lỗi tải danh sách gói tập:', e);

@@ -15,7 +15,6 @@ use App\Models\DKChuongTrinh;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Validator;
 
 class GoiTapController extends Controller
 {
@@ -37,7 +36,7 @@ class GoiTapController extends Controller
             'data' => $data
         ], 200);
     }
-    
+
     public function searchTrainer(Request $request)
     {
         $noi_dung_tim_kiem = $request->noi_dung_tim_kiem;
@@ -127,7 +126,7 @@ class GoiTapController extends Controller
         //     ], 422);
         // }
 
-       // 5. Lấy chương trình tập hiện tại của hội viên
+        // 5. Lấy chương trình tập hiện tại của hội viên
         $chuongTrinh = DB::table('dang_ky_chuong_trinh as dkct')
             ->join('chuong_trinh_tap as ct', 'dkct.id_chuong_trinh', '=', 'ct.id')
             ->leftJoin('cap_do as cd', 'ct.id_cap_do', '=', 'cd.id')
@@ -194,7 +193,7 @@ class GoiTapController extends Controller
             ->where('is_thanh_toan', 1)
             ->count();
 
-       // Lần đăng ký hiện tại
+        // Lần đăng ký hiện tại
         $lanDangKy = $soLanDaDangKy + 1;
 
         $phanTramGiam = 0;
@@ -487,7 +486,7 @@ class GoiTapController extends Controller
                 'message' => 'Vui lòng đăng nhập.'
             ], 401);
         }
-        $gioiThieu = GioiThieu::where( 'id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
+        $gioiThieu = GioiThieu::where('id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
             ->where('tinh_trang', 0)
             ->latest('id')
             ->first();
@@ -507,401 +506,151 @@ class GoiTapController extends Controller
         ]);
     }
 
-    /* =========================================================================
-     * ADMIN API: QUẢN LÝ GÓI TẬP (CRUD, TÌM KIẾM, THAY ĐỔI TRẠNG THÁI)
-     * ========================================================================= */
+    /* ========== ADMIN: QUẢN LÝ GÓI TẬP ========== */
 
-    /**
-     * Định dạng dữ liệu gói tập cho giao diện Admin
-     */
-    protected function formatGoiTapAdmin($goi)
-    {
-        $loai = 'gym';
-        if ($goi->so_buoi_pt > 0) {
-            $loai = 'pt';
-        } elseif ($goi->co_ai) {
-            $loai = 'ai';
-        }
-
-        $thoiHan = $goi->thoi_han_ngay ?? $goi->thoi_han_mua ?? 30;
-
-        $daBan = isset($goi->da_ban)
-            ? (int)$goi->da_ban
-            : (int)DB::table('chi_tiet_dang_ky_goi')->where('id_goi_tap', $goi->id)->count();
-
-        return [
-            'id' => $goi->id,
-            'ma_goi_tap' => $goi->ma_goi_tap,
-            'id_phong_tap' => $goi->id_phong_tap,
-            'ten_goi_tap' => $goi->ten_goi_tap,
-            'ten_goi' => $goi->ten_goi_tap,
-            'loai' => $loai,
-            'gia' => (float)$goi->gia,
-            'thoi_han' => (int)$thoiHan,
-            'thoi_han_ngay' => (int)($goi->thoi_han_ngay ?? $thoiHan),
-            'thoi_han_mua' => (int)($goi->thoi_han_mua ?? $thoiHan),
-            'thoi_han_tang' => (int)($goi->thoi_han_tang ?? 0),
-            'so_buoi' => (int)($goi->so_buoi ?? 0),
-            'so_buoi_pt' => (int)($goi->so_buoi_pt ?? 0),
-            'co_ai' => (bool)$goi->co_ai,
-            'co_trainer_review' => (bool)$goi->co_trainer_review,
-            'noi_bat' => (bool)($goi->co_ai && $goi->so_buoi_pt == 0),
-            'mo_ta' => $goi->mo_ta,
-            'hinh_anh' => $goi->hinh_anh,
-            'tinh_trang' => (int)$goi->tinh_trang,
-            'trang_thai' => $goi->tinh_trang == 1 ? 'active' : 'inactive',
-            'da_ban' => $daBan,
-            'created_at' => $goi->created_at ? Carbon::parse($goi->created_at)->format('d/m/Y H:i') : null,
-            'updated_at' => $goi->updated_at ? Carbon::parse($goi->updated_at)->format('d/m/Y H:i') : null,
-        ];
-    }
-
-    /**
-     * Admin: Lấy danh sách gói tập (hỗ trợ lọc theo loại, trạng thái, tìm kiếm từ khóa)
-     */
+    // 1. Lấy danh sách và tìm kiếm
     public function danhSachGoiTapAdmin(Request $request)
     {
-        $keyword = $request->query('keyword', $request->query('search', ''));
-        $loai = $request->query('loai');
-        $tinhTrang = $request->query('tinh_trang');
-        $trangThai = $request->query('trang_thai');
-
         $query = GoiTap::query();
 
-        if (!empty($keyword)) {
-            $query->where(function ($q) use ($keyword) {
-                $q->where('ten_goi_tap', 'LIKE', '%' . $keyword . '%')
-                  ->orWhere('ma_goi_tap', 'LIKE', '%' . $keyword . '%');
-            });
+        if ($request->keyword) {
+            $query->where('ten_goi_tap', 'LIKE', '%' . $request->keyword . '%');
         }
-
-        if (!empty($loai)) {
-            if ($loai === 'pt') {
-                $query->where('so_buoi_pt', '>', 0);
-            } elseif ($loai === 'ai') {
-                $query->where('co_ai', 1)->where('so_buoi_pt', 0);
-            } elseif ($loai === 'gym') {
-                $query->where('so_buoi_pt', 0)->where('co_ai', 0);
-            }
-        }
-
-        if ($tinhTrang !== null && $tinhTrang !== '') {
-            $query->where('tinh_trang', (int)$tinhTrang);
-        } elseif (!empty($trangThai)) {
-            if ($trangThai === 'active') {
-                $query->where('tinh_trang', 1);
-            } elseif ($trangThai === 'inactive') {
-                $query->where('tinh_trang', 0);
-            }
-        }
-
-        $list = $query->orderBy('id', 'desc')->get();
-        $data = $list->map(function ($item) {
-            return $this->formatGoiTapAdmin($item);
-        });
 
         return response()->json([
-            'status' => true,
             'success' => true,
-            'message' => 'Lấy danh sách gói tập thành công.',
-            'data' => $data,
+            'data' => $query->orderByDesc('id')->get()
         ]);
     }
 
-    /**
-     * Admin: Tìm kiếm gói tập
-     */
     public function timKiemGoiTapAdmin(Request $request)
     {
-        $keyword = $request->query('keyword', $request->noi_dung_tim_kiem ?? $request->query('search', ''));
-
-        $query = GoiTap::query();
-        if (!empty($keyword)) {
-            $query->where(function ($q) use ($keyword) {
-                $q->where('ten_goi_tap', 'LIKE', '%' . $keyword . '%')
-                  ->orWhere('ma_goi_tap', 'LIKE', '%' . $keyword . '%');
-            });
-        }
-
-        $list = $query->orderBy('id', 'desc')->get();
-        $data = $list->map(function ($item) {
-            return $this->formatGoiTapAdmin($item);
-        });
-
-        return response()->json([
-            'status' => true,
-            'success' => true,
-            'message' => 'Tìm kiếm gói tập thành công.',
-            'data' => $data,
-        ]);
+        return $this->danhSachGoiTapAdmin($request);
     }
 
-    /**
-     * Admin: Chi tiết gói tập theo ID
-     */
-    public function chiTietGoiTapAdmin($id)
-    {
-        $goiTap = GoiTap::find($id);
-        if (!$goiTap) {
-            return response()->json([
-                'status' => false,
-                'success' => false,
-                'message' => 'Không tìm thấy gói tập.',
-            ], 404);
-        }
-
-        return response()->json([
-            'status' => true,
-            'success' => true,
-            'message' => 'Lấy thông tin chi tiết gói tập thành công.',
-            'data' => $this->formatGoiTapAdmin($goiTap),
-        ]);
-    }
-
-    /**
-     * Admin: Thêm mới gói tập
-     */
+    // 2. Thêm gói tập
     public function themMoiGoiTapAdmin(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'ten_goi_tap' => 'required_without:ten_goi|nullable|string|max:255',
-            'ten_goi' => 'required_without:ten_goi_tap|nullable|string|max:255',
+        $data = $request->validate([
+            'ten_goi_tap' => 'required|string',
             'gia' => 'required|numeric|min:0',
-            'thoi_han' => 'nullable|integer|min:1',
-            'thoi_han_ngay' => 'nullable|integer|min:1',
-            'thoi_han_mua' => 'nullable|integer|min:1',
-            'thoi_han_tang' => 'nullable|integer|min:0',
+            'thoi_han_ngay' => 'required|integer|min:1',
             'so_buoi' => 'nullable|integer|min:0',
             'so_buoi_pt' => 'nullable|integer|min:0',
             'co_ai' => 'nullable|boolean',
             'co_trainer_review' => 'nullable|boolean',
             'mo_ta' => 'nullable|string',
             'hinh_anh' => 'nullable|string',
-            'tinh_trang' => 'nullable|integer',
-        ], [
-            'ten_goi_tap.required_without' => 'Vui lòng nhập tên gói tập.',
-            'ten_goi.required_without' => 'Vui lòng nhập tên gói tập.',
-            'gia.required' => 'Vui lòng nhập giá gói tập.',
-            'gia.numeric' => 'Giá gói tập phải là số hợp lệ.',
-            'gia.min' => 'Giá gói tập không được âm.',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $data['ma_goi_tap'] = 'GT' . strtoupper(Str::random(6));
+        $data['id_phong_tap'] = $request->id_phong_tap ?? 1;
+        $data['thoi_han_mua'] = $request->thoi_han_ngay;
+        $data['thoi_han_tang'] = $request->thoi_han_tang ?? 0;
+        $data['tinh_trang'] = 1;
 
-        $tenGoi = trim($request->ten_goi_tap ?? $request->ten_goi);
-        $maGoiTap = $request->ma_goi_tap;
-        if (empty($maGoiTap)) {
-            $maGoiTap = 'GT' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
-        }
-
-        $thoiHan = $request->thoi_han_ngay ?? $request->thoi_han ?? $request->thoi_han_mua ?? 30;
-        $thoiHanMua = $request->thoi_han_mua ?? $request->thoi_han ?? $request->thoi_han_ngay ?? 30;
-        $thoiHanTang = $request->thoi_han_tang ?? 0;
-
-        $tinhTrang = 1;
-        if ($request->has('tinh_trang') && $request->tinh_trang !== null) {
-            $tinhTrang = (int)$request->tinh_trang;
-        } elseif ($request->has('trang_thai')) {
-            $tinhTrang = $request->trang_thai === 'inactive' ? 0 : 1;
-        }
-
-        $coAi = $request->has('co_ai') ? (bool)$request->co_ai : false;
-        $coTrainerReview = $request->has('co_trainer_review') ? (bool)$request->co_trainer_review : false;
-        $soBuoiPt = (int)($request->so_buoi_pt ?? 0);
-        $soBuoi = (int)($request->so_buoi ?? 0);
-
-        if ($request->loai === 'pt' && $soBuoiPt == 0) {
-            $soBuoiPt = 12;
-        }
-        if ($request->loai === 'ai') {
-            $coAi = true;
-        }
-
-        $goiTap = GoiTap::create([
-            'ma_goi_tap' => $maGoiTap,
-            'id_phong_tap' => $request->id_phong_tap ?? 1,
-            'ten_goi_tap' => $tenGoi,
-            'thoi_han_mua' => $thoiHanMua,
-            'thoi_han_tang' => $thoiHanTang,
-            'thoi_han_ngay' => $thoiHan,
-            'gia' => $request->gia,
-            'hinh_anh' => $request->hinh_anh ?? null,
-            'so_buoi' => $soBuoi,
-            'so_buoi_pt' => $soBuoiPt,
-            'mo_ta' => $request->mo_ta,
-            'co_ai' => $coAi ? 1 : 0,
-            'co_trainer_review' => $coTrainerReview ? 1 : 0,
-            'tinh_trang' => $tinhTrang,
-        ]);
+        $goiTap = GoiTap::create($data);
 
         return response()->json([
-            'status' => true,
             'success' => true,
-            'message' => 'Thêm mới gói tập thành công.',
-            'data' => $this->formatGoiTapAdmin($goiTap),
+            'message' => 'Thêm gói tập thành công',
+            'data' => $goiTap
         ], 201);
     }
 
-    /**
-     * Admin: Cập nhật thông tin gói tập
-     */
+    // 3. Xem chi tiết
+    public function chiTietGoiTapAdmin($id)
+    {
+        $goiTap = GoiTap::find($id);
+
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $goiTap
+        ]);
+    }
+
+    // 4. Cập nhật gói tập
     public function capNhatGoiTapAdmin(Request $request, $id)
     {
         $goiTap = GoiTap::find($id);
+
         if (!$goiTap) {
             return response()->json([
-                'status' => false,
                 'success' => false,
-                'message' => 'Không tìm thấy gói tập.',
+                'message' => 'Không tìm thấy gói tập'
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'gia' => 'nullable|numeric|min:0',
-            'thoi_han' => 'nullable|integer|min:1',
-            'thoi_han_ngay' => 'nullable|integer|min:1',
-            'thoi_han_mua' => 'nullable|integer|min:1',
-            'thoi_han_tang' => 'nullable|integer|min:0',
-            'so_buoi' => 'nullable|integer|min:0',
-            'so_buoi_pt' => 'nullable|integer|min:0',
+        $data = $request->validate([
+            'ten_goi_tap' => 'sometimes|string',
+            'gia' => 'sometimes|numeric|min:0',
+            'thoi_han_ngay' => 'sometimes|integer|min:1',
+            'thoi_han_mua' => 'sometimes|integer|min:1',
+            'thoi_han_tang' => 'sometimes|integer|min:0',
+            'so_buoi' => 'sometimes|integer|min:0',
+            'so_buoi_pt' => 'sometimes|integer|min:0',
+            'co_ai' => 'sometimes|boolean',
+            'co_trainer_review' => 'sometimes|boolean',
+            'mo_ta' => 'sometimes|nullable|string',
+            'hinh_anh' => 'sometimes|nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $updateData = [];
-
-        if ($request->has('ten_goi_tap') || $request->has('ten_goi')) {
-            $updateData['ten_goi_tap'] = trim($request->ten_goi_tap ?? $request->ten_goi);
-        }
-        if ($request->has('ma_goi_tap')) {
-            $updateData['ma_goi_tap'] = trim($request->ma_goi_tap);
-        }
-        if ($request->has('gia')) {
-            $updateData['gia'] = $request->gia;
-        }
-        if ($request->has('thoi_han_ngay') || $request->has('thoi_han')) {
-            $thoiHan = $request->thoi_han_ngay ?? $request->thoi_han;
-            $updateData['thoi_han_ngay'] = $thoiHan;
-            $updateData['thoi_han_mua'] = $request->thoi_han_mua ?? $thoiHan;
-        } elseif ($request->has('thoi_han_mua')) {
-            $updateData['thoi_han_mua'] = $request->thoi_han_mua;
-            $updateData['thoi_han_ngay'] = $request->thoi_han_mua;
-        }
-        if ($request->has('thoi_han_tang')) {
-            $updateData['thoi_han_tang'] = $request->thoi_han_tang;
-        }
-        if ($request->has('so_buoi')) {
-            $updateData['so_buoi'] = $request->so_buoi;
-        }
-        if ($request->has('so_buoi_pt')) {
-            $updateData['so_buoi_pt'] = $request->so_buoi_pt;
-        }
-        if ($request->has('co_ai')) {
-            $updateData['co_ai'] = $request->boolean('co_ai') ? 1 : 0;
-        }
-        if ($request->has('co_trainer_review')) {
-            $updateData['co_trainer_review'] = $request->boolean('co_trainer_review') ? 1 : 0;
-        }
-        if ($request->has('mo_ta')) {
-            $updateData['mo_ta'] = $request->mo_ta;
-        }
-        if ($request->has('hinh_anh')) {
-            $updateData['hinh_anh'] = $request->hinh_anh;
-        }
-        if ($request->has('tinh_trang')) {
-            $updateData['tinh_trang'] = (int)$request->tinh_trang;
-        } elseif ($request->has('trang_thai')) {
-            $updateData['tinh_trang'] = $request->trang_thai === 'active' ? 1 : 0;
-        }
-
-        $goiTap->update($updateData);
+        $goiTap->update($data);
 
         return response()->json([
-            'status' => true,
             'success' => true,
-            'message' => 'Cập nhật thông tin gói tập thành công.',
-            'data' => $this->formatGoiTapAdmin($goiTap->fresh()),
+            'message' => 'Cập nhật gói tập thành công',
+            'data' => $goiTap->fresh()
         ]);
     }
 
-    /**
-     * Admin: Xóa gói tập
-     */
+    // 5. Xóa gói tập
     public function xoaGoiTapAdmin($id)
     {
         $goiTap = GoiTap::find($id);
+
         if (!$goiTap) {
             return response()->json([
-                'status' => false,
                 'success' => false,
-                'message' => 'Không tìm thấy gói tập.',
+                'message' => 'Không tìm thấy gói tập'
             ], 404);
         }
 
-        $countDangKy = DB::table('chi_tiet_dang_ky_goi')->where('id_goi_tap', $id)->count();
-        if ($countDangKy > 0) {
-            $goiTap->update(['tinh_trang' => 0]);
-            return response()->json([
-                'status' => true,
-                'success' => true,
-                'message' => "Gói tập đã có {$countDangKy} lượt đăng ký trong hệ thống nên không thể xóa khỏi CSDL. Hệ thống đã tự động chuyển trạng thái sang ngừng bán.",
-                'data' => $this->formatGoiTapAdmin($goiTap),
-                'is_soft_disabled' => true,
-            ]);
-        }
-
-        $goiTap->delete();
+        $goiTap->update(['tinh_trang' => 0]);
 
         return response()->json([
-            'status' => true,
             'success' => true,
-            'message' => 'Xóa gói tập thành công.',
+            'message' => 'Đã ngừng bán gói tập'
         ]);
     }
 
-    /**
-     * Admin: Thay đổi trạng thái gói tập (Đang bán <-> Ngừng bán)
-     */
-    public function doiTrangThaiGoiTapAdmin(Request $request, $id)
+    // 6. Thay đổi trạng thái
+    public function doiTrangThaiGoiTapAdmin($id)
     {
         $goiTap = GoiTap::find($id);
+
         if (!$goiTap) {
             return response()->json([
-                'status' => false,
                 'success' => false,
-                'message' => 'Không tìm thấy gói tập.',
+                'message' => 'Không tìm thấy gói tập'
             ], 404);
         }
 
-        if ($request->has('tinh_trang') && $request->tinh_trang !== null) {
-            $newStatus = (int)$request->tinh_trang;
-        } elseif ($request->has('trang_thai')) {
-            $newStatus = $request->trang_thai === 'active' ? 1 : 0;
-        } else {
-            $newStatus = $goiTap->tinh_trang == 1 ? 0 : 1;
-        }
-
-        $goiTap->update(['tinh_trang' => $newStatus]);
+        $goiTap->update([
+            'tinh_trang' => $goiTap->tinh_trang == 1 ? 0 : 1
+        ]);
 
         return response()->json([
-            'status' => true,
             'success' => true,
-            'message' => $newStatus == 1 ? 'Đã kích hoạt mở bán gói tập.' : 'Đã chuyển gói tập sang ngừng bán.',
-            'data' => $this->formatGoiTapAdmin($goiTap->fresh()),
+            'message' => 'Thay đổi trạng thái thành công',
+            'data' => $goiTap
         ]);
     }
 }
