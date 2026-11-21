@@ -7,10 +7,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ChuongTrinhTap;
 use App\Models\NoiTap;
+use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+<<<<<<< HEAD
 
+=======
+use App\Http\Requests\Client\HoSo\StoreHoSoRequest;
+use App\Services\NutritionService;
+use App\Models\LichSuKhuyenCao;
+use App\Services\RecommendationService;
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
 class MembersController extends Controller
 {
@@ -886,6 +894,212 @@ class MembersController extends Controller
             'data' => $data
         ]);
     }
+    
+    public function luuHoSoBanDau(StoreHoSoRequest $request)
+    {
+        $hoiVien = Auth::guard('sanctum')->user();
+
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        $validated = $request->validated();
+
+        // 1. Lưu hồ sơ hội viên
+        $hoiVien->update([
+            'ngay_sinh' => $validated['ngay_sinh'],
+            'gioi_tinh' => $validated['gioi_tinh'],
+            'chieu_cao_cm' => $validated['chieu_cao_cm'],
+            'can_nang_kg' => $validated['can_nang_kg'],
+
+            'muc_tieu_hoat_dong' => $validated['muc_tieu_hoat_dong'],
+            'muc_tieu_hien_tai' => $validated['muc_tieu_hien_tai'],
+            'noi_tap_uu_tien' => $validated['noi_tap_uu_tien'],
+
+            'che_do_an_ua_thich' => $validated['che_do_an_ua_thich'] ?? [],
+            'muc_ngan_sach_an_uong' => $validated['muc_ngan_sach_an_uong'],
+
+            'note' => $validated['note'] ?? null,
+            'di_ung' => $validated['di_ung'] ?? [],
+
+            'ngay_cap_nhat_chi_so' => now(),
+        ]);
+
+        // 2. Tính tuổi
+        $ngaySinh = Carbon::parse($hoiVien->ngay_sinh);
+        $tuoi = $ngaySinh->age;
+
+        // 3. Quy đổi mức độ vận động
+        $activityMultipliers = [
+            1 => 1.2,
+            2 => 1.375,
+            3 => 1.55,
+            4 => 1.725,
+        ];
+
+        $activityLevel = (int) $hoiVien->muc_tieu_hoat_dong;
+
+        $activityMultiplier = $activityMultipliers[$activityLevel] ?? 1.2;
+
+        // 4. Tính toán và lưu lịch sử chỉ số dinh dưỡng
+        $chiSoDinhDuong = NutritionService::recordNutritionAssessment(
+            $hoiVien->id,
+            (float) $hoiVien->can_nang_kg,
+            (float) $hoiVien->chieu_cao_cm,
+            $tuoi,
+            $hoiVien->gioi_tinh,
+            $activityMultiplier,
+            $hoiVien->muc_tieu_hien_tai
+        );
+
+        // 5. Tạo khuyến cáo dựa trên hồ sơ và chỉ số dinh dưỡng
+        $khuyenCao = RecommendationService::generate(
+            $hoiVien,
+            $chiSoDinhDuong
+        );
+
+        // 6. Ngừng áp dụng khuyến cáo cũ
+        LichSuKhuyenCao::where('id_hoi_vien', $hoiVien->id)
+            ->where('trang_thai', 1)
+            ->update([
+                'trang_thai' => 0,
+            ]);
+
+        // 7. Lưu khuyến cáo mới
+        $lichSuKhuyenCao = LichSuKhuyenCao::create([
+            'id_hoi_vien' => $hoiVien->id,
+            'id_chi_so_dinh_duong' => $chiSoDinhDuong->id,
+
+            'danh_gia_the_trang' => $khuyenCao['danh_gia_the_trang'],
+            'dinh_huong_dinh_duong' => $khuyenCao['dinh_huong_dinh_duong'],
+            'goi_y_thuc_pham' => $khuyenCao['goi_y_thuc_pham'],
+            'dinh_huong_tap_luyen' => $khuyenCao['dinh_huong_tap_luyen'],
+            'viec_can_thuc_hien' => $khuyenCao['viec_can_thuc_hien'],
+            'chi_so_can_theo_doi' => $khuyenCao['chi_so_can_theo_doi'],
+
+            'trang_thai' => 1,
+        ]);
+
+        // 8. Trả kết quả về FE
+        return response()->json([
+            'success' => true,
+            'message' => 'Lưu hồ sơ, tính toán chỉ số và tạo khuyến cáo thành công.',
+
+            'data' => [
+                'id' => $hoiVien->id,
+                'gioi_tinh' => $hoiVien->gioi_tinh,
+                'ngay_sinh' => $ngaySinh->format('d/m/Y'),
+                'tuoi' => $tuoi,
+
+                'chieu_cao_cm' => $hoiVien->chieu_cao_cm,
+                'can_nang_kg' => $hoiVien->can_nang_kg,
+
+                'muc_tieu_hoat_dong' => $activityLevel,
+                'he_so_van_dong' => $activityMultiplier,
+
+                'muc_tieu_hien_tai' => $hoiVien->muc_tieu_hien_tai,
+                'noi_tap_uu_tien' => $hoiVien->noi_tap_uu_tien,
+
+                'che_do_an_ua_thich' => $hoiVien->che_do_an_ua_thich,
+                'muc_ngan_sach_an_uong' => $hoiVien->muc_ngan_sach_an_uong,
+                'note' => $hoiVien->note,
+                'di_ung' => $hoiVien->di_ung,
+
+                // Kết quả tính toán dinh dưỡng
+                'chi_so_dinh_duong' => [
+                    'id' => $chiSoDinhDuong->id,
+                    'can_nang' => $chiSoDinhDuong->can_nang,
+                    'bmi' => $chiSoDinhDuong->bmi,
+                    'bmr' => $chiSoDinhDuong->bmr,
+                    'tdee' => $chiSoDinhDuong->tdee,
+                    'kcal_muc_tieu' => $chiSoDinhDuong->kcal_muc_tieu,
+                    'protein' => $chiSoDinhDuong->protein,
+                    'carb' => $chiSoDinhDuong->carb,
+                    'fat' => $chiSoDinhDuong->fat,
+                ],
+
+                // Kết quả khuyến cáo
+                'khuyen_cao' => [
+                    'id' => $lichSuKhuyenCao->id,
+                    'danh_gia_the_trang' => $lichSuKhuyenCao->danh_gia_the_trang,
+                    'dinh_huong_dinh_duong' => $lichSuKhuyenCao->dinh_huong_dinh_duong,
+                    'goi_y_thuc_pham' => $lichSuKhuyenCao->goi_y_thuc_pham,
+                    'dinh_huong_tap_luyen' => $lichSuKhuyenCao->dinh_huong_tap_luyen,
+                    'viec_can_thuc_hien' => $lichSuKhuyenCao->viec_can_thuc_hien,
+                    'chi_so_can_theo_doi' => $lichSuKhuyenCao->chi_so_can_theo_doi,
+                    'trang_thai' => $lichSuKhuyenCao->trang_thai,
+                ],
+
+                'ngay_cap_nhat_chi_so' => $hoiVien->ngay_cap_nhat_chi_so,
+            ],
+        ]);
+    }
+
+    
+
+
+
+
+
+    public function checkCapNhatChiSo()
+    {
+        // 1. Lấy hội viên đăng nhập
+        $hoiVien = Auth::guard('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+        // 2. Lấy thông tin hội viên từ Model Client
+        $client = Client::find($hoiVien->id);
+
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông tin hội viên.',
+            ], 404);
+        }
+
+        // 3. Kiểm tra lần cập nhật chỉ số gần nhất
+        if (!$client->ngay_cap_nhat_chi_so) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn chưa cập nhật chỉ số cơ thể.',
+                'data' => [
+                    'can_cap_nhat' => true,
+                    'ngay_cap_nhat_cuoi' => null,
+                    'ngay_cap_nhat_tiep_theo' => null,
+                ],
+            ]);
+        }
+
+        // 4. Tính thời điểm cập nhật tiếp theo (sau 2 ngày)
+        $ngayCapNhatCuoi = Carbon::parse($client->ngay_cap_nhat_chi_so);
+
+        $ngayCapNhatTiepTheo = $ngayCapNhatCuoi->copy()->addDays(2);
+
+        // 5. Kiểm tra đã đủ 2 ngày chưa
+        $canCapNhat = now()->greaterThanOrEqualTo($ngayCapNhatTiepTheo);
+
+        return response()->json([
+            'success' => true,
+            'message' => $canCapNhat
+                ? 'Đã đến lúc cập nhật lại chỉ số cơ thể.'
+                : 'Chưa đến thời gian cập nhật chỉ số.',
+            'data' => [
+                'can_cap_nhat' => $canCapNhat,
+                'ngay_cap_nhat_cuoi' => $ngayCapNhatCuoi->toDateTimeString(),
+                'ngay_cap_nhat_tiep_theo' => $ngayCapNhatTiepTheo->toDateTimeString(),
+            ],
+        ]);
+    }
+
+
+
 
 
 

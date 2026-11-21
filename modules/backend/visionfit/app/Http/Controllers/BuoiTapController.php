@@ -1085,6 +1085,23 @@ class BuoiTapController extends Controller
             ->distinct()
             ->count('bt.id_lich_tap');
 
+        // 7.1. Kiểm tra hội viên đã hoàn thành ngày tập khác trong hôm nay chưa
+        $daHoanThanhHomNay = DB::table('buoi_tap as bt')
+            ->where('bt.id_hoi_vien', $user->id)
+            ->whereDate('bt.ngay_tap', $ngayHienTai)
+            ->whereNotNull('bt.thoi_gian_ket_thuc')
+            ->where('bt.phan_tram_hoan_thanh', '>=', 100)
+            ->where('bt.id_chuong_trinh_bai_tap', '!=', $request->id_chuong_trinh_bai_tap)
+            ->exists();
+
+        $canKhuyenCao = $daHoanThanhHomNay;
+
+        $noiDungKhuyenCao = $canKhuyenCao
+            ? 'Bạn đã hoàn thành một ngày tập luyện hôm nay. VisionFit khuyến nghị bạn không nên tập thêm một ngày tập khác trong cùng ngày để cơ thể có thời gian phục hồi.'
+            : null;
+
+        
+
         // 8. Kiểm tra gói tập còn hạn
         $goiConHan = DB::table('dang_ky_goi as dkg')
             ->join(
@@ -1115,6 +1132,8 @@ class BuoiTapController extends Controller
                     'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
                     'can_dang_ky_goi' => false,
                     'goi_con_han' => true,
+                    'can_khuyen_cao' => $canKhuyenCao,
+                    'noi_dung_khuyen_cao' => $noiDungKhuyenCao,
                 ],
             ]);
         }
@@ -1138,6 +1157,8 @@ class BuoiTapController extends Controller
                     'ngay_thu' => $chuongTrinhBaiTap->ngay_thu,
                     'can_dang_ky_goi' => false,
                     'goi_con_han' => false,
+                    'can_khuyen_cao' => $canKhuyenCao,
+                    'noi_dung_khuyen_cao' => $noiDungKhuyenCao,
                 ],
             ]);
         }
@@ -1183,6 +1204,8 @@ class BuoiTapController extends Controller
                     'goi_con_han' => false,
                     'duoc_tiep_tuc_hoan_thanh' => true,
                     'can_dang_ky_goi' => false,
+                    'can_khuyen_cao' => $canKhuyenCao,
+                    'noi_dung_khuyen_cao' => $noiDungKhuyenCao,
                 ],
             ]);
         }
