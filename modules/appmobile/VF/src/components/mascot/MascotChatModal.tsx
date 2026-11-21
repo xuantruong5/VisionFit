@@ -188,6 +188,32 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     };
 
     setMessages((prev) => [...prev, userMsg]);
+<<<<<<< HEAD
+    if (!customQuery) setInputText('');
+
+    // Kiểm tra ý định tập luyện -> tự động chuyển trang Kế hoạch tập
+    const isWorkoutIntent = /tập luyện|muốn tập|bắt đầu tập|vào tập|kế hoạch tập|tập ngay|đi tập|luyện tập|^tập$/i.test(textToSend.trim().toLowerCase());
+    if (isWorkoutIntent) {
+      triggerWorkoutStart();
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: currentSpecies === 'cat'
+          ? 'Meo meo! Tuyệt vời quá! Hãy cùng khởi động và bắt đầu buổi tập nào 🐱💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!'
+          : 'Tuyệt vời! Khởi động kỹ và bùng nổ năng lượng buổi tập hôm nay nào 🐻💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsTyping(false);
+
+      setTimeout(() => {
+        navigateToWorkoutPlan();
+        onClose();
+      }, 700);
+      return;
+    }
+=======
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
     setIsTyping(true);
     triggerMascotState('thinking');
@@ -231,6 +257,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     const elements: React.ReactNode[] = [];
     let i = 0;
 
+<<<<<<< HEAD
+=======
     const isPipeRow = (l: string) => {
       const t = l.trim();
       return t.includes('|') && (t.startsWith('|') || t.endsWith('|') || t.split('|').length >= 3);
@@ -240,10 +268,57 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       return t.includes('|') && /^\|?[\s:\-+|]+\|?$/.test(t) && t.includes('-');
     };
 
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
     while (i < lines.length) {
       const line = lines[i];
       const trimmed = line.trim();
 
+<<<<<<< HEAD
+      // Kiểm tra Bảng Markdown
+      const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
+      const isNextSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
+
+      if (isTableRow && isNextSep) {
+        const headers = trimmed.slice(1, -1).split('|').map((c) => c.trim().replace(/\*\*/g, ''));
+        i += 2; // Bỏ qua header và separator
+        const rows: string[][] = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          const cells = lines[i].trim().slice(1, -1).split('|').map((c) => c.trim());
+          rows.push(cells);
+          i++;
+        }
+
+        elements.push(
+          <View key={`tbl-${i}`} style={styles.tableWrapper}>
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={true}
+              contentContainerStyle={styles.tableScrollContent}
+            >
+              <View style={styles.tableBox}>
+                <View style={styles.tableHeaderRow}>
+                  {headers.map((h, hIdx) => (
+                    <View key={`th-${hIdx}`} style={[styles.tableThCell, hIdx === 0 && styles.tableColFirst]}>
+                      <Text style={styles.tableThText} numberOfLines={2}>{h}</Text>
+                    </View>
+                  ))}
+                </View>
+                {rows.map((row, rIdx) => (
+                  <View key={`tr-${rIdx}`} style={[styles.tableTrRow, rIdx % 2 === 1 && styles.tableTrEven]}>
+                    {row.map((cell, cIdx) => (
+                      <View key={`td-${cIdx}`} style={[styles.tableTdCell, cIdx === 0 && styles.tableColFirst]}>
+                        <Text style={styles.tableTdText}>{cell.replace(/\*\*/g, '')}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        );
+        continue;
+=======
       // Kiểm tra Bảng Markdown đàn hồi (không kẹt khi có dòng trống hoặc dấu pipe thiếu)
       if (isPipeRow(trimmed)) {
         let sepIdx = -1;
@@ -305,6 +380,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
           );
           continue;
         }
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
       }
 
       // 1. Phân cách ngang: '---', '***'
@@ -447,6 +523,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                           {msg.text}
                         </Text>
                       ) : (
+<<<<<<< HEAD
+                        renderFormattedAiMessage(msg.text)
+=======
                         <>
                           {renderFormattedAiMessage(msg.text)}
                           {(msg.text.includes('kế hoạch tập') || msg.text.includes('Kế hoạch tập') || msg.text.includes('bài tập')) && msg.id !== 'welcome' && (
@@ -463,6 +542,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                             </TouchableOpacity>
                           )}
                         </>
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
                       )}
                       <Text
                         style={[
@@ -860,6 +940,8 @@ const styles = StyleSheet.create({
     minWidth: 42,
     maxWidth: 52,
   },
+<<<<<<< HEAD
+=======
   workoutActionBtn: {
     marginTop: 8,
     backgroundColor: COLORS.primary,
@@ -875,6 +957,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
   input: {
     flex: 1,
     backgroundColor: '#F4F8F9',

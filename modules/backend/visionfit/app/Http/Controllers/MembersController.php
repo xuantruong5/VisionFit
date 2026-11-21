@@ -11,10 +11,14 @@ use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+<<<<<<< HEAD
+
+=======
 use App\Http\Requests\Client\HoSo\StoreHoSoRequest;
 use App\Services\NutritionService;
 use App\Models\LichSuKhuyenCao;
 use App\Services\RecommendationService;
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
 class MembersController extends Controller
 {

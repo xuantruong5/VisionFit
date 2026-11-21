@@ -212,6 +212,8 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::delete('/thong-bao/{id}', [ThongBaoController::class, 'xoa']);
     Route::delete('/thong-bao', [ThongBaoController::class, 'xoaTatCa']);
 
+<<<<<<< HEAD
+=======
 
 
     Route::post('/luu-ho-so-ban-dau', [MembersController::class, 'luuHoSoBanDau']);
@@ -220,6 +222,7 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
 
     
 
+>>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
 
 
