@@ -126,9 +126,24 @@
                             <strong>{{ goi.da_ban }}</strong>
                         </div>
 
-                        <button class="btn-edit" @click="openEditModal(goi)">
-                            Chỉnh sửa
-                        </button>
+                        <div class="action-buttons">
+                            <button
+                                class="btn-status"
+                                :class="goi.trang_thai === 'active' ? 'btn-deactivate' : 'btn-activate'"
+                                :title="goi.trang_thai === 'active' ? 'Chuyển sang ngừng bán' : 'Kích hoạt mở bán'"
+                                @click="toggleStatus(goi)"
+                            >
+                                {{ goi.trang_thai === 'active' ? 'Tắt' : 'Bật' }}
+                            </button>
+
+                            <button class="btn-edit" @click="openEditModal(goi)">
+                                Chỉnh sửa
+                            </button>
+
+                            <button class="btn-delete" title="Xóa gói tập" @click="deletePackage(goi)">
+                                ✕
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -262,6 +277,8 @@
 </template>
 
 <script>
+import baseRequestAdmin from '@/core/baseRequestAdmin';
+
 export default {
     name: "AdminGoiTap",
 
@@ -272,74 +289,9 @@ export default {
             statusFilter: '',
             showModal: false,
             editingPackage: null,
+            loading: false,
 
-            list_goi_tap: [
-                {
-                    id: 1,
-                    ten_goi: 'Gym Cơ bản 1 tháng',
-                    loai: 'gym',
-                    gia: 500000,
-                    thoi_han: 30,
-                    co_ai: false,
-                    co_trainer_review: false,
-                    so_buoi_pt: 0,
-                    da_ban: 34,
-                    noi_bat: false,
-                    trang_thai: 'active'
-                },
-                {
-                    id: 2,
-                    ten_goi: 'Gym + AI 1 tháng',
-                    loai: 'ai',
-                    gia: 850000,
-                    thoi_han: 30,
-                    co_ai: true,
-                    co_trainer_review: true,
-                    so_buoi_pt: 0,
-                    da_ban: 42,
-                    noi_bat: true,
-                    trang_thai: 'active'
-                },
-                {
-                    id: 3,
-                    ten_goi: 'Gym + AI 3 tháng',
-                    loai: 'ai',
-                    gia: 2200000,
-                    thoi_han: 90,
-                    co_ai: true,
-                    co_trainer_review: true,
-                    so_buoi_pt: 0,
-                    da_ban: 28,
-                    noi_bat: false,
-                    trang_thai: 'active'
-                },
-                {
-                    id: 4,
-                    ten_goi: 'Personal Trainer 12 buổi',
-                    loai: 'pt',
-                    gia: 3600000,
-                    thoi_han: 60,
-                    co_ai: true,
-                    co_trainer_review: true,
-                    so_buoi_pt: 12,
-                    da_ban: 17,
-                    noi_bat: false,
-                    trang_thai: 'active'
-                },
-                {
-                    id: 5,
-                    ten_goi: 'Personal Trainer 24 buổi',
-                    loai: 'pt',
-                    gia: 6500000,
-                    thoi_han: 90,
-                    co_ai: true,
-                    co_trainer_review: true,
-                    so_buoi_pt: 24,
-                    da_ban: 9,
-                    noi_bat: false,
-                    trang_thai: 'inactive'
-                }
-            ],
+            list_goi_tap: [],
 
             form: {
                 ten_goi: '',
@@ -362,7 +314,7 @@ export default {
                 const keyword = this.search.toLowerCase();
 
                 const matchSearch =
-                    goi.ten_goi.toLowerCase().includes(keyword);
+                    goi.ten_goi && goi.ten_goi.toLowerCase().includes(keyword);
 
                 const matchType =
                     !this.typeFilter ||
@@ -395,9 +347,13 @@ export default {
         }
     },
 
+    mounted() {
+        this.loadPackages();
+    },
+
     methods: {
         formatMoney(value) {
-            return new Intl.NumberFormat('vi-VN').format(value);
+            return new Intl.NumberFormat('vi-VN').format(value || 0);
         },
 
         getTypeName(type) {
@@ -405,6 +361,20 @@ export default {
             if (type === 'ai') return 'GYM + AI';
             if (type === 'pt') return 'PERSONAL TRAINER';
             return type;
+        },
+
+        async loadPackages() {
+            try {
+                this.loading = true;
+                const res = await baseRequestAdmin.get('admin/goi-tap');
+                if (res.data && (res.data.status || res.data.success)) {
+                    this.list_goi_tap = res.data.data;
+                }
+            } catch (e) {
+                console.error('Lỗi tải danh sách gói tập:', e);
+            } finally {
+                this.loading = false;
+            }
         },
 
         openCreateModal() {
@@ -430,16 +400,16 @@ export default {
             this.editingPackage = goi;
 
             this.form = {
-                ten_goi: goi.ten_goi,
+                ten_goi: goi.ten_goi || goi.ten_goi_tap,
                 loai: goi.loai,
                 gia: goi.gia,
-                thoi_han: goi.thoi_han,
-                co_ai: goi.co_ai,
-                co_trainer_review: goi.co_trainer_review,
-                so_buoi_pt: goi.so_buoi_pt,
-                noi_bat: goi.noi_bat,
+                thoi_han: goi.thoi_han || goi.thoi_han_ngay || 30,
+                co_ai: !!goi.co_ai,
+                co_trainer_review: !!goi.co_trainer_review,
+                so_buoi_pt: goi.so_buoi_pt || 0,
+                noi_bat: !!goi.noi_bat,
                 mo_ta: goi.mo_ta || '',
-                trang_thai: goi.trang_thai
+                trang_thai: goi.trang_thai || (goi.tinh_trang == 1 ? 'active' : 'inactive')
             };
 
             this.showModal = true;
@@ -450,23 +420,61 @@ export default {
             this.editingPackage = null;
         },
 
-        savePackage() {
+        async savePackage() {
             if (!this.form.ten_goi || !this.form.gia) {
                 alert('Vui lòng nhập tên gói và giá bán');
                 return;
             }
 
-            if (this.editingPackage) {
-                Object.assign(this.editingPackage, this.form);
-            } else {
-                this.list_goi_tap.unshift({
-                    id: Date.now(),
-                    ...this.form,
-                    da_ban: 0
-                });
+            try {
+                if (this.editingPackage) {
+                    const res = await baseRequestAdmin.put(`admin/goi-tap/${this.editingPackage.id}`, this.form);
+                    if (res.data && (res.data.status || res.data.success)) {
+                        alert(res.data.message || 'Cập nhật gói tập thành công');
+                        this.closeModal();
+                        this.loadPackages();
+                    }
+                } else {
+                    const res = await baseRequestAdmin.post('admin/goi-tap', this.form);
+                    if (res.data && (res.data.status || res.data.success)) {
+                        alert(res.data.message || 'Thêm mới gói tập thành công');
+                        this.closeModal();
+                        this.loadPackages();
+                    }
+                }
+            } catch (error) {
+                const msg = error.response?.data?.message || 'Có lỗi xảy ra khi lưu gói tập';
+                alert(msg);
             }
+        },
 
-            this.closeModal();
+        async toggleStatus(goi) {
+            const actionText = goi.trang_thai === 'active' ? 'ngừng bán' : 'mở bán lại';
+            if (!confirm(`Bạn có chắc muốn ${actionText} gói "${goi.ten_goi}"?`)) return;
+
+            try {
+                const res = await baseRequestAdmin.post(`admin/goi-tap/${goi.id}/trang-thai`);
+                if (res.data && (res.data.status || res.data.success)) {
+                    alert(res.data.message);
+                    this.loadPackages();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Lỗi khi đổi trạng thái');
+            }
+        },
+
+        async deletePackage(goi) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa gói tập "${goi.ten_goi}"?`)) return;
+
+            try {
+                const res = await baseRequestAdmin.delete(`admin/goi-tap/${goi.id}`);
+                if (res.data && (res.data.status || res.data.success)) {
+                    alert(res.data.message);
+                    this.loadPackages();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || 'Lỗi khi xóa gói tập');
+            }
         }
     }
 }
@@ -757,6 +765,59 @@ export default {
     height: 5px;
     border-radius: 50%;
     background: currentColor;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-status {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.btn-status.btn-deactivate {
+    background: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #fecdd3;
+}
+
+.btn-status.btn-deactivate:hover {
+    background: #ffe4e6;
+}
+
+.btn-status.btn-activate {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.btn-status.btn-activate:hover {
+    background: #d1fae5;
+}
+
+.btn-delete {
+    border: 1px solid #fecdd3;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: #fff1f2;
+    color: #e11d48;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.btn-delete:hover {
+    background: #e11d48;
+    color: white;
 }
 
 .btn-edit {
