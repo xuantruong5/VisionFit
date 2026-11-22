@@ -1,91 +1,345 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TRAINER_COLORS as COLORS, SOFT_SHADOW } from '../../general/theme';
+import apiFitlife from '../../general/api';
 
-// Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const FILTERS = ['Tất cả', 'Ca dạy', 'Học viên', 'Hệ thống'];
-
-type Noti = { id: string; type: string; title: string; desc: string; time: string; icon?: string; bg?: string; ink?: string; avatar?: string; unread?: boolean };
-
-const GROUPS: { title: string; items: Noti[] }[] = [
-  {
-    title: 'Hôm nay',
-    items: [
-      { id: '1', type: 'Ca dạy', icon: 'time-outline', bg: '#FFF1EC', ink: '#A9744A', title: 'Ca dạy sắp bắt đầu', desc: 'Trần Minh Anh • Cardio & Giảm mỡ lúc 14:30', time: '13:45', unread: true },
-      { id: '2', type: 'Học viên', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', title: 'Nguyễn Văn An đã check-in', desc: 'Phòng Gym A • sẵn sàng cho buổi tập', time: '08:52', unread: true },
-      { id: '3', type: 'Học viên', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80', title: 'Phạm Thu Hà đánh giá 5 sao', desc: '“Buổi tập rất hiệu quả, cảm ơn HLV!”', time: '07:30' },
-    ],
-  },
-  {
-    title: 'Hôm qua',
-    items: [
-      { id: '4', type: 'Hệ thống', icon: 'wallet-outline', bg: '#ECFDF5', ink: '#5E7B45', title: 'Đã nhận thanh toán', desc: '+500.000 ₫ từ buổi PT với Nguyễn Văn An', time: '19:10' },
-      { id: '5', type: 'Ca dạy', icon: 'close-circle-outline', bg: '#FEF2F2', ink: '#C0625A', title: 'Học viên huỷ ca dạy', desc: 'Lê Hoàng Nam huỷ ca 18:00 • Full Body', time: '15:22' },
-      { id: '6', type: 'Hệ thống', icon: 'megaphone-outline', bg: '#EAF3FC', ink: '#6E8CA8', title: 'Cập nhật chính sách', desc: 'Chính sách thưởng theo buổi dạy tháng 11', time: '09:00' },
-    ],
-  },
-];
+type Noti = {
+  id: number;
+  type: string;
+  title: string;
+  desc: string;
+  time: string;
+  unread: boolean;
+  loai: string;
+};
 
 const TrainerNotifications = ({ navigation }: any) => {
   const [filter, setFilter] = useState('Tất cả');
+  const [notifications, setNotifications] = useState<Noti[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // Định dạng thời gian
+  const formatTime = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString.replace(' ', 'T'));
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(); yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    const time = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', });
+    if (isToday) return time;
+    if (isYesterday) return `Hôm qua • ${time}`;
+    return `${date.toLocaleDateString('vi-VN')} • ${time}`;
+  };
+
+  // Xác định nhóm thông báo
+  const getType = (item: any) => {
+    const title = (item.tieu_de || '').trim().toLowerCase();
+    // Chỉ thông báo có tiêu đề chính xác là "Học viên mới"
+    // mới được xếp vào nhóm Học viên
+    if (title === 'học viên mới') {
+      return 'Học viên';
+    }
+    if (
+      title.includes('ca dạy') ||
+      title.includes('lịch dạy')
+    ) {
+      return 'Ca dạy';
+    }
+    return 'Hệ thống';
+  };
+
+  // Gọi API thông báo
+  const fetchNotifications = async () => {
+    try {
+      const response = await apiFitlife.get('/trainer/thong-bao');
+      if (response.data.success) {
+        const data = response.data.data || [];
+        const mappedData: Noti[] = data.map((item: any) => ({
+          id: item.id,
+          type: getType(item),
+          title: item.tieu_de,
+          desc: item.noi_dung,
+          time: formatTime(item.created_at),
+          unread: Number(item.da_doc) === 0,
+          loai: item.loai,
+        }));
+        setNotifications(mappedData);
+        setUnreadCount(response.data.so_thong_bao_chua_doc || 0);
+      }
+    } catch (error: any) {
+      console.log(
+        'Lỗi lấy thông báo:',
+        error.response?.data || error.message
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // 1. Đánh dấu một thông báo đã đọc
+  const markAsRead = async (id: number) => {
+    const item = notifications.find(n => n.id === id);
+
+    if (!item || !item.unread) return;
+
+    try {
+      const response = await apiFitlife.post(
+        `/trainer/thong-bao/${id}/da-doc`
+      );
+
+      if (response.data.success) {
+        setNotifications(prev =>
+          prev.map(n =>
+            n.id === id ? { ...n, unread: false } : n
+          )
+        );
+
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error: any) {
+      console.log('Lỗi đánh dấu đã đọc:', error.response?.data || error.message);
+    }
+  };
+
+  // 2. Đánh dấu tất cả đã đọc
+  const markAllAsRead = async () => {
+    if (unreadCount === 0) return;
+
+    try {
+      const response = await apiFitlife.post(
+        '/trainer/thong-bao/da-doc-tat-ca'
+      );
+
+      if (response.data.success) {
+        setNotifications(prev =>
+          prev.map(n => ({ ...n, unread: false }))
+        );
+
+        setUnreadCount(0);
+      }
+    } catch (error: any) {
+      console.log('Lỗi đánh dấu tất cả đã đọc:', error.response?.data || error.message);
+    }
+  };
+
+  // 3. Xóa một thông báo
+  const deleteNotification = async (id: number) => {
+    try {
+      const response = await apiFitlife.delete(
+        `/trainer/thong-bao/${id}`
+      );
+
+      if (response.data.success) {
+        const deletedItem = notifications.find(n => n.id === id);
+
+        setNotifications(prev =>
+          prev.filter(n => n.id !== id)
+        );
+
+        if (deletedItem?.unread) {
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+
+        setDeletingId(null);
+      }
+    } catch (error: any) {
+      console.log('Lỗi xóa thông báo:', error.response?.data || error.message);
+    }
+  };
+
+  // 4. Xóa tất cả thông báo
+  const deleteAllNotifications = async () => {
+    if (notifications.length === 0) return;
+
+    try {
+      const response = await apiFitlife.delete(
+        '/trainer/thong-bao'
+      );
+
+      if (response.data.success) {
+        setNotifications([]);
+        setUnreadCount(0);
+        setDeletingId(null);
+      }
+    } catch (error: any) {
+      console.log('Lỗi xóa tất cả:', error.response?.data || error.message);
+    }
+  };
+  // Kéo xuống để tải lại
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchNotifications();
+  };
+
+  // Nhóm thông báo theo ngày
+  const getGroupTitle = (time: string) => {
+    if (time.startsWith('Hôm qua')) return 'Hôm qua';
+    const today = new Date().toLocaleDateString('vi-VN');
+    if (time.includes(today)) return 'Hôm nay';
+    return 'Trước đó';
+  };
+  const filteredNotifications = notifications.filter(
+    item => filter === 'Tất cả' || item.type === filter
+  );
+  const groups = [
+    {
+      title: 'Hôm nay',
+      items: filteredNotifications.filter(item => {
+        const date = new Date(item.time.includes('•')
+          ? item.time.split(' • ')[0].split('/').reverse().join('-')
+          : new Date().toISOString());
+        return item.time.includes('Hôm qua') === false &&
+          !item.time.includes('/');
+      }),
+    },
+    {
+      title: 'Hôm qua',
+      items: filteredNotifications.filter(item =>
+        item.time.includes('Hôm qua')
+      ),
+    },
+    {
+      title: 'Trước đó',
+      items: filteredNotifications.filter(item =>
+        item.time.includes('/')
+      ),
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
-
       <View style={styles.header}>
         <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.goBack?.()}>
           <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thông báo</Text>
-        <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7}>
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Thông báo</Text>
+          {unreadCount > 0 && (
+            <Text style={styles.unreadCount}>
+              {unreadCount} thông báo chưa đọc
+            </Text>
+          )}
+        </View>
+        <TouchableOpacity  style={styles.roundBtn} activeOpacity={0.7} onPress={markAllAsRead} >
           <Ionicons name="checkmark-done" size={20} color={COLORS.primary} />
         </TouchableOpacity>
+
+        {/* Xóa tất cả */}
+        <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={deleteAllNotifications} >
+          <Ionicons name="trash-outline" size={19} color="#E53935" />
+        </TouchableOpacity>
+
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipRow}>
-        {FILTERS.map((item) => (
-          <TouchableOpacity
-            key={item}
-            activeOpacity={0.8}
-            onPress={() => setFilter(item)}
+        {FILTERS.map(item => (
+          <TouchableOpacity  key={item}  activeOpacity={0.8} onPress={() => setFilter(item)}
             style={[styles.chip, filter === item && styles.chipActive]}>
-            <Text style={[styles.chipText, filter === item && styles.chipTextActive]}>{item}</Text>
+            <Text style={[ styles.chipText, filter === item && styles.chipTextActive, ]}>
+              {item}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {GROUPS.map((group) => {
-          const items = group.items.filter((n) => filter === 'Tất cả' || n.type === filter);
-          if (items.length === 0) return null;
-          return (
-            <View key={group.title}>
-              <Text style={styles.sectionTitle}>{group.title}</Text>
-              <View style={styles.card}>
-                {items.map((item, index) => (
-                  <View key={item.id} style={[styles.row, index < items.length - 1 && styles.rowBorder]}>
-                    {item.avatar ? (
-                      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-                    ) : (
-                      <View style={[styles.iconTile, { backgroundColor: item.bg }]}>
-                        <Ionicons name={item.icon || "notifications-outline"} size={20} color={item.ink} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+      }>
+
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+        ) : filteredNotifications.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="notifications-off-outline" size={48} color={COLORS.textLight} />
+            <Text style={styles.emptyText}>
+              Chưa có thông báo nào
+            </Text>
+          </View>
+        ) : (
+          groups.map(group => {
+            if (group.items.length === 0) return null;
+            return (
+              <View key={group.title}>
+                <Text style={styles.sectionTitle}>
+                  {group.title}
+                </Text>
+
+                <View style={styles.card}>
+                  {group.items.map((item, index) => {
+                    const isStudent = item.title?.trim().toLowerCase() === 'học viên mới';
+
+                    return (
+                      <View key={item.id} style={[  styles.row, index < group.items.length - 1 && styles.rowBorder, deletingId === item.id && styles.rowDeleting, ]} >
+                        <TouchableOpacity style={styles.notificationContent}  activeOpacity={0.8} onPress={() => markAsRead(item.id)} onLongPress={() => setDeletingId(item.id)}  delayLongPress={400} >
+                          <View  style={[ styles.iconTile,  {   backgroundColor: isStudent ? '#EAF8F8' : '#EAF3FC', },  ]} >
+                            <Ionicons name={isStudent ? 'person-add-outline' : 'notifications-outline'} size={20} color={isStudent ? COLORS.primary : '#6E8CA8'} />
+                          </View>
+
+                          <View style={styles.flex}>
+                            <Text style={styles.title}>
+                              {item.title}
+                            </Text>
+
+                            <Text style={styles.desc} numberOfLines={2}>
+                              {item.desc}
+                            </Text>
+
+                            <Text style={styles.time}>
+                              {item.time}
+                            </Text>
+                          </View>
+
+                          {item.unread && (
+                            <View style={styles.unreadDot} />
+                          )}
+                        </TouchableOpacity>
+
+                        <View style={styles.rightActions}>
+
+                          {/* Nhấn giữ sẽ hiện nút xóa */}
+                          {deletingId === item.id && (
+                            <TouchableOpacity style={styles.deleteButton} activeOpacity={0.7} onPress={() => deleteNotification(item.id)} >
+                              <Ionicons  name="trash" size={19} color="#E53935"  />
+                            </TouchableOpacity>
+                          )}
+
+                          {/* Nút đặt lịch */}
+                          {isStudent && (
+                            <TouchableOpacity style={styles.bookingButton}  activeOpacity={0.8}
+                              onPress={() => {  navigation.navigate('selectcalendar', {  notificationId: item.id, });}} >
+                              <Ionicons name="calendar-outline" size={14} color="#FFFFFF"/>
+                              <Text style={styles.bookingButtonText}>
+                                Đặt lịch
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+
+
+                        </View>
                       </View>
-                    )}
-                    <View style={styles.flex}>
-                      <Text style={styles.title}>{item.title}</Text>
-                      <Text style={styles.desc} numberOfLines={2}>{item.desc}</Text>
-                      <Text style={styles.time}>{item.time}</Text>
-                    </View>
-                    {item.unread && <View style={styles.unreadDot} />}
-                  </View>
-                ))}
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -117,11 +371,16 @@ const styles = StyleSheet.create({
     ...SOFT_SHADOW,
   },
   headerTitle: {
-    flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '700',
     color: COLORS.textPrimary,
+  },
+  unreadCount: {
+    textAlign: 'center',
+    fontSize: 11,
+    color: COLORS.primary,
+    marginTop: 2,
   },
   chipScroll: {
     flexGrow: 0,
@@ -184,11 +443,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
   title: {
     fontSize: 14.5,
     fontWeight: '700',
@@ -213,5 +467,58 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: COLORS.accentOrange,
     marginTop: 6,
+  },
+  empty: {
+    alignItems: 'center',
+    marginTop: 80,
+  },
+  emptyText: {
+    marginTop: 12,
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  rightActions: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    alignSelf: 'stretch',
+    minHeight: 85,
+  },
+
+  bookingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 5,
+    marginTop: 8,
+  },
+
+  bookingButtonText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  notificationContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  rowDeleting: {
+    // backgroundColor: '#FFF5F5',
+  },
+
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFF0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+
   },
 });

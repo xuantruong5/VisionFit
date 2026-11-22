@@ -80,6 +80,7 @@ import TrainerNotifications from "./src/page/trainners/TrainerNotifications";
 import EditTrainerProfile from "./src/page/trainners/EditTrainerProfile";
 import AddMember from "./src/page/trainners/AddMember";
 import TrainerSettings from "./src/page/trainners/TrainerSettings";
+import selectcalendar from "./src/page/trainners/SelectCalendar";
 
 
 
@@ -417,6 +418,7 @@ const App = () => {
           <Stack.Screen name="AddMember" component={AddMember} />
           <Stack.Screen name="TrainerSettings" component={TrainerSettings} />
           <Stack.Screen name="MemberProfile" component={MemberProfile} />
+          <Stack.Screen name="selectcalendar" component={selectcalendar}/>
 
 
           {/* cua chat */}

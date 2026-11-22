@@ -241,37 +241,23 @@ Route::post('/trainer/check-ma-pt', [TrainerController::class, 'checkMaPT']);
 Route::post('trainer/login', [TrainerController::class, 'loginTrainer']);
 Route::post('/trainer/dang-ky', [TrainerController::class, 'dangKy']);
 Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], function () {
-
-
     Route::get('/chat/contacts', [ChatController::class, 'getTrainerContacts']);
-
     Route::get('/chat/rooms', [ChatController::class, 'getTrainerRooms']);
-
     Route::get('/chat/room/{id}', [ChatController::class, 'getTrainerRoom']);
-
     Route::match(['get', 'post'], '/chat/history-message', [ChatController::class, 'getTrainerHistory']);
-
     Route::post('/chat/send-message', [ChatController::class, 'sendTrainerMessage']);
-
     Route::post('/chat/room/{id}/read', [ChatController::class, 'markAsRead']);
-
     Route::post('/chat/room/{id}/pin', [ChatController::class, 'togglePinRoom']);
-
     Route::post('/chat/room/{id}/mute', [ChatController::class, 'toggleMuteRoom']);
-
     Route::post('/chat/message/{id}/recall', [ChatController::class, 'recallMessage']);
-
     Route::post('/chat/message/{id}/reaction', [ChatController::class, 'reactMessage']);
-
     Route::post('/chat/upload', [ChatController::class, 'uploadMedia']);
-
 
 
 
     Route::get('/user', [BaiDangController::class, 'getUser']);
     Route::get('/check-token', [TrainerController::class, 'checkTokenTrainer']);
     Route::post('logout', [TrainerController::class, 'logoutTrainer']);
-
 
 
     Route::get('/bai-dang', [BaiDangController::class, 'index']);
@@ -305,6 +291,18 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
     Route::post('/add-member', [TrainerController::class, 'addMember']);
     Route::put('/members/{id}', [TrainerController::class, 'updateMember']);
     Route::delete('/members/{id}', [TrainerController::class, 'deleteMember']);
+
+    Route::get('/thong-bao', [ThongBaoController::class, 'MemberTrainers']);
+    Route::get('/lich-members-moi', [TrainerController::class, 'getMemberNew']);
+
+    Route::post('/thong-bao/{id}/da-doc', [ThongBaoController::class, 'TrainersDaDoc']);
+    Route::post('/thong-bao/da-doc-tat-ca', [ThongBaoController::class, 'TrainersTatCaDaDoc']);
+    Route::delete('/thong-bao/{id}', [ThongBaoController::class, 'TrainersXoa']);
+    Route::delete('/thong-bao', [ThongBaoController::class, 'TrainersXoaTatCa']);
+
+    // tạo lịch pt với member 
+    Route::post('/tao-lich-pt', [TrainerController::class, 'taoLichPT']);
+    
 });
 
 

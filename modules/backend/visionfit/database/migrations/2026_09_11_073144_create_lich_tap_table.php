@@ -16,8 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('id_dang_ky_chuong_trinh');
             $table->unsignedBigInteger('id_chuong_trinh');
             $table->unsignedBigInteger('id_hoi_vien');
-            $table->unsignedBigInteger('id_goi')->nullable();
-            $table->unsignedBigInteger('id_trainner')->nullable();
+            $table->unsignedBigInteger('id_goi')->nullable(); // bỏ và nếu được sửa lại luồng xem xét lại
+            $table->unsignedBigInteger('id_trainner')->nullable();// bỏ và nếu được sửa lại luồng xem xét lại
             $table->integer('ngay_thu')->nullable(); // ngày thứ mấy trong gói đó ví dụ gói đó có 20 ngày thì thứ mấy trong 20 ngày
             // $table->string('thu_trong_tuan')->comment('1: Thứ 2, 2: Thứ 3, ..., 6: Thứ 7, 7: Chủ nhật');
             $table->date('ngay_tap');

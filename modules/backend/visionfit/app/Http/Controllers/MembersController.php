@@ -406,7 +406,7 @@ class MembersController extends Controller
                 'email' => $hoiVien->email,
                 'so_dien_thoai' => $hoiVien->so_dien_thoai,
                 'anh_dai_dien' => $this->formatAvatar($hoiVien->anh_dai_dien),
-                'ngay_sinh' => $hoiVien->ngay_sinh,
+                'ngay_sinh' => $hoiVien->ngay_sinh? Carbon::parse($hoiVien->ngay_sinh)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y'): null,
                 'gioi_tinh' => $hoiVien->gioi_tinh,
                 'chieu_cao_cm' => $hoiVien->chieu_cao_cm,
                 'can_nang_kg' => $hoiVien->can_nang_kg,
