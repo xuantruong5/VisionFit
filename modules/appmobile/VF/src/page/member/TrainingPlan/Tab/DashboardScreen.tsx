@@ -173,7 +173,7 @@ const DashboardScreen = () => {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
+      
 
         {/* DÒNG THÔNG BÁO CẬP NHẬT CHỈ SỐ SAU 2 NGÀY (MODEL BẤM 2 NGÀY) */}
         <TouchableOpacity
