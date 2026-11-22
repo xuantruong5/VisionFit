@@ -8,7 +8,7 @@ import AppHeader from '../../components/AppHeader';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../general/theme';
 
-import DateTimePicker from '@react-native-community/datetimepicker';
+// import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
 
 
@@ -225,37 +225,14 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           <View style={styles.metricsRow}>
             <View style={styles.metricInputBox}>
               <Text style={styles.metricLabel}>Ngày sinh</Text>
-
-              <TouchableOpacity style={styles.metricInput} activeOpacity={0.7} onPress={() => setShowDatePicker(true)} >
-                <Text style={{ color: birthDate ? COLORS.text : COLORS.textLight, fontSize: 13, }}>
-                  {birthDate
-                    ? birthDate.split('-').reverse().join('/')
-                    : 'Chọn ngày sinh'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={birthDate ? new Date(`${birthDate}T00:00:00`) : new Date(2000, 0, 1)}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                maximumDate={new Date()}
-                onChange={(event, selectedDate) => {
-                  if (Platform.OS === 'android') {
-                    setShowDatePicker(false);
-                  }
-
-                  if (selectedDate) {
-                    const year = selectedDate.getFullYear();
-                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                    const day = String(selectedDate.getDate()).padStart(2, '0');
-
-                    setBirthDate(`${year}-${month}-${day}`);
-                  }
-                }}
+              <TextInput
+                style={styles.metricInput}
+                placeholder="2000-01-15"
+                placeholderTextColor={COLORS.textLight}
+                value={birthDate}
+                onChangeText={setBirthDate}
               />
-            )}
+            </View>
             <View style={styles.metricInputBox}>
               <Text style={styles.metricLabel}>Chiều cao (cm)</Text>
               <TextInput

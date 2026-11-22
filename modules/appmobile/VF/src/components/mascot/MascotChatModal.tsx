@@ -22,6 +22,7 @@ import { MascotSelectorModal } from './MascotSelectorModal';
 import { MascotVectorRig } from './MascotVectorRig';
 import { triggerMascotState, triggerWorkoutStart } from './mascotEvents';
 import { navigateToWorkoutPlan } from '../../general/rootNavigation';
+import { notify } from '../../general/notification';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 interface MascotChatModalProps {
@@ -55,7 +56,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<any>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<any>(null);
   const isShiftRef = useRef(false);
   const justSentRef = useRef(false);
 
@@ -190,28 +191,6 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     clearInput();
 
-    // Kiểm tra ý định tập luyện -> tự động chuyển trang Kế hoạch tập
-    const isWorkoutIntent = /tập luyện|muốn tập|bắt đầu tập|vào tập|kế hoạch tập|tập ngay|đi tập|luyện tập|^tập$/i.test(textToSend.trim().toLowerCase());
-    if (isWorkoutIntent) {
-      triggerWorkoutStart();
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'assistant',
-        text: currentSpecies === 'cat'
-          ? 'Meo meo! Tuyệt vời quá! Hãy cùng khởi động và bắt đầu buổi tập nào 🐱💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!'
-          : 'Tuyệt vời! Khởi động kỹ và bùng nổ năng lượng buổi tập hôm nay nào 🐻💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-
-      setTimeout(() => {
-        navigateToWorkoutPlan();
-        onClose();
-      }, 700);
-      return;
-    }
-
     setIsTyping(true);
     triggerMascotState('thinking');
 
@@ -220,15 +199,54 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     }, 100);
 
     try {
-      const reply = await getAIResponse(textToSend, currentSpecies);
+      // Gửi toàn bộ lịch sử hội thoại gần nhất để LLM duy trì ngữ cảnh nhiều lượt (Sub-task 1.4)
+      const historyPayload = messages.map((m) => ({
+        sender: m.sender,
+        text: m.text,
+      }));
+
+      const res = await getAIResponse(textToSend, currentSpecies, historyPayload);
+
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'assistant',
-        text: reply,
+        text: res.answer,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, aiMsg]);
-      triggerMascotState('speaking', 4000);
+
+      // Task 5: AI Emotion - Thay đổi biểu cảm Mascot theo ngữ cảnh phân tích từ AI Model
+      const emotion = res.emotion || 'explaining';
+      if (emotion === 'encouraging' || emotion === 'celebrating') {
+        triggerMascotState('celebrating', 4500);
+      } else if (emotion === 'caring' || emotion === 'apologetic') {
+        triggerMascotState('error', 3500);
+      } else if (emotion === 'welcome') {
+        triggerMascotState('speaking', 4000);
+      } else {
+        triggerMascotState('speaking', 4000);
+      }
+
+      // Task 2: AI Workout Navigation - Tự động điều hướng tập luyện khi Model phát hiện action NAVIGATE_WORKOUT
+      if (res.action?.type === 'NAVIGATE_WORKOUT') {
+        triggerWorkoutStart();
+        setTimeout(() => {
+          navigateToWorkoutPlan();
+          onClose();
+        }, 1500);
+      }
+
+      // Task 6: AI Water Reminder - Tự động thiết lập / tắt nhắc nhở uống nước
+      if (res.action?.type === 'SET_WATER_REMINDER') {
+        const isEnabled = res.action.params?.enabled !== false && (res.action as any).enabled !== false;
+        notify({
+          type: isEnabled ? 'success' : 'info',
+          message: isEnabled
+            ? '💧 Đã thiết lập nhắc nhở uống nước mỗi 2 tiếng một lần!'
+            : '🔕 Đã tắt tính năng nhắc nhở uống nước.',
+        });
+        triggerMascotState('speaking', 3500);
+      }
     } catch (e) {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -355,6 +373,25 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         elements.push(
           <View key={`badge-${i}`} style={styles.headingBadge}>
             <Text style={styles.headingBadgeText}>{trimmed}</Text>
+          </View>
+        );
+        i++;
+        continue;
+      }
+
+      // 3.5. Hình ảnh Markdown: ![alt](url) (Sub-task 3.3 & Sub-task 4.3)
+      const imgMatch = trimmed.match(/^!\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (imgMatch) {
+        const altText = imgMatch[1];
+        const imgUrl = imgMatch[2];
+        elements.push(
+          <View key={`img-${i}`} style={styles.imageWrapper}>
+            <Image
+              source={{ uri: imgUrl }}
+              style={styles.chatInlineImage}
+              resizeMode="cover"
+            />
+            {altText ? <Text style={styles.chatImageCaption}>{altText}</Text> : null}
           </View>
         );
         i++;
@@ -923,6 +960,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#B5CCD2',
     elevation: 0,
     shadowOpacity: 0,
+  },
+  imageWrapper: {
+    marginVertical: 8,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    width: '100%',
+  },
+  chatInlineImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 14,
+  },
+  chatImageCaption: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
 
