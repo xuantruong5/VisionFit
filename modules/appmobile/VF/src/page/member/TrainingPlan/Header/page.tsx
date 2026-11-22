@@ -6,6 +6,7 @@ import DashboardScreen from "../Tab/DashboardScreen";
 import DietScreen from "../Tab/DietScreen";
 import WorkoutExercisePlan from "../Tab/WorkoutExercisePlan";
 import MyPlansModal from "./MyPlansModal";
+import AiVideoAnalysisModal from "../../AiVideoAnalysis/AiVideoAnalysisModal";
 import { COLORS, PASTEL, SOFT_SHADOW } from "../../../../general/theme";
 import { Notice, notificationEmitter } from "../../../../general/notification";
 import apiFitlife from "../../../../general/api";
@@ -19,6 +20,7 @@ const TODAY_LABEL = `${WEEKDAY_NAMES[NOW.getDay()]}, ${NOW.getDate()} tháng ${N
 const HeaderPage = ({ navigation, route }: any) => {
   const [activeTab, setActiveTab] = useState("Trang tổng quan");
   const [myPlansVisible, setMyPlansVisible] = useState(false);
+  const [aiVideoModalVisible, setAiVideoModalVisible] = useState(false);
 
   // Kiểu dữ liệu thông báo lấy từ database
   type NotificationItem = {
@@ -172,8 +174,14 @@ const HeaderPage = ({ navigation, route }: any) => {
               <Ionicons name="sunny" size={14} color={COLORS.accentGold} />
               <Text style={styles.dateText}>{TODAY_LABEL}</Text>
             </View>
-            <TouchableOpacity style={styles.iconButton} onPress={() => setActiveTab("Trang tổng quan")} activeOpacity={0.7} >
-              <Ionicons name="calendar-outline" size={20} color={PASTEL.ink} />
+            {/* NÚT PHÂN TÍCH VIDEO AI */}
+            <TouchableOpacity
+              style={[styles.iconButton, styles.aiVideoButton]}
+              onPress={() => setAiVideoModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="videocam-outline" size={20} color={COLORS.primary} />
+              <View style={styles.aiDotBadge} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.iconButton} onPress={() => setMyPlansVisible(true)} activeOpacity={0.7} >
@@ -244,6 +252,9 @@ const HeaderPage = ({ navigation, route }: any) => {
       </View>
       {/* Modal Kế hoạch của tôi */}
       <MyPlansModal visible={myPlansVisible} onClose={() => setMyPlansVisible(false)} navigation={navigation} />
+
+      {/* Modal Phân tích động tác video AI */}
+      <AiVideoAnalysisModal visible={aiVideoModalVisible} onClose={() => setAiVideoModalVisible(false)} />
 
       <Modal
         visible={notificationVisible}
@@ -436,6 +447,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     ...SOFT_SHADOW,
+  },
+  aiVideoButton: {
+    backgroundColor: "#F0F9FB",
+    borderWidth: 1.2,
+    borderColor: "#B9E2EC",
+    position: "relative",
+  },
+  aiDotBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#10B981",
   },
   tabContainer: {
     flexDirection: "row",

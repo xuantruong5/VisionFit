@@ -906,20 +906,20 @@ class MembersController extends Controller
 
         // 1. Lưu hồ sơ hội viên
         $hoiVien->update([
-            'ngay_sinh' => $validated['ngay_sinh'],
-            'gioi_tinh' => $validated['gioi_tinh'],
+            'ngay_sinh' => $validated['ngay_sinh'] ?? $hoiVien->ngay_sinh ?? '2000-01-01',
+            'gioi_tinh' => $validated['gioi_tinh'] ?? $hoiVien->gioi_tinh ?? 0,
             'chieu_cao_cm' => $validated['chieu_cao_cm'],
             'can_nang_kg' => $validated['can_nang_kg'],
 
             'muc_tieu_hoat_dong' => $validated['muc_tieu_hoat_dong'],
-            'muc_tieu_hien_tai' => $validated['muc_tieu_hien_tai'],
-            'noi_tap_uu_tien' => $validated['noi_tap_uu_tien'],
+            'muc_tieu_hien_tai' => $validated['muc_tieu_hien_tai'] ?? $hoiVien->muc_tieu_hien_tai ?? 'tang_co',
+            'noi_tap_uu_tien' => $validated['noi_tap_uu_tien'] ?? $hoiVien->noi_tap_uu_tien ?? 'phong_gym',
 
-            'che_do_an_ua_thich' => $validated['che_do_an_ua_thich'] ?? [],
-            'muc_ngan_sach_an_uong' => $validated['muc_ngan_sach_an_uong'],
+            'che_do_an_ua_thich' => $validated['che_do_an_ua_thich'] ?? $hoiVien->che_do_an_ua_thich ?? ['Eat Clean'],
+            'muc_ngan_sach_an_uong' => $validated['muc_ngan_sach_an_uong'] ?? $hoiVien->muc_ngan_sach_an_uong ?? 2,
 
-            'note' => $validated['note'] ?? null,
-            'di_ung' => $validated['di_ung'] ?? [],
+            'note' => $validated['note'] ?? $hoiVien->note,
+            'di_ung' => $validated['di_ung'] ?? $hoiVien->di_ung ?? [],
 
             'ngay_cap_nhat_chi_so' => now(),
         ]);

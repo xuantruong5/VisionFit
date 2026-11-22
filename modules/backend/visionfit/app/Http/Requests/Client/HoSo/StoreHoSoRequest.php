@@ -23,20 +23,20 @@ class StoreHoSoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ngay_sinh' => 'required|date|before:today',
-            'gioi_tinh' => 'required|in:0,1,2',
+            'ngay_sinh' => 'sometimes|required|date|before:today',
+            'gioi_tinh' => 'sometimes|required|in:0,1,2',
             'chieu_cao_cm' => 'required|numeric|min:50|max:250',
             'can_nang_kg' => 'required|numeric|min:10|max:300',
 
             'muc_tieu_hoat_dong' => 'required|in:1,2,3,4',
-            'muc_tieu_hien_tai' => 'required|string|max:50',
-            'noi_tap_uu_tien' => 'required|string|max:30',
+            'muc_tieu_hien_tai' => 'sometimes|required|string|max:50',
+            'noi_tap_uu_tien' => 'sometimes|required|string|max:30',
 
             // Cho phép chọn nhiều chế độ ăn
             'che_do_an_ua_thich' => 'nullable|array',
             'che_do_an_ua_thich.*' => 'string|max:255',
 
-            'muc_ngan_sach_an_uong' => 'required|in:1,2,3',
+            'muc_ngan_sach_an_uong' => 'sometimes|required|in:1,2,3',
 
             'note' => 'nullable|string',
 

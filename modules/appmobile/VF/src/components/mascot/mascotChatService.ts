@@ -77,7 +77,8 @@ const formatVNDate = (dateStr?: string): string => {
 const queryGeminiAI = async (
   question: string,
   context: any,
-  species: MascotSpecies
+  species: MascotSpecies,
+  history: Array<{ sender: string; text: string }> = []
 ): Promise<string | null> => {
   const apiKey = (globalThis as any)?.__VISIONFIT_GEMINI_KEY__ || '';
   if (!apiKey) {
@@ -132,7 +133,20 @@ ${formattedContext ? JSON.stringify(formattedContext) : 'Chưa đăng nhập / d
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
+    const messages: any[] = [{ role: 'system', content: systemPrompt }];
+    if (history && Array.isArray(history)) {
+      history.slice(-4).forEach((h: any) => {
+        if (h.sender && h.text) {
+          messages.push({
+            role: h.sender === 'user' ? 'user' : 'assistant',
+            content: String(h.text),
+          });
+        }
+      });
+    }
+    messages.push({ role: 'user', content: question });
 
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
@@ -145,10 +159,7 @@ ${formattedContext ? JSON.stringify(formattedContext) : 'Chưa đăng nhập / d
         body: JSON.stringify({
           model: 'gemini-flash-lite-latest',
           max_completion_tokens: 1500,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: question },
-          ],
+          messages,
         }),
         signal: controller.signal,
       }
@@ -174,13 +185,47 @@ ${formattedContext ? JSON.stringify(formattedContext) : 'Chưa đăng nhập / d
 const replyFromRealContext = (
   question: string,
   context: any,
-  species: MascotSpecies
+  species: MascotSpecies,
+  history: Array<{ sender: string; text: string }> = []
 ): string => {
   const q = question.toLowerCase().trim();
   const isCat = species === 'cat';
   const prefix = isCat ? 'Meo meo! 🐱 ' : 'Gấu VIF đây! 🐻 ';
 
-  // 1. Kiểm tra chấn thương / đau mỏi
+  // 0. Xử lý câu trả lời tiếp nối ngữ cảnh (Sub-task 1.4: Context follow-up)
+  let lastAssistantMsg = '';
+  if (history && Array.isArray(history)) {
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i]?.sender === 'assistant' && history[i]?.text) {
+        lastAssistantMsg = (history[i].text || '').toLowerCase();
+        break;
+      }
+    }
+  }
+
+  const isAffirmative = /^(có|co|ok|oke|được|duoc|uh|ừ|u|đồng ý|dong y|yes|yep|muốn|muon|chốt|nhất trí|kết nối đi|giúp mình|giup minh|tập luôn|tap luon)/i.test(q);
+  const isNegative = /^(không|khong|k|ko|thôi|thoi|chưa|chua|no|nope|đừng|dung|không cần|khong can)/i.test(q);
+
+  if (isAffirmative && lastAssistantMsg) {
+    if (/pt|huấn luyện viên|huan luyen vien|kết nối/i.test(lastAssistantMsg)) {
+      return `${prefix}Tuyệt vời! Gấu VIF đã ghi nhận bạn đồng ý kết nối Huấn luyện viên (PT). Đội ngũ hỗ trợ VisionFit sẽ liên hệ với bạn trong thời gian sớm nhất để bố trí HLV phù hợp! Trong lúc chờ, bạn hãy mở Kế hoạch tập để xem lịch và khởi động trước nhé! 💪🔥`;
+    }
+    if (/bắt đầu|bat dau|chiến|mở lịch|kế hoạch tập|tập luyện|tập ngay/i.test(lastAssistantMsg)) {
+      return `${prefix}Lên dây cót tinh thần chiến hết mình nào! Mình đã chuẩn bị sẵn trang Kế hoạch tập luyện cho bạn rồi đây. Hãy chuẩn bị khăn và nước rồi bắt đầu nhé! 🔥💪`;
+    }
+    if (/uống nước|uong nuoc|nhắc nước/i.test(lastAssistantMsg)) {
+      return `${prefix}Đã thiết lập nhắc bạn uống nước đều đặn mỗi 2 tiếng một lần! 💧 Uống đủ nước để cơ bắp phục hồi nhanh nhất nhé!`;
+    }
+  }
+
+  if (isNegative && lastAssistantMsg) {
+    if (/pt|huấn luyện viên|huan luyen vien|kết nối/i.test(lastAssistantMsg)) {
+      return `${prefix}Dạ không sao bạn nhé! Bạn hoàn toàn có thể tự giác tập luyện theo giáo án cá nhân trên ứng dụng. Khi nào cần PT hướng dẫn cứ nhắn cho mình nhé! 🐻💪`;
+    }
+    if (/uống nước|uong nuoc/i.test(lastAssistantMsg)) {
+      return `${prefix}Đã tắt tính năng nhắc uống nước theo yêu cầu của bạn. Chúc bạn luôn giữ vững phong độ tập luyện nhé!`;
+    }
+  }
   if (/đau|dau|chấn thương|chan thuong|chuột rút|chuot rut|chóng mặt|chong mat|buốt|buot|ngất|ngat|khớp|khop/i.test(q)) {
     return `${prefix}Hãy dừng ngay bài tập đang gây đau nhé! Chườm lạnh trong 15-20 phút nếu bị sưng và tuyệt đối đừng cố gắng tập tiếp. Hãy báo ngay cho Huấn luyện viên (PT) hoặc bác sĩ thể thao để được kiểm tra kỹ càng! 🛡️`;
   }
@@ -300,20 +345,39 @@ const replyFromRealContext = (
   return `${prefix}Mình đã nhận câu hỏi: "${question}".\nBạn có thể hỏi mình về chỉ số dinh dưỡng (BMI/BMR/TDEE), gói tập còn lại, thực đơn ăn uống hoặc gợi ý bài tập hôm nay nhé! Chúc bạn luôn giữ vững phong độ tập luyện! 🔥`;
 };
 
+export interface AIResponseResult {
+  answer: string;
+  intent?: string;
+  emotion?: string;
+  action?: {
+    type: string;
+    params?: any;
+    screen?: string;
+  } | null;
+  source?: string;
+}
+
 // Hàm chính xuất ra cho MascotChatModal
 export const getAIResponse = async (
   question: string,
-  species: MascotSpecies = 'bear'
-): Promise<string> => {
-  // 1. Gọi trực tiếp Backend AI Assistant (đã huấn luyện toàn bộ dữ liệu dinh dưỡng, món ăn, bài tập)
+  species: MascotSpecies = 'bear',
+  history: Array<{ sender: string; text: string }> = []
+): Promise<AIResponseResult> => {
+  // 1. Gọi trực tiếp Backend AI Assistant (Đã tích hợp Gemini LLM + Context + Lịch sử hội thoại + RAG DB Backup)
   try {
     const res = await apiFitlife.post(
       '/assistant/chat',
-      { message: question, species },
-      { timeout: 8000 }
+      { message: question, species, history },
+      { timeout: 20000 }
     );
     if (res.data?.answer && typeof res.data.answer === 'string') {
-      return res.data.answer.trim();
+      return {
+        answer: res.data.answer.trim(),
+        intent: res.data.intent || 'general_support',
+        emotion: res.data.emotion || 'explaining',
+        action: res.data.action || null,
+        source: res.data.source || 'gemini_ai',
+      };
     }
   } catch (err) {
     // Mạng chậm hoặc offline -> Tiếp tục fallback phía client
@@ -322,12 +386,24 @@ export const getAIResponse = async (
   // 2. Lấy ngữ cảnh hội viên từ Backend cache
   const context = await fetchUserContext();
 
-  // 3. Thử truy vấn Google Gemini AI trực tiếp nếu có key
-  const aiAnswer = await queryGeminiAI(question, context, species);
+  // 3. Thử truy vấn Google Gemini AI trực tiếp nếu có key trên client
+  const aiAnswer = await queryGeminiAI(question, context, species, history);
   if (aiAnswer) {
-    return aiAnswer;
+    return {
+      answer: aiAnswer,
+      intent: 'general_support',
+      emotion: 'explaining',
+      action: null,
+      source: 'client_gemini_ai',
+    };
   }
 
   // 4. Fallback sang bộ quy tắc RAG khớp nối dữ liệu thực tế VisionFit
-  return replyFromRealContext(question, context, species);
+  return {
+    answer: replyFromRealContext(question, context, species, history),
+    intent: 'general_support',
+    emotion: 'neutral',
+    action: null,
+    source: 'client_rag_fallback',
+  };
 };
