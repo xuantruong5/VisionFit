@@ -372,15 +372,11 @@ class AssistantController extends Controller
 
         $systemPrompt = "{$roleText}\n" .
             "Bạn là trợ lý AI thông minh chuyên về Thể hình, Sức khỏe và Dinh dưỡng của hệ sinh thái VisionFit.\n" .
-<<<<<<< HEAD
-            "QUY TẮC BẮT BUỘC:\n" .
-=======
             "KHẢ NĂNG NHẬN BIẾT NGÔN NGỮ TỰ NHIÊN (BẮT BUỘC):\n" .
             "- Bạn thấu hiểu mọi cách diễn đạt tiếng Việt tự nhiên: gõ không dấu (như 'lich tap', 'toi muon tap luyen', 'an gi', 'tap nguc', 'chi so calo'), viết tắt, tiếng lóng gym, văn phong nói chuyện đời thường.\n" .
             "- Luôn nhận diện chính xác ý định (intent) của người dùng kể cả khi họ chỉ nhắn 1-2 từ ngắn gọn.\n" .
             "- Khi người dùng nói 'Tôi muốn tập luyện', 'tập ngay', 'bắt đầu tập', hãy nhiệt tình cổ vũ, gợi ý các bài tập hôm nay hoặc bài khởi động cần làm trước khi tập thật tự nhiên, không trả lời máy móc.\n" .
             "QUY TẮC PHẢN HỒI:\n" .
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
             "1. Dùng tiếng Việt chuẩn, ấm áp, ngắn gọn, súc tích (dưới 150 từ), dễ đọc trên màn hình điện thoại di động.\n" .
             "2. QUY TẮC BẢNG DỮ LIỆU (TỐI ƯU CHO ĐIỆN THOẠI):\n" .
             "Khi trả lời về CHỈ SỐ DINH DƯỠNG (BMI/BMR/TDEE/Calo/Macros), THỰC ĐƠN MÓN ĂN, BÀI TẬP, GÓI TẬP hoặc LỊCH TẬP, bạn BẮT BUỘC phải trình bày kết quả dưới dạng BẢNG Markdown (| Cột 1 | Cột 2 | ...) rõ ràng, có tiêu đề cột và hàng phân cách.\n" .
@@ -403,14 +399,9 @@ class AssistantController extends Controller
 
         try {
             $url = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-<<<<<<< HEAD
-            $payload = [
-                'model' => 'gemini-3.5-flash-lite',
-=======
             $model = env('GEMINI_MODEL', 'gemini-flash-lite-latest');
             $payload = [
                 'model' => $model,
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
                 'max_completion_tokens' => 1500,
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
@@ -537,13 +528,8 @@ class AssistantController extends Controller
             return "{$prefix}Bạn có thể xem số buổi tập còn lại và hạn thẻ tập trong mục \"Hồ sơ cá nhân\" > \"Gói tập của tôi\" nhé!";
         }
 
-<<<<<<< HEAD
-        // 6. Bài tập & Khởi động -> Dạng bảng Markdown chuẩn Việt Nam
-        if (preg_match('/khởi động|khoi dong|bài tập|bai tap|động tác|dong tac|tập gì|tap gi|ngực|nguc|lưng|lung|chân|chan|tay|bụng|bung/ui', $q)) {
-=======
         // 6. Bài tập, Tập luyện & Khởi động -> Dạng bảng Markdown chuẩn Việt Nam
         if (preg_match('/khởi động|khoi dong|bài tập|bai tap|động tác|dong tac|tập gì|tap gi|ngực|nguc|lưng|lung|chân|chan|tay|bụng|bung|tập luyện|tap luyen|muốn tập|muon tap|luyện tập|luyen tap|kế hoạch tập|ke hoach tap/ui', $q)) {
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
             if (preg_match('/khởi động|khoi dong/ui', $q)) {
                 return "{$prefix}- **⏱️ 4 bước khởi động chuẩn (5 - 10 phút)**\n\n" .
                     "1. Xoay tròn cổ tay, cổ chân, khớp vai và khớp hông (2 phút)\n" .

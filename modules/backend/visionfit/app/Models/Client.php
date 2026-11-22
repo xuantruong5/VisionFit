@@ -41,8 +41,6 @@ class Client extends Authenticatable
         'is_block',
         'hash_reset',
         'hash_active',
-<<<<<<< HEAD
-=======
         'ngay_cap_nhat_chi_so'
     ];
 
@@ -51,7 +49,6 @@ class Client extends Authenticatable
         'ngay_cap_nhat_chi_so' => 'datetime',
         'di_ung' => 'array',
         'che_do_an_ua_thich' => 'array',
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
     ];
 
     public function baiDang()

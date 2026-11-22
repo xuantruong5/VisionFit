@@ -14,6 +14,7 @@ use App\Models\Trainer;
 use App\Models\DKChuongTrinh;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class GoiTapController extends Controller
 {
@@ -35,7 +36,7 @@ class GoiTapController extends Controller
             'data' => $data
         ], 200);
     }
-    
+
     public function searchTrainer(Request $request)
     {
         $noi_dung_tim_kiem = $request->noi_dung_tim_kiem;
@@ -125,7 +126,7 @@ class GoiTapController extends Controller
         //     ], 422);
         // }
 
-       // 5. Lấy chương trình tập hiện tại của hội viên
+        // 5. Lấy chương trình tập hiện tại của hội viên
         $chuongTrinh = DB::table('dang_ky_chuong_trinh as dkct')
             ->join('chuong_trinh_tap as ct', 'dkct.id_chuong_trinh', '=', 'ct.id')
             ->leftJoin('cap_do as cd', 'ct.id_cap_do', '=', 'cd.id')
@@ -192,7 +193,7 @@ class GoiTapController extends Controller
             ->where('is_thanh_toan', 1)
             ->count();
 
-       // Lần đăng ký hiện tại
+        // Lần đăng ký hiện tại
         $lanDangKy = $soLanDaDangKy + 1;
 
         $phanTramGiam = 0;
@@ -485,7 +486,7 @@ class GoiTapController extends Controller
                 'message' => 'Vui lòng đăng nhập.'
             ], 401);
         }
-        $gioiThieu = GioiThieu::where( 'id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
+        $gioiThieu = GioiThieu::where('id_hoi_vien_duoc_gioi_thieu', $hoiVien->id)
             ->where('tinh_trang', 0)
             ->latest('id')
             ->first();
@@ -505,6 +506,151 @@ class GoiTapController extends Controller
         ]);
     }
 
+    /* ========== ADMIN: QUẢN LÝ GÓI TẬP ========== */
 
+    // 1. Lấy danh sách và tìm kiếm
+    public function danhSachGoiTapAdmin(Request $request)
+    {
+        $query = GoiTap::query();
 
+        if ($request->keyword) {
+            $query->where('ten_goi_tap', 'LIKE', '%' . $request->keyword . '%');
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $query->orderByDesc('id')->get()
+        ]);
+    }
+
+    public function timKiemGoiTapAdmin(Request $request)
+    {
+        return $this->danhSachGoiTapAdmin($request);
+    }
+
+    // 2. Thêm gói tập
+    public function themMoiGoiTapAdmin(Request $request)
+    {
+        $data = $request->validate([
+            'ten_goi_tap' => 'required|string',
+            'gia' => 'required|numeric|min:0',
+            'thoi_han_ngay' => 'required|integer|min:1',
+            'so_buoi' => 'nullable|integer|min:0',
+            'so_buoi_pt' => 'nullable|integer|min:0',
+            'co_ai' => 'nullable|boolean',
+            'co_trainer_review' => 'nullable|boolean',
+            'mo_ta' => 'nullable|string',
+            'hinh_anh' => 'nullable|string',
+        ]);
+
+        $data['ma_goi_tap'] = 'GT' . strtoupper(Str::random(6));
+        $data['id_phong_tap'] = $request->id_phong_tap ?? 1;
+        $data['thoi_han_mua'] = $request->thoi_han_ngay;
+        $data['thoi_han_tang'] = $request->thoi_han_tang ?? 0;
+        $data['tinh_trang'] = 1;
+
+        $goiTap = GoiTap::create($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Thêm gói tập thành công',
+            'data' => $goiTap
+        ], 201);
+    }
+
+    // 3. Xem chi tiết
+    public function chiTietGoiTapAdmin($id)
+    {
+        $goiTap = GoiTap::find($id);
+
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $goiTap
+        ]);
+    }
+
+    // 4. Cập nhật gói tập
+    public function capNhatGoiTapAdmin(Request $request, $id)
+    {
+        $goiTap = GoiTap::find($id);
+
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập'
+            ], 404);
+        }
+
+        $data = $request->validate([
+            'ten_goi_tap' => 'sometimes|string',
+            'gia' => 'sometimes|numeric|min:0',
+            'thoi_han_ngay' => 'sometimes|integer|min:1',
+            'thoi_han_mua' => 'sometimes|integer|min:1',
+            'thoi_han_tang' => 'sometimes|integer|min:0',
+            'so_buoi' => 'sometimes|integer|min:0',
+            'so_buoi_pt' => 'sometimes|integer|min:0',
+            'co_ai' => 'sometimes|boolean',
+            'co_trainer_review' => 'sometimes|boolean',
+            'mo_ta' => 'sometimes|nullable|string',
+            'hinh_anh' => 'sometimes|nullable|string',
+        ]);
+
+        $goiTap->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật gói tập thành công',
+            'data' => $goiTap->fresh()
+        ]);
+    }
+
+    // 5. Xóa gói tập
+    public function xoaGoiTapAdmin($id)
+    {
+        $goiTap = GoiTap::find($id);
+
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập'
+            ], 404);
+        }
+
+        $goiTap->update(['tinh_trang' => 0]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã ngừng bán gói tập'
+        ]);
+    }
+
+    // 6. Thay đổi trạng thái
+    public function doiTrangThaiGoiTapAdmin($id)
+    {
+        $goiTap = GoiTap::find($id);
+
+        if (!$goiTap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy gói tập'
+            ], 404);
+        }
+
+        $goiTap->update([
+            'tinh_trang' => $goiTap->tinh_trang == 1 ? 0 : 1
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Thay đổi trạng thái thành công',
+            'data' => $goiTap
+        ]);
+    }
 }

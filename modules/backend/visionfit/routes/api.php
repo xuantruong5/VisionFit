@@ -212,17 +212,8 @@ Route::group(['prefix' => 'client','middleware' => 'ClientMiddleware'], function
     Route::delete('/thong-bao/{id}', [ThongBaoController::class, 'xoa']);
     Route::delete('/thong-bao', [ThongBaoController::class, 'xoaTatCa']);
 
-<<<<<<< HEAD
-=======
-
-
     Route::post('/luu-ho-so-ban-dau', [MembersController::class, 'luuHoSoBanDau']);
     Route::get('/check-cap-nhat-chi-so', [MembersController::class, 'checkCapNhatChiSo']);
-
-
-    
-
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
 
 
@@ -349,6 +340,15 @@ Route::group(['prefix' => 'admin', 'middleware' => 'AdminMiddleware'], function 
     Route::post('/phan-cong', [AdminController::class, 'themMoiPhanCong']);
     Route::match(['put', 'post'], '/phan-cong/{id}', [AdminController::class, 'capNhatPhanCong']);
     Route::post('/phan-cong/{id}/trang-thai', [AdminController::class, 'doiTrangThaiPhanCong']);
+
+    // Quản lý Gói tập (Admin)
+    Route::get('/goi-tap', [GoiTapController::class, 'danhSachGoiTapAdmin']);
+    Route::post('/goi-tap', [GoiTapController::class, 'themMoiGoiTapAdmin']);
+    Route::get('/goi-tap/tim-kiem', [GoiTapController::class, 'timKiemGoiTapAdmin']);
+    Route::get('/goi-tap/{id}', [GoiTapController::class, 'chiTietGoiTapAdmin']);
+    Route::match(['put', 'post'], '/goi-tap/{id}', [GoiTapController::class, 'capNhatGoiTapAdmin']);
+    Route::delete('/goi-tap/{id}', [GoiTapController::class, 'xoaGoiTapAdmin']);
+    Route::post('/goi-tap/{id}/trang-thai', [GoiTapController::class, 'doiTrangThaiGoiTapAdmin']);
 });
 
 
