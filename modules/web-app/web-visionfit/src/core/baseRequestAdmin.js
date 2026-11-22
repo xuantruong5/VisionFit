@@ -2,7 +2,7 @@ import axios from "axios";
 
 // const apiUrl = "http://192.168.1.8:8000/api/";
 
-const apiUrl = "http://172.29.192.1:8000/api/";
+const apiUrl = "http://172.16.57.58:8000/api/";
 
 
 // của Ngọc

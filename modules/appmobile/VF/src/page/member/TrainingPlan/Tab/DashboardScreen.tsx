@@ -136,7 +136,7 @@ const DashboardScreen = () => {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
+      
 
         {/* 1. CHUỖI NGÀY TẬP LUYỆN */}
         {thongKeChuoiTap && (
