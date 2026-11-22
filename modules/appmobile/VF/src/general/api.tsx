@@ -11,6 +11,9 @@ export const BASE_URL = "http://172.16.57.58:8000";
 // export const BASE_URL = "http://192.168.1.171:8000"; 
 
 
+// export const BASE_URL = "http://192.168.1.171:8000"; 
+
+
 // Cái này của Hùng xóa là t chém.
 // export const BASE_URL = "http://localhost:8000";
 

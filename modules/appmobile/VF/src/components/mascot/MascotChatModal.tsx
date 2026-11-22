@@ -188,6 +188,29 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     };
 
     setMessages((prev) => [...prev, userMsg]);
+    clearInput();
+
+    // Kiểm tra ý định tập luyện -> tự động chuyển trang Kế hoạch tập
+    const isWorkoutIntent = /tập luyện|muốn tập|bắt đầu tập|vào tập|kế hoạch tập|tập ngay|đi tập|luyện tập|^tập$/i.test(textToSend.trim().toLowerCase());
+    if (isWorkoutIntent) {
+      triggerWorkoutStart();
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: currentSpecies === 'cat'
+          ? 'Meo meo! Tuyệt vời quá! Hãy cùng khởi động và bắt đầu buổi tập nào 🐱💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!'
+          : 'Tuyệt vời! Khởi động kỹ và bùng nổ năng lượng buổi tập hôm nay nào 🐻💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsTyping(false);
+
+      setTimeout(() => {
+        navigateToWorkoutPlan();
+        onClose();
+      }, 700);
+      return;
+    }
 
     setIsTyping(true);
     triggerMascotState('thinking');

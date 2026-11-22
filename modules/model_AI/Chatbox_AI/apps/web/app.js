@@ -109,6 +109,21 @@ function formatSafeHTML(text) {
       parts.push(`<div class="vif-heading vif-h${level}">- ${content}</div>`);
       continue;
     }
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      if (inUl) { parts.push('</ul>'); inUl = false; }
+      if (inOl) { parts.push('</ol>'); inOl = false; }
+      parts.push('<hr class="vif-divider" />');
+      continue;
+    }
+    const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+    if (headingMatch) {
+      if (inUl) { parts.push('</ul>'); inUl = false; }
+      if (inOl) { parts.push('</ol>'); inOl = false; }
+      const level = headingMatch[1].length;
+      const content = formatInline(headingMatch[2]);
+      parts.push(`<div class="vif-heading vif-h${level}">- ${content}</div>`);
+      continue;
+    }
     const isUl = /^[-*]\s+(.*)$/.test(trimmed);
     const isOl = /^(\d+)\.\s+(.*)$/.test(trimmed);
     if (isUl || isOl) {

@@ -19,6 +19,26 @@ class GoiTap extends Model
         'so_buoi',
         'so_buoi_pt',
         'mo_ta',
+        'co_ai',
+        'co_trainer_review',
         'tinh_trang',
     ];
+
+    protected $casts = [
+        'co_ai' => 'boolean',
+        'co_trainer_review' => 'boolean',
+        'tinh_trang' => 'integer',
+        'gia' => 'float',
+        'thoi_han_mua' => 'integer',
+        'thoi_han_tang' => 'integer',
+        'thoi_han_ngay' => 'integer',
+        'so_buoi' => 'integer',
+        'so_buoi_pt' => 'integer',
+    ];
+
+    public function chiTietDangKy()
+    {
+        return $this->hasMany(ChiTietDangKyGoi::class, 'id_goi_tap', 'id');
+    }
 }
+
