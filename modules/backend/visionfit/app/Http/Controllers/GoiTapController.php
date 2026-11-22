@@ -511,15 +511,19 @@ class GoiTapController extends Controller
     // 1. Lấy danh sách và tìm kiếm
     public function danhSachGoiTapAdmin(Request $request)
     {
-        $query = GoiTap::query();
+        $query = GoiTap::leftJoin( DB::raw('(SELECT id_goi_tap, COUNT(*) as tong_so_da_ban   
+            FROM chi_tiet_dang_ky_goi 
+            GROUP BY id_goi_tap) as ct'),
+            'goi_tap.id','=', 'ct.id_goi_tap')
+        ->select(  'goi_tap.*', DB::raw('COALESCE(ct.tong_so_da_ban, 0) as tong_so_da_ban'));
 
         if ($request->keyword) {
-            $query->where('ten_goi_tap', 'LIKE', '%' . $request->keyword . '%');
+            $query->where('goi_tap.ten_goi_tap', 'LIKE', '%' . $request->keyword . '%');
         }
 
         return response()->json([
             'success' => true,
-            'data' => $query->orderByDesc('id')->get()
+            'data' => $query->orderByDesc('goi_tap.id')->get()
         ]);
     }
 

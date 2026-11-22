@@ -1,20 +1,9 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
 const Dashboard = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.container}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container} >
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -22,10 +11,7 @@ const Dashboard = ({ navigation }: any) => {
             <Text style={styles.title}>Trainer Dashboard</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => {}}
-          >
+          <TouchableOpacity style={styles.notificationButton} onPress={() => {}}>
             <Text style={styles.notificationIcon}>🔔</Text>
             <View style={styles.notificationDot} />
           </TouchableOpacity>
@@ -48,10 +34,7 @@ const Dashboard = ({ navigation }: any) => {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => navigation?.navigate('Profile')}
-          >
+          <TouchableOpacity style={styles.profileButton} onPress={() => navigation?.navigate('Profile')}>
             <Text style={styles.profileButtonText}>View</Text>
           </TouchableOpacity>
         </View>
@@ -60,10 +43,7 @@ const Dashboard = ({ navigation }: any) => {
         <Text style={styles.sectionTitle}>Overview</Text>
 
         <View style={styles.statsGrid}>
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => navigation?.navigate('Members')}
-          >
+          <TouchableOpacity style={styles.statCard} onPress={() => navigation?.navigate('Members')} >
             <View style={[styles.iconBox, styles.blueBox]}>
               <Text style={styles.icon}>👥</Text>
             </View>
@@ -185,10 +165,7 @@ const Dashboard = ({ navigation }: any) => {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => navigation?.navigate('SessionHistory')}
-          >
+          <TouchableOpacity style={styles.actionCard} onPress={() => navigation?.navigate('SessionHistory')} >
             <Text style={styles.actionIcon}>📋</Text>
             <Text style={styles.actionTitle}>History</Text>
             <Text style={styles.actionDescription}>

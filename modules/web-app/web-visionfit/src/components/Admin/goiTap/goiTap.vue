@@ -59,12 +59,7 @@
             </div>
 
             <div class="package-grid">
-                <div
-                    v-for="goi in filteredPackages"
-                    :key="goi.id"
-                    class="package-card"
-                    :class="{ featured: goi.noi_bat }"
-                >
+                <div  v-for="goi in filteredPackages" :key="goi.id" class="package-card" :class="{ featured: goi.noi_bat }" >
                     <div v-if="goi.noi_bat" class="featured-label">
                         PHỔ BIẾN
                     </div>
@@ -372,7 +367,7 @@ export default {
                         thoi_han: item.thoi_han || item.thoi_han_ngay || item.thoi_han_mua || 30,
                         trang_thai: item.trang_thai || (item.tinh_trang == 1 ? 'active' : 'inactive'),
                         loai: item.loai || (item.so_buoi_pt > 0 ? 'pt' : (item.co_ai ? 'ai' : 'gym')),
-                        da_ban: item.da_ban !== undefined ? item.da_ban : 0,
+                        da_ban: item.tong_so_da_ban ?? 0,
                     }));
                 }
             } catch (e) {

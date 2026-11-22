@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { PASTEL, RADIUS, SOFT_SHADOW } from '../../general/theme';
+import apiFitlife from '../../general/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
 const TRAINER_AVATAR = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80';
@@ -35,6 +37,26 @@ const RECENT_MEMBERS = [
 ];
 
 const HomePage = ({ navigation }: any) => {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await apiFitlife.get('/trainer/thong-bao');
+
+      if (response.data.success) {
+        setUnreadCount(response.data.so_thong_bao_chua_doc || 0);
+      }
+    } catch (error: any) {
+      console.log('Lỗi lấy số thông báo:', error.response?.data || error.message);
+    }
+  };
+
+  // Mỗi lần quay lại HomePage sẽ cập nhật số thông báo
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnreadCount();
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
@@ -55,9 +77,20 @@ const HomePage = ({ navigation }: any) => {
           <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('TrainerChat')}>
             <Ionicons name="chatbubble-outline" size={19} color={PASTEL.ink} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.roundBtn} activeOpacity={0.7} onPress={() => navigation?.navigate('TrainerNotifications')}>
+          <TouchableOpacity
+            style={styles.roundBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation?.navigate('TrainerNotifications')}
+          >
             <Ionicons name="notifications-outline" size={19} color={PASTEL.ink} />
-            <View style={styles.notiDot} />
+
+            {unreadCount > 0 && (
+              <View style={styles.notiBadge}>
+                <Text style={styles.notiBadgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -514,5 +547,25 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: RADIUS.pill,
     backgroundColor: PASTEL.mintInk,
+  },
+  notiBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 10,
+    backgroundColor: '#FF4545',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+
+  notiBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
