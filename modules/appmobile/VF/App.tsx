@@ -316,8 +316,10 @@ const App = () => {
       if (type === "auth") {
         Alert.alert("Authentication Error", message);
         navigationRef.navigate("Login" as never);
+      } else if (message) {
+        Alert.alert(type === "success" ? "Thành công" : "Thông báo", message);
       }
-    }
+    };
     notificationEmitter.on("thong_bao", sub);
 
     return () => {
