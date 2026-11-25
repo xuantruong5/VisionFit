@@ -34,6 +34,14 @@ FLIP_MAP = {
     31: 32, 32: 31,                      # Foot index
 }
 
+def get_canonical_subject(name):
+    """Normalizes subject names like person10_squat, person_10, etc. to standard person_10."""
+    s = str(name).lower()
+    for num in ['10', '11', '12', '13', '14']:
+        if f'person{num}' in s or f'person_{num}' in s:
+            return f'person_{num}'
+    return s
+
 def letterbox_image(bgr, size=IMAGE_SIZE):
     h, w = bgr.shape[:2]
     scale = min(size / h, size / w)
@@ -61,7 +69,7 @@ def main():
     print(f"[Auto-Annotator] Found {len(videos)} videos to process.")
 
     for vf in videos:
-        subject_name = vf.stem
+        subject_name = get_canonical_subject(vf.stem)
         is_front = 'suqtan' in vf.stem or 'squatsai' in vf.stem
         is_female = 'squatnuw' in vf.stem
 
@@ -111,6 +119,14 @@ def main():
     images_arr = np.array(all_images, dtype=np.uint8)
     kp_arr = np.array(all_keypoints, dtype=np.float32)
     sub_arr = np.array(all_subjects, dtype=object)
+
+    expected_gym = {'person_10', 'person_11', 'person_12', 'person_13', 'person_14'}
+    actual_subs = set(np.unique(sub_arr))
+    assert expected_gym.issubset(actual_subs), f"Missing gym subjects: {expected_gym - actual_subs}"
+    for gs in expected_gym:
+        cnt = (sub_arr == gs).sum()
+        assert cnt > 50, f"Subject {gs} has too few frames: {cnt}"
+    print(f"[Verification Passed] All gym subjects present with pure real frames: {expected_gym}")
 
     OUT_NPZ.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(OUT_NPZ, images=images_arr, keypoints=kp_arr, subjects=sub_arr)

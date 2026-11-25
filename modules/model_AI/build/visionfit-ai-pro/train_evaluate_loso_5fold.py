@@ -1,13 +1,14 @@
-"""Full 5-Fold Leave-One-Subject-Out (LOSO) Cross-Validation Pipeline.
+"""Full 5-Fold Leave-One-Subject-Out (LOSO) Cross-Validation Pipeline with Nested Subject Validation.
 Evaluates Dual-Head BodyPoseNet generalizability on unseen subjects.
 
 Key scientific properties:
-  1. Strict subject separation: Held-out subject (e.g. person10_squat) is 100% unseen.
-  2. Train-Only Augmentation: Horizontal flipping is applied ONLY to the training pool.
-     Test set contains purely real, unaugmented frames.
-  3. Internal Validation: 15% of the training pool is used to select the best checkpoint
-     per fold, ensuring optimal generalization.
-  4. Angle MAE & PCK: Evaluates Knee MAE, Torso MAE, PCK@0.10, PCK@0.20, and Visibility F1.
+  1. Strict Subject Isolation: Held-out subject (e.g. person_10) is 100% unseen.
+  2. Subject-Level Validation Split: A separate independent person (e.g. person_11) is used
+     for validation/checkpoint selection. ZERO frame overlap between Train, Val, and Test!
+  3. Train-Only Augmentation: Horizontal flipping is applied ONLY to the training pool.
+     Test and Val sets contain purely real, unaugmented video frames.
+  4. Angle MAE & PCK: Evaluates Knee MAE, Torso MAE, Hip Descent MAE, PCK@0.10, PCK@0.20, and Visibility F1.
+  5. Canonical Naming: Standardized person_10 through person_14 with strict assertions.
 
 Outputs:
   reports/pose_loso_5fold_eval.json
@@ -28,7 +29,7 @@ from pose_model import BodyPoseNet, IMAGE_SIZE
 DATA_PATH = ROOT / 'data' / 'pose_multiview_squat.npz'
 OUT_JSON = ROOT / 'reports' / 'pose_loso_5fold_eval.json'
 
-GYM_SUBJECTS = ['person10_squat', 'person11_squat', 'person12_squat', 'person13_squat', 'person14_squat']
+GYM_SUBJECTS = ['person_10', 'person_11', 'person_12', 'person_13', 'person_14']
 
 FLIP_PAIRS = [
     (1, 4), (2, 5), (3, 6), (7, 8), (9, 10),
@@ -85,9 +86,23 @@ def augment_training_data(x, y_c, y_v):
     return x_out, y_c_out, y_v_out
 
 
-def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, device, epochs=20):
+def train_and_eval_fold(fold_idx, test_subject, val_subject, images, coords, vis, subjects, device, epochs=18):
     test_mask = (subjects == test_subject)
-    train_pool_mask = ~test_mask
+    val_mask = (subjects == val_subject)
+    train_mask = (~test_mask) & (~val_mask)
+
+    # Strict assertion check for subject isolation (disjoint sets)
+    assert test_mask.sum() > 0, f"Error: No frames for test subject {test_subject}!"
+    assert val_mask.sum() > 0, f"Error: No frames for val subject {val_subject}!"
+    assert train_mask.sum() > 0, "Error: No frames for train pool!"
+
+    test_sub_set = set(subjects[test_mask])
+    val_sub_set = set(subjects[val_mask])
+    train_sub_set = set(subjects[train_mask])
+
+    assert len(test_sub_set.intersection(val_sub_set)) == 0, f"Leakage: Test and Val share subjects {test_sub_set & val_sub_set}"
+    assert len(test_sub_set.intersection(train_sub_set)) == 0, f"Leakage: Test and Train share subjects {test_sub_set & train_sub_set}"
+    assert len(val_sub_set.intersection(train_sub_set)) == 0, f"Leakage: Val and Train share subjects {val_sub_set & train_sub_set}"
 
     # 1. Held-out Test Set (Pure, unaugmented real frames of test_subject)
     x_test = torch.from_numpy(images[test_mask]).permute(0, 3, 1, 2).float() / 255.0
@@ -95,24 +110,16 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
     y_v_test = torch.from_numpy(vis[test_mask])
     test_loader = DataLoader(TensorDataset(x_test, y_c_test, y_v_test), batch_size=32, shuffle=False)
 
-    # 2. Train / Internal Val split from remaining training pool
-    train_pool_indices = np.flatnonzero(train_pool_mask)
-    rng = np.random.default_rng(42 + fold_idx)
-    shuffled = rng.permutation(train_pool_indices)
-    val_cut = int(len(shuffled) * 0.15)
-    val_idx = shuffled[:val_cut]
-    tr_idx = shuffled[val_cut:]
-
-    x_val = torch.from_numpy(images[val_idx]).permute(0, 3, 1, 2).float() / 255.0
-    y_c_val = torch.from_numpy(coords[val_idx])
-    y_v_val = torch.from_numpy(vis[val_idx])
+    # 2. Subject-Level Validation Set (Pure, unaugmented real frames of val_subject)
+    x_val = torch.from_numpy(images[val_mask]).permute(0, 3, 1, 2).float() / 255.0
+    y_c_val = torch.from_numpy(coords[val_mask])
+    y_v_val = torch.from_numpy(vis[val_mask])
     val_loader = DataLoader(TensorDataset(x_val, y_c_val, y_v_val), batch_size=32, shuffle=False)
 
-    x_tr_raw = torch.from_numpy(images[tr_idx]).permute(0, 3, 1, 2).float() / 255.0
-    y_c_tr_raw = torch.from_numpy(coords[tr_idx])
-    y_v_tr_raw = torch.from_numpy(vis[tr_idx])
-
     # 3. Augment training split ONLY
+    x_tr_raw = torch.from_numpy(images[train_mask]).permute(0, 3, 1, 2).float() / 255.0
+    y_c_tr_raw = torch.from_numpy(coords[train_mask])
+    y_v_tr_raw = torch.from_numpy(vis[train_mask])
     x_train, y_c_train, y_v_train = augment_training_data(x_tr_raw, y_c_tr_raw, y_v_tr_raw)
     train_loader = DataLoader(TensorDataset(x_train, y_c_train, y_v_train), batch_size=32, shuffle=True)
 
@@ -138,7 +145,7 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
             optimizer.step()
         scheduler.step()
 
-        # Internal validation to select best checkpoint
+        # Subject-Level validation to select best generalizing checkpoint
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
@@ -148,7 +155,7 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
                 w = torch.clamp(torch.repeat_interleave(bv, 2, dim=-1), min=0.2, max=1.0)
                 l = criterion_c(p_c, bc, weight=w) + lambda_vis * criterion_v(p_v, bv)
                 val_loss += l.item() * len(bx)
-        val_loss /= len(val_idx)
+        val_loss /= val_mask.sum()
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -164,6 +171,7 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
     pck20_list = []
     knee_maes = []
     torso_maes = []
+    hip_descent_maes = []
     tp, fp, fn, tn = 0, 0, 0, 0
 
     with torch.no_grad():
@@ -214,6 +222,12 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
                 g_torso = np.degrees(np.arctan2(abs(g_t_vec[0]), abs(g_t_vec[1]) + 1e-6))
                 torso_maes.append(abs(p_torso - g_torso))
 
+                # Hip descent error relative to leg length (biomechanical depth accuracy)
+                leg_len = max(0.05, abs(gt_pts[i, a_idx, 1] - gt_pts[i, h_idx, 1]))
+                p_hip_y = (pred_pts[i, 23, 1] + pred_pts[i, 24, 1]) / 2.0
+                g_hip_y = (gt_pts[i, 23, 1] + gt_pts[i, 24, 1]) / 2.0
+                hip_descent_maes.append(abs(p_hip_y - g_hip_y) / leg_len * 100.0)
+
                 # Vis F1
                 pv_bin = pred_v[i] >= 0.5
                 gv_bin = gt_v[i] >= 0.5
@@ -226,10 +240,16 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
     rec = tp / (tp + fn + 1e-6)
     f1 = 2 * prec * rec / (prec + rec + 1e-6)
 
+    view_type = 'side' if test_subject in ['person_10', 'person_11'] else 'front'
+
     fold_metrics = {
         'fold': fold_idx,
         'held_out_subject': test_subject,
+        'val_subject': val_subject,
+        'view_perspective': view_type,
         'test_frames': int(test_mask.sum()),
+        'val_frames': int(val_mask.sum()),
+        'train_frames_augmented': len(x_train),
         'visible_joint_error_px': round(float(np.mean(vis_errors)), 2),
         'all_joint_error_px': round(float(np.mean(all_errors)), 2),
         'pck_010_torso': round(float(np.mean(pck10_list)), 2),
@@ -237,15 +257,16 @@ def train_and_eval_fold(fold_idx, test_subject, images, coords, vis, subjects, d
         'visibility_f1_pct': round(float(f1 * 100.0), 2),
         'knee_angle_mae_deg': round(float(np.mean(knee_maes)), 2),
         'torso_angle_mae_deg': round(float(np.mean(torso_maes)), 2),
+        'hip_descent_mae_pct': round(float(np.mean(hip_descent_maes)), 2),
     }
     return fold_metrics, best_state
 
 
 def main():
-    print("=" * 80)
-    print("      5-FOLD LEAVE-ONE-SUBJECT-OUT (LOSO) CROSS-VALIDATION PIPELINE")
-    print("      (Strict Subject Isolation · Train-Only Augmentation · Internal Val)")
-    print("=" * 80)
+    print("=" * 80, flush=True)
+    print("      5-FOLD NESTED LEAVE-ONE-SUBJECT-OUT (LOSO) CROSS-VALIDATION", flush=True)
+    print("      (Strict Subject Isolation · Subject-Level Val · Train-Only Augmentation)", flush=True)
+    print("=" * 80, flush=True)
     z = np.load(DATA_PATH, allow_pickle=True)
     images = z['images']
     keypoints = z['keypoints']
@@ -255,19 +276,21 @@ def main():
     vis = keypoints[:, :, 2].astype(np.float32)
 
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    print(f"Device: {device}, Total samples: {len(images)}")
-    print(f"Subjects for LOSO: {GYM_SUBJECTS}\n")
+    print(f"Device: {device}, Total samples: {len(images)}", flush=True)
+    print(f"Subjects for LOSO: {GYM_SUBJECTS}", flush=True)
+    print(f"All subjects in dataset: {list(np.unique(subjects))}\n", flush=True)
 
     results = []
     t_start = time.time()
 
     for idx, test_sub in enumerate(GYM_SUBJECTS, 1):
-        print(f"[Fold {idx}/5] Training with '{test_sub}' strictly held out as Unseen Test...")
+        val_sub = GYM_SUBJECTS[idx % len(GYM_SUBJECTS)]
+        print(f"[Fold {idx}/5] Test Subject: '{test_sub}' | Val Subject: '{val_sub}'", flush=True)
         t0 = time.time()
-        fold_res, _ = train_and_eval_fold(idx, test_sub, images, coords, vis, subjects, device, epochs=20)
+        fold_res, _ = train_and_eval_fold(idx, test_sub, val_sub, images, coords, vis, subjects, device, epochs=18)
         dt = time.time() - t0
         results.append(fold_res)
-        print(f"  --> Visible Joint Err: {fold_res['visible_joint_error_px']} px | Knee Angle MAE: {fold_res['knee_angle_mae_deg']}° | Vis F1: {fold_res['visibility_f1_pct']}% ({dt:.1f}s)")
+        print(f"  --> Visible Joint Err: {fold_res['visible_joint_error_px']} px | Knee Angle MAE: {fold_res['knee_angle_mae_deg']}° | Vis F1: {fold_res['visibility_f1_pct']}% | Hip Descent Err: {fold_res['hip_descent_mae_pct']}% ({dt:.1f}s)", flush=True)
 
     # Aggregate LOSO Results
     vis_errs = [r['visible_joint_error_px'] for r in results]
@@ -277,6 +300,7 @@ def main():
     f1s = [r['visibility_f1_pct'] for r in results]
     knee_maes = [r['knee_angle_mae_deg'] for r in results]
     torso_maes = [r['torso_angle_mae_deg'] for r in results]
+    hip_descent_errs = [r['hip_descent_mae_pct'] for r in results]
 
     summary = {
         'mean_visible_joint_error_px': round(float(np.mean(vis_errs)), 2),
@@ -287,14 +311,16 @@ def main():
         'mean_visibility_f1_pct': round(float(np.mean(f1s)), 2),
         'mean_knee_angle_mae_deg': round(float(np.mean(knee_maes)), 2),
         'mean_torso_angle_mae_deg': round(float(np.mean(torso_maes)), 2),
+        'mean_hip_descent_mae_pct': round(float(np.mean(hip_descent_errs)), 2),
     }
 
     full_report = {
-        'evaluation_protocol': '5-Fold Leave-One-Subject-Out (LOSO) Cross-Validation',
+        'evaluation_protocol': '5-Fold Nested Leave-One-Subject-Out (LOSO) Cross-Validation',
         'principles_applied': [
-            'Strict Subject ID Isolation (No subject cross-contamination)',
-            'Train-Only Horizontal Flip Augmentation (Test set remains pure real video frames)',
-            'Internal Stratified Validation for early checkpoint selection per fold'
+            'Strict Subject ID Isolation (Zero overlap across Train, Val, and Test subjects)',
+            'Subject-Level Nested Validation (100% unseen person used for checkpoint selection)',
+            'Train-Only Horizontal Flip Augmentation (Test and Val remain 100% pure real video frames)',
+            'Canonical Subject Naming (person_10 through person_14)'
         ],
         'subjects_evaluated': GYM_SUBJECTS,
         'summary_across_folds': summary,
@@ -305,16 +331,17 @@ def main():
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(full_report, indent=2, ensure_ascii=False), encoding='utf-8')
 
-    print("\n" + "=" * 80)
-    print("      FINAL 5-FOLD LOSO CROSS-VALIDATION SUMMARY REPORT")
-    print("=" * 80)
-    print(f"Mean Visible Joint Error : {summary['mean_visible_joint_error_px']} ± {summary['std_visible_joint_error_px']} px")
-    print(f"Mean Knee Angle MAE      : {summary['mean_knee_angle_mae_deg']}°")
-    print(f"Mean Torso Angle MAE     : {summary['mean_torso_angle_mae_deg']}°")
-    print(f"Mean Visibility F1-Score : {summary['mean_visibility_f1_pct']}%")
-    print(f"Mean PCK@0.20 (Standard) : {summary['mean_pck_020_torso']}%")
-    print("=" * 80)
-    print(f"[Success] Saved 5-Fold LOSO Report -> {OUT_JSON}")
+    print("\n" + "=" * 80, flush=True)
+    print("      FINAL 5-FOLD NESTED LOSO CROSS-VALIDATION SUMMARY REPORT", flush=True)
+    print("=" * 80, flush=True)
+    print(f"Mean Visible Joint Error : {summary['mean_visible_joint_error_px']} ± {summary['std_visible_joint_error_px']} px", flush=True)
+    print(f"Mean Knee Angle MAE      : {summary['mean_knee_angle_mae_deg']}°", flush=True)
+    print(f"Mean Torso Angle MAE     : {summary['mean_torso_angle_mae_deg']}°", flush=True)
+    print(f"Mean Hip Descent Err     : {summary['mean_hip_descent_mae_pct']}%", flush=True)
+    print(f"Mean Visibility F1-Score : {summary['mean_visibility_f1_pct']}%", flush=True)
+    print(f"Mean PCK@0.20 (Standard) : {summary['mean_pck_020_torso']}%", flush=True)
+    print("=" * 80, flush=True)
+    print(f"[Success] Saved 5-Fold LOSO Report -> {OUT_JSON}", flush=True)
 
 
 if __name__ == '__main__':

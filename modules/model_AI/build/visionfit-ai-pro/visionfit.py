@@ -384,6 +384,9 @@ class BiomechanicalSquatAnalyzer:
         self.view_mode = None
         self.active_side = None
         self.side_switch_counter = 0
+        self.prev_landmarks = None
+        self.min_vis_threshold = 0.40
+        self.max_jump_displacement = 60.0
 
     def _new_rep(self, sec):
         return {
@@ -397,6 +400,8 @@ class BiomechanicalSquatAnalyzer:
             "bottom_hip_angle": 180.0,
             "max_descent": 0.0,
             "min_valgus_ratio": 1.0,
+            "low_conf_frames": 0,
+            "total_frames": 0,
             "status": "GOOD_FORM",
             "feedback": "",
             "correction_tip": "",
@@ -482,18 +487,66 @@ class BiomechanicalSquatAnalyzer:
         effective_front = (self.view_mode == "front") if self.view_mode else is_front_view
         feedback_event = None
 
-        # Landmark Quality Gate: If landmarks are degenerate or missing, mark LOW_CONFIDENCE
+        # Robust Landmark Quality Gate: Visibility, Geometry, and Temporal Jump
+        quality_status = "OK"
+        quality_reason = None
+
+        # 1. Keypoint Visibility Check
+        k_vis = float(pts_2d[k_idx, 3]) if pts_2d.shape[-1] >= 4 else 1.0
+        h_vis = float(pts_2d[h_idx, 3]) if pts_2d.shape[-1] >= 4 else 1.0
+        a_vis = float(pts_2d[a_idx, 3]) if pts_2d.shape[-1] >= 4 else 1.0
+        if min(k_vis, h_vis, a_vis) < self.min_vis_threshold:
+            quality_status = "LOW_CONFIDENCE"
+            quality_reason = "Khớp quan trọng bị che khuất (Low Visibility)"
+
+        # 2. Anatomical Geometry Plausibility (Segment lengths & ratios)
+        l_femur = float(np.linalg.norm(hip - knee))
+        l_tibia = float(np.linalg.norm(knee - ank))
+        l_torso = float(np.linalg.norm(sh - hip))
+        if l_femur < 8.0 or l_tibia < 8.0 or l_torso < 10.0:
+            quality_status = "LOW_CONFIDENCE"
+            quality_reason = "Khung xương bị suy biến kích thước (Collapsed Bone)"
+        elif (l_femur / max(1.0, l_tibia) < 0.35) or (l_femur / max(1.0, l_tibia) > 2.8):
+            quality_status = "LOW_CONFIDENCE"
+            quality_reason = "Tỷ lệ giải phẫu bất thường (Abnormal Segment Ratio)"
+
+        # 3. Temporal Motion Continuity & Jump Filter
+        if self.prev_landmarks is not None:
+            prev_k = self.prev_landmarks[k_idx, :2]
+            prev_a = self.prev_landmarks[a_idx, :2]
+            disp_k = float(np.linalg.norm(knee - prev_k))
+            disp_a = float(np.linalg.norm(ank - prev_a))
+            if max(disp_k, disp_a) > self.max_jump_displacement:
+                quality_status = "LOW_CONFIDENCE"
+                quality_reason = "Khớp bị nhảy vị trí đột ngột (Temporal Jump)"
+                knee = 0.6 * prev_k + 0.4 * knee
+                ank = 0.6 * prev_a + 0.4 * ank
+
+        self.prev_landmarks = pts_2d.copy()
+
+        # 4. Angle Degeneracy Check
         if knee_ang is None or hip_ang is None:
+            quality_status = "LOW_CONFIDENCE"
+            quality_reason = "Không tính được góc vector (Degenerate Vectors)"
+
+        # If quality failed, track degraded frame and protect state machine
+        if quality_status == "LOW_CONFIDENCE":
+            if self.state != "STANDING":
+                self.current_rep["low_conf_frames"] += 1
             return {
                 "knee_angle": self.current_rep.get("min_knee_angle", 180.0),
                 "torso_lean": 0.0,
                 "state": self.state,
                 "status": "LOW_CONFIDENCE",
+                "reason": quality_reason,
                 "completed_reps": self.completed_reps,
                 "feedback_event": None,
                 "active_side": self.active_side,
                 "is_front_view": effective_front,
             }
+
+        if self.state != "STANDING":
+            self.current_rep["total_frames"] += 1
 
         if effective_front:
             # Front View State Machine based on Hip Descent and Valgus Ratio
@@ -544,6 +597,10 @@ class BiomechanicalSquatAnalyzer:
                         is_good = False
                         reasons.append(f"Lỗi chưa đủ độ sâu (Hạ hông mới đạt {max_d*100:.0f}% độ dài chân)")
                         tips.append("Hạ hông sâu hơn sao cho đùi song song với mặt sàn.")
+                    if self.current_rep.get("low_conf_frames", 0) > 15:
+                        is_good = False
+                        reasons.append("Chất lượng theo dõi kém / Mất dấu khớp trong rep (Tracking degraded)")
+                        tips.append("Điều chỉnh camera góc rộng hơn và đảm bảo ánh sáng thấy rõ toàn bộ cơ thể.")
 
                     if is_good:
                         self.current_rep["status"] = "GOOD_FORM"
@@ -619,6 +676,10 @@ class BiomechanicalSquatAnalyzer:
                         is_good = False
                         reasons.append(f"Lỗi gập lưng quá mức ({max_t:.1f}° > 45°)")
                         tips.append("Giữ ngực mở, siết cơ lõi bụng để lưng nghiêng trong khoảng 20°-35°.")
+                    if self.current_rep.get("low_conf_frames", 0) > 15:
+                        is_good = False
+                        reasons.append("Chất lượng theo dõi kém / Mất dấu khớp trong rep (Tracking degraded)")
+                        tips.append("Điều chỉnh camera góc rộng hơn và đảm bảo ánh sáng thấy rõ toàn bộ cơ thể.")
 
                     if is_good:
                         self.current_rep["status"] = "GOOD_FORM"
