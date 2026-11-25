@@ -391,53 +391,36 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
             rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             landmarks = []
 
-            # 100% Self-Trained VisionFit PoseNet (BodyPoseNet 4.18M params)
-            try:
-                from pose_model import IMAGE_SIZE, infer_rgb
-                h, w = rgb.shape[:2]
-                scale = min(IMAGE_SIZE / h, IMAGE_SIZE / w)
-                nh, nw = max(1, int(h * scale)), max(1, int(w * scale))
-                resized = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
-                canvas = np.zeros((IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
-                top = (IMAGE_SIZE - nh) // 2
-                left = (IMAGE_SIZE - nw) // 2
-                canvas[top:top+nh, left:left+nw] = resized
-                pts = infer_rgb(get_pose_model(), canvas, device='cpu')
-                for i in range(len(pts)):
-                    lx = (pts[i, 0] * IMAGE_SIZE - left) / nw
-                    ly = (pts[i, 1] * IMAGE_SIZE - top) / nh
-                    landmarks.append({
-                        'x': float(np.clip(lx, 0.0, 1.0)),
-                        'y': float(np.clip(ly, 0.0, 1.0)),
-                        'z': float(pts[i, 2]),
-                        'visibility': float(pts[i, 3])
-                    })
-            except Exception as posenet_err:
-                print(f'[PredictPose PoseNet Error]: {posenet_err}')
+            # 100% Self-Trained VisionFit PoseNet (Dual-Head BodyPoseNet 5.25M params)
+            from pose_model import IMAGE_SIZE, infer_rgb
+            h, w = rgb.shape[:2]
+            scale = min(IMAGE_SIZE / h, IMAGE_SIZE / w)
+            nh, nw = max(1, int(h * scale)), max(1, int(w * scale))
+            resized = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
+            canvas = np.zeros((IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
+            top = (IMAGE_SIZE - nh) // 2
+            left = (IMAGE_SIZE - nw) // 2
+            canvas[top:top+nh, left:left+nw] = resized
 
-            # Fallback to MediaPipe only if local PoseNet model encounters unexpected issue
-            if not landmarks:
-                detector = get_mp_detector()
-                if detector is not None:
-                    try:
-                        import mediapipe as mp
-                        mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-                        res = detector.detect(mp_img)
-                        if res.pose_landmarks and len(res.pose_landmarks) > 0:
-                            for p in res.pose_landmarks[0]:
-                                landmarks.append({
-                                    'x': float(p.x),
-                                    'y': float(p.y),
-                                    'z': float(p.z) if hasattr(p, 'z') and p.z is not None else 0.0,
-                                    'visibility': float(p.visibility) if hasattr(p, 'visibility') and p.visibility is not None else 1.0
-                                })
-                    except Exception as det_err:
-                        print(f'[PredictPose MP Det Error]: {det_err}')
+            pose_net = get_pose_model()
+            if pose_net is None:
+                raise RuntimeError('PoseNet model (models/pose_custom.pt) is not loaded')
+
+            pts = infer_rgb(pose_net, canvas, device='cpu')
+            for i in range(len(pts)):
+                lx = (pts[i, 0] * IMAGE_SIZE - left) / nw
+                ly = (pts[i, 1] * IMAGE_SIZE - top) / nh
+                landmarks.append({
+                    'x': float(np.clip(lx, 0.0, 1.0)),
+                    'y': float(np.clip(ly, 0.0, 1.0)),
+                    'z': float(pts[i, 2]),
+                    'visibility': float(pts[i, 3])
+                })
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'ok', 'landmarks': landmarks}).encode('utf-8'))
+            self.wfile.write(json.dumps({'status': 'ok', 'engine': 'VisionFit_PoseNet_DualHead', 'landmarks': landmarks}).encode('utf-8'))
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')

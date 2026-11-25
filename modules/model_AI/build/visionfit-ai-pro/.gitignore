@@ -31,4 +31,6 @@ reports/*
 !reports/evaluation.json
 !reports/history.csv
 !reports/pose_multiview_eval.json
+!reports/pose_loso_eval.json
+!reports/pose_loso_5fold_eval.json
 !reports/.gitkeep
