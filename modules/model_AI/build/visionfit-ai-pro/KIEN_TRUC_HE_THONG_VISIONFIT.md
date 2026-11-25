@@ -148,7 +148,7 @@ visionfit-ai-pro/
 ├── models/                             # 💾 File trọng số mô hình AI
 │   ├── mediapipe/
 │   │   └── pose_landmarker_full.task   # Teacher model (Google MediaPipe 33-landmark)
-│   ├── pose_custom.pt                  # PoseNet cục bộ tự train (395 KB, PCK 99.71%)
+│   ├── pose_custom.pt                  # Dual-Head BodyPoseNet tự train (20 MB, ResBlock CNN 5.25M params)
 │   └── action_demo.pt                  # ActionNet PyTorch phân loại động tác
 │
 ├── web/                                # 🌐 Giao diện Web Studio (HTML5/JS/Cyberpunk CSS)

@@ -246,15 +246,17 @@ def train(args):
 
 
 def load_pose_model(path, device='cpu'):
-    """Loads VisionFit BodyPoseNet checkpoint with strict architecture verification."""
+    """Loads VisionFit BodyPoseNet checkpoint with strict architecture verification.
+    Requires complete Dual-Head checkpoint (66 coords + 33 visibility).
+    """
     try:
         ckpt = torch.load(path, weights_only=False, map_location=device)
     except Exception:
         ckpt = torch.load(path, weights_only=False, map_location=device)
     state = ckpt.get('state', ckpt.get('state_dict', {}))
     
-    # Check if checkpoint is Dual-Head BodyPoseNet
-    if ckpt.get('type') == 'DualHead_ResBlock_CNN' or ('coord_head.1.weight' in state and 'vis_head.1.weight' in state):
+    # Strict validation: must have both coord_head and vis_head weights
+    if 'coord_head.1.weight' in state and 'vis_head.1.weight' in state:
         model = BodyPoseNet().to(device)
         model.load_state_dict(state, strict=True)
         model.eval()
@@ -262,26 +264,11 @@ def load_pose_model(path, device='cpu'):
         setattr(model, '_is_dual_head', True)
         return model
 
-    # Backward compatibility with single-head BodyPoseNet
-    if ckpt.get('architecture') == 'BodyPoseNet' or 'regressor.1.weight' in state:
-        model = BodyPoseNet().to(device)
-        mapped_state = {}
-        for k, v in state.items():
-            if k.startswith('regressor.'):
-                mapped_state[k.replace('regressor.', 'coord_head.')] = v
-            else:
-                mapped_state[k] = v
-        model.load_state_dict(mapped_state, strict=False)
-        model.eval()
-        setattr(model, '_model_type', 'body_posenet')
-        setattr(model, '_is_dual_head', False)
-        return model
-
-    model = PoseNet().to(device)
-    model.load_state_dict(state, strict=True)
-    model.eval()
-    setattr(model, '_model_type', 'posenet')
-    return model
+    # If legacy weights detected, warn or require upgrade
+    raise RuntimeError(
+        f"Incompatible checkpoint at {path}: VisionFit requires Dual-Head BodyPoseNet "
+        "with both coordinate and visibility heads trained (strict=True)."
+    )
 
 
 def infer_rgb(model, rgb_image, device='cpu'):
