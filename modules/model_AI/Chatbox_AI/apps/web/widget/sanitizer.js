@@ -99,7 +99,8 @@ export function renderSafeMessage(text) {
             i++;
             const rawRow = nextTrim.startsWith('|') ? nextTrim.slice(1) : nextTrim;
             const cleanRow = rawRow.endsWith('|') ? rawRow.slice(0, -1) : rawRow;
-            const rowCells = cleanRow.split('|').map(c => c.trim());
+            const rawCells = cleanRow.split('|').map(c => c.trim());
+            const rowCells = Array.from({ length: headers.length }, (_, idx) => rawCells[idx] ?? '—');
             const tr = document.createElement('tr');
             rowCells.forEach(cell => {
               const td = document.createElement('td');
@@ -116,27 +117,6 @@ export function renderSafeMessage(text) {
         fragment.appendChild(wrap);
         continue;
       }
-    }
-
-    // Kiểm tra dòng kẻ phân cách: "---", "***", "___"
-    if (/^[-*_]{3,}$/.test(trimmed)) {
-      currentList = null;
-      const hr = document.createElement('hr');
-      hr.className = 'vif-divider';
-      fragment.appendChild(hr);
-      continue;
-    }
-
-    // Kiểm tra dòng tiêu đề Markdown: "# ", "## ", "### ", v.v. -> Đổi thành -
-    const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
-    if (headingMatch) {
-      currentList = null;
-      const level = headingMatch[1].length;
-      const h = document.createElement('div');
-      h.className = `vif-heading vif-h${level}`;
-      h.innerHTML = `- ` + formatInlineMarkdown(headingMatch[2]);
-      fragment.appendChild(h);
-      continue;
     }
 
     // Kiểm tra dòng kẻ phân cách: "---", "***", "___"

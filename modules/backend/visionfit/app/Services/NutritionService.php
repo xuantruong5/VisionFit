@@ -212,11 +212,21 @@ class NutritionService
      */
     private static function normalizeGoal(string $goal): string
     {
-        $g = strtolower(trim($goal));
-        if (in_array($g, ['lose_weight', 'giam_can', 'giam_mo', 'cut', '2'], true)) {
+        $g = mb_strtolower(trim($goal), 'UTF-8');
+        if (
+            in_array($g, ['lose_weight', 'giam_can', 'giam_mo', 'cut', '2'], true) ||
+            str_contains($g, 'giảm cân') || str_contains($g, 'giam can') ||
+            str_contains($g, 'giảm mỡ') || str_contains($g, 'giam mo') ||
+            str_contains($g, 'cutting')
+        ) {
             return 'lose_weight';
         }
-        if (in_array($g, ['gain_weight', 'tang_can', 'tang_co', 'bulk', '1'], true)) {
+        if (
+            in_array($g, ['gain_weight', 'tang_can', 'tang_co', 'bulk', '1'], true) ||
+            str_contains($g, 'tăng cân') || str_contains($g, 'tang can') ||
+            str_contains($g, 'tăng cơ') || str_contains($g, 'tang co') ||
+            str_contains($g, 'bulking')
+        ) {
             return 'gain_weight';
         }
         return 'maintain';

@@ -434,7 +434,7 @@ const App = () => {
         !currentRoute.toLowerCase().includes('login') &&
         !currentRoute.toLowerCase().includes('auth') &&
         !currentRoute.toLowerCase().includes('onboarding') && (
-          <FloatingMascotWidget stage="starter" />
+          <FloatingMascotWidget />
       )}
  </View>
  );

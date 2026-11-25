@@ -18,6 +18,10 @@ export function config(env = process.env) {
     mePath: env.VISIONFIT_ME_PATH || '/assistant/me', contextPath: env.VISIONFIT_CONTEXT_PATH || '/assistant/context',
     aiUrl: env.AI_API_URL || 'https://api.openai.com/v1/chat/completions',
     aiKey: env.AI_API_KEY, model: env.AI_MODEL,
+    aiFallbackModels: (env.AI_FALLBACK_MODELS || '').split(',').map(s => s.trim()).filter(Boolean),
+    backupAiUrl: env.AI_BACKUP_API_URL || '',
+    backupAiKey: env.AI_BACKUP_API_KEY || '',
+    backupAiModel: env.AI_BACKUP_MODEL || '',
   };
   if (!['demo', 'live'].includes(c.dataMode) || !['demo', 'live'].includes(c.aiMode)) throw new Error('Mode must be demo or live');
   const origin = new URL(c.origin);
