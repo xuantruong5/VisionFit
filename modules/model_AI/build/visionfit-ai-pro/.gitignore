@@ -21,6 +21,7 @@ reports/*
 
 # Cho phép Git theo dõi các thư mục ảnh đánh giá làm minh chứng Capstone
 !reports/pose_letterbox_eval/
+!reports/eval/
 !reports/pose_debug/
 !reports/pose_v2/
 
