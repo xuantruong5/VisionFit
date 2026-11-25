@@ -198,6 +198,9 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         elif self.path == '/api/analyze_squat':
             self.handle_api_analyze_squat()
             return
+        elif self.path == '/api/analyze_incline_press':
+            self.handle_api_analyze_incline_press()
+            return
         elif self.path.startswith('/api/upload_and_analyze'):
             self.handle_api_upload_and_analyze()
             return
@@ -310,14 +313,67 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
+    def handle_api_analyze_incline_press(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
+            video_input = data.get('video', '') or data.get('video_path', '')
+            if not video_input:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'No video specified'}).encode('utf-8'))
+                return
+
+            video_file = ROOT_DIR / video_input
+            if not video_file.is_file():
+                video_file = ROOT_DIR / 'videos' / 'incline_press' / Path(video_input).name
+            if not video_file.is_file():
+                video_file = ROOT_DIR / 'videos' / video_input
+            if not video_file.is_file():
+                raise FileNotFoundError(f'Video file not found: {video_input}')
+
+            from visionfit import analyze_incline_press_video
+            out_video = ROOT_DIR / 'reports' / 'incline_press' / f'{video_file.stem}_annotated.mp4'
+            out_report = ROOT_DIR / 'reports' / 'incline_press' / f'{video_file.stem}_report.json'
+
+            report = analyze_incline_press_video(
+                video_file,
+                out_video_path=out_video,
+                report_path=out_report,
+            )
+
+            payload = {
+                'status': 'ok',
+                'video': video_file.name,
+                'annotated_video': f'/reports/incline_press/{out_video.name}',
+                'report': report,
+            }
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
     def handle_api_list_videos(self):
         squat_dir = ROOT_DIR / 'videos' / 'squat'
+        incline_dir = ROOT_DIR / 'videos' / 'incline_press'
         squat_videos = []
+        incline_videos = []
         if squat_dir.is_dir():
             squat_videos = sorted([f.name for f in squat_dir.glob('*.mp4')])
+        if incline_dir.is_dir():
+            incline_videos = sorted([f.name for f in incline_dir.glob('*.mp4')])
         payload = {
             'status': 'ok',
             'squat_videos': squat_videos,
+            'incline_press_videos': incline_videos,
             'push_up_videos': [],
             'lunge_videos': [],
         }

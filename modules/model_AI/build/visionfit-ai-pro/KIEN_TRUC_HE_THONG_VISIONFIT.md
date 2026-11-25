@@ -349,4 +349,24 @@ Hệ thống chạy hoàn toàn bằng mô hình PoseNet tự train (không dùn
 | **`person12_squat`** | Góc nghiêng (Side) | 3 | **3** | **1 GOOD / 2 BAD** | Bắt chính xác lỗi Squat nông ở Rep 2 ($97.6^\circ$) và Rep 3 ($95.1^\circ$). |
 
 ---
+
+### 8.5. Mở Rộng Đa Bài Tập: Incline Dumbbell Press (Nằm ghế dốc đẩy tạ đôi - Ngực trên)
+Thực hiện mở rộng hệ thống sang bài tập thứ hai theo khung chương trình 5 bài tập của Coach Trương Thái Lưu (CPT Poliquin):
+* **Tập dữ liệu:** Trích xuất bằng chế độ video tracking thời gian thực từ [videos/incline_press/incline_press_1.mp4](file:///Users/mac/Documents/VISIONFIT_CAP/VisionFit/modules/model_AI/build/visionfit-ai-pro/videos/incline_press/incline_press_1.mp4), tăng cường đối xứng lật ngang, kết hợp vào `data/pose_multi_exercise.npz` (4.511 khung hình).
+* **Kết quả huấn luyện đa bài tập (Báo cáo: [reports/pose_multiexercise_eval.json](file:///Users/mac/Documents/VISIONFIT_CAP/VisionFit/modules/model_AI/build/visionfit-ai-pro/reports/pose_multiexercise_eval.json)):**
+  - **Sai số tọa độ trung bình:** **1.12 px**
+  - **PCK @ 0.05:** **71.56%**
+  - **PCK @ 0.10:** **93.17%**
+  - **PCK @ 0.20:** **99.33%**
+  - **Visibility Head F1-Score:** **99.63%** (Accuracy: **99.34%**)
+
+#### Đánh giá Phân tích Cơ sinh học Incline Dumbbell Press trên Video Thật:
+| Chỉ số kiểm thử | Giá trị đo được | Chuẩn Coach Trương Thái Lưu | Đánh giá kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| **Số Reps hoàn thành** | **3 Reps** | 3 Reps thực tế | Nhận diện chính xác 100% số lần lặp. |
+| **Độ dốc ghế (Bench Incline)** | **17.0° – 17.4°** | 15° – 30° | **ĐẠT CHUẨN** (Tập trung lực tối ưu vào ngực trên). |
+| **Độ sâu khuỷu tay đáy (Bottom Elbow)** | **46.3° – 52.6°** | 75° – 95° (Tối thiểu 70°) | **CẢNH BÁO LỖI:** Hạ tạ quá sâu (< 70°), nguy cơ chấn thương bao khớp vai. |
+| **Biên độ đẩy khóa khớp (Lockout Elbow)** | **140.5° – 142.8°** | 160° – 175° (Tối thiểu 145°) | **CẢNH BÁO LỖI:** Đẩy chưa hết biên độ / Half rep (< 145°). |
+
+---
 *Tài liệu được cập nhật tự động và lưu trữ chính thức tại kho mã nguồn dự án VisionFit AI Pro.*

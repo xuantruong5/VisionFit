@@ -15,10 +15,13 @@ data/action_clips/
 data/action_real.npz
 data/pose_real.npz
 data/pose_multiview_squat.npz
+data/pose_incline_press.npz
+data/pose_multi_exercise.npz
 videos/
 
 # Báo cáo kết quả
 reports/*
+reports/**/*.mp4
 
 # Cho phép Git theo dõi các thư mục ảnh đánh giá làm minh chứng Capstone
 !reports/pose_letterbox_eval/
@@ -33,4 +36,7 @@ reports/*
 !reports/pose_multiview_eval.json
 !reports/pose_loso_eval.json
 !reports/pose_loso_5fold_eval.json
+!reports/pose_multiexercise_eval.json
+!reports/incline_press/
+!reports/incline_press/incline_press_1_report.json
 !reports/.gitkeep

@@ -825,6 +825,8 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, engin
 
     finally:
         cap.release()
+        if hasattr(analyzer, 'finalize'):
+            analyzer.finalize(sec=frame_idx / fps)
         if mp_detector is not None:
             try:
                 mp_detector.close()
@@ -882,6 +884,260 @@ def squat_cli(args):
     print(f"Saved JSON report    : {report_file}")
 
 
+def analyze_incline_press_video(video_path, out_video_path=None, report_path=None, engine="posenet", model_asset_path=None):
+    """Analyzes an Incline Dumbbell Press video using VisionFit AI.
+    engine: "posenet" (100% self-trained PyTorch BodyPoseNet) or "mediapipe" (baseline)
+    Renders full 33-landmark skeleton HUD if out_video_path is specified.
+    Returns complete report dict.
+    """
+    import cv2
+    import numpy as np
+    from incline_press_analyzer import BiomechanicalInclinePressAnalyzer
+
+    video_path = Path(video_path)
+    if not video_path.is_file():
+        cand = Path(__file__).resolve().parent / "videos" / "incline_press" / video_path.name
+        if cand.is_file():
+            video_path = cand
+        else:
+            cand = Path(__file__).resolve().parent / "videos" / video_path.name
+            if cand.is_file():
+                video_path = cand
+    if not video_path.is_file():
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+
+    if out_video_path is None:
+        out_video_path = Path(__file__).resolve().parent / "reports" / "incline_press" / f"{video_path.stem}_annotated.mp4"
+    if report_path is None:
+        report_path = Path(__file__).resolve().parent / "reports" / "incline_press" / f"{video_path.stem}_report.json"
+
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        raise IOError(f"Cannot open video: {video_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    writer = None
+    if out_video_path:
+        out_video_path = Path(out_video_path)
+        out_video_path.parent.mkdir(parents=True, exist_ok=True)
+        fourcc = cv2.VideoWriter_fourcc(*"avc1")
+        writer = cv2.VideoWriter(str(out_video_path), fourcc, fps, (w, h))
+        if not writer.isOpened():
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            writer = cv2.VideoWriter(str(out_video_path), fourcc, fps, (w, h))
+
+    analyzer = BiomechanicalInclinePressAnalyzer()
+    feedback_display = {"text": "", "color": (0, 255, 0), "timer": 0}
+
+    posenet_model = None
+    mp_detector = None
+
+    if engine == "posenet":
+        from pose_model import load_pose_model, infer_rgb, IMAGE_SIZE
+        custom_model_path = Path(__file__).resolve().parent / "models" / "pose_custom.pt"
+        if not custom_model_path.is_file():
+            raise FileNotFoundError(f"PoseNet model not found: {custom_model_path}")
+        posenet_model = load_pose_model(str(custom_model_path), device="cpu")
+    else:
+        import mediapipe as mp
+        if model_asset_path is None:
+            model_asset_path = Path(__file__).resolve().parent / "models" / "mediapipe" / "pose_landmarker_full.task"
+        if not Path(model_asset_path).is_file():
+            raise FileNotFoundError(f"MediaPipe task file not found: {model_asset_path}")
+        options = mp.tasks.vision.PoseLandmarkerOptions(
+            base_options=mp.tasks.BaseOptions(model_asset_path=str(model_asset_path)),
+            running_mode=mp.tasks.vision.RunningMode.VIDEO,
+            num_poses=1,
+        )
+        mp_detector = mp.tasks.vision.PoseLandmarker.create_from_options(options)
+
+    frame_idx = 0
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+
+            sec = frame_idx / fps
+            ts = int(round(frame_idx * 1000.0 / fps))
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            pts = None
+            current_elbow = 180.0
+            current_bench = 0.0
+
+            if engine == "posenet":
+                from pose_model import infer_rgb, IMAGE_SIZE
+                scale = min(IMAGE_SIZE / h, IMAGE_SIZE / w)
+                nh, nw = max(1, int(h * scale)), max(1, int(w * scale))
+                resized = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
+                canvas = np.zeros((IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
+                top = (IMAGE_SIZE - nh) // 2
+                left = (IMAGE_SIZE - nw) // 2
+                canvas[top:top+nh, left:left+nw] = resized
+
+                raw_pts = infer_rgb(posenet_model, canvas, device="cpu")
+                pts = np.zeros((33, 4), dtype=np.float32)
+                for i in range(33):
+                    lx = (raw_pts[i, 0] * IMAGE_SIZE - left) / nw
+                    ly = (raw_pts[i, 1] * IMAGE_SIZE - top) / nh
+                    pts[i] = [lx * w, ly * h, raw_pts[i, 2], raw_pts[i, 3]]
+            else:
+                import mediapipe as mp
+                mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+                res = mp_detector.detect_for_video(mp_img, ts)
+                if res.pose_landmarks and len(res.pose_landmarks) > 0:
+                    lm = res.pose_landmarks[0]
+                    pts = np.zeros((33, 4), dtype=np.float32)
+                    for i in range(33):
+                        p = lm[i]
+                        vis = float(p.visibility) if p.visibility is not None else 1.0
+                        pts[i] = [p.x * w, p.y * h, p.z * w if hasattr(p, 'z') and p.z is not None else 0.0, vis]
+
+            if pts is not None:
+                step_res = analyzer.process_frame(pts, sec=sec)
+                current_elbow = step_res["elbow_angle"]
+                current_bench = step_res["bench_incline"]
+
+                if step_res["feedback_event"]:
+                    feedback_display = {
+                        "text": step_res["feedback_event"]["text"],
+                        "color": step_res["feedback_event"]["color"],
+                        "timer": int(fps * 2.5),
+                    }
+
+                if writer:
+                    def to_px(idx):
+                        return int(round(pts[idx, 0])), int(round(pts[idx, 1]))
+
+                    # Draw skeleton
+                    for a, b in FULL_SKELETON_CONNECTIONS:
+                        if pts[a, 3] >= 0.35 and pts[b, 3] >= 0.35:
+                            cv2.line(frame, to_px(a), to_px(b), (0, 200, 255), 2, cv2.LINE_AA)
+
+                    # Highlight active arm: Shoulder -> Elbow -> Wrist
+                    side = step_res["active_side"]
+                    s_idx = 11 if side == "left" else 12
+                    e_idx = 13 if side == "left" else 14
+                    w_idx = 15 if side == "left" else 16
+                    h_idx = 23 if side == "left" else 24
+
+                    arm_color = (0, 255, 0) if (75.0 <= current_elbow <= 95.0 or current_elbow >= 155.0) else ((0, 0, 255) if current_elbow < 70.0 else (0, 165, 255))
+                    cv2.line(frame, to_px(s_idx), to_px(e_idx), arm_color, 4, cv2.LINE_AA)
+                    cv2.line(frame, to_px(e_idx), to_px(w_idx), arm_color, 4, cv2.LINE_AA)
+
+                    # Bench Incline Line: Hip -> Shoulder
+                    cv2.line(frame, to_px(h_idx), to_px(s_idx), (255, 100, 0), 3, cv2.LINE_AA)
+
+                    # Joint dots
+                    for j in range(33):
+                        if pts[j, 3] >= 0.35:
+                            radius = 5 if j in [s_idx, e_idx, w_idx, h_idx] else 3
+                            dot_color = (0, 0, 255) if j in [s_idx, e_idx, w_idx, h_idx] else (0, 255, 0)
+                            cv2.circle(frame, to_px(j), radius, dot_color, -1, cv2.LINE_AA)
+                            cv2.circle(frame, to_px(j), radius + 2, (255, 255, 255), 1, cv2.LINE_AA)
+
+            if writer:
+                # Top HUD Banner
+                cv2.rectangle(frame, (20, 20), (min(w - 20, 560), 160), (15, 15, 15), -1)
+                cv2.rectangle(frame, (20, 20), (min(w - 20, 560), 160), (0, 200, 255), 2)
+                engine_label = "100% POSENET (SELF-TRAINED)" if engine == "posenet" else "MEDIAPIPE BASELINE"
+                cv2.putText(frame, f"VISIONFIT AI - {engine_label}", (35, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 200, 255), 2, cv2.LINE_AA)
+
+                state_color = (0, 255, 0) if analyzer.state == "BOTTOM" else (0, 200, 255)
+                cv2.putText(frame, f"REPS: {analyzer.completed_reps}", (35, 88), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (255, 255, 255), 3, cv2.LINE_AA)
+                cv2.putText(frame, f"PHA: {analyzer.state}", (230, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.7, state_color, 2, cv2.LINE_AA)
+
+                e_col = (0, 255, 0) if (75.0 <= current_elbow <= 95.0 or current_elbow >= 155.0) else ((0, 0, 255) if current_elbow < 70.0 else (0, 165, 255))
+                b_col = (0, 255, 0) if (15.0 <= current_bench <= 30.0) else ((0, 165, 255) if current_bench <= 45.0 else (0, 0, 255))
+
+                cv2.putText(frame, f"Goc khuyu: {current_elbow:.1f}° (day 75°-95°, dinh >145°)", (35, 118), cv2.FONT_HERSHEY_SIMPLEX, 0.52, e_col, 2, cv2.LINE_AA)
+                cv2.putText(frame, f"Do doc ghe: {current_bench:.1f}° (chuan: 15°-30°)", (35, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.52, b_col, 2, cv2.LINE_AA)
+
+                # Real-time warning if descent too deep
+                if current_elbow < 70.0 and analyzer.state in ["LOWERING", "BOTTOM"]:
+                    cv2.putText(frame, "CANH BAO: HA TA QUA SAU (< 70°)!", (35, 185), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 255), 2, cv2.LINE_AA)
+
+                # Completed feedback banner
+                if feedback_display["timer"] > 0:
+                    banner_top = max(200, h - 140)
+                    cv2.rectangle(frame, (30, banner_top), (w - 30, banner_top + 60), (10, 10, 10), -1)
+                    cv2.rectangle(frame, (30, banner_top), (w - 30, banner_top + 60), feedback_display["color"], 3)
+                    cv2.putText(frame, feedback_display["text"], (45, banner_top + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.65, feedback_display["color"], 2, cv2.LINE_AA)
+                    feedback_display["timer"] -= 1
+
+                writer.write(frame)
+            frame_idx += 1
+
+    finally:
+        cap.release()
+        if hasattr(analyzer, 'finalize'):
+            analyzer.finalize(sec=frame_idx / fps)
+        if mp_detector is not None:
+            try:
+                mp_detector.close()
+            except Exception:
+                pass
+        if writer:
+            writer.release()
+
+    report = {
+        "video": video_path.name,
+        "exercise": "incline_dumbbell_press",
+        "exercise_vn": "Nằm ghế dốc đẩy tạ đôi (Ngực trên)",
+        "ai_engine": "VisionFit PoseNet (100% Local Self-Trained PyTorch)" if engine == "posenet" else "MediaPipe Pose Landmarker (Baseline)",
+        "engine_type": engine,
+        "total_reps_counted": analyzer.completed_reps,
+        "good_reps_count": sum(1 for r in analyzer.reps_data if r["status"] == "GOOD_FORM"),
+        "bad_reps_count": sum(1 for r in analyzer.reps_data if r["status"] == "BAD_FORM"),
+        "reps_detail": analyzer.reps_data,
+        "standards_applied": {
+            "elbow_angle_lockout_ideal": "160°-175°",
+            "elbow_angle_lockout_min_acceptable": "145°",
+            "elbow_angle_bottom_ideal": "75°-95°",
+            "elbow_angle_bottom_acceptable": "70°-100°",
+            "elbow_angle_bottom_danger_too_deep": "<70° (Nguy cơ chấn thương bao khớp vai)",
+            "bench_incline_ideal": "15°-30°",
+            "bench_incline_max_acceptable": "45°",
+        },
+    }
+
+    if report_path:
+        report_path = Path(report_path)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    return report
+
+
+def incline_press_cli(args):
+    video_path = Path(args.video)
+    if not video_path.is_file():
+        cand = Path(__file__).resolve().parent / "videos" / "incline_press" / video_path.name
+        if cand.is_file():
+            video_path = cand
+    out_video = args.out or f"reports/incline_press/{video_path.stem}_annotated.mp4"
+    report_file = args.report or f"reports/incline_press/{video_path.stem}_report.json"
+    print(f"[VisionFit Core] Analyzing Incline Dumbbell Press video: {video_path}")
+    print(f"Applying Coach Truong Thai Luu Biomechanical Standards...")
+    report = analyze_incline_press_video(video_path, out_video_path=out_video, report_path=report_file)
+    print("\n" + "=" * 60)
+    print(f"  ANALYSIS SUMMARY: {video_path.name} (Incline Dumbbell Press)")
+    print("=" * 60)
+    print(f"Total Reps Counted : {report['total_reps_counted']}")
+    print(f"Good Reps          : {report['good_reps_count']}")
+    print(f"Bad Reps           : {report['bad_reps_count']}")
+    for r in report["reps_detail"]:
+        print(f"  Rep {r['rep_number']:02d} ({r['start_time']}s - {r['end_time']}s): [{r['status']}] {r['feedback']}")
+    print("=" * 60)
+    print(f"Saved annotated video: {out_video}")
+    print(f"Saved JSON report    : {report_file}")
+
+
 def main():
     p = argparse.ArgumentParser(description='VisionFit local AI: keypoints -> action')
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -915,8 +1171,12 @@ def main():
     sq.add_argument('--video', required=True, help='Path to squat video file')
     sq.add_argument('--out', help='Path to output annotated video (optional)')
     sq.add_argument('--report', help='Path to output JSON report (optional)')
+    inc = sub.add_parser('incline-press', help='Analyze Incline Dumbbell Press video form and count reps with VisionFit AI')
+    inc.add_argument('--video', required=True, help='Path to incline press video file')
+    inc.add_argument('--out', help='Path to output annotated video (optional)')
+    inc.add_argument('--report', help='Path to output JSON report (optional)')
     args = p.parse_args()
-    {'demo': demo, 'train': train, 'predict': predict, 'squat': squat_cli}[args.cmd](args)
+    {'demo': demo, 'train': train, 'predict': predict, 'squat': squat_cli, 'incline-press': incline_press_cli}[args.cmd](args)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,69 @@
+{
+  "video": "incline_press_1.mp4",
+  "exercise": "incline_dumbbell_press",
+  "exercise_vn": "Nằm ghế dốc đẩy tạ đôi (Ngực trên)",
+  "ai_engine": "VisionFit PoseNet (100% Local Self-Trained PyTorch)",
+  "engine_type": "posenet",
+  "total_reps_counted": 3,
+  "good_reps_count": 0,
+  "bad_reps_count": 3,
+  "reps_detail": [
+    {
+      "rep_number": 1,
+      "start_time": 3.17,
+      "min_elbow_angle": 49.58660125732422,
+      "max_elbow_angle": 142.12826538085938,
+      "bench_incline_angle": 17.371274948120117,
+      "shoulder_angle": 44.55109405517578,
+      "errors": [
+        "Hạ tạ quá sâu (49.6° < 70°: Nguy cơ chấn thương bao khớp vai)",
+        "Đẩy chưa hết biên độ (142.1° < 145°: Half rep)"
+      ],
+      "status": "BAD_FORM",
+      "feedback": "Hạ tạ quá sâu (49.6° < 70°: Nguy cơ chấn thương bao khớp vai) | Đẩy chưa hết biên độ (142.1° < 145°: Half rep)",
+      "bottom_time": 3.47,
+      "end_time": 5.98
+    },
+    {
+      "rep_number": 2,
+      "start_time": 8.69,
+      "min_elbow_angle": 52.62675094604492,
+      "max_elbow_angle": 142.8001708984375,
+      "bench_incline_angle": 16.98859214782715,
+      "shoulder_angle": 38.34028244018555,
+      "errors": [
+        "Hạ tạ quá sâu (52.6° < 70°: Nguy cơ chấn thương bao khớp vai)",
+        "Đẩy chưa hết biên độ (142.8° < 145°: Half rep)"
+      ],
+      "status": "BAD_FORM",
+      "feedback": "Hạ tạ quá sâu (52.6° < 70°: Nguy cơ chấn thương bao khớp vai) | Đẩy chưa hết biên độ (142.8° < 145°: Half rep)",
+      "bottom_time": 8.92,
+      "end_time": 10.86
+    },
+    {
+      "rep_number": 3,
+      "start_time": 12.96,
+      "min_elbow_angle": 46.28880310058594,
+      "max_elbow_angle": 140.5159454345703,
+      "bench_incline_angle": 16.961360931396484,
+      "shoulder_angle": 37.8195686340332,
+      "errors": [
+        "Hạ tạ quá sâu (46.3° < 70°: Nguy cơ chấn thương bao khớp vai)",
+        "Đẩy chưa hết biên độ / Video kết thúc sớm (140.5° < 145°: Half rep)"
+      ],
+      "status": "BAD_FORM",
+      "feedback": "Hạ tạ quá sâu (46.3° < 70°: Nguy cơ chấn thương bao khớp vai) | Đẩy chưa hết biên độ / Video kết thúc sớm (140.5° < 145°: Half rep)",
+      "bottom_time": 13.23,
+      "end_time": 15.63
+    }
+  ],
+  "standards_applied": {
+    "elbow_angle_lockout_ideal": "160°-175°",
+    "elbow_angle_lockout_min_acceptable": "145°",
+    "elbow_angle_bottom_ideal": "75°-95°",
+    "elbow_angle_bottom_acceptable": "70°-100°",
+    "elbow_angle_bottom_danger_too_deep": "<70° (Nguy cơ chấn thương bao khớp vai)",
+    "bench_incline_ideal": "15°-30°",
+    "bench_incline_max_acceptable": "45°"
+  }
+}
