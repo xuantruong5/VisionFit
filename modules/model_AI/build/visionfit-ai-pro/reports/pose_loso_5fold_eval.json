@@ -1,5 +1,10 @@
 {
   "evaluation_protocol": "5-Fold Leave-One-Subject-Out (LOSO) Cross-Validation",
+  "principles_applied": [
+    "Strict Subject ID Isolation (No subject cross-contamination)",
+    "Train-Only Horizontal Flip Augmentation (Test set remains pure real video frames)",
+    "Internal Stratified Validation for early checkpoint selection per fold"
+  ],
   "subjects_evaluated": [
     "person10_squat",
     "person11_squat",
@@ -8,76 +13,76 @@
     "person14_squat"
   ],
   "summary_across_folds": {
-    "mean_visible_joint_error_px": 17.74,
-    "std_visible_joint_error_px": 4.7,
-    "mean_all_joint_error_px": 17.63,
-    "mean_pck_010_torso": 1.05,
-    "mean_pck_020_torso": 4.74,
-    "mean_visibility_f1_pct": 92.29,
-    "mean_knee_angle_mae_deg": 47.04,
-    "mean_torso_angle_mae_deg": 13.82
+    "mean_visible_joint_error_px": 13.99,
+    "std_visible_joint_error_px": 4.96,
+    "mean_all_joint_error_px": 13.95,
+    "mean_pck_010_torso": 4.26,
+    "mean_pck_020_torso": 11.91,
+    "mean_visibility_f1_pct": 94.22,
+    "mean_knee_angle_mae_deg": 32.05,
+    "mean_torso_angle_mae_deg": 9.74
   },
   "folds_detail": [
     {
       "fold": 1,
       "held_out_subject": "person10_squat",
       "test_frames": 1101,
-      "visible_joint_error_px": 16.32,
-      "all_joint_error_px": 16.43,
-      "pck_010_torso": 0.26,
-      "pck_020_torso": 3.06,
+      "visible_joint_error_px": 12.54,
+      "all_joint_error_px": 12.65,
+      "pck_010_torso": 2.41,
+      "pck_020_torso": 11.63,
       "visibility_f1_pct": 91.14,
-      "knee_angle_mae_deg": 53.9,
-      "torso_angle_mae_deg": 15.28
+      "knee_angle_mae_deg": 40.49,
+      "torso_angle_mae_deg": 10.39
     },
     {
       "fold": 2,
       "held_out_subject": "person11_squat",
       "test_frames": 351,
-      "visible_joint_error_px": 9.69,
-      "all_joint_error_px": 9.36,
-      "pck_010_torso": 1.81,
-      "pck_020_torso": 9.21,
-      "visibility_f1_pct": 89.87,
-      "knee_angle_mae_deg": 54.12,
-      "torso_angle_mae_deg": 15.6
+      "visible_joint_error_px": 5.17,
+      "all_joint_error_px": 5.45,
+      "pck_010_torso": 17.05,
+      "pck_020_torso": 37.17,
+      "visibility_f1_pct": 90.08,
+      "knee_angle_mae_deg": 15.33,
+      "torso_angle_mae_deg": 9.49
     },
     {
       "fold": 3,
       "held_out_subject": "person12_squat",
       "test_frames": 695,
-      "visible_joint_error_px": 21.03,
-      "all_joint_error_px": 21.03,
-      "pck_010_torso": 0.29,
-      "pck_020_torso": 0.78,
-      "visibility_f1_pct": 99.7,
-      "knee_angle_mae_deg": 39.88,
-      "torso_angle_mae_deg": 11.86
+      "visible_joint_error_px": 17.26,
+      "all_joint_error_px": 17.26,
+      "pck_010_torso": 0.03,
+      "pck_020_torso": 0.5,
+      "visibility_f1_pct": 100.0,
+      "knee_angle_mae_deg": 45.11,
+      "torso_angle_mae_deg": 13.88
     },
     {
       "fold": 4,
       "held_out_subject": "person13_squat",
       "test_frames": 193,
-      "visible_joint_error_px": 18.2,
-      "all_joint_error_px": 18.21,
-      "pck_010_torso": 1.04,
-      "pck_020_torso": 3.33,
-      "visibility_f1_pct": 90.81,
-      "knee_angle_mae_deg": 55.93,
-      "torso_angle_mae_deg": 12.65
+      "visible_joint_error_px": 15.47,
+      "all_joint_error_px": 15.46,
+      "pck_010_torso": 0.38,
+      "pck_020_torso": 2.68,
+      "visibility_f1_pct": 96.32,
+      "knee_angle_mae_deg": 37.12,
+      "torso_angle_mae_deg": 6.19
     },
     {
       "fold": 5,
       "held_out_subject": "person14_squat",
       "test_frames": 203,
-      "visible_joint_error_px": 23.44,
-      "all_joint_error_px": 23.13,
-      "pck_010_torso": 1.83,
-      "pck_020_torso": 7.32,
-      "visibility_f1_pct": 89.95,
-      "knee_angle_mae_deg": 31.36,
-      "torso_angle_mae_deg": 13.72
+      "visible_joint_error_px": 19.5,
+      "all_joint_error_px": 18.92,
+      "pck_010_torso": 1.42,
+      "pck_020_torso": 7.55,
+      "visibility_f1_pct": 93.54,
+      "knee_angle_mae_deg": 22.19,
+      "torso_angle_mae_deg": 8.73
     }
   ],
-  "total_execution_time_seconds": 737.7
+  "total_execution_time_seconds": 1129.0
 }

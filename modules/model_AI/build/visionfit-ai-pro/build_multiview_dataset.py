@@ -98,25 +98,11 @@ def main():
                         cy = np.clip((top + p.y * nh) / float(IMAGE_SIZE), 0.0, 1.0)
                         kp[i] = [cx, cy, vis]
 
-                    # Standard sample
+                    # Standard sample (Real Video Frame)
                     all_images.append(canvas_rgb)
                     all_keypoints.append(kp)
                     all_subjects.append(subject_name)
                     extracted += 1
-
-                    # For front view & female video, also add horizontally flipped augmentation to balance dataset
-                    if is_front or is_female:
-                        flip_canvas = cv2.flip(canvas_rgb, 1)
-                        flip_kp = np.zeros((33, 3), dtype=np.float32)
-                        for i in range(33):
-                            mapped_i = FLIP_MAP.get(i, i)
-                            flip_kp[mapped_i, 0] = 1.0 - kp[i, 0]
-                            flip_kp[mapped_i, 1] = kp[i, 1]
-                            flip_kp[mapped_i, 2] = kp[i, 2]
-                        all_images.append(flip_canvas)
-                        all_keypoints.append(flip_kp)
-                        all_subjects.append(f"{subject_name}_flip")
-                        extracted += 1
 
                 frame_idx += 1
         cap.release()

@@ -382,6 +382,8 @@ class BiomechanicalSquatAnalyzer:
         self.standing_leg_len = None
         self.baseline_samples = []
         self.view_mode = None
+        self.active_side = None
+        self.side_switch_counter = 0
 
     def _new_rep(self, sec):
         return {
@@ -406,8 +408,8 @@ class BiomechanicalSquatAnalyzer:
         ba = np.asarray(a) - np.asarray(b)
         bc = np.asarray(c) - np.asarray(b)
         norm = np.linalg.norm(ba) * np.linalg.norm(bc)
-        if norm < 1e-8:
-            return 180.0
+        if norm < 1e-6:
+            return None
         cos_ang = np.clip(np.dot(ba, bc) / norm, -1.0, 1.0)
         return float(np.degrees(np.arccos(cos_ang)))
 
@@ -450,10 +452,23 @@ class BiomechanicalSquatAnalyzer:
         ank_w = abs(float(pts_2d[27, 0] - pts_2d[28, 0]))
         valgus_ratio = knee_w / max(1.0, ank_w)
 
-        # Determine more visible side (right vs left)
+        # Determine more visible side (right vs left) with temporal locking (hysteresis)
         r_vis = float(pts_2d[12, 3] + pts_2d[24, 3] + pts_2d[26, 3]) if pts_2d.shape[-1] >= 4 else 1.0
         l_vis = float(pts_2d[11, 3] + pts_2d[23, 3] + pts_2d[25, 3]) if pts_2d.shape[-1] >= 4 else 1.0
-        s_idx, h_idx, k_idx, a_idx = (12, 24, 26, 28) if r_vis >= l_vis else (11, 23, 25, 27)
+        favored_side = "right" if r_vis >= l_vis else "left"
+
+        if self.active_side is None:
+            self.active_side = favored_side
+            self.side_switch_counter = 0
+        elif favored_side != self.active_side:
+            self.side_switch_counter += 1
+            if self.side_switch_counter >= 15:
+                self.active_side = favored_side
+                self.side_switch_counter = 0
+        else:
+            self.side_switch_counter = 0
+
+        s_idx, h_idx, k_idx, a_idx = (12, 24, 26, 28) if self.active_side == "right" else (11, 23, 25, 27)
 
         sh = pts_2d[s_idx, :2]
         hip = pts_2d[h_idx, :2]
@@ -466,6 +481,19 @@ class BiomechanicalSquatAnalyzer:
 
         effective_front = (self.view_mode == "front") if self.view_mode else is_front_view
         feedback_event = None
+
+        # Landmark Quality Gate: If landmarks are degenerate or missing, mark LOW_CONFIDENCE
+        if knee_ang is None or hip_ang is None:
+            return {
+                "knee_angle": self.current_rep.get("min_knee_angle", 180.0),
+                "torso_lean": 0.0,
+                "state": self.state,
+                "status": "LOW_CONFIDENCE",
+                "completed_reps": self.completed_reps,
+                "feedback_event": None,
+                "active_side": self.active_side,
+                "is_front_view": effective_front,
+            }
 
         if effective_front:
             # Front View State Machine based on Hip Descent and Valgus Ratio

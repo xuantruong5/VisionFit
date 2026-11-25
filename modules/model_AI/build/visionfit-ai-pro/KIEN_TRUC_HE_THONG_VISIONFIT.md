@@ -53,12 +53,15 @@ Trong quá trình bảo vệ trước Hội đồng, nhóm cần làm rõ sự p
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  TẦNG 2: BỘ NÃO PHÂN TÍCH SINH CƠ HỌC (Biomechanical Analysis Layer)        │
 │                                                                              │
-│  • Tệp tin lõi: visionfit.py (Class BiomechanicalSquatAnalyzer)              │
-│  • Thuật toán:                                                               │
-│    - Tính góc gối 3D vector (Hip -> Knee -> Ankle)                           │
-│    - Tính góc nghiêng thân mình relative to vertical (Hip -> Shoulder)       │
-│    - Máy trạng thái 4 pha: STANDING -> DESCENDING -> BOTTOM -> ASCENDING     │
-│    - Chấm điểm form chuẩn PT Lưu: ĐÚNG (65°-90°) vs SAI (Nông >95°, Lưng >45°)│
+│  • Tệp tin lõi: visionfit.py (Class BiomechanicalSquatAnalyzer &            │
+│                 InclinePressAnalyzer)                                        │
+│  • Thuật toán & Kiểm soát Chất lượng:                                        │
+│    - Landmark Quality Gate: Chặn nhiễu suy biến vector (norm < 1e-6 -> None),│
+│      kích hoạt LOW_CONFIDENCE bảo vệ máy trạng thái không nhảy rep ảo         │
+│    - Side-Locking Hysteresis: Chống đảo chiều góc nhìn (15 frames threshold)  │
+│    - Tính góc khớp 3D vector (Hip-Knee-Ankle, Shoulder-Elbow-Wrist)          │
+│    - Máy trạng thái hữu hạn (FSM) theo dõi chu kỳ rep thời gian thực          │
+│    - Chấm điểm form chuẩn PT Trương Thái Lưu (Squat, Incline Dumbbell Press) │
 │    - Xuất video gắn nhãn Full 33-Landmark Skeleton + HUD đo góc + Báo cáo JSON│
 └──────────────────────────────────────┬───────────────────────────────────────┘
                                        │ (JSON Report + Annotated Video)
@@ -319,21 +322,25 @@ Dưới đây là bảng số liệu đo đạc khoa học toàn diện dùng đ
 ---
 
 ### 8.3. Thử nghiệm Tổng quát hóa: Đầy đủ 5-Fold Leave-One-Subject-Out (LOSO Cross-Validation)
-* **Giao thức:** Thực hiện 5 lượt huấn luyện và kiểm định độc lập luân phiên trên toàn bộ 5 người tập gym (`person10` đến `person14`). Ở mỗi lượt, 1 người tập được giữ lại 100% làm tập Test độc lập (mô hình không nhìn thấy bất kỳ frame nào của người này khi train).
+* **Giao thức Khoa học Chuẩn mực (Strict Subject Isolation & Leak-Free Protocol):**
+  1. **Cô lập 100% đối tượng thử nghiệm:** Luân phiên giữ lại từng người tập gym (`person10_squat` đến `person14_squat`) làm tập Test độc lập (Unseen Test). Không có bất kỳ khung hình nào của đối tượng này xuất hiện trong tập Train hay Val.
+  2. **Loại bỏ triệt để rò rỉ dữ liệu (No Data Leakage):** Không tạo subject ảo dạng `_flip` trong bộ dữ liệu gốc. Tập kiểm thử Test set giữ **100% video thực tế thuần khiết** (pure real frames). Phép tăng cường đối xứng lật ngang chỉ được thực hiện nội bộ trên tập huấn luyện (Train-only Augmentation).
+  3. **Internal Stratified Validation:** Tách riêng 15% tập train của mỗi Fold làm tập Validation nội bộ để chọn lọc checkpoint tối ưu nhất qua từng epoch, tránh overfitting.
 * **Kết quả đo đạc chi tiết từng Fold (Báo cáo chính thức: [reports/pose_loso_5fold_eval.json](file:///Users/mac/Documents/VISIONFIT_CAP/VisionFit/modules/model_AI/build/visionfit-ai-pro/reports/pose_loso_5fold_eval.json)):**
 
-| Lượt (Fold) | Người tập kiểm thử độc lập (Unseen Test) | Số frames test | Sai số khớp nhìn thấy (Visible Joint Err) | Độ chính xác phát hiện khớp bị che (Vis F1) | Sai số góc gối (Knee MAE) |
-| :---: | :--- | :---: | :---: | :---: | :---: |
-| **Fold 1** | `person10_squat` (áo tối màu) | 1.101 frames | **16.32 px** | **91.14%** | 53.90° |
-| **Fold 2** | `person11_squat` (phòng khách) | 351 frames | **9.69 px** | **89.87%** | 54.12° |
-| **Fold 3** | `person12_squat` (ngoài trời) | 695 frames | **21.03 px** | **99.70%** | 39.88° |
-| **Fold 4** | `person13_squat` (áo thun) | 193 frames | **18.20 px** | **90.81%** | 55.93° |
-| **Fold 5** | `person14_squat` (góc gần camera) | 203 frames | **23.44 px** | **89.95%** | 31.36° |
-| **TRUNG BÌNH 5 FOLDS** | **Toàn bộ 5 đối tượng kiểm thử luân phiên** | **2.543 frames** | **17.74 ± 4.7 px** | **92.29%** | **47.04°** |
+| Lượt (Fold) | Người tập kiểm thử độc lập (Unseen Test) | Số frames test | Sai số khớp nhìn thấy (Visible Joint Err) | Độ chính xác phát hiện khớp bị che (Vis F1) | Sai số góc gối (Knee MAE) | Sai số góc thân (Torso MAE) |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Fold 1** | `person10_squat` (áo tối màu) | 1.101 frames | **12.54 px** | **91.14%** | 40.49° | 10.39° |
+| **Fold 2** | `person11_squat` (phòng khách) | 351 frames | **5.17 px** | **90.08%** | **15.33°** | 9.49° |
+| **Fold 3** | `person12_squat` (ngoài trời) | 695 frames | **17.26 px** | **100.0%** | 45.11° | 13.88° |
+| **Fold 4** | `person13_squat` (áo thun) | 193 frames | **15.47 px** | **96.32%** | 37.12° | 6.19° |
+| **Fold 5** | `person14_squat` (góc gần camera) | 203 frames | **19.50 px** | **93.54%** | **22.19°** | 8.73° |
+| **TRUNG BÌNH 5 FOLDS** | **Toàn bộ 5 đối tượng kiểm thử luân phiên** | **2.543 frames** | **13.99 ± 4.96 px** | **94.22%** | **32.05°** | **9.74°** |
 
 *Nhận xét khoa học:*
-1. **Khả năng nhận diện khớp che khuất (Visibility Head)** đạt độ ổn định và tổng quát hóa vượt trội trên người hoàn toàn mới với **F1-Score trung bình 92.29%**.
-2. Khi huấn luyện mô hình triển khai thực tế ([models/pose_custom.pt](file:///Users/mac/Documents/VISIONFIT_CAP/VisionFit/modules/model_AI/build/visionfit-ai-pro/models/pose_custom.pt)) có sự kết hợp đa dạng dữ liệu của cả 5 đối tượng và video đa góc nhìn, mô hình học được toàn bộ đặc trưng không gian và đạt sai số cực thấp chỉ **2.50 px** trên toàn tập, với Knee Angle MAE đạt mức xuất sắc **5.70°**.
+1. **Khả năng tổng quát hóa cải thiện vượt bậc:** Nhờ áp dụng hàm mất mát Wing Loss kết hợp phân nhánh dự đoán tọa độ & độ che khuất (Dual-Head) và cơ chế chọn checkpoint qua Internal Validation, sai số khớp nhìn thấy trung bình giảm xuống **13.99 px** (giảm đáng kể so với 17.74 px trước đây), và sai số góc gối trung bình giảm mạnh từ 47.04° xuống **32.05°** (đặc biệt Fold 2 đạt mức xuất sắc **15.33°**).
+2. **Khả năng nhận diện khớp che khuất (Visibility Head)** đạt độ ổn định và tổng quát hóa vượt trội trên người hoàn toàn mới với **F1-Score trung bình 94.22%** (tăng từ 92.29%).
+3. Khi huấn luyện mô hình triển khai thực tế ([models/pose_custom.pt](file:///Users/mac/Documents/VISIONFIT_CAP/VisionFit/modules/model_AI/build/visionfit-ai-pro/models/pose_custom.pt)) có sự kết hợp đa dạng dữ liệu của cả 5 đối tượng và video đa góc nhìn, mô hình học được toàn bộ đặc trưng không gian và đạt sai số cực thấp chỉ **2.50 px** trên toàn tập, với Knee Angle MAE đạt mức xuất sắc **5.70°**.
 
 ---
 
