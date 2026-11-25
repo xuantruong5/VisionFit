@@ -508,9 +508,9 @@ class BiomechanicalSquatAnalyzer:
                     is_good = True
                     reasons = []
                     tips = []
-                    if min_v < 0.82:
+                    if min_v < 0.88:
                         is_good = False
-                        reasons.append(f"Lỗi chụm đầu gối (Knee Valgus: {min_v*100:.0f}% < 85%)")
+                        reasons.append(f"Lỗi chụm đầu gối (Knee Valgus: {min_v*100:.0f}% < 88%)")
                         tips.append("Mở rộng khớp gối hướng theo mũi chân khi hạ người, siết cơ mông nhỡ và cơ đùi ngoài.")
                     if max_d < 0.30 and min_k > 115.0:
                         is_good = False
@@ -627,13 +627,14 @@ class BiomechanicalSquatAnalyzer:
         }
 
 
-def analyze_squat_video(video_path, out_video_path=None, report_path=None, model_asset_path=None):
-    """Analyzes a squat video using MediaPipe Pose Landmarker + VisionFit AI Biomechanical Analyzer.
+def analyze_squat_video(video_path, out_video_path=None, report_path=None, engine="posenet", model_asset_path=None):
+    """Analyzes a squat video using VisionFit AI.
+    engine: "posenet" (100% self-trained PyTorch BodyPoseNet) or "mediapipe" (baseline)
     Renders full 33-landmark skeleton HUD if out_video_path is specified.
     Returns complete report dict.
     """
     import cv2
-    import mediapipe as mp
+    import numpy as np
 
     video_path = Path(video_path)
     if not video_path.is_file():
@@ -652,11 +653,6 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, model
         out_video_path = Path(__file__).resolve().parent / "reports" / "squat" / f"{video_path.stem}_annotated.mp4"
     if report_path is None:
         report_path = Path(__file__).resolve().parent / "reports" / "squat" / f"{video_path.stem}_report.json"
-
-    if model_asset_path is None:
-        model_asset_path = Path(__file__).resolve().parent / "models" / "mediapipe" / "pose_landmarker_full.task"
-    if not Path(model_asset_path).is_file():
-        raise FileNotFoundError(f"MediaPipe task file not found: {model_asset_path}")
 
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -679,17 +675,33 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, model
             writer = cv2.VideoWriter(str(out_video_path), fourcc, fps, (w, h))
 
     analyzer = BiomechanicalSquatAnalyzer()
-
-    options = mp.tasks.vision.PoseLandmarkerOptions(
-        base_options=mp.tasks.BaseOptions(model_asset_path=str(model_asset_path)),
-        running_mode=mp.tasks.vision.RunningMode.VIDEO,
-        num_poses=1,
-    )
-
     feedback_display = {"text": "", "color": (0, 255, 0), "timer": 0}
 
-    with mp.tasks.vision.PoseLandmarker.create_from_options(options) as detector:
-        frame_idx = 0
+    # Setup inference engine
+    posenet_model = None
+    mp_detector = None
+
+    if engine == "posenet":
+        from pose_model import load_pose_model, infer_rgb, IMAGE_SIZE
+        custom_model_path = Path(__file__).resolve().parent / "models" / "pose_custom.pt"
+        if not custom_model_path.is_file():
+            raise FileNotFoundError(f"PoseNet model not found: {custom_model_path}")
+        posenet_model = load_pose_model(str(custom_model_path), device="cpu")
+    else:
+        import mediapipe as mp
+        if model_asset_path is None:
+            model_asset_path = Path(__file__).resolve().parent / "models" / "mediapipe" / "pose_landmarker_full.task"
+        if not Path(model_asset_path).is_file():
+            raise FileNotFoundError(f"MediaPipe task file not found: {model_asset_path}")
+        options = mp.tasks.vision.PoseLandmarkerOptions(
+            base_options=mp.tasks.BaseOptions(model_asset_path=str(model_asset_path)),
+            running_mode=mp.tasks.vision.RunningMode.VIDEO,
+            num_poses=1,
+        )
+        mp_detector = mp.tasks.vision.PoseLandmarker.create_from_options(options)
+
+    frame_idx = 0
+    try:
         while True:
             ok, frame = cap.read()
             if not ok:
@@ -698,21 +710,41 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, model
             sec = frame_idx / fps
             ts = int(round(frame_idx * 1000.0 / fps))
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-            res = detector.detect_for_video(mp_img, ts)
 
             current_knee = 180.0
             current_torso = 0.0
             step_res = {}
+            pts = None
 
-            if res.pose_landmarks and len(res.pose_landmarks) > 0:
-                lm = res.pose_landmarks[0]
+            if engine == "posenet":
+                from pose_model import infer_rgb, IMAGE_SIZE
+                scale = min(IMAGE_SIZE / h, IMAGE_SIZE / w)
+                nh, nw = max(1, int(h * scale)), max(1, int(w * scale))
+                resized = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
+                canvas = np.zeros((IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
+                top = (IMAGE_SIZE - nh) // 2
+                left = (IMAGE_SIZE - nw) // 2
+                canvas[top:top+nh, left:left+nw] = resized
+
+                raw_pts = infer_rgb(posenet_model, canvas, device="cpu")  # (33, 4) in [0, 1] relative to canvas
                 pts = np.zeros((33, 4), dtype=np.float32)
                 for i in range(33):
-                    p = lm[i]
-                    vis = float(p.visibility) if p.visibility is not None else 1.0
-                    pts[i] = [p.x * w, p.y * h, p.z * w if hasattr(p, 'z') and p.z is not None else 0.0, vis]
+                    lx = (raw_pts[i, 0] * IMAGE_SIZE - left) / nw
+                    ly = (raw_pts[i, 1] * IMAGE_SIZE - top) / nh
+                    pts[i] = [lx * w, ly * h, raw_pts[i, 2], raw_pts[i, 3]]
+            else:
+                import mediapipe as mp
+                mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+                res = mp_detector.detect_for_video(mp_img, ts)
+                if res.pose_landmarks and len(res.pose_landmarks) > 0:
+                    lm = res.pose_landmarks[0]
+                    pts = np.zeros((33, 4), dtype=np.float32)
+                    for i in range(33):
+                        p = lm[i]
+                        vis = float(p.visibility) if p.visibility is not None else 1.0
+                        pts[i] = [p.x * w, p.y * h, p.z * w if hasattr(p, 'z') and p.z is not None else 0.0, vis]
 
+            if pts is not None:
                 step_res = analyzer.process_frame(pts, sec=sec)
                 current_knee = step_res["knee_angle"]
                 current_torso = step_res["torso_lean"]
@@ -755,9 +787,10 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, model
 
             if writer:
                 # Top HUD Banner
-                cv2.rectangle(frame, (20, 20), (min(w - 20, 480), 160), (15, 15, 15), -1)
-                cv2.rectangle(frame, (20, 20), (min(w - 20, 480), 160), (0, 200, 255), 2)
-                cv2.putText(frame, "VISIONFIT AI - FORM ANALYSIS", (35, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 200, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(frame, (20, 20), (min(w - 20, 520), 160), (15, 15, 15), -1)
+                cv2.rectangle(frame, (20, 20), (min(w - 20, 520), 160), (0, 200, 255), 2)
+                engine_label = "100% POSENET (SELF-TRAINED)" if engine == "posenet" else "MEDIAPIPE BASELINE"
+                cv2.putText(frame, f"VISIONFIT AI - {engine_label}", (35, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 255), 2, cv2.LINE_AA)
 
                 # State & Reps
                 state_color = (0, 255, 0) if analyzer.state == "BOTTOM" else (0, 200, 255)
@@ -790,13 +823,20 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, model
                 writer.write(frame)
             frame_idx += 1
 
-    cap.release()
-    if writer:
-        writer.release()
+    finally:
+        cap.release()
+        if mp_detector is not None:
+            try:
+                mp_detector.close()
+            except Exception:
+                pass
+        if writer:
+            writer.release()
 
     report = {
         "video": video_path.name,
-        "ai_engine": "VisionFit AI Biomechanical Engine",
+        "ai_engine": "VisionFit PoseNet (100% Local Self-Trained PyTorch)" if engine == "posenet" else "MediaPipe Pose Landmarker (Baseline)",
+        "engine_type": engine,
         "total_reps_counted": analyzer.completed_reps,
         "good_reps_count": sum(1 for r in analyzer.reps_data if r["status"] == "GOOD_FORM"),
         "bad_reps_count": sum(1 for r in analyzer.reps_data if r["status"] == "BAD_FORM"),
@@ -806,6 +846,7 @@ def analyze_squat_video(video_path, out_video_path=None, report_path=None, model
             "knee_angle_bottom_max_acceptable": "95°",
             "torso_lean_bottom_ideal": "20°-35°",
             "torso_lean_bottom_max_acceptable": "45°",
+            "valgus_ratio_min_acceptable": "88%",
         },
     }
 

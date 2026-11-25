@@ -390,25 +390,9 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
 
             rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             landmarks = []
-            detector = get_mp_detector()
-            if detector is not None:
-                try:
-                    import mediapipe as mp
-                    mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-                    res = detector.detect(mp_img)
-                    if res.pose_landmarks and len(res.pose_landmarks) > 0:
-                        for p in res.pose_landmarks[0]:
-                            landmarks.append({
-                                'x': float(p.x),
-                                'y': float(p.y),
-                                'z': float(p.z) if hasattr(p, 'z') and p.z is not None else 0.0,
-                                'visibility': float(p.visibility) if hasattr(p, 'visibility') and p.visibility is not None else 1.0
-                            })
-                except Exception as det_err:
-                    print(f'[PredictPose Det Error]: {det_err}')
 
-            # Fallback to local PoseNet with letterboxing if detector failed
-            if not landmarks:
+            # 100% Self-Trained VisionFit PoseNet (BodyPoseNet 4.18M params)
+            try:
                 from pose_model import IMAGE_SIZE, infer_rgb
                 h, w = rgb.shape[:2]
                 scale = min(IMAGE_SIZE / h, IMAGE_SIZE / w)
@@ -428,6 +412,27 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
                         'z': float(pts[i, 2]),
                         'visibility': float(pts[i, 3])
                     })
+            except Exception as posenet_err:
+                print(f'[PredictPose PoseNet Error]: {posenet_err}')
+
+            # Fallback to MediaPipe only if local PoseNet model encounters unexpected issue
+            if not landmarks:
+                detector = get_mp_detector()
+                if detector is not None:
+                    try:
+                        import mediapipe as mp
+                        mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+                        res = detector.detect(mp_img)
+                        if res.pose_landmarks and len(res.pose_landmarks) > 0:
+                            for p in res.pose_landmarks[0]:
+                                landmarks.append({
+                                    'x': float(p.x),
+                                    'y': float(p.y),
+                                    'z': float(p.z) if hasattr(p, 'z') and p.z is not None else 0.0,
+                                    'visibility': float(p.visibility) if hasattr(p, 'visibility') and p.visibility is not None else 1.0
+                                })
+                    except Exception as det_err:
+                        print(f'[PredictPose MP Det Error]: {det_err}')
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')

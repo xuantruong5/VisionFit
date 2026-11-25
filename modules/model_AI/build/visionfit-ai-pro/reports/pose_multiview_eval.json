@@ -1,0 +1,78 @@
+{
+  "model": "models/pose_custom.pt",
+  "architecture": "VisionFit ResBlock CNN PoseNet (100% Local Self-Trained)",
+  "total_eval_frames": 3575,
+  "overall": {
+    "pck_05": 23.36,
+    "pck_10": 64.92,
+    "mean_error_pixels_128": 2.14
+  },
+  "per_subject": {
+    "person10_squat": {
+      "frames": 1101,
+      "pck_05": 27.55,
+      "pck_10": 73.2,
+      "mean_error_pixels": 2.52
+    },
+    "person11_squat": {
+      "frames": 351,
+      "pck_05": 16.32,
+      "pck_10": 52.02,
+      "mean_error_pixels": 2.32
+    },
+    "person12_squat": {
+      "frames": 695,
+      "pck_05": 13.15,
+      "pck_10": 50.23,
+      "mean_error_pixels": 1.77
+    },
+    "person13_squat": {
+      "frames": 193,
+      "pck_05": 20.74,
+      "pck_10": 58.63,
+      "mean_error_pixels": 2.19
+    },
+    "person14_squat": {
+      "frames": 203,
+      "pck_05": 31.59,
+      "pck_10": 74.26,
+      "mean_error_pixels": 2.42
+    },
+    "squatnuw": {
+      "frames": 236,
+      "pck_05": 18.62,
+      "pck_10": 55.26,
+      "mean_error_pixels": 1.95
+    },
+    "squatnuw_flip": {
+      "frames": 236,
+      "pck_05": 15.45,
+      "pck_10": 49.88,
+      "mean_error_pixels": 2.06
+    },
+    "squatsai": {
+      "frames": 152,
+      "pck_05": 30.7,
+      "pck_10": 77.91,
+      "mean_error_pixels": 1.85
+    },
+    "squatsai_flip": {
+      "frames": 152,
+      "pck_05": 34.07,
+      "pck_10": 83.45,
+      "mean_error_pixels": 1.73
+    },
+    "suqtanam": {
+      "frames": 128,
+      "pck_05": 38.85,
+      "pck_10": 87.52,
+      "mean_error_pixels": 1.76
+    },
+    "suqtanam_flip": {
+      "frames": 128,
+      "pck_05": 39.49,
+      "pck_10": 89.02,
+      "mean_error_pixels": 1.72
+    }
+  }
+}

@@ -14,6 +14,7 @@ data/frames/
 data/action_clips/
 data/action_real.npz
 data/pose_real.npz
+data/pose_multiview_squat.npz
 videos/
 
 # Báo cáo kết quả
@@ -21,6 +22,7 @@ reports/*
 
 # Cho phép Git theo dõi các thư mục ảnh đánh giá làm minh chứng Capstone
 !reports/pose_letterbox_eval/
+!reports/pose_multiview_eval/
 !reports/eval/
 !reports/pose_debug/
 !reports/pose_v2/
@@ -28,4 +30,5 @@ reports/*
 # Cho phép các file kết quả đánh giá
 !reports/evaluation.json
 !reports/history.csv
+!reports/pose_multiview_eval.json
 !reports/.gitkeep

@@ -16,6 +16,62 @@ IMAGE_SIZE = 128
 JOINTS = 33
 
 
+class ResBlock(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+
+    def forward(self, x):
+        residual = x
+        out = torch.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        return torch.relu(out + residual)
+
+
+class BodyPoseNet(nn.Module):
+    """Deep ResNet-based 33-landmark body pose regressor (4.18M params).
+    Input: (B, 3, 128, 128)
+    Output: (B, 66) — 33 joints x (x, y) normalized [0, 1]
+    """
+    def __init__(self):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 32, 7, stride=2, padding=3, bias=False),
+            nn.BatchNorm2d(32), nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, 3, padding=1, bias=False),
+            nn.BatchNorm2d(64), nn.ReLU(inplace=True),
+            ResBlock(64),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, 3, padding=1, bias=False),
+            nn.BatchNorm2d(128), nn.ReLU(inplace=True),
+            ResBlock(128),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, 3, padding=1, bias=False),
+            nn.BatchNorm2d(256), nn.ReLU(inplace=True),
+            ResBlock(256),
+            nn.AdaptiveAvgPool2d((4, 4)),
+        )
+        self.regressor = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256 * 4 * 4, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.25),
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.15),
+            nn.Linear(256, 66),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        feat = self.features(x)
+        return self.regressor(feat)
+
+
 class PoseNet(nn.Module):
     def __init__(self):
         super().__init__()
@@ -179,24 +235,39 @@ def train(args):
 
 def load_pose_model(path, device='cpu'):
     try:
-        ckpt = torch.load(path, weights_only=True, map_location=device)
+        ckpt = torch.load(path, weights_only=False, map_location=device)
     except Exception:
         ckpt = torch.load(path, weights_only=False, map_location=device)
-    if ckpt.get('image_size') != IMAGE_SIZE:
-        raise ValueError('Unsupported pose image size')
+    state = ckpt.get('state', ckpt.get('state_dict', {}))
+    
+    # Check if checkpoint is BodyPoseNet (ResBlock CNN 4.18M params)
+    if ckpt.get('architecture') == 'BodyPoseNet' or 'regressor.1.weight' in state:
+        model = BodyPoseNet().to(device)
+        model.load_state_dict(state)
+        model.eval()
+        setattr(model, '_model_type', 'body_posenet')
+        return model
+
     model = PoseNet().to(device)
-    model.load_state_dict(ckpt['state'])
+    model.load_state_dict(state)
     model.eval()
+    setattr(model, '_model_type', 'posenet')
     return model
 
 
 def infer_rgb(model, rgb_image, device='cpu'):
-    """Input RGB uint8 (128,128,3); output (33,4), z=0 by design."""
+    """Input RGB uint8 (128,128,3); output (33,4): x, y, z=0, visibility."""
     image = np.asarray(rgb_image)
     if image.shape != (IMAGE_SIZE, IMAGE_SIZE, 3) or image.dtype != np.uint8:
         raise ValueError('RGB image must be uint8 (128,128,3)')
-    inp = torch.from_numpy(image.copy()).permute(2, 0, 1)[None].to(device=device, dtype=torch.float32) / 255.
+    inp = torch.from_numpy(image.copy()).permute(2, 0, 1)[None].to(device=device, dtype=torch.float32) / 255.0
     with torch.no_grad():
+        if getattr(model, '_model_type', None) == 'body_posenet':
+            pts2d = model(inp).view(33, 2).cpu().numpy().astype('float32')
+            pts4 = np.zeros((33, 4), dtype=np.float32)
+            pts4[:, :2] = np.clip(pts2d, 0.0, 1.0)
+            pts4[:, 3] = 1.0
+            return pts4
         return decode_pose(*model(inp))[0].cpu().numpy().astype('float32')
 
 
