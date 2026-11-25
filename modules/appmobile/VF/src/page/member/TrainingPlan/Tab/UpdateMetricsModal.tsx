@@ -1,16 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  Platform,
-} from 'react-native';
+import { Modal,View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Alert, Platform,} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SHADOWS } from '../../../../general/theme';
@@ -55,7 +44,7 @@ export const UpdateMetricsModal: React.FC<Props> = ({
       setActivity(currentActivity || 2);
       setResultData(null);
     }
-  }, [visible, currentHeight, currentWeight, currentActivity]);
+  }, [visible]);
 
   // Tính nháp BMI nhanh theo thời gian thực
   const hNum = parseFloat(height);

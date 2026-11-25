@@ -1034,6 +1034,48 @@ class MembersController extends Controller
         ]);
     }
 
+    public function checkCapNhatLanDau()
+    {
+        // 1. Lấy hội viên đăng nhập
+        $hoiVien = Auth::guard('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+        // 2. Tìm thông tin hội viên
+        $client = Client::find($hoiVien->id);
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông tin hội viên.',
+            ], 404);
+        }
+        // 3. Kiểm tra đã cập nhật chỉ số lần nào chưa
+        if (!$client->ngay_cap_nhat_chi_so) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn chưa cập nhật chỉ số cơ thể. Vui lòng cập nhật ngay.',
+                'data' => [
+                    'da_cap_nhat' => false,
+                    'bat_buoc_cap_nhat' => true,
+                ],
+            ]);
+        }
+        // 4. Đã từng cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Bạn đã cập nhật chỉ số cơ thể.',
+            'data' => [
+                'da_cap_nhat' => true,
+                'bat_buoc_cap_nhat' => false,
+            ],
+        ]);
+    }
+
+
+
     
 
 
