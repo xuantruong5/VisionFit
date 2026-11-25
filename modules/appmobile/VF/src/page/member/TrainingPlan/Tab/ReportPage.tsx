@@ -75,6 +75,22 @@ const ReportPage = ({ navigation, route }: any) => {
     const [completingExercise, setCompletingExercise] = useState(false);
 
 
+    // hàm lấy video lên
+    const BACKEND_URL = (apiFitlife.defaults.baseURL || "")
+        .replace(/\/api\/?$/, "")
+        .replace(/\/+$/, "");
+
+    // Chuyển đường dẫn tương đối thành URL đầy đủ
+    const videoHuongDan = exercise?.video_huong_dan
+        ? exercise.video_huong_dan.startsWith("http")
+            ? exercise.video_huong_dan
+            : `${BACKEND_URL}/${encodeURI(
+                exercise.video_huong_dan.replace(/^\/+/, "")
+            )}`
+        : null; 
+
+
+
 
 
 
@@ -482,12 +498,11 @@ const ReportPage = ({ navigation, route }: any) => {
                 {/* ================= EXERCISE IMAGE ================= */}
                 <View style={styles.exerciseArea}>
                     <View style={styles.exerciseImageArea}>
-                        {exercise?.video_huong_dan ? (
-                            exercise.video_huong_dan.toLowerCase().endsWith(".gif") ? (
-                                <Image source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" onError={() => console.log("Video hướng dẫn bị lỗi")} />
+                        {videoHuongDan ? (
+                            videoHuongDan.toLowerCase().endsWith(".gif") ? (
+                                <Image source={{ uri: videoHuongDan }} style={styles.exerciseImage} resizeMode="contain" onError={(e) => console.log("Lỗi GIF:", e.nativeEvent) } />
                             ) : (
-                                <Video source={{ uri: exercise.video_huong_dan }} style={styles.exerciseImage} resizeMode="contain" repeat paused={false} muted onError={() => console.log("Video hướng dẫn bị lỗi")} />
-                            )
+                                <Video  source={{ uri: videoHuongDan }} style={styles.exerciseImage} resizeMode="contain" repeat paused={false} muted controls onError={(e) => console.log("LỖI VIDEO:", e) }  onLoad={() => console.log("VIDEO ĐÃ TẢI:", videoHuongDan) }/> )
                         ) : (
                             <View style={styles.mediaFallback}>
                                 <Ionicons name="videocam-off-outline" size={34} color={COLORS.primary} />

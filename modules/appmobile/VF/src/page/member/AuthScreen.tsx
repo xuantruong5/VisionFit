@@ -84,6 +84,22 @@ const AuthScreen = ({ navigation }: any) => {
                     await AsyncStorage.setItem('token', token);
                     await AsyncStorage.setItem('role', 'member');
                 }
+                if (token) {
+                    const checkProfile = await apiFitlife.get( '/client/check-cap-nhat-lan-dau');
+                    console.log('CHECK PROFILE REGISTER =', checkProfile.data);
+                    const batBuocCapNhat = checkProfile.data?.data?.bat_buoc_cap_nhat;
+                    // Chưa cập nhật: bắt buộc nhập chỉ số
+                    if (batBuocCapNhat === true) {
+                        navigation.reset({
+                            index: 0,
+                            routes: [
+                                { name: 'AiConsultationScreen' },
+                            ],
+                        });
+
+                        return;
+                    }
+                }
 
                 Alert.alert(
                     'Đăng ký thành công',
@@ -267,6 +283,31 @@ const AuthScreen = ({ navigation }: any) => {
             await AsyncStorage.setItem('role', 'member');
             console.log('Đăng nhập thành công, đang kiểm tra chương trình tập...');
 
+            const checkProfile = await apiFitlife.get('/client/check-cap-nhat-lan-dau');
+            console.log('CHECK PROFILE =', checkProfile.data);
+            const batBuocCapNhat = checkProfile.data?.data?.bat_buoc_cap_nhat;
+            if (batBuocCapNhat === true) {
+            Alert.alert(
+                'Hoàn thiện hồ sơ',
+                'Bạn cần cập nhật thông tin cơ thể trước khi sử dụng VisionFit.',
+                [
+                    {
+                        text: 'Cập nhật ngay',
+                        onPress: () => {
+                            navigation.reset({
+                                index: 0,
+                                routes: [
+                                    { name: 'AiConsultationScreen' },
+                                ],
+                            });
+                        },
+                    },
+                ],
+                { cancelable: false }
+            );
+
+            return;
+        }
             // Kiểm tra chương trình tập đã đăng ký
             const programResponse = await apiFitlife.get('/client/my-programs');
             const chuongTrinh = programResponse.data?.data;

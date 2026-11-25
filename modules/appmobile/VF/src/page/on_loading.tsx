@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from "react";
 import apiFitlife from '../general/api';
 
+
 const Onloading = ({ navigation }: any) => {
     useEffect(() => {
         const checkLogin = async () => {
@@ -22,6 +23,21 @@ const Onloading = ({ navigation }: any) => {
                 // Hội viên
                 if (role === "member") {
                     try {
+                        const checkProfile = await apiFitlife.get( "/client/check-cap-nhat-lan-dau" );
+                            console.log("CHECK PROFILE =", checkProfile.data);
+                            const batBuocCapNhat = checkProfile.data?.data?.bat_buoc_cap_nhat;
+                            // BƯỚC 2: Nếu chưa cập nhật thì bắt buộc chuyển đến màn hình cập nhật
+                            if (batBuocCapNhat === true) {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [
+                                        { name: "AiConsultationScreen" },
+                                    ],
+                                });
+
+                                return;
+                            }
+
                         const response = await apiFitlife.get("/client/my-programs");
                         const chuongTrinh = response.data.data;
                         console.log("MY PROGRAMS =", chuongTrinh);

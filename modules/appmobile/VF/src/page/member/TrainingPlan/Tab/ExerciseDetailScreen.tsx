@@ -3,6 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Switch, } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS, SHADOWS } from '../../../../general/theme';
+import apiFitlife from '../../../../general/api';
+import Video from 'react-native-video';
 
 interface ExerciseDetailScreenProps {
   navigation: any;
@@ -11,6 +13,22 @@ interface ExerciseDetailScreenProps {
 
 const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation, route }) => {
   const { exercise } = route.params || {};
+
+
+  // hàm lấy đường dẫn video từ backend
+  const BACKEND_URL = (apiFitlife.defaults.baseURL || "")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/+$/, "");
+  const getMediaUrl = (path: string) => {
+    if (!path) return "";
+
+    if (path.startsWith("http")) {
+      return path;
+    }
+
+    return `${BACKEND_URL}/${encodeURI(path.replace(/^\/+/, ""))}`;
+  };
+
   const [activeTab, setActiveTab] = useState<'info' | 'muscles' | 'history' | 'progress'>('info');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [fontSizeScale, setFontSizeScale] = useState(1);
@@ -26,11 +44,16 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
     ...exercise,
     name: exercise?.ten_bai_tap || exercise?.name || '',
     description: exercise?.mo_ta || exercise?.description || '',
-    video_huong_dan: exercise?.video_huong_dan || exercise?.video || exercise?.image || '',
-    video_sai: exercise?.video_sai || '',
+    video_huong_dan: getMediaUrl(exercise?.video_huong_dan || exercise?.video || exercise?.image || ''),
+    video_sai: getMediaUrl(exercise?.video_sai || ''),
     instructions: exercise?.huong_dan || exercise?.instructions || '',
     warnings: exercise?.canh_bao || exercise?.warnings || '',
   };
+  // lấy video lên 
+  const currentMedia = videoMode === 'correct' ? currentExercise.video_huong_dan : currentExercise.video_sai;
+  const isGif = currentMedia?.toLowerCase().split('?')[0].endsWith('.gif');
+
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -48,7 +71,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
 
         <View style={styles.headerRightGroup}>
           <TouchableOpacity style={styles.headerIconBtn} onPress={() => setIsBookmarked(!isBookmarked)}>
-            <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={20} color={COLORS.primary}/>
+            <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={20} color={COLORS.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconBtn}>
             <Ionicons name="play-outline" size={20} color={COLORS.primary} />
@@ -90,39 +113,50 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             {/* Bộ chọn Video đúng / Video sai */}
             {currentExercise.video_sai ? (
               <View style={styles.videoModeToggleRow}>
-                <TouchableOpacity style={[ styles.videoModeToggleBtn, videoMode === 'correct' && styles.videoModeToggleBtnCorrect, ]} onPress={() => setVideoMode('correct')} activeOpacity={0.8}>
+                <TouchableOpacity style={[styles.videoModeToggleBtn, videoMode === 'correct' && styles.videoModeToggleBtnCorrect,]} onPress={() => setVideoMode('correct')} activeOpacity={0.8}>
                   <Ionicons name="checkmark-circle" size={16} color={videoMode === 'correct' ? '#FFFFFF' : '#10B981'} />
-                  <Text style={[ styles.videoModeToggleText, videoMode === 'correct' && styles.videoModeToggleTextActive, ]} >
+                  <Text style={[styles.videoModeToggleText, videoMode === 'correct' && styles.videoModeToggleTextActive,]} >
                     Video đúng (Kỹ thuật chuẩn)
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.videoModeToggleBtn, videoMode === 'wrong' && styles.videoModeToggleBtnWrong,]} onPress={() => setVideoMode('wrong')} activeOpacity={0.8}>
                   <Ionicons name="close-circle" size={16} color={videoMode === 'wrong' ? '#FFFFFF' : '#EF4444'} />
-                  <Text style={[ styles.videoModeToggleText, videoMode === 'wrong' && styles.videoModeToggleTextActive,]}>
+                  <Text style={[styles.videoModeToggleText, videoMode === 'wrong' && styles.videoModeToggleTextActive,]}>
                     Video sai (Lỗi thường gặp)
                   </Text>
                 </TouchableOpacity>
               </View>
             ) : null}
-            {/* Hình ảnh/Minh họa bài tập (GIF Animation) */}
+            {/* Hình ảnh / Video hướng dẫn */}
             <View style={styles.imageBox}>
-              {(
-                videoMode === 'correct'
-                  ? currentExercise.video_huong_dan
-                  : currentExercise.video_sai
-              ) ? (
-                <Image source={{ uri: videoMode === 'correct' ? currentExercise.video_huong_dan : currentExercise.video_sai, }}
-                  style={styles.exerciseHeroImage} resizeMode="contain" onError={() => console.log('Video hướng dẫn bị lỗi')} />
+              {currentMedia ? (
+                isGif ? (
+                  // GIF
+                  <Image
+                    source={{ uri: currentMedia }}
+                    style={styles.exerciseHeroImage}
+                    resizeMode="contain"
+                    onError={() => console.log('Không tải được GIF:', currentMedia)}
+                  />
+                ) : (
+                  // MP4
+                  <Video source={{ uri: currentMedia }} style={styles.exerciseHeroImage}  resizeMode="contain" repeat paused={false} muted  controls
+                    onError={(error) => console.log('Lỗi phát video:', error, currentMedia) }
+                  />
+                )
               ) : (
                 <View style={styles.mediaFallback}>
-                  <Ionicons name="videocam-off-outline" size={34} color={COLORS.primary} />
-                  <Text style={styles.mediaFallbackText}>Video hướng dẫn bị lỗi</Text>
+                  <Ionicons  name="videocam-off-outline" size={34} color={COLORS.primary} />
+                  <Text style={styles.mediaFallbackText}>
+                    Chưa có video hướng dẫn
+                  </Text>
                 </View>
               )}
 
-              <View style={[ styles.videoBadge, videoMode === 'correct' ? styles.videoBadgeCorrect : styles.videoBadgeWrong,]} >
-                <Ionicons name={videoMode === 'correct' ? 'checkmark' : 'alert-outline'} size={12} color="#FFFFFF"/>
+              <View
+                style={[ styles.videoBadge, videoMode === 'correct' ? styles.videoBadgeCorrect  : styles.videoBadgeWrong, ]} >
+                <Ionicons name={videoMode === 'correct' ? 'checkmark' : 'alert-outline'} size={12} color="#FFFFFF" />
                 <Text style={styles.videoBadgeText}>
                   {videoMode === 'correct' ? 'Động tác đúng' : 'Lỗi sai cần tránh'}
                 </Text>
@@ -130,7 +164,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             </View>
 
             {/* Tên bài tập */}
-            <Text style={[ styles.exerciseNameText, { fontSize: 20 * fontSizeScale }, ]} >
+            <Text style={[styles.exerciseNameText, { fontSize: 20 * fontSizeScale },]} >
               {currentExercise.name}
             </Text>
 
@@ -139,7 +173,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
               {currentExercise.description}
             </Text>
 
-       
+
             {/* Hướng dẫn */}
             <Text style={styles.sectionHeaderTitle}>Hướng dẫn</Text>
 
@@ -155,7 +189,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                         {index + 1}
                       </Text>
                     </View>
-                    <Text style={[ styles.instructionText,{ fontSize: 14 * fontSizeScale }, ]} >
+                    <Text style={[styles.instructionText, { fontSize: 14 * fontSizeScale },]} >
                       {item}.
                     </Text>
                   </View>
@@ -181,7 +215,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                       <View key={index} style={styles.warningItem}>
                         <View style={styles.warningDot} />
 
-                        <Text style={[styles.warningItemText, { fontSize: 14 * fontSizeScale }, ]} >
+                        <Text style={[styles.warningItemText, { fontSize: 14 * fontSizeScale },]} >
                           {item.replace(/[.]$/, '')}.
                         </Text>
                       </View>
@@ -309,7 +343,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                   Tuần
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.pillBtn, timeFilter === 'month' && styles.pillBtnActive]}onPress={() => setTimeFilter('month')} >
+              <TouchableOpacity style={[styles.pillBtn, timeFilter === 'month' && styles.pillBtnActive]} onPress={() => setTimeFilter('month')} >
                 <Text style={[styles.pillBtnText, timeFilter === 'month' && styles.pillBtnTextActive]}>
                   Tháng
                 </Text>
@@ -335,7 +369,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
             {/* Tùy chọn cài đặt */}
             <View style={styles.settingRow}>
               <Text style={styles.settingLabel}>Hiển thị trên Trang tổng quan</Text>
-              <Switch value={showOnDashboard} onValueChange={setShowOnDashboard} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor="#FFFFFF"/>
+              <Switch value={showOnDashboard} onValueChange={setShowOnDashboard} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor="#FFFFFF" />
             </View>
 
             <View style={styles.settingRow}>
@@ -344,7 +378,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({ navigation,
                   Hiển thị tất cả dữ liệu từ tất cả các chương trình tập luyện
                 </Text>
               </View>
-              <Switch value={showAllPrograms} onValueChange={setShowAllPrograms} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor="#FFFFFF"/>
+              <Switch value={showAllPrograms} onValueChange={setShowAllPrograms} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor="#FFFFFF" />
             </View>
 
             <View style={styles.infoNoteRow}>
@@ -477,7 +511,7 @@ const styles = StyleSheet.create({
   },
   exerciseHeroImage: {
     width: '100%',
-    height: '100%',
+    height: 230,
   },
   exerciseNameText: {
     fontSize: 20,
