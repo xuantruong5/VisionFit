@@ -7,7 +7,7 @@
 
 import { MascotRenderer } from '../mascot/renderer.js';
 import { MascotSelector } from '../mascot/selector.js';
-import { renderSafeMessage } from './sanitizer.js';
+import { renderSafeMessage, escapeHTML } from './sanitizer.js';
 import { HostAdapter } from './adapter.js';
 
 export class MascotWidget {
@@ -134,7 +134,7 @@ export class MascotWidget {
       <div class="vif-panel-messages" id="widget-messages" role="log" aria-live="polite">
         <!-- Tin nhắn ban đầu -->
         <div class="vif-msg-bubble vif-msg-assistant">
-          <p>Xin chào ${this.userName ? `<strong>${this.userName}</strong>` : 'bạn'}! Tôi là người bạn đồng hành của bạn tại VisionFit. Hôm nay bạn muốn tìm hiểu về lịch tập, gói tập hay bắt đầu rèn luyện?</p>
+          <p>Xin chào ${this.userName ? `<strong>${escapeHTML(this.userName)}</strong>` : 'bạn'}! Tôi là người bạn đồng hành của bạn tại VisionFit. Hôm nay bạn muốn tìm hiểu về lịch tập, gói tập hay bắt đầu rèn luyện?</p>
         </div>
       </div>
 
@@ -218,7 +218,7 @@ export class MascotWidget {
       this.greetingBubble = document.createElement('div');
       const themeClass = this.species === 'cat' ? 'vif-theme-cat' : 'vif-theme-bear';
       this.greetingBubble.className = `vif-greeting-bubble ${themeClass}`;
-      const greetingName = this.userName ? `, ${this.userName}` : '';
+      const greetingName = this.userName ? `, ${escapeHTML(this.userName)}` : '';
       this.greetingBubble.innerHTML = `
         <button type="button" class="vif-bubble-close" aria-label="Đóng lời chào">✕</button>
         <div>Chào bạn${greetingName}! 👋<br>Hôm nay mình cùng tập luyện thật sung nhé!</div>
@@ -420,7 +420,7 @@ export class MascotWidget {
       }
     } catch (err) {
       // Giữ lại nội dung câu hỏi vào input để người dùng không bị mất
-      input.value = '';
+      input.value = query;
 
       // Linh vật biểu cảm bối rối nhẹ
       this.headerMascot.setState('error', 2500);
@@ -429,7 +429,10 @@ export class MascotWidget {
       const errorMsg = document.createElement('div');
       errorMsg.className = 'vif-msg-bubble vif-msg-assistant';
       errorMsg.style.borderColor = '#ff8c8c';
-      errorMsg.innerHTML = `<p style="color:#c92a2a">⚠️ ${err.message || 'Không thể kết nối tới trợ lý.'}</p>`;
+      const p = document.createElement('p');
+      p.style.color = '#c92a2a';
+      p.textContent = `⚠️ ${err?.message || 'Không thể kết nối tới trợ lý.'}`;
+      errorMsg.appendChild(p);
       msgContainer.appendChild(errorMsg);
       msgContainer.scrollTop = msgContainer.scrollHeight;
     } finally {

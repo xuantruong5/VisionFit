@@ -12,6 +12,7 @@ export const MASCOT_EVENTS = {
   WORKOUT_PAUSE: 'mascot:workout_pause',
   WORKOUT_COMPLETE: 'mascot:workout_complete',
   DRINK_WATER: 'mascot:drink_water',
+  SET_WATER_REMINDER: 'mascot:set_water_reminder',
   STRETCH: 'mascot:stretch',
   ERROR: 'mascot:error',
 };
@@ -37,6 +38,10 @@ export function triggerWorkoutComplete() {
 
 export function triggerDrinkWater() {
   mascotEmitter.emit(MASCOT_EVENTS.SET_STATE, 'drinking', 6000);
+}
+
+export function triggerWaterReminderSetting(enabled: boolean, intervalHours: number = 2) {
+  mascotEmitter.emit(MASCOT_EVENTS.SET_WATER_REMINDER, { enabled, intervalHours });
 }
 
 export function triggerMascotError() {

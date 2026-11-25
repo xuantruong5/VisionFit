@@ -34,6 +34,7 @@ import { MascotChatModal } from './MascotChatModal';
 import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
 import { getMascotPeekingImage } from './mascotImages';
 import { getStoredSpecies, subscribeSpeciesChange } from './mascotStorage';
+import { getProgressionData, recordWorkoutSession } from './mascotProgression';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {
@@ -73,7 +74,7 @@ export interface MascotProps {
 
 export const FloatingMascotWidget: React.FC<MascotProps> = ({
   species,
-  stage = 'starter',
+  stage,
 }) => {
   return (
     <MascotErrorBoundary>
@@ -89,11 +90,13 @@ const EDGE_PEEK_THRESHOLD = 20; // Khoảng cách <= 20px tới mép viền sẽ
 
 const MascotInner: React.FC<MascotProps> = ({
   species,
-  stage = 'starter',
+  stage,
 }) => {
   const [screen, setScreen] = useState(Dimensions.get('window'));
+  const screenRef = useRef(screen);
+  const drinkRevertTimerRef = useRef<any>(null);
   const [currentSpecies, setCurrentSpecies] = useState<MascotSpecies>(species || 'bear');
-  const [currentStage, setCurrentStage] = useState<MascotStage>(stage);
+  const [currentStage, setCurrentStage] = useState<MascotStage>(stage || 'starter');
 
   // Trạng thái hoạt cảnh: Mặc định luôn ở trạng thái 'idle' nhún nhảy thể thao tại chỗ
   const [currentState, setCurrentState] = useState<MascotState>('idle');
@@ -170,7 +173,21 @@ const MascotInner: React.FC<MascotProps> = ({
   }, [species]);
 
   useEffect(() => {
-    setCurrentStage(stage);
+    if (stage) {
+      setCurrentStage(stage);
+      return;
+    }
+    let isMounted = true;
+    getProgressionData()
+      .then((prog) => {
+        if (isMounted && prog?.currentStage) {
+          setCurrentStage(prog.currentStage);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
   }, [stage]);
 
   // LẮNG NGHE SỰ KIỆN TỪ TOÀN BỘ ỨNG DỤNG
@@ -219,6 +236,13 @@ const MascotInner: React.FC<MascotProps> = ({
       'workout-session-finish',
       () => {
         handleSetState('celebrating', 8000);
+        recordWorkoutSession()
+          .then((updated) => {
+            if (updated?.currentStage) {
+              setCurrentStage(updated.currentStage);
+            }
+          })
+          .catch(() => {});
       }
     );
 
@@ -235,18 +259,30 @@ const MascotInner: React.FC<MascotProps> = ({
   // Lắng nghe thay đổi kích thước màn hình
   useEffect(() => {
     const sub = Dimensions.addEventListener('change', ({ window }: { window: any }) => {
+      screenRef.current = window;
       setScreen(window);
     });
-    return () => sub?.remove?.();
+    return () => {
+      sub?.remove?.();
+      if (drinkRevertTimerRef.current) {
+        clearTimeout(drinkRevertTimerRef.current);
+      }
+    };
   }, []);
 
-  // NHẮC UỐNG NƯỚC MỖI 2 TIẾNG (7200s) + KÍCH HOẠT NHANH PHÍM D
+  // NHẮC UỐNG NƯỚC MỖI 2 TIẾNG (7200s) - Có thể bật/tắt động từ AI Chatbot
+  const [waterReminderEnabled, setWaterReminderEnabled] = useState(true);
+  const [waterIntervalHours, setWaterIntervalHours] = useState(2);
+
   const triggerDrink = () => {
     setCurrentState('drinking');
     bubbleScale.setValue(0.3);
     Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
 
-    setTimeout(() => {
+    if (drinkRevertTimerRef.current) {
+      clearTimeout(drinkRevertTimerRef.current);
+    }
+    drinkRevertTimerRef.current = setTimeout(() => {
       Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => {
         setCurrentState('idle');
       });
@@ -254,8 +290,26 @@ const MascotInner: React.FC<MascotProps> = ({
   };
 
   useEffect(() => {
-    const twoHoursMs = 2 * 60 * 60 * 1000;
-    const drinkTimer = setInterval(triggerDrink, twoHoursMs);
+    const handleWaterSetting = (payload?: { enabled?: boolean; intervalHours?: number }) => {
+      if (typeof payload?.enabled === 'boolean') {
+        setWaterReminderEnabled(payload.enabled);
+      }
+      if (typeof payload?.intervalHours === 'number' && payload.intervalHours > 0) {
+        setWaterIntervalHours(payload.intervalHours);
+      }
+    };
+    mascotEmitter.on(MASCOT_EVENTS.SET_WATER_REMINDER, handleWaterSetting);
+    return () => {
+      mascotEmitter.off(MASCOT_EVENTS.SET_WATER_REMINDER, handleWaterSetting);
+    };
+  }, []);
+
+  useEffect(() => {
+    let drinkTimer: any = null;
+    if (waterReminderEnabled) {
+      const intervalMs = Math.max(1, waterIntervalHours) * 60 * 60 * 1000;
+      drinkTimer = setInterval(triggerDrink, intervalMs);
+    }
 
     const handleKeyDown = (e: any) => {
       if (e?.key === 'd' || e?.key === 'D') {
@@ -268,12 +322,12 @@ const MascotInner: React.FC<MascotProps> = ({
     }
 
     return () => {
-      clearInterval(drinkTimer);
+      if (drinkTimer) clearInterval(drinkTimer);
       if (globalWin && globalWin.removeEventListener) {
         globalWin.removeEventListener('keydown', handleKeyDown);
       }
     };
-  }, []);
+  }, [waterReminderEnabled, waterIntervalHours]);
 
   // HÀM HÚT VÀO MÉP VIỀN (EDGE SNAPPING -> DOCKED PEEKING)
   const dockToEdge = (side: 'left' | 'right') => {
@@ -282,8 +336,8 @@ const MascotInner: React.FC<MascotProps> = ({
     isPeekingRef.current = true;
     peekingSideRef.current = side;
 
-    // Khi núp mép, linh vật dính sát vào mép trái (0) hoặc mép phải (screen.width - WIDGET_WIDTH)
-    const targetX = side === 'left' ? 0 : screen.width - WIDGET_WIDTH;
+    // Khi núp mép, linh vật dính sát vào mép trái (0) hoặc mép phải (screenRef.current.width - WIDGET_WIDTH)
+    const targetX = side === 'left' ? 0 : screenRef.current.width - WIDGET_WIDTH;
 
     Animated.parallel([
       Animated.spring(panX, {
@@ -307,7 +361,7 @@ const MascotInner: React.FC<MascotProps> = ({
     isPeekingRef.current = false;
     peekingSideRef.current = null;
 
-    const targetX = side === 'left' ? 24 : screen.width - WIDGET_WIDTH - 24;
+    const targetX = side === 'left' ? 24 : screenRef.current.width - WIDGET_WIDTH - 24;
 
     Animated.parallel([
       Animated.spring(panX, {
@@ -373,9 +427,10 @@ const MascotInner: React.FC<MascotProps> = ({
           }
         }
 
+        const currentScreen = screenRef.current;
         const minX = 0;
-        const maxX = screen.width - WIDGET_WIDTH;
-        const maxTop = screen.height - WIDGET_HEIGHT - 30;
+        const maxX = currentScreen.width - WIDGET_WIDTH;
+        const maxTop = currentScreen.height - WIDGET_HEIGHT - 30;
 
         let nextX = dragOffsetRef.current.startX + deltaX;
         // Nếu vẫn đang giữ núp và chỉ di chuyển dọc theo viền
@@ -383,7 +438,7 @@ const MascotInner: React.FC<MascotProps> = ({
           if (peekingSideRef.current === 'left' && deltaX < 10) {
             nextX = 0;
           } else if (peekingSideRef.current === 'right' && deltaX > -10) {
-            nextX = screen.width - WIDGET_WIDTH;
+            nextX = currentScreen.width - WIDGET_WIDTH;
           }
         } else {
           nextX = Math.max(minX, Math.min(maxX, nextX));
@@ -421,7 +476,7 @@ const MascotInner: React.FC<MascotProps> = ({
 
         if (newX <= 18) {
           dockToEdge('left');
-        } else if (newX >= screen.width - WIDGET_WIDTH - 18) {
+        } else if (newX >= screenRef.current.width - WIDGET_WIDTH - 18) {
           dockToEdge('right');
         } else {
           // Thả ở giữa màn hình -> Giữ nguyên tư thế hoạt động bình thường
