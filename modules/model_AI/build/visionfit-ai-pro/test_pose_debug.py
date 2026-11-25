@@ -4,9 +4,9 @@ import numpy as np
 from pathlib import Path
 from pose_model import load_pose_model, infer_rgb
 
-DATA = "data/pose_real.npz"
-# MODEL = "models/pose_debug.pt"
-MODEL = "models/pose_v2.pt"
+DATA = "data/pose_debug_91.npz"
+# MODEL = "models/pose_debug_91.pt"
+MODEL = "models/pose_debug_91.pt"
 # OUT = Path("reports/pose_debug")
 OUT = Path("reports/pose_v2")
 OUT.mkdir(parents=True, exist_ok=True)

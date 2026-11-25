@@ -345,6 +345,502 @@ class SquatCounter:
         return {'reps': self.reps, 'state': self.state, 'angle': round(knee, 1), 'status': 'ok'}
 
 
+# =====================================================================
+# VISIONFIT AI BIOMECHANICAL SQUAT ANALYZER
+# =====================================================================
+
+FULL_SKELETON_CONNECTIONS = [
+    # Head & Face
+    (0, 1), (1, 2), (2, 3), (3, 7),
+    (0, 4), (4, 5), (5, 6), (6, 8),
+    (9, 10),
+    # Torso & Shoulders
+    (11, 12), (11, 23), (12, 24), (23, 24),
+    # Arms
+    (11, 13), (13, 15), (15, 17), (15, 19), (15, 21), (17, 19),
+    (12, 14), (14, 16), (16, 18), (16, 20), (16, 22), (18, 20),
+    # Legs & Feet
+    (23, 25), (25, 27), (27, 29), (29, 31), (27, 31),
+    (24, 26), (26, 28), (28, 30), (30, 32), (28, 32),
+]
+
+
+class BiomechanicalSquatAnalyzer:
+    """Squat form analyzer and rep counter implementing VisionFit AI Biomechanical standards:
+    - Supports BOTH Front View (chính diện: tracks hip descent dynamics & knee valgus)
+      and Side View (nghiêng/ngang: tracks knee flexion 65°-90° & torso lean 20°-35°).
+    - Automatically classifies GOOD_FORM vs BAD_FORM and outputs detailed corrective feedback.
+    """
+    def __init__(self, knee_bottom_max=95.0, torso_lean_max=45.0):
+        self.knee_bottom_max = knee_bottom_max
+        self.torso_lean_max = torso_lean_max
+        self.state = "STANDING"
+        self.completed_reps = 0
+        self.reps_data = []
+        self.current_rep = self._new_rep(0.0)
+        self.standing_hip_y = None
+        self.standing_leg_len = None
+        self.baseline_samples = []
+        self.view_mode = None
+
+    def _new_rep(self, sec):
+        return {
+            "rep_number": 0,
+            "start_time": round(sec, 2),
+            "bottom_time": 0.0,
+            "end_time": 0.0,
+            "min_knee_angle": 180.0,
+            "max_torso_lean_vert": 0.0,
+            "torso_angle_horiz": 90.0,
+            "bottom_hip_angle": 180.0,
+            "max_descent": 0.0,
+            "min_valgus_ratio": 1.0,
+            "status": "GOOD_FORM",
+            "feedback": "",
+            "correction_tip": "",
+            "view_mode": "side",
+        }
+
+    @staticmethod
+    def calc_angle_3pts(a, b, c):
+        ba = np.asarray(a) - np.asarray(b)
+        bc = np.asarray(c) - np.asarray(b)
+        norm = np.linalg.norm(ba) * np.linalg.norm(bc)
+        if norm < 1e-8:
+            return 180.0
+        cos_ang = np.clip(np.dot(ba, bc) / norm, -1.0, 1.0)
+        return float(np.degrees(np.arccos(cos_ang)))
+
+    @staticmethod
+    def calc_torso_lean(hip, shoulder):
+        dx = shoulder[0] - hip[0]
+        dy = shoulder[1] - hip[1]
+        angle_vert = float(np.degrees(np.arctan2(abs(dx), max(1e-6, -dy))))
+        angle_horiz = float(np.degrees(np.arctan2(max(1e-6, -dy), abs(dx) + 1e-6)))
+        return angle_vert, angle_horiz
+
+    def process_frame(self, pts_2d, sec=0.0):
+        """Processes 2D/3D landmarks of 1 frame and updates squat state machine.
+        pts_2d: (33, 2) or (33, 3) or (33, 4) array.
+        """
+        w_span = max(1.0, float(np.max(pts_2d[:, 0]) - np.min(pts_2d[:, 0])))
+        sh_w = abs(float(pts_2d[11, 0] - pts_2d[12, 0]))
+        hp_w = abs(float(pts_2d[23, 0] - pts_2d[24, 0]))
+        is_front_view = (sh_w > 0.10 * w_span) and (hp_w > 0.045 * w_span)
+
+        # Baseline calibration from standing frames
+        hip_y = float(pts_2d[23, 1] + pts_2d[24, 1]) / 2.0
+        ank_y = float(pts_2d[27, 1] + pts_2d[28, 1]) / 2.0
+        leg_len = max(10.0, ank_y - hip_y)
+
+        if len(self.baseline_samples) < 20:
+            self.baseline_samples.append((hip_y, leg_len, is_front_view))
+            self.standing_hip_y = float(np.median([s[0] for s in self.baseline_samples]))
+            self.standing_leg_len = float(np.median([s[1] for s in self.baseline_samples]))
+
+        if self.view_mode is None and len(self.baseline_samples) >= 10:
+            front_votes = sum(1 for s in self.baseline_samples if s[2])
+            self.view_mode = "front" if front_votes >= 5 else "side"
+
+        base_h = self.standing_hip_y if self.standing_hip_y else hip_y
+        base_l = self.standing_leg_len if self.standing_leg_len else leg_len
+        descent = (hip_y - base_h) / max(1.0, base_l)
+
+        knee_w = abs(float(pts_2d[25, 0] - pts_2d[26, 0]))
+        ank_w = abs(float(pts_2d[27, 0] - pts_2d[28, 0]))
+        valgus_ratio = knee_w / max(1.0, ank_w)
+
+        # Determine more visible side (right vs left)
+        r_vis = float(pts_2d[12, 3] + pts_2d[24, 3] + pts_2d[26, 3]) if pts_2d.shape[-1] >= 4 else 1.0
+        l_vis = float(pts_2d[11, 3] + pts_2d[23, 3] + pts_2d[25, 3]) if pts_2d.shape[-1] >= 4 else 1.0
+        s_idx, h_idx, k_idx, a_idx = (12, 24, 26, 28) if r_vis >= l_vis else (11, 23, 25, 27)
+
+        sh = pts_2d[s_idx, :2]
+        hip = pts_2d[h_idx, :2]
+        knee = pts_2d[k_idx, :2]
+        ank = pts_2d[a_idx, :2]
+
+        knee_ang = self.calc_angle_3pts(hip, knee, ank)
+        hip_ang = self.calc_angle_3pts(sh, hip, knee)
+        torso_vert, torso_horiz = self.calc_torso_lean(hip, sh)
+
+        effective_front = (self.view_mode == "front") if self.view_mode else is_front_view
+        feedback_event = None
+
+        if effective_front:
+            # Front View State Machine based on Hip Descent and Valgus Ratio
+            if self.state == "STANDING":
+                if descent > 0.18:
+                    self.state = "DESCENDING"
+                    self.current_rep["start_time"] = round(sec, 2)
+                    self.current_rep["max_descent"] = max(0.0, descent)
+                    self.current_rep["min_valgus_ratio"] = valgus_ratio
+                    self.current_rep["min_knee_angle"] = knee_ang
+                    self.current_rep["view_mode"] = "front"
+            elif self.state == "DESCENDING":
+                if descent > self.current_rep["max_descent"]:
+                    self.current_rep["max_descent"] = descent
+                if valgus_ratio < self.current_rep["min_valgus_ratio"]:
+                    self.current_rep["min_valgus_ratio"] = valgus_ratio
+                if knee_ang < self.current_rep["min_knee_angle"]:
+                    self.current_rep["min_knee_angle"] = knee_ang
+                if descent > 0.38 or (descent > 0.28 and descent < self.current_rep["max_descent"] - 0.05):
+                    self.state = "BOTTOM"
+                    self.current_rep["bottom_time"] = round(sec, 2)
+            elif self.state == "BOTTOM":
+                if descent > self.current_rep["max_descent"]:
+                    self.current_rep["max_descent"] = descent
+                if valgus_ratio < self.current_rep["min_valgus_ratio"]:
+                    self.current_rep["min_valgus_ratio"] = valgus_ratio
+                if knee_ang < self.current_rep["min_knee_angle"]:
+                    self.current_rep["min_knee_angle"] = knee_ang
+                if descent < self.current_rep["max_descent"] - 0.12:
+                    self.state = "ASCENDING"
+            elif self.state == "ASCENDING":
+                if descent < 0.14:
+                    self.completed_reps += 1
+                    self.current_rep["end_time"] = round(sec, 2)
+                    self.current_rep["rep_number"] = self.completed_reps
+                    max_d = self.current_rep["max_descent"]
+                    min_v = self.current_rep["min_valgus_ratio"]
+                    min_k = self.current_rep["min_knee_angle"]
+
+                    is_good = True
+                    reasons = []
+                    tips = []
+                    if min_v < 0.82:
+                        is_good = False
+                        reasons.append(f"Lỗi chụm đầu gối (Knee Valgus: {min_v*100:.0f}% < 85%)")
+                        tips.append("Mở rộng khớp gối hướng theo mũi chân khi hạ người, siết cơ mông nhỡ và cơ đùi ngoài.")
+                    if max_d < 0.30 and min_k > 115.0:
+                        is_good = False
+                        reasons.append(f"Lỗi chưa đủ độ sâu (Hạ hông mới đạt {max_d*100:.0f}% độ dài chân)")
+                        tips.append("Hạ hông sâu hơn sao cho đùi song song với mặt sàn.")
+
+                    if is_good:
+                        self.current_rep["status"] = "GOOD_FORM"
+                        self.current_rep["feedback"] = f"Form chuẩn (Độ sâu {max_d*100:.0f}%, Trục gối chuẩn)"
+                        feedback_event = {
+                            "text": f"REP {self.completed_reps}: FORM CHUAN",
+                            "color": (0, 255, 0),
+                            "status": "GOOD_FORM",
+                        }
+                    else:
+                        self.current_rep["status"] = "BAD_FORM"
+                        self.current_rep["feedback"] = "; ".join(reasons)
+                        self.current_rep["correction_tip"] = " | ".join(tips)
+                        feedback_event = {
+                            "text": f"REP {self.completed_reps}: " + reasons[0],
+                            "color": (0, 0, 255),
+                            "status": "BAD_FORM",
+                        }
+
+                    self.reps_data.append(dict(self.current_rep))
+                    self.current_rep = self._new_rep(sec)
+                    self.state = "STANDING"
+        else:
+            # Side View State Machine based on Knee Flexion Angle
+            if self.state == "STANDING":
+                if knee_ang < 140.0:
+                    self.state = "DESCENDING"
+                    self.current_rep["start_time"] = round(sec, 2)
+                    self.current_rep["min_knee_angle"] = knee_ang
+                    self.current_rep["max_torso_lean_vert"] = torso_vert
+                    self.current_rep["torso_angle_horiz"] = torso_horiz
+                    self.current_rep["view_mode"] = "side"
+            elif self.state == "DESCENDING":
+                if knee_ang < self.current_rep["min_knee_angle"]:
+                    self.current_rep["min_knee_angle"] = knee_ang
+                    self.current_rep["bottom_time"] = round(sec, 2)
+                    self.current_rep["bottom_hip_angle"] = hip_ang
+                    self.current_rep["torso_angle_horiz"] = torso_horiz
+                if torso_vert > self.current_rep["max_torso_lean_vert"]:
+                    self.current_rep["max_torso_lean_vert"] = torso_vert
+                if knee_ang <= 95.0 or (knee_ang < 110.0 and (knee_ang - self.current_rep["min_knee_angle"] > 10.0)):
+                    self.state = "BOTTOM"
+            elif self.state == "BOTTOM":
+                if knee_ang < self.current_rep["min_knee_angle"]:
+                    self.current_rep["min_knee_angle"] = knee_ang
+                    self.current_rep["bottom_time"] = round(sec, 2)
+                    self.current_rep["bottom_hip_angle"] = hip_ang
+                    self.current_rep["torso_angle_horiz"] = torso_horiz
+                if torso_vert > self.current_rep["max_torso_lean_vert"]:
+                    self.current_rep["max_torso_lean_vert"] = torso_vert
+                if knee_ang > self.current_rep["min_knee_angle"] + 15.0:
+                    self.state = "ASCENDING"
+            elif self.state == "ASCENDING":
+                if torso_vert > self.current_rep["max_torso_lean_vert"]:
+                    self.current_rep["max_torso_lean_vert"] = torso_vert
+                if knee_ang > 155.0:
+                    self.completed_reps += 1
+                    self.current_rep["end_time"] = round(sec, 2)
+                    self.current_rep["rep_number"] = self.completed_reps
+
+                    min_k = self.current_rep["min_knee_angle"]
+                    max_t = self.current_rep["max_torso_lean_vert"]
+
+                    is_good = True
+                    reasons = []
+                    tips = []
+
+                    if min_k > self.knee_bottom_max:
+                        is_good = False
+                        reasons.append(f"Lỗi chưa đủ độ sâu ({min_k:.1f}° > 95°)")
+                        tips.append("Hạ người sâu hơn để đạt góc gối 65°-90°.")
+                    if max_t > self.torso_lean_max:
+                        is_good = False
+                        reasons.append(f"Lỗi gập lưng quá mức ({max_t:.1f}° > 45°)")
+                        tips.append("Giữ ngực mở, siết cơ lõi bụng để lưng nghiêng trong khoảng 20°-35°.")
+
+                    if is_good:
+                        self.current_rep["status"] = "GOOD_FORM"
+                        self.current_rep["feedback"] = f"Form chuẩn (Gối {min_k:.1f}°, Thân {max_t:.1f}°)"
+                        feedback_event = {
+                            "text": f"REP {self.completed_reps}: FORM CHUAN",
+                            "color": (0, 255, 0),
+                            "status": "GOOD_FORM",
+                        }
+                    else:
+                        self.current_rep["status"] = "BAD_FORM"
+                        self.current_rep["feedback"] = "; ".join(reasons)
+                        self.current_rep["correction_tip"] = " | ".join(tips)
+                        feedback_event = {
+                            "text": f"REP {self.completed_reps}: " + reasons[0],
+                            "color": (0, 0, 255),
+                            "status": "BAD_FORM",
+                        }
+
+                    self.reps_data.append(dict(self.current_rep))
+                    self.current_rep = self._new_rep(sec)
+                    self.state = "STANDING"
+
+        return {
+            "state": self.state,
+            "knee_angle": round(knee_ang, 1),
+            "torso_lean": round(torso_vert, 1),
+            "completed_reps": self.completed_reps,
+            "feedback_event": feedback_event,
+            "active_side": "right" if r_vis >= l_vis else "left",
+            "valgus_ratio": round(valgus_ratio, 2),
+            "descent": round(descent, 2),
+            "is_front_view": effective_front,
+        }
+
+
+def analyze_squat_video(video_path, out_video_path=None, report_path=None, model_asset_path=None):
+    """Analyzes a squat video using MediaPipe Pose Landmarker + VisionFit AI Biomechanical Analyzer.
+    Renders full 33-landmark skeleton HUD if out_video_path is specified.
+    Returns complete report dict.
+    """
+    import cv2
+    import mediapipe as mp
+
+    video_path = Path(video_path)
+    if not video_path.is_file():
+        # Check in videos/squat/ then videos/
+        cand = Path(__file__).resolve().parent / "videos" / "squat" / video_path.name
+        if cand.is_file():
+            video_path = cand
+        else:
+            cand = Path(__file__).resolve().parent / "videos" / video_path.name
+            if cand.is_file():
+                video_path = cand
+    if not video_path.is_file():
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+
+    if out_video_path is None:
+        out_video_path = Path(__file__).resolve().parent / "reports" / "squat" / f"{video_path.stem}_annotated.mp4"
+    if report_path is None:
+        report_path = Path(__file__).resolve().parent / "reports" / "squat" / f"{video_path.stem}_report.json"
+
+    if model_asset_path is None:
+        model_asset_path = Path(__file__).resolve().parent / "models" / "mediapipe" / "pose_landmarker_full.task"
+    if not Path(model_asset_path).is_file():
+        raise FileNotFoundError(f"MediaPipe task file not found: {model_asset_path}")
+
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        raise IOError(f"Cannot open video: {video_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    writer = None
+    if out_video_path:
+        out_video_path = Path(out_video_path)
+        out_video_path.parent.mkdir(parents=True, exist_ok=True)
+        # Prefer avc1 (H.264) for native HTML5 browser playback, fallback to mp4v
+        fourcc = cv2.VideoWriter_fourcc(*"avc1")
+        writer = cv2.VideoWriter(str(out_video_path), fourcc, fps, (w, h))
+        if not writer.isOpened():
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            writer = cv2.VideoWriter(str(out_video_path), fourcc, fps, (w, h))
+
+    analyzer = BiomechanicalSquatAnalyzer()
+
+    options = mp.tasks.vision.PoseLandmarkerOptions(
+        base_options=mp.tasks.BaseOptions(model_asset_path=str(model_asset_path)),
+        running_mode=mp.tasks.vision.RunningMode.VIDEO,
+        num_poses=1,
+    )
+
+    feedback_display = {"text": "", "color": (0, 255, 0), "timer": 0}
+
+    with mp.tasks.vision.PoseLandmarker.create_from_options(options) as detector:
+        frame_idx = 0
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+
+            sec = frame_idx / fps
+            ts = int(round(frame_idx * 1000.0 / fps))
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            res = detector.detect_for_video(mp_img, ts)
+
+            current_knee = 180.0
+            current_torso = 0.0
+            step_res = {}
+
+            if res.pose_landmarks and len(res.pose_landmarks) > 0:
+                lm = res.pose_landmarks[0]
+                pts = np.zeros((33, 4), dtype=np.float32)
+                for i in range(33):
+                    p = lm[i]
+                    vis = float(p.visibility) if p.visibility is not None else 1.0
+                    pts[i] = [p.x * w, p.y * h, p.z * w if hasattr(p, 'z') and p.z is not None else 0.0, vis]
+
+                step_res = analyzer.process_frame(pts, sec=sec)
+                current_knee = step_res["knee_angle"]
+                current_torso = step_res["torso_lean"]
+
+                if step_res["feedback_event"]:
+                    feedback_display = {
+                        "text": step_res["feedback_event"]["text"],
+                        "color": step_res["feedback_event"]["color"],
+                        "timer": int(fps * 2.0),
+                    }
+
+                if writer:
+                    # Draw Full 33-Landmark Skeleton
+                    def to_px(idx):
+                        return int(round(pts[idx, 0])), int(round(pts[idx, 1]))
+
+                    # Draw connections
+                    for a, b in FULL_SKELETON_CONNECTIONS:
+                        if pts[a, 3] >= 0.4 and pts[b, 3] >= 0.4:
+                            cv2.line(frame, to_px(a), to_px(b), (0, 220, 255), 2, cv2.LINE_AA)
+
+                    # Highlight active squat side (Vai -> Hong -> Goi -> Co chan)
+                    side_color = (0, 255, 0) if current_knee <= 95.0 else (0, 165, 255)
+                    s_idx = 12 if step_res["active_side"] == "right" else 11
+                    h_idx = 24 if step_res["active_side"] == "right" else 23
+                    k_idx = 26 if step_res["active_side"] == "right" else 25
+                    a_idx = 28 if step_res["active_side"] == "right" else 27
+
+                    cv2.line(frame, to_px(s_idx), to_px(h_idx), (0, 255, 255), 4, cv2.LINE_AA)
+                    cv2.line(frame, to_px(h_idx), to_px(k_idx), side_color, 5, cv2.LINE_AA)
+                    cv2.line(frame, to_px(k_idx), to_px(a_idx), side_color, 5, cv2.LINE_AA)
+
+                    # Draw keypoint dots
+                    for j in range(33):
+                        if pts[j, 3] >= 0.4:
+                            radius = 5 if j in [s_idx, h_idx, k_idx, a_idx] else 3
+                            dot_color = (0, 0, 255) if j in [s_idx, h_idx, k_idx, a_idx] else (0, 255, 0)
+                            cv2.circle(frame, to_px(j), radius, dot_color, -1, cv2.LINE_AA)
+                            cv2.circle(frame, to_px(j), radius + 2, (255, 255, 255), 1, cv2.LINE_AA)
+
+            if writer:
+                # Top HUD Banner
+                cv2.rectangle(frame, (20, 20), (min(w - 20, 480), 160), (15, 15, 15), -1)
+                cv2.rectangle(frame, (20, 20), (min(w - 20, 480), 160), (0, 200, 255), 2)
+                cv2.putText(frame, "VISIONFIT AI - FORM ANALYSIS", (35, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 200, 255), 2, cv2.LINE_AA)
+
+                # State & Reps
+                state_color = (0, 255, 0) if analyzer.state == "BOTTOM" else (0, 200, 255)
+                cv2.putText(frame, f"REPS: {analyzer.completed_reps}", (35, 88), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (255, 255, 255), 3, cv2.LINE_AA)
+                cv2.putText(frame, f"PHA: {analyzer.state}", (230, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.7, state_color, 2, cv2.LINE_AA)
+
+                # Angle readouts / Biomechanical metrics
+                if step_res.get("is_front_view"):
+                    valgus_pct = int(round(step_res.get("valgus_ratio", 1.0) * 100))
+                    v_col = (0, 0, 255) if valgus_pct < 85 else (0, 255, 0)
+                    descent_pct = int(round(step_res.get("descent", 0.0) * 100))
+                    cv2.putText(frame, f"Truc goi: {valgus_pct}% (chuan: >=85%)", (35, 118), cv2.FONT_HERSHEY_SIMPLEX, 0.55, v_col, 2, cv2.LINE_AA)
+                    cv2.putText(frame, f"Do ha hong: {descent_pct}% (chuan: >=35%)", (35, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 255), 2, cv2.LINE_AA)
+                    if valgus_pct < 85 and analyzer.state in ["DESCENDING", "BOTTOM"]:
+                        cv2.putText(frame, "CANH BAO: CHUM DAU GOI (KNEE VALGUS)!", (35, 175), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2, cv2.LINE_AA)
+                else:
+                    k_col = (0, 255, 0) if (65.0 <= current_knee <= 95.0) else ((0, 165, 255) if current_knee > 95.0 else (0, 255, 255))
+                    t_col = (0, 0, 255) if current_torso > 45.0 else (0, 255, 0)
+                    cv2.putText(frame, f"Goc goi: {current_knee:.1f}° (chuan: 65°-90°)", (35, 118), cv2.FONT_HERSHEY_SIMPLEX, 0.55, k_col, 2, cv2.LINE_AA)
+                    cv2.putText(frame, f"Goc than: {current_torso:.1f}° (chuan: 20°-35°)", (35, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.55, t_col, 2, cv2.LINE_AA)
+
+                # Completed feedback banner
+                if feedback_display["timer"] > 0:
+                    banner_top = max(180, h - 140)
+                    cv2.rectangle(frame, (30, banner_top), (w - 30, banner_top + 60), (10, 10, 10), -1)
+                    cv2.rectangle(frame, (30, banner_top), (w - 30, banner_top + 60), feedback_display["color"], 3)
+                    cv2.putText(frame, feedback_display["text"], (45, banner_top + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.68, feedback_display["color"], 2, cv2.LINE_AA)
+                    feedback_display["timer"] -= 1
+
+                writer.write(frame)
+            frame_idx += 1
+
+    cap.release()
+    if writer:
+        writer.release()
+
+    report = {
+        "video": video_path.name,
+        "ai_engine": "VisionFit AI Biomechanical Engine",
+        "total_reps_counted": analyzer.completed_reps,
+        "good_reps_count": sum(1 for r in analyzer.reps_data if r["status"] == "GOOD_FORM"),
+        "bad_reps_count": sum(1 for r in analyzer.reps_data if r["status"] == "BAD_FORM"),
+        "reps_detail": analyzer.reps_data,
+        "thresholds_applied": {
+            "knee_angle_bottom_ideal": "65°-90°",
+            "knee_angle_bottom_max_acceptable": "95°",
+            "torso_lean_bottom_ideal": "20°-35°",
+            "torso_lean_bottom_max_acceptable": "45°",
+        },
+    }
+
+    if report_path:
+        report_path = Path(report_path)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    return report
+
+
+def squat_cli(args):
+    video_path = Path(args.video)
+    if not video_path.is_file():
+        cand = Path(__file__).resolve().parent / "videos" / "squat" / video_path.name
+        if cand.is_file():
+            video_path = cand
+    out_video = args.out or f"reports/squat/{video_path.stem}_annotated.mp4"
+    report_file = args.report or f"reports/squat/{video_path.stem}_report.json"
+    print(f"[VisionFit Core] Analyzing Squat video: {video_path}")
+    print(f"Applying VisionFit AI Biomechanical Standards...")
+    report = analyze_squat_video(video_path, out_video_path=out_video, report_path=report_file)
+    print("\n" + "=" * 55)
+    print(f"  ANALYSIS SUMMARY: {video_path.name}")
+    print("=" * 55)
+    print(f"Total Reps Counted : {report['total_reps_counted']}")
+    print(f"Good Reps          : {report['good_reps_count']}")
+    print(f"Bad Reps           : {report['bad_reps_count']}")
+    for r in report["reps_detail"]:
+        print(f"  Rep {r['rep_number']:02d} ({r['start_time']}s - {r['end_time']}s): [{r['status']}] {r['feedback']}")
+    print("=" * 55)
+    print(f"Saved annotated video: {out_video}")
+    print(f"Saved JSON report    : {report_file}")
+
+
 def main():
     p = argparse.ArgumentParser(description='VisionFit local AI: keypoints -> action')
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -374,8 +870,12 @@ def main():
     q.add_argument('--model', required=True)
     q.add_argument('--input', required=True, help='.npy (T,33,4) or .npz with landmarks')
     q.add_argument('--threshold', type=float, default=0.65, help='Below threshold -> unknown')
+    sq = sub.add_parser('squat', help='Analyze Squat video form and count reps with VisionFit AI')
+    sq.add_argument('--video', required=True, help='Path to squat video file')
+    sq.add_argument('--out', help='Path to output annotated video (optional)')
+    sq.add_argument('--report', help='Path to output JSON report (optional)')
     args = p.parse_args()
-    {'demo': demo, 'train': train, 'predict': predict}[args.cmd](args)
+    {'demo': demo, 'train': train, 'predict': predict, 'squat': squat_cli}[args.cmd](args)
 
 
 if __name__ == '__main__':

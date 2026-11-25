@@ -246,6 +246,79 @@
               </div>
             </div>
           </div>
+
+          <!-- VisionFit AI Exercise Analysis Card -->
+          <div class="card" id="aiAnalysisCard" style="border: 1px solid rgba(6, 182, 212, 0.4); background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);">
+            <div class="card-header">
+              <h3 class="card-title">
+                <span class="card-title-icon">⚡</span> Phân Tích Kỹ Thuật Động Tác (VisionFit AI)
+              </h3>
+              <span class="badge-tag cyan" id="aiAnalysisStatusBadge">AI Model</span>
+            </div>
+            
+            <!-- Default placeholder when no video uploaded yet -->
+            <div id="aiAnalysisPlaceholder" style="font-size: 0.85rem; color: var(--text-muted); padding: 16px 12px; text-align: center; border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px;">
+              <div style="font-size: 1.3rem; margin-bottom: 6px;">📁</div>
+              <b>Chưa có video được tải lên</b><br>
+              <span style="font-size: 0.8rem; color: #94a3b8; display: inline-block; margin-top: 6px; line-height: 1.4;">
+                Nhấp nút <b>"📁 Tải Video lên"</b> ở thanh công cụ bên cạnh để AI tiến hành phân tích chuyển động, đánh giá form và đếm rep.
+              </span>
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="aiAnalysisLoading" style="display: none; padding: 18px 12px; text-align: center;">
+              <div style="font-size: 1.05rem; color: var(--accent-cyan); font-weight: 600; margin-bottom: 6px;">
+                ⏳ AI đang phân tích video từng frame...
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);" id="aiAnalysisLoadingFileName">
+                Đang trích xuất 33 khớp xương và đánh giá góc chuyển động...
+              </div>
+            </div>
+
+            <!-- Analysis Result Box -->
+            <div id="aiAnalysisResultBox" style="display: none; padding-top: 4px;">
+              <div style="font-size: 0.82rem; color: var(--accent-cyan); margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                <span>🎬 Video: <b id="aiAnalysisVideoName" style="color: #fff;"></b></span>
+                <span class="badge-tag green" id="aiAnalysisDoneBadge">AI Đã Phân Tích</span>
+              </div>
+
+              <!-- 3 Stat Badges -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.08);">
+                  <div style="font-size: 0.72rem; color: var(--text-muted);">TỔNG REPS</div>
+                  <div id="aiTotalReps" style="font-size: 1.4rem; font-weight: 700; color: #fff;">0</div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.35);">
+                  <div style="font-size: 0.72rem; color: #10b981;">FORM CHUẨN</div>
+                  <div id="aiGoodReps" style="font-size: 1.4rem; font-weight: 700; color: #10b981;">0</div>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.15); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(239, 68, 68, 0.35);">
+                  <div style="font-size: 0.72rem; color: #ef4444;">CẦN SỬA</div>
+                  <div id="aiBadReps" style="font-size: 1.4rem; font-weight: 700; color: #ef4444;">0</div>
+                </div>
+              </div>
+
+              <!-- Detailed Reps List from AI -->
+              <div style="font-size: 0.8rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">
+                📋 Đánh giá chi tiết từng Rep của AI:
+              </div>
+              <div id="aiRepsList" style="max-height: 200px; overflow-y: auto; font-size: 0.8rem; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+              </div>
+
+              <!-- Output video player embedded directly -->
+              <div id="aiOutputVideoBox" style="display: none; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 6px;">
+                  📹 Video thành phẩm (Đã gắn Khung Xương 33 Khớp & HUD):
+                </div>
+                <video id="aiOutputVideoPlayer" controls playsinline preload="auto" style="width: 100%; border-radius: 6px; max-height: 280px; background: #000; border: 1px solid rgba(255,255,255,0.1);"></video>
+                <div style="margin-top: 6px; text-align: right;">
+                  <a id="aiOutputVideoLink" href="#" target="_blank" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline;">
+                    Mở video trong tab mới ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

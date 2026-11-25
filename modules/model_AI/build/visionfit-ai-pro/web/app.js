@@ -620,8 +620,12 @@ function onPoseResults(results) {
     document.getElementById('fpsBadge').innerText = `${state.fps} FPS`;
   }
 
-  canvasElement.width = videoElement.videoWidth || 640;
-  canvasElement.height = videoElement.videoHeight || 480;
+  const vw = videoElement.videoWidth || 640;
+  const vh = videoElement.videoHeight || 480;
+  if (canvasElement.width !== vw || canvasElement.height !== vh) {
+    canvasElement.width = vw;
+    canvasElement.height = vh;
+  }
   canvasCtx.save();
   canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
@@ -690,7 +694,7 @@ function drawCyberSkeleton(landmarks, width, height, analysis) {
     const p1 = landmarks[i];
     const p2 = landmarks[j];
     if (!p1 || !p2) continue;
-    if ((p1.visibility || 1) < 0.35 || (p2.visibility || 1) < 0.35) continue;
+    if ((p1.visibility || 1) < 0.45 || (p2.visibility || 1) < 0.45) continue;
 
     canvasCtx.beginPath();
     canvasCtx.moveTo(p1.x * width, p1.y * height);
@@ -706,7 +710,7 @@ function drawCyberSkeleton(landmarks, width, height, analysis) {
     if (POSE_HAND_NODES.includes(i)) continue; // SKIP 3 extra points in palm
 
     const p = landmarks[i];
-    if (!p || (p.visibility || 1) < 0.35) continue;
+    if (!p || (p.visibility || 1) < 0.45) continue;
     const x = p.x * width;
     const y = p.y * height;
 
@@ -1786,6 +1790,16 @@ function setupEventListeners() {
   });
 
   // Video file upload - Automatically turns off mirror for uploaded videos
+  videoElement.addEventListener('loadedmetadata', () => {
+    const vw = videoElement.videoWidth;
+    const vh = videoElement.videoHeight;
+    const box = document.getElementById('viewportBox');
+    if (vw && vh && box) {
+      const ratio = Math.max(0.5625, Math.min(1.7778, vw / vh));
+      box.style.aspectRatio = `${ratio}`;
+    }
+  });
+
   document.getElementById('videoFileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1795,15 +1809,52 @@ function setupEventListeners() {
     // Turn off mirror for uploaded video files so it displays in original orientation
     toggleMirror(false);
 
+    // Reset previous frames and rep counters for new video
+    state.recentFrames = [];
+    state.totalReps = 0;
+    for (const k in state.counters) {
+      state.counters[k].reps = 0;
+      state.counters[k].state = 'up';
+    }
+    document.getElementById('statReps').innerText = '0';
+    document.getElementById('hudRepCount').innerText = '0';
+
     const url = URL.createObjectURL(file);
     videoElement.srcObject = null;
     videoElement.src = url;
-    videoElement.loop = true;
+    videoElement.loop = false;
+    videoElement.onloadedmetadata = () => {
+      const vw = videoElement.videoWidth;
+      const vh = videoElement.videoHeight;
+      const box = document.getElementById('viewportBox');
+      if (vw && vh && box) {
+        box.style.aspectRatio = `${vw} / ${vh}`;
+      }
+    };
+    videoElement.onended = () => {
+      state.cameraRunning = false;
+      stopTimer();
+      const totalRepsEl = document.getElementById('aiTotalReps');
+      if (totalRepsEl && totalRepsEl.innerText !== '0') {
+        const exactReps = parseInt(totalRepsEl.innerText, 10);
+        const statRepsEl = document.getElementById('statReps');
+        const hudRepCountEl = document.getElementById('hudRepCount');
+        if (statRepsEl) statRepsEl.innerText = exactReps;
+        if (hudRepCountEl) hudRepCountEl.innerText = exactReps;
+      }
+      const phasePill = document.getElementById('hudPhasePill');
+      if (phasePill) phasePill.innerText = 'HOÀN THÀNH VIDEO';
+      const actionName = document.getElementById('hudActionName');
+      if (actionName) actionName.innerText = 'KẾT THÚC';
+    };
     videoElement.play();
     state.cameraRunning = true;
     document.getElementById('sourceBadge').innerText = 'FILE VIDEO';
     runVideoPolling();
     startTimer();
+
+    // Trigger VisionFit AI full video analysis and rep evaluation in the empty space
+    analyzeUploadedVideoWithAI(file);
   });
 
   // Data Collection
@@ -1987,6 +2038,144 @@ async function loadAnalysisDatasetAndTrain(forceRetrain = false) {
   // Auto-train the neural network model
   if (logBox) logBox.innerText += '🚀 Đang tự động huấn luyện TensorFlow.js Neural Network trên 120 mẫu động tác...\n';
   await startTfTraining();
+}
+
+// ==========================================
+// VISIONFIT AI EXERCISE ANALYSIS ENGINE
+// ==========================================
+async function analyzeUploadedVideoWithAI(file) {
+  const placeholder = document.getElementById('aiAnalysisPlaceholder');
+  const loading = document.getElementById('aiAnalysisLoading');
+  const loadingFileName = document.getElementById('aiAnalysisLoadingFileName');
+  const resultBox = document.getElementById('aiAnalysisResultBox');
+  const videoNameEl = document.getElementById('aiAnalysisVideoName');
+  const totalRepsEl = document.getElementById('aiTotalReps');
+  const goodRepsEl = document.getElementById('aiGoodReps');
+  const badRepsEl = document.getElementById('aiBadReps');
+  const repsListEl = document.getElementById('aiRepsList');
+  const outputVideoBox = document.getElementById('aiOutputVideoBox');
+  const outputVideoPlayer = document.getElementById('aiOutputVideoPlayer');
+  const outputLink = document.getElementById('aiOutputVideoLink');
+
+  if (!placeholder || !loading || !resultBox) return;
+
+  // Show loading state
+  placeholder.style.display = 'none';
+  resultBox.style.display = 'none';
+  loading.style.display = 'block';
+  if (loadingFileName) {
+    loadingFileName.innerText = `Đang tải lên và phân tích ${file.name} bằng AI...`;
+  }
+
+  try {
+    const uploadUrl = `/api/upload_and_analyze?filename=${encodeURIComponent(file.name)}`;
+    const resp = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Server returned error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const r = data.report;
+
+    if (videoNameEl) videoNameEl.innerText = file.name;
+    if (totalRepsEl) totalRepsEl.innerText = r.total_reps_counted || 0;
+    if (goodRepsEl) goodRepsEl.innerText = r.good_reps_count || 0;
+    if (badRepsEl) badRepsEl.innerText = r.bad_reps_count || 0;
+
+    // Update top stat grid as well
+    const statRepsEl = document.getElementById('statReps');
+    if (statRepsEl) statRepsEl.innerText = r.total_reps_counted || 0;
+    const hudRepCountEl = document.getElementById('hudRepCount');
+    if (hudRepCountEl) hudRepCountEl.innerText = r.total_reps_counted || 0;
+
+    const statFormScore = document.getElementById('statFormScore');
+    const statFormEval = document.getElementById('statFormEval');
+    if (statFormScore && r.total_reps_counted > 0) {
+      const pct = Math.round((r.good_reps_count / r.total_reps_counted) * 100);
+      statFormScore.innerText = `${pct}%`;
+      if (statFormEval) {
+        statFormEval.innerText = pct >= 80 ? 'Form rất tốt' : (pct >= 50 ? 'Cần cải thiện' : 'Form chưa chuẩn');
+      }
+    }
+
+    // Render detailed reps list
+    if (repsListEl) {
+      repsListEl.innerHTML = '';
+      if (r.reps_detail && r.reps_detail.length > 0) {
+        r.reps_detail.forEach(rep => {
+          const isGood = rep.status === 'GOOD_FORM';
+          const item = document.createElement('div');
+          item.style.padding = '10px 12px';
+          item.style.borderRadius = '8px';
+          item.style.marginBottom = '8px';
+          item.style.background = isGood ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+          item.style.border = `1px solid ${isGood ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)'}`;
+
+          let metricStr = '';
+          if (rep.view_mode === 'front') {
+            const descentPct = Math.round((rep.max_descent || 0) * 100);
+            const valgusPct = Math.round((rep.min_valgus_ratio || 1) * 100);
+            metricStr = `Góc quay: <b>Chính diện (Front)</b> | Hạ hông: <b>${descentPct}%</b> | Trục gối: <b>${valgusPct}%</b> (chuẩn ≥85%)`;
+          } else {
+            metricStr = `Góc quay: <b>Ngang (Side)</b> | Gối min: <b>${rep.min_knee_angle ? rep.min_knee_angle.toFixed(1) : 0}°</b> (chuẩn 65°-90°) | Thân max: <b>${rep.max_torso_lean_vert ? rep.max_torso_lean_vert.toFixed(1) : 0}°</b> (chuẩn 20°-35°)`;
+          }
+
+          item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <b style="color: ${isGood ? '#10b981' : '#ef4444'}; font-size: 0.95rem;">Rep ${rep.rep_number} (${rep.start_time}s - ${rep.end_time}s)</b>
+              <span style="font-weight: 700; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: ${isGood ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${isGood ? '#10b981' : '#ef4444'}; border: 1px solid ${isGood ? '#10b981' : '#ef4444'};">
+                ${isGood ? '✔ FORM CHUẨN' : '⚠ CẦN SỬA'}
+              </span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+              ${metricStr}
+            </div>
+            <div style="font-size: 0.8rem; font-weight: 600; color: ${isGood ? '#10b981' : '#f87171'}; margin-bottom: 4px;">
+              ${isGood ? '✔ ' + rep.feedback : '❌ ' + rep.feedback}
+            </div>
+            ${rep.correction_tip ? `
+              <div style="font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 6px 10px; border-radius: 6px; border-left: 3px solid #38bdf8; margin-top: 5px;">
+                💡 <b>Lời khuyên sửa lỗi từ AI:</b> ${rep.correction_tip}
+              </div>
+            ` : ''}
+          `;
+          repsListEl.appendChild(item);
+        });
+      } else {
+        repsListEl.innerHTML = '<div style="color: var(--text-muted); padding: 8px;">Không phát hiện rep hoàn chỉnh nào trong video.</div>';
+      }
+    }
+
+    if (data.annotated_video) {
+      if (outputVideoPlayer) {
+        outputVideoPlayer.src = data.annotated_video;
+        outputVideoPlayer.load();
+      }
+      if (outputLink) {
+        outputLink.href = data.annotated_video;
+      }
+      if (outputVideoBox) {
+        outputVideoBox.style.display = 'block';
+      }
+    }
+
+    loading.style.display = 'none';
+    resultBox.style.display = 'block';
+  } catch (err) {
+    console.error('Error analyzing uploaded video with AI:', err);
+    loading.style.display = 'none';
+    placeholder.style.display = 'block';
+    placeholder.innerHTML = `
+      <div style="color: #ef4444; font-weight: 600; margin-bottom: 4px;">⚠ Phân tích video tự động gặp lỗi</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">${err.message}</div>
+      <div style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 6px;">AI phân tích thời gian thực trên khung xem video vẫn tiếp tục hoạt động.</div>
+    `;
+  }
 }
 
 // App Entrypoint

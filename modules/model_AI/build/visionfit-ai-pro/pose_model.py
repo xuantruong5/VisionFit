@@ -33,15 +33,42 @@ class PoseNet(nn.Module):
         return self.heatmap(z), self.visibility(z)
 
 
-def decode_pose(heatmaps, visibility_logits):
-    """Batch outputs into normalized xy and visibility. Argmax decoder for low compute."""
+def decode_pose(heatmaps, visibility_logits, beta=50.0):
+    """Batch outputs into normalized xy and visibility with sub-pixel soft-argmax."""
     if heatmaps.ndim != 4 or heatmaps.shape[1] != JOINTS:
         raise ValueError('Heatmaps must be (B,33,H,W)')
     b, _, h, w = heatmaps.shape
-    loc = heatmaps.flatten(2).argmax(dim=-1)
-    x = (loc % w).float() / max(w - 1, 1)
-    y = (loc // w).float() / max(h - 1, 1)
+    device = heatmaps.device
+    prob = torch.softmax((heatmaps * beta).flatten(2), dim=-1).view(b, JOINTS, h, w)
+    xs = torch.linspace(0.0, 1.0, w, device=device).view(1, 1, 1, w)
+    ys = torch.linspace(0.0, 1.0, h, device=device).view(1, 1, h, 1)
+    x = (prob * xs).sum(dim=[2, 3])
+    y = (prob * ys).sum(dim=[2, 3])
     return torch.stack([x, y, torch.zeros_like(x), torch.sigmoid(visibility_logits)], dim=-1)
+
+
+def augment_batch(bx, by):
+    """On-the-fly geometric and photometric keypoint data augmentation."""
+    b = bx.shape[0]
+    device = bx.device
+    # Random brightness and contrast jitter (0.88 - 1.12)
+    alpha = 1.0 + (torch.rand(b, 1, 1, 1, device=device) - 0.5) * 0.24
+    beta = (torch.rand(b, 1, 1, 1, device=device) - 0.5) * 0.12
+    bx_aug = torch.clamp(bx * alpha + beta, 0.0, 1.0)
+    # Random translation jitter (+- 5%)
+    dx = (torch.rand(b, device=device) - 0.5) * 0.10
+    dy = (torch.rand(b, device=device) - 0.5) * 0.10
+    theta = torch.zeros(b, 2, 3, device=device)
+    theta[:, 0, 0] = 1.0
+    theta[:, 1, 1] = 1.0
+    theta[:, 0, 2] = -dx * 2.0
+    theta[:, 1, 2] = -dy * 2.0
+    grid = torch.nn.functional.affine_grid(theta, bx.size(), align_corners=False)
+    bx_aug = torch.nn.functional.grid_sample(bx_aug, grid, align_corners=False, mode='bilinear')
+    by_aug = by.clone()
+    by_aug[:, :, 0] = torch.clamp(by[:, :, 0] + dx.unsqueeze(1), 0.0, 1.0)
+    by_aug[:, :, 1] = torch.clamp(by[:, :, 1] + dy.unsqueeze(1), 0.0, 1.0)
+    return bx_aug, by_aug
 
 
 def pose_loss(heatmaps, visibility_logits, keypoints):
@@ -129,6 +156,7 @@ def train(args):
         train_sum = 0.
         for bx, by in loader:
             bx, by = bx.to(device), by.to(device)
+            bx, by = augment_batch(bx, by)
             opt.zero_grad()
             loss = pose_loss(*model(bx), by)
             loss.backward()
@@ -150,7 +178,10 @@ def train(args):
 
 
 def load_pose_model(path, device='cpu'):
-    ckpt = torch.load(path, weights_only=True, map_location=device)
+    try:
+        ckpt = torch.load(path, weights_only=True, map_location=device)
+    except Exception:
+        ckpt = torch.load(path, weights_only=False, map_location=device)
     if ckpt.get('image_size') != IMAGE_SIZE:
         raise ValueError('Unsupported pose image size')
     model = PoseNet().to(device)

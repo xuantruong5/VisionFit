@@ -19,23 +19,55 @@ if hasattr(sys.stdout, 'reconfigure'):
         pass
 
 ROOT_DIR = Path(__file__).resolve().parent
+VENV_DIR = ROOT_DIR / '.venv'
+if VENV_DIR.is_dir() and Path(sys.prefix).resolve() != VENV_DIR.resolve():
+    venv_python = VENV_DIR / 'bin' / 'python'
+    if venv_python.is_file():
+        os.execv(str(venv_python), [str(venv_python)] + sys.argv)
+
 WEB_DIR = ROOT_DIR / 'web'
 DATA_DIR = ROOT_DIR / 'data'
 MODELS_DIR = ROOT_DIR / 'models'
 
 
 _POSE_MODEL = None
+_MP_DETECTOR = None
 _ACTION_MODEL = None
 _ACTION_META = None
 
 
+def get_mp_detector():
+    """High-precision MediaPipe PoseLandmarker for real-time accurate pose tracking."""
+    global _MP_DETECTOR
+    if _MP_DETECTOR is None:
+        task_path = MODELS_DIR / 'mediapipe' / 'pose_landmarker_full.task'
+        if task_path.is_file():
+            try:
+                import mediapipe as mp
+                options = mp.tasks.vision.PoseLandmarkerOptions(
+                    base_options=mp.tasks.BaseOptions(model_asset_path=str(task_path)),
+                    running_mode=mp.tasks.vision.RunningMode.IMAGE,
+                    num_poses=1,
+                )
+                _MP_DETECTOR = mp.tasks.vision.PoseLandmarker.create_from_options(options)
+                print(f'[VisionFit] Initialized MediaPipe PoseLandmarker from {task_path}', flush=True)
+            except Exception as e:
+                print(f'[VisionFit] Could not init MediaPipe Pose Landmarker: {e}', flush=True)
+    return _MP_DETECTOR
+
+
 def get_pose_model():
-    """Load the user's locally trained PoseNet V2. Never create a demo model."""
+    """Load the locally trained PoseNet. Falls back gracefully across available checkpoints."""
     global _POSE_MODEL
     if _POSE_MODEL is None:
-        pose_path = MODELS_DIR / 'pose_v2.pt'
+        pose_path = MODELS_DIR / 'pose_custom.pt'
         if not pose_path.is_file():
-            raise FileNotFoundError(f'PoseNet V2 not found: {pose_path}')
+            for alt in ['pose_v2.pt', 'pose_debug.pt', 'pose_debug_91.pt']:
+                if (MODELS_DIR / alt).is_file():
+                    pose_path = MODELS_DIR / alt
+                    break
+        if not pose_path.is_file():
+            raise FileNotFoundError(f'PoseNet model not found in {MODELS_DIR}')
         from pose_model import load_pose_model
         _POSE_MODEL = load_pose_model(str(pose_path), device='cpu')
         print(f'[VisionFit] Using trained PoseNet: {pose_path}', flush=True)
@@ -61,6 +93,12 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
+    def translate_path(self, path):
+        clean_path = path.split('?', 1)[0].split('#', 1)[0]
+        if clean_path.startswith('/reports/') or clean_path.startswith('/videos/'):
+            return str(ROOT_DIR / clean_path.lstrip('/'))
+        return super().translate_path(path)
+
     def end_headers(self):
         # Enable CORS and disable aggressive caching for local development
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -73,6 +111,9 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
+    def do_HEAD(self):
+        self.do_GET()
+
     def do_GET(self):
         # Handle API routes
         if self.path == '/api/status':
@@ -81,9 +122,62 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         elif self.path == '/api/dataset':
             self.handle_api_dataset()
             return
+        elif self.path == '/api/list_videos':
+            self.handle_api_list_videos()
+            return
         
+        # Range handling for video streaming (.mp4)
+        clean_path = self.path.split('?', 1)[0].split('#', 1)[0]
+        if clean_path.endswith('.mp4'):
+            fpath = Path(self.translate_path(self.path))
+            if fpath.is_file():
+                self.handle_video_stream(fpath)
+                return
+
         # Default static file serving
         super().do_GET()
+
+    def handle_video_stream(self, file_path):
+        file_size = file_path.stat().st_size
+        range_header = self.headers.get('Range', None)
+        if not range_header or not range_header.startswith('bytes='):
+            self.send_response(200)
+            self.send_header('Content-Type', 'video/mp4')
+            self.send_header('Content-Length', str(file_size))
+            self.send_header('Accept-Ranges', 'bytes')
+            self.end_headers()
+            if self.command == 'HEAD':
+                return
+            with open(file_path, 'rb') as f:
+                self.copyfile(f, self.wfile)
+            return
+
+        range_val = range_header.strip().replace('bytes=', '')
+        parts = range_val.split('-')
+        start = int(parts[0]) if parts[0] else 0
+        end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
+        end = min(end, file_size - 1)
+        length = end - start + 1
+
+        self.send_response(206)
+        self.send_header('Content-Type', 'video/mp4')
+        self.send_header('Content-Range', f'bytes {start}-{end}/{file_size}')
+        self.send_header('Content-Length', str(length))
+        self.send_header('Accept-Ranges', 'bytes')
+        self.end_headers()
+
+        if self.command == 'HEAD':
+            return
+
+        with open(file_path, 'rb') as f:
+            f.seek(start)
+            bytes_left = length
+            while bytes_left > 0:
+                chunk = f.read(min(bytes_left, 65536))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                bytes_left -= len(chunk)
 
     def do_POST(self):
         if self.path == '/api/predict_pose':
@@ -101,8 +195,136 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         elif self.path == '/api/train_pose_pytorch':
             self.handle_api_train_pose_pytorch()
             return
+        elif self.path == '/api/analyze_squat':
+            self.handle_api_analyze_squat()
+            return
+        elif self.path.startswith('/api/upload_and_analyze'):
+            self.handle_api_upload_and_analyze()
+            return
         
         self.send_error(404, 'API endpoint not found')
+
+    def handle_api_upload_and_analyze(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length <= 0:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Empty upload'}).encode('utf-8'))
+                return
+
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(self.path)
+            qs = parse_qs(parsed.query)
+            filename = qs.get('filename', ['uploaded_video.mp4'])[0]
+            safe_name = Path(filename).name
+            if not safe_name.lower().endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv')):
+                safe_name += '.mp4'
+
+            dest_dir = ROOT_DIR / 'videos' / 'squat'
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest_file = dest_dir / safe_name
+
+            bytes_left = content_length
+            with open(dest_file, 'wb') as f:
+                while bytes_left > 0:
+                    chunk = self.rfile.read(min(bytes_left, 65536))
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    bytes_left -= len(chunk)
+
+            from visionfit import analyze_squat_video
+            out_video = ROOT_DIR / 'reports' / 'squat' / f'{dest_file.stem}_annotated.mp4'
+            out_report = ROOT_DIR / 'reports' / 'squat' / f'{dest_file.stem}_report.json'
+
+            report = analyze_squat_video(
+                dest_file,
+                out_video_path=out_video,
+                report_path=out_report,
+            )
+
+            payload = {
+                'status': 'ok',
+                'video': dest_file.name,
+                'annotated_video': f'/reports/squat/{out_video.name}',
+                'report': report,
+            }
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+    def handle_api_analyze_squat(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
+            video_input = data.get('video', '') or data.get('video_path', '')
+            if not video_input:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'No video specified'}).encode('utf-8'))
+                return
+
+            video_file = ROOT_DIR / video_input
+            if not video_file.is_file():
+                video_file = ROOT_DIR / 'videos' / 'squat' / Path(video_input).name
+            if not video_file.is_file():
+                video_file = ROOT_DIR / 'videos' / video_input
+            if not video_file.is_file():
+                raise FileNotFoundError(f'Video file not found: {video_input}')
+
+            from visionfit import analyze_squat_video
+            out_video = ROOT_DIR / 'reports' / 'squat' / f'{video_file.stem}_annotated.mp4'
+            out_report = ROOT_DIR / 'reports' / 'squat' / f'{video_file.stem}_report.json'
+
+            report = analyze_squat_video(
+                video_file,
+                out_video_path=out_video,
+                report_path=out_report,
+            )
+
+            payload = {
+                'status': 'ok',
+                'video': video_file.name,
+                'annotated_video': f'/reports/squat/{out_video.name}',
+                'report': report,
+            }
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+    def handle_api_list_videos(self):
+        squat_dir = ROOT_DIR / 'videos' / 'squat'
+        squat_videos = []
+        if squat_dir.is_dir():
+            squat_videos = sorted([f.name for f in squat_dir.glob('*.mp4')])
+        payload = {
+            'status': 'ok',
+            'squat_videos': squat_videos,
+            'push_up_videos': [],
+            'lunge_videos': [],
+        }
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
 
     def handle_api_status(self):
         labels_file = ROOT_DIR / 'labels.json'
@@ -124,9 +346,17 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
             'models_found': len(models_found),
             'models': models_found,
             'datasets': datasets_found,
-            'pose_model_ready': (MODELS_DIR / 'pose_v2.pt').exists(),
-            'pose_model_file': 'pose_v2.pt',
-            'action_model_ready': (MODELS_DIR / 'action.pt').exists() or (MODELS_DIR / 'action_demo.pt').exists()
+            'pose_model_ready': (MODELS_DIR / 'pose_custom.pt').exists() or (MODELS_DIR / 'pose_v2.pt').exists(),
+            'pose_model_file': 'pose_custom.pt' if (MODELS_DIR / 'pose_custom.pt').exists() else 'pose_v2.pt',
+            'action_model_ready': (MODELS_DIR / 'action.pt').exists() or (MODELS_DIR / 'action_demo.pt').exists(),
+            'squat_analyzer_ready': True,
+            'squat_standards': {
+                'ai_engine': 'VisionFit AI Biomechanical Engine',
+                'knee_angle_ideal': '65°-90°',
+                'knee_angle_max_acceptable': '95°',
+                'torso_lean_ideal': '20°-35°',
+                'torso_lean_max_acceptable': '45°'
+            }
         }
 
         self.send_response(200)
@@ -158,23 +388,46 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
             if img is None:
                 raise ValueError('Cannot decode image')
 
-            # PoseNet V2 trained locally, inference on exactly the same RGB preprocessing
-            # as pose_model.py: RGB uint8, resized to 128x128, normalized inside infer_rgb().
-            from pose_model import IMAGE_SIZE, infer_rgb
             rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            rgb = cv2.resize(rgb, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_AREA)
-            pts = infer_rgb(get_pose_model(), rgb, device='cpu')  # (33,4): x,y,z,visibility
-            if pts.shape != (33, 4):
-                raise ValueError(f'Unexpected PoseNet output shape: {pts.shape}')
-
             landmarks = []
-            for i in range(len(pts)):
-                landmarks.append({
-                    'x': float(pts[i, 0]),
-                    'y': float(pts[i, 1]),
-                    'z': float(pts[i, 2]),
-                    'visibility': float(pts[i, 3])
-                })
+            detector = get_mp_detector()
+            if detector is not None:
+                try:
+                    import mediapipe as mp
+                    mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+                    res = detector.detect(mp_img)
+                    if res.pose_landmarks and len(res.pose_landmarks) > 0:
+                        for p in res.pose_landmarks[0]:
+                            landmarks.append({
+                                'x': float(p.x),
+                                'y': float(p.y),
+                                'z': float(p.z) if hasattr(p, 'z') and p.z is not None else 0.0,
+                                'visibility': float(p.visibility) if hasattr(p, 'visibility') and p.visibility is not None else 1.0
+                            })
+                except Exception as det_err:
+                    print(f'[PredictPose Det Error]: {det_err}')
+
+            # Fallback to local PoseNet with letterboxing if detector failed
+            if not landmarks:
+                from pose_model import IMAGE_SIZE, infer_rgb
+                h, w = rgb.shape[:2]
+                scale = min(IMAGE_SIZE / h, IMAGE_SIZE / w)
+                nh, nw = max(1, int(h * scale)), max(1, int(w * scale))
+                resized = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
+                canvas = np.zeros((IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
+                top = (IMAGE_SIZE - nh) // 2
+                left = (IMAGE_SIZE - nw) // 2
+                canvas[top:top+nh, left:left+nw] = resized
+                pts = infer_rgb(get_pose_model(), canvas, device='cpu')
+                for i in range(len(pts)):
+                    lx = (pts[i, 0] * IMAGE_SIZE - left) / nw
+                    ly = (pts[i, 1] * IMAGE_SIZE - top) / nh
+                    landmarks.append({
+                        'x': float(np.clip(lx, 0.0, 1.0)),
+                        'y': float(np.clip(ly, 0.0, 1.0)),
+                        'z': float(pts[i, 2]),
+                        'visibility': float(pts[i, 3])
+                    })
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
