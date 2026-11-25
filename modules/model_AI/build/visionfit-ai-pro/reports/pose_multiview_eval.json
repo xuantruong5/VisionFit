@@ -3,76 +3,76 @@
   "architecture": "VisionFit ResBlock CNN PoseNet (100% Local Self-Trained)",
   "total_eval_frames": 3575,
   "overall": {
-    "pck_05": 23.36,
-    "pck_10": 64.92,
-    "mean_error_pixels_128": 2.14
+    "pck_05": 57.4,
+    "pck_10": 85.79,
+    "mean_error_pixels_128": 2.5
   },
   "per_subject": {
     "person10_squat": {
       "frames": 1101,
-      "pck_05": 27.55,
-      "pck_10": 73.2,
-      "mean_error_pixels": 2.52
+      "pck_05": 69.43,
+      "pck_10": 94.08,
+      "mean_error_pixels": 1.28
     },
     "person11_squat": {
       "frames": 351,
-      "pck_05": 16.32,
-      "pck_10": 52.02,
-      "mean_error_pixels": 2.32
+      "pck_05": 59.84,
+      "pck_10": 95.07,
+      "mean_error_pixels": 0.95
     },
     "person12_squat": {
       "frames": 695,
-      "pck_05": 13.15,
-      "pck_10": 50.23,
-      "mean_error_pixels": 1.77
+      "pck_05": 50.62,
+      "pck_10": 82.94,
+      "mean_error_pixels": 1.09
     },
     "person13_squat": {
       "frames": 193,
-      "pck_05": 20.74,
-      "pck_10": 58.63,
-      "mean_error_pixels": 2.19
+      "pck_05": 44.29,
+      "pck_10": 76.46,
+      "mean_error_pixels": 1.7
     },
     "person14_squat": {
       "frames": 203,
-      "pck_05": 31.59,
-      "pck_10": 74.26,
-      "mean_error_pixels": 2.42
+      "pck_05": 0.22,
+      "pck_10": 1.43,
+      "mean_error_pixels": 24.64
     },
     "squatnuw": {
       "frames": 236,
-      "pck_05": 18.62,
-      "pck_10": 55.26,
-      "mean_error_pixels": 1.95
+      "pck_05": 66.22,
+      "pck_10": 94.03,
+      "mean_error_pixels": 0.85
     },
     "squatnuw_flip": {
       "frames": 236,
-      "pck_05": 15.45,
-      "pck_10": 49.88,
-      "mean_error_pixels": 2.06
+      "pck_05": 34.22,
+      "pck_10": 87.28,
+      "mean_error_pixels": 1.27
     },
     "squatsai": {
       "frames": 152,
-      "pck_05": 30.7,
-      "pck_10": 77.91,
-      "mean_error_pixels": 1.85
+      "pck_05": 75.82,
+      "pck_10": 97.27,
+      "mean_error_pixels": 0.96
     },
     "squatsai_flip": {
       "frames": 152,
-      "pck_05": 34.07,
-      "pck_10": 83.45,
-      "mean_error_pixels": 1.73
+      "pck_05": 72.71,
+      "pck_10": 96.41,
+      "mean_error_pixels": 0.98
     },
     "suqtanam": {
       "frames": 128,
-      "pck_05": 38.85,
-      "pck_10": 87.52,
-      "mean_error_pixels": 1.76
+      "pck_05": 62.1,
+      "pck_10": 96.5,
+      "mean_error_pixels": 1.38
     },
     "suqtanam_flip": {
       "frames": 128,
-      "pck_05": 39.49,
-      "pck_10": 89.02,
-      "mean_error_pixels": 1.72
+      "pck_05": 76.09,
+      "pck_10": 97.3,
+      "mean_error_pixels": 1.01
     }
   }
 }

@@ -32,9 +32,12 @@ class ResBlock(nn.Module):
 
 
 class BodyPoseNet(nn.Module):
-    """Deep ResNet-based 33-landmark body pose regressor (4.18M params).
+    """Deep ResNet-based 33-landmark body pose regressor with Dual-Head:
+    - Shared Backbone: 4-stage Residual CNN (features)
+    - Coordinate Head: 66 outputs (33 joints x [x, y]) in [0, 1]
+    - Visibility Head: 33 outputs (visibility logits for each joint)
     Input: (B, 3, 128, 128)
-    Output: (B, 66) — 33 joints x (x, y) normalized [0, 1]
+    Output: coords (B, 66), vis_logits (B, 33)
     """
     def __init__(self):
         super().__init__()
@@ -55,7 +58,7 @@ class BodyPoseNet(nn.Module):
             ResBlock(256),
             nn.AdaptiveAvgPool2d((4, 4)),
         )
-        self.regressor = nn.Sequential(
+        self.coord_head = nn.Sequential(
             nn.Flatten(),
             nn.Linear(256 * 4 * 4, 512),
             nn.ReLU(inplace=True),
@@ -66,10 +69,19 @@ class BodyPoseNet(nn.Module):
             nn.Linear(256, 66),
             nn.Sigmoid(),
         )
+        self.vis_head = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256 * 4 * 4, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.20),
+            nn.Linear(256, 33),
+        )
 
     def forward(self, x):
         feat = self.features(x)
-        return self.regressor(feat)
+        coords = self.coord_head(feat)
+        vis_logits = self.vis_head(feat)
+        return coords, vis_logits
 
 
 class PoseNet(nn.Module):
@@ -240,10 +252,20 @@ def load_pose_model(path, device='cpu'):
         ckpt = torch.load(path, weights_only=False, map_location=device)
     state = ckpt.get('state', ckpt.get('state_dict', {}))
     
-    # Check if checkpoint is BodyPoseNet (ResBlock CNN 4.18M params)
-    if ckpt.get('architecture') == 'BodyPoseNet' or 'regressor.1.weight' in state:
+    # Check if checkpoint is BodyPoseNet (ResBlock CNN 4.18M+ params)
+    if ckpt.get('architecture') == 'BodyPoseNet' or 'coord_head.1.weight' in state or 'regressor.1.weight' in state:
         model = BodyPoseNet().to(device)
-        model.load_state_dict(state)
+        if 'regressor.1.weight' in state and 'coord_head.1.weight' not in state:
+            # Map legacy single-regressor checkpoint to coord_head
+            mapped_state = {}
+            for k, v in state.items():
+                if k.startswith('regressor.'):
+                    mapped_state[k.replace('regressor.', 'coord_head.')] = v
+                else:
+                    mapped_state[k] = v
+            model.load_state_dict(mapped_state, strict=False)
+        else:
+            model.load_state_dict(state, strict=False)
         model.eval()
         setattr(model, '_model_type', 'body_posenet')
         return model
@@ -256,17 +278,25 @@ def load_pose_model(path, device='cpu'):
 
 
 def infer_rgb(model, rgb_image, device='cpu'):
-    """Input RGB uint8 (128,128,3); output (33,4): x, y, z=0, visibility."""
+    """Input RGB uint8 (128,128,3); output (33,4): x, y, z=0, visibility [0, 1]."""
     image = np.asarray(rgb_image)
     if image.shape != (IMAGE_SIZE, IMAGE_SIZE, 3) or image.dtype != np.uint8:
         raise ValueError('RGB image must be uint8 (128,128,3)')
     inp = torch.from_numpy(image.copy()).permute(2, 0, 1)[None].to(device=device, dtype=torch.float32) / 255.0
     with torch.no_grad():
         if getattr(model, '_model_type', None) == 'body_posenet':
-            pts2d = model(inp).view(33, 2).cpu().numpy().astype('float32')
+            out = model(inp)
+            if isinstance(out, tuple):
+                coords, vis_logits = out
+                pts2d = coords.view(33, 2).cpu().numpy().astype('float32')
+                vis = torch.sigmoid(vis_logits).view(33).cpu().numpy().astype('float32')
+            else:
+                pts2d = out.view(33, 2).cpu().numpy().astype('float32')
+                vis = np.ones(33, dtype=np.float32)
             pts4 = np.zeros((33, 4), dtype=np.float32)
             pts4[:, :2] = np.clip(pts2d, 0.0, 1.0)
-            pts4[:, 3] = 1.0
+            pts4[:, 2] = 0.0  # 2D pose model by design
+            pts4[:, 3] = np.clip(vis, 0.0, 1.0)
             return pts4
         return decode_pose(*model(inp))[0].cpu().numpy().astype('float32')
 
