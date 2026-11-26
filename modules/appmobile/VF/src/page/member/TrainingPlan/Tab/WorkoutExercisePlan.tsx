@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, StatusBar, Alert } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
-import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
+import { PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
+
 const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const navHook = useNavigation<any>();
   const navigation = propNav || navHook;
@@ -13,392 +13,501 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
   const [loading, setLoading] = useState(true);
 
   const [isReversed, setIsReversed] = useState(false);
+  const [progressByDay, setProgressByDay] = useState<Record<number, number>>({});
+  const [tongNgayDaHoanThanh, setTongNgayDaHoanThanh] = useState(0);
+  const [tongNgayTap, setTongNgayTap] = useState(0);
+
+  // check quyền đăng ký gói chưa 
+  const [checkingDayId, setCheckingDayId] = useState<number | null>(null);
+
   const getProgramExercises = async () => {
+    setLoading(true);
     try {
       const res = await apiFitlife.get("/client/list-program-exercises");
       if (!res.data.success || !Array.isArray(res.data.data)) {
         setProgram(null);
         setApiData([]);
+        setProgressByDay({});
         return;
       }
-      setApiData(res.data.data);
-      if (res.data.data.length > 0) {
-        setProgram(res.data.data[0]);
-      }
+      const days = res.data.data;
+      setApiData(days);
+      setProgram(days.length > 0 ? days[0] : null);
+
+      const initialProgress: Record<number, number> = {};
+      days.forEach((day: any) => {
+        const id = Number(day.id_chuong_trinh_bai_tap);
+        if (id > 0) {
+          initialProgress[id] = 0;
+        }
+      });
+      setProgressByDay(initialProgress);
+
+      getProgressByDay(days).catch((error) => {
+        console.log("Lỗi tải tiến độ:", error);
+      });
     } catch (error) {
+      console.log("Lỗi lấy chương trình tập:", error);
       setProgram(null);
       setApiData([]);
+      setProgressByDay({});
     } finally {
       setLoading(false);
     }
   };
+
+  const getCompletedDays = async () => {
+    try {
+      const res = await apiFitlife.get("/client/huan-luyen-tiep-theo");
+      if (res.data?.success) {
+        const data = res.data.data;
+        setTongNgayDaHoanThanh(Number(data?.tong_ngay_da_hoan_thanh ?? 0));
+        setTongNgayTap(Number(data?.tong_ngay_tap ?? 0));
+      }
+    } catch (error: any) {
+      console.log("Lỗi lấy tiến độ huấn luyện:", error.response?.data ?? error.message);
+    }
+  };
+
+  const getProgressByDay = async (days: any[]) => {
+    try {
+      if (days.length === 0) {
+        setProgressByDay({});
+        return;
+      }
+      const ids = [
+        ...new Set(
+          days
+            .map((day: any) => Number(day.id_chuong_trinh_bai_tap))
+            .filter((id: number) => Number.isFinite(id) && id > 0)
+        ),
+      ];
+
+      if (ids.length === 0) {
+        setProgressByDay({});
+        return;
+      }
+
+      const res = await apiFitlife.get("/client/buoi-tap/phan-tram-hoan-thanh-tat-ca", {
+        params: { ids },
+      });
+
+      if (!res.data.success || !Array.isArray(res.data.data)) {
+        return;
+      }
+
+      const progressMap: Record<number, number> = {};
+      ids.forEach((id) => {
+        progressMap[id] = 0;
+      });
+
+      res.data.data.forEach((item: any) => {
+        const id = Number(item.id_chuong_trinh_bai_tap);
+        const percent = Number(item.phan_tram_hoan_thanh ?? 0);
+        if (Number.isFinite(id) && id > 0) {
+          progressMap[id] = Math.max(0, Math.min(100, percent));
+        }
+      });
+
+      setProgressByDay(progressMap);
+    } catch (error: any) {
+      console.log("Lỗi lấy phần trăm hoàn thành:", error.response?.data ?? error.message);
+    }
+  };
+
+
+  const handlePressDay = async (day: any) => {
+    if (Number(day.tinh_trang) !== 1) return;
+
+    try {
+      setCheckingDayId(Number(day.id_chuong_trinh_bai_tap));
+
+      // 1. Nếu ngày được chọn đã hoàn thành thì tìm ngày chưa hoàn thành tiếp theo
+      let targetDay = day;
+
+      const progressSelected =
+        Number(progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0);
+
+      if (progressSelected >= 100) {
+        const nextDay = apiData.find((item: any) => {
+          const sameRegistration =
+            Number(item.id_dang_ky_chuong_trinh) ===
+            Number(day.id_dang_ky_chuong_trinh);
+
+          const isUnlocked = Number(item.tinh_trang) === 1;
+
+          const progress =
+            Number(progressByDay[Number(item.id_chuong_trinh_bai_tap)] ?? 0);
+
+          return sameRegistration && isUnlocked && progress < 100;
+        });
+
+        if (!nextDay) {
+          Alert.alert(
+            "Thông báo",
+            "Bạn đã hoàn thành tất cả các ngày tập có thể thực hiện trong chương trình này."
+          );
+          return;
+        }
+
+        targetDay = nextDay;
+      }
+
+      // 2. Lấy ID của ngày thực tế sẽ tập
+      const idDangKy = Number(targetDay.id_dang_ky_chuong_trinh);
+      const idChuongTrinhBaiTap = Number(
+        targetDay.id_chuong_trinh_bai_tap
+      );
+
+      if (!idDangKy || !idChuongTrinhBaiTap) {
+        Alert.alert(
+          "Thông báo",
+          "Không tìm thấy thông tin đăng ký chương trình."
+        );
+        return;
+      }
+
+      // 3. Tạo params TRƯỚC khi hiển thị cảnh báo
+      const params = {
+        ngayThu: targetDay.ngay_thu,
+        dayType: targetDay.ten_ngay_tap,
+        thoi_gian_phut: targetDay.thoi_gian_phut,
+        id_chuong_trinh_bai_tap: targetDay.id_chuong_trinh_bai_tap,
+        id_dang_ky_chuong_trinh: targetDay.id_dang_ky_chuong_trinh,
+        id_chuong_trinh: targetDay.id_chuong_trinh,
+        id_lich_tap: targetDay.id_lich_tap,
+      };
+
+      // 4. Kiểm tra quyền tập với đúng ngày sẽ tập
+      const res = await apiFitlife.post("/client/check-quyen-tap", {
+        id_dang_ky_chuong_trinh: idDangKy,
+        id_chuong_trinh_bai_tap: idChuongTrinhBaiTap,
+      });
+
+      const data = res.data?.data;
+
+      // Không được phép tập
+      if (!data?.duoc_phep_tap) {
+        Alert.alert(
+          "Yêu cầu đăng ký gói tập",
+          res.data?.message || "Bạn cần đăng ký gói tập để tiếp tục.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.navigate("WorkoutSelectionScreen" as never);
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Có khuyến cáo tập luyện
+      if (data?.can_khuyen_cao) {
+        Alert.alert(
+          "Khuyến cáo tập luyện",
+          data?.noi_dung_khuyen_cao ||
+          "Bạn đã hoàn thành một chương trình tập luyện khác hôm nay. Hãy dành thời gian cho cơ thể phục hồi.",
+          [
+            {
+              text: "Quay lại",
+              style: "cancel",
+            },
+            {
+              text: "Vẫn tiếp tục",
+              onPress: () => {
+                navigation.navigate("ExercisePage", params);
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Được phép tập
+      navigation.navigate("ExercisePage", params);
+
+    } catch (error: any) {
+      console.log(
+        "Lỗi kiểm tra quyền tập:",
+        error.response?.data ?? error.message
+      );
+
+      Alert.alert(
+        "Thông báo",
+        error.response?.data?.message ||
+        "Không thể kiểm tra quyền tập. Vui lòng thử lại."
+      );
+    } finally {
+      setCheckingDayId(null);
+    }
+  };
+
+
   useFocusEffect(
     useCallback(() => {
       getProgramExercises();
+      getCompletedDays();
     }, [])
   );
 
-  const handleDayPress = (day: any) => {
-    if (day.isLocked) return;
-    navigation.navigate("ExercisePage", {
-      dayLabel: day.dayLabel,
-      dayType: day.type,
-      ngayThu: day.ngayThu,
-      id_chuong_trinh_bai_tap: day.id,
-      id_dang_ky_chuong_trinh:
-        program?.id_dang_ky_chuong_trinh,
-      id_chuong_trinh: program?.id_chuong_trinh,
-    });
-  };
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView
-        style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* ================= TOP BANNER ================= */}
-        <ImageBackground source={{ uri: program?.anh_dai_dien }} style={styles.bannerContainer} imageStyle={styles.bannerImage} >
-          {/* Gradient Overlay for better text readability */}
-          <LinearGradient
-            colors={["rgba(4, 38, 48, 0.4)", "rgba(4, 38, 48, 0.9)"]}
-            style={styles.bannerOverlay}
-          >
-            <View style={styles.bannerContent}>
-              <Text style={styles.bannerTitle}>{program?.ten_chuong_trinh ?? "Chương trình tập"}</Text>
-
-              <View style={styles.bannerInfoRow}>
-                <Ionicons name="home" size={wp("3.5%")} color="#FFFFFF" />
-                <Text style={styles.bannerInfoText}> Tại nhà </Text>
-                <View style={styles.starsContainer}>
-                  <Ionicons name="star-outline" size={wp("3%")} color="#FFFFFF" />
-                  <Ionicons name="star-outline" size={wp("3%")} color="#FFFFFF" />
-                  <Ionicons name="star-outline" size={wp("3%")} color="#FFFFFF" />
-                </View>
-                <Text style={styles.bannerInfoText}> {" "}{program?.ten_cap_do ?? "Chưa xác định"}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
+        {/* Tóm tắt chương trình */}
+        <View style={styles.summaryCard}>
+          <Image source={{ uri: program?.anh_dai_dien || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80", }}
+            style={styles.summaryImage} resizeMode="cover" />
+          <View style={styles.flex}>
+            <Text style={styles.summaryTitle} numberOfLines={2}>
+              {program?.ten_chuong_trinh ?? "Chương trình tập"}
+            </Text>
+            <Text style={styles.summaryMeta}>
+              {program?.so_ngay ?? 0} ngày · {program?.so_buoi_moi_tuan ?? 0} buổi/tuần
+            </Text>
+            <View style={styles.chipRow}>
+              <View style={[styles.chip, { backgroundColor: PASTEL.tealSoft }]}>
+                <Text style={[styles.chipText, { color: PASTEL.teal }]} numberOfLines={1}>
+                  {program?.ten_noi_tap ?? "Chưa xác định"}
+                </Text>
               </View>
-
-              <Text style={styles.bannerHighlightText}>
-                {program?.so_ngay ?? 0} ngày tập luyện
-                {" "}({program?.so_buoi_moi_tuan ?? 0} buổi mỗi tuần)
-              </Text>
-
-              <Text style={styles.bannerInfoText}>
-                Tập luyện hoàn tất: 0
-              </Text>
+              <View style={[styles.chip, { backgroundColor: PASTEL.butter }]}>
+                <Text style={[styles.chipText, { color: PASTEL.butterInk }]} numberOfLines={1}>
+                  {program?.ten_cap_do ?? "Trung cấp"}
+                </Text>
+              </View>
             </View>
+          </View>
+          <View style={styles.summaryCount}>
+            <Text style={styles.summaryCountValue}>{tongNgayDaHoanThanh}</Text>
+            <Text style={styles.summaryCountTotal}>/{tongNgayTap}</Text>
+          </View>
+        </View>
 
-            <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
-              <Ionicons name="share-social" size={wp("4.5%")} color="#FFFFFF" />
-            </TouchableOpacity>
-          </LinearGradient>
-        </ImageBackground>
-
-        {/* ================= LIST HEADER ================= */}
+        {/* Tiêu đề danh sách */}
         <View style={styles.listHeaderRow}>
           <Text style={styles.listHeaderTitle}>Ngày tập luyện</Text>
-          <TouchableOpacity onPress={() => setIsReversed(prev => !prev)}>
-            <Ionicons name="swap-vertical" size={wp("5.5%")} color="#18BEC3" />
+          <TouchableOpacity style={styles.sortButton} onPress={() => setIsReversed((prev) => !prev)} activeOpacity={0.7}>
+            <Ionicons name="swap-vertical" size={15} color={PASTEL.ink} />
+            <Text style={styles.sortButtonText}>{isReversed ? "Giảm dần" : "Tăng dần"}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ================= LIST OF DAYS ================= */}
-        <View style={styles.daysListContainer}>
-          {loading ? (
-            <Text style={{ textAlign: "center", color: "#18BEC3" }}>
-              Đang tải ngày tập...
-            </Text>
-          ) : apiData.length === 0 ? (
-            <Text style={{ textAlign: "center", color: "#5B7C84" }}>
-              Chưa có ngày tập luyện.
-            </Text>
-          ) : (
-            (isReversed ? [...apiData].reverse() : apiData).map((day: any) => {
-              const isUnlocked = Number(day.tinh_trang) === 1;
-              return (
-                <TouchableOpacity
-                  key={day.id_chuong_trinh_bai_tap}
-                  style={styles.dayCard}
-                  activeOpacity={isUnlocked ? 0.7 : 1}
-                  onPress={() => {
-                    if (!isUnlocked) return;
-                    const params = {
-                      ngayThu: day.ngay_thu,
-                      dayType: day.ten_ngay_tap,
-                      thoi_gian_phut: day.thoi_gian_phut,
-                      id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
-                      id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
-                      id_chuong_trinh: day.id_chuong_trinh,
-                    };
-                    console.log("===== DỮ LIỆU GỬI SANG ExercisePage =====");
-                    console.log("Ngày tập:", day);
-                    console.log("Params:", JSON.stringify(params, null, 2));
-                    navigation.navigate("ExercisePage", params);
-                  }}
-                >
-                  {/* Chỉ icon thay đổi theo trạng thái */}
-                  <View style={styles.dayCardIconWrapper}>
-                    {isUnlocked ? (
-                      <View style={styles.progressCircle}>
-                        <Text style={styles.progressText}>0%</Text>
-                      </View>
-                    ) : (
-                      <View style={styles.lockCircle}>
-                        <Ionicons name="lock-closed-outline" size={wp("6%")} color="#FF9EA7"style={{ opacity: 0.5 }} />
-                      </View>
-                    )}
-                  </View>
+        {/* Danh sách ngày tập */}
+        {loading ? (
+          <View style={styles.stateBox}>
+            <ActivityIndicator size="large" color={PASTEL.teal} />
+            <Text style={styles.stateText}>Đang tải lịch tập...</Text>
+          </View>
+        ) : apiData.length === 0 ? (
+          <View style={styles.stateBox}>
+            <Text style={styles.stateText}>Chưa có ngày tập luyện nào.</Text>
+          </View>
+        ) : (
+          (isReversed ? [...apiData].reverse() : apiData).map((day: any) => {
+            const isUnlocked = Number(day.tinh_trang) === 1;
+            const progress = progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0;
+            const ring =
+              progress >= 100
+                ? { bg: PASTEL.mint, ink: PASTEL.mintInk }
+                : progress > 0
+                  ? { bg: PASTEL.butter, ink: PASTEL.butterInk }
+                  : { bg: PASTEL.tealSoft, ink: PASTEL.teal };
 
-                  {/* Nội dung card giữ nguyên độ sáng */}
-                  <View style={styles.dayCardInfo}>
-                    <Text style={styles.dayLabelText}>
-                      {day.ngay_thu} ngày tập luyện
-                    </Text>
-                    <Text style={styles.dayTypeText}>
-                      {day.ten_ngay_tap}
-                    </Text>
+            return (
+              <TouchableOpacity key={day.id_chuong_trinh_bai_tap}
+                style={[styles.dayCard, !isUnlocked && styles.dayCardLocked]} activeOpacity={isUnlocked ? 0.8 : 1} onPress={() => handlePressDay(day)}
+                disabled={!isUnlocked || checkingDayId !== null} >
+                {isUnlocked ? (
+                  <View style={[styles.statusCircle, { backgroundColor: ring.bg }]}>
+                    <Text style={[styles.statusText, { color: ring.ink }]}>{progress}%</Text>
                   </View>
-                  {isUnlocked && (
-                    <View style={{ width: wp("3%"), height: wp("3%"), borderRadius: wp("1.5%"), backgroundColor: "#18BEC3",}}/>
-                  )}
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
+                ) : (
+                  <View style={[styles.statusCircle, styles.statusCircleLocked]}>
+                    <Ionicons name="lock-closed-outline" size={18} color={PASTEL.inkMuted} />
+                  </View>
+                )}
+
+                <View style={styles.flex}>
+                  <Text style={styles.dayLabel}>Ngày thứ {day.ngay_thu}</Text>
+                  <Text style={styles.dayTitle} numberOfLines={1}>
+                    {day.ten_ngay_tap}
+                  </Text>
+                  <Text style={styles.dayMeta}>
+                    Buổi {day.buoi_thuc_te} · {day.thu_tap || "Thứ 2"} · {day.ngay_tap_hien_thi || "Hôm nay"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
+export default WorkoutExercisePlan;
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    marginTop: 10
+    backgroundColor: PASTEL.background,
   },
-
-  // Main Header Top
-  mainHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: wp("5%"),
-    paddingTop: hp("2%"),
-    backgroundColor: "#FFFFFF",
-  },
-  headerIconBtn: {
-    width: wp("11%"),
-    height: wp("11%"),
-    borderRadius: wp("5.5%"),
-    borderWidth: 1,
-    borderColor: "#EEF3F5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mainHeaderTitle: {
-    fontSize: wp("5%"),
-    fontWeight: "700",
-    color: "#111C1E",
-  },
-
-  // Tabs Header (Trang tổng quan | Kế hoạch tập | Chế độ ăn)
-  tabsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    marginTop: hp("3%"),
-    marginBottom: hp("2%"),
-    paddingHorizontal: wp("2%"),
-  },
-  tabText: {
-    color: "#5B7C84",
-    fontSize: wp("3.8%"),
-    fontWeight: "500",
-  },
-  activeTabWrapper: {
-    backgroundColor: "#3A5C70", // Dark blue-gray
-    paddingVertical: hp("1%"),
-    paddingHorizontal: wp("5%"),
-    borderRadius: wp("5%"),
-  },
-  activeTabText: {
-    color: "#FFFFFF",
-    fontSize: wp("3.8%"),
-    fontWeight: "600",
-  },
-
-  // Scroll Content
-  scrollView: {
+  flex: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: wp("4%"),
-    paddingBottom: hp("15%"),
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
   },
 
-  // Banner
-  bannerContainer: {
-    width: "100%",
-    height: hp("22%"),
-    borderRadius: wp("4%"),
-    overflow: "hidden",
-    marginBottom: hp("3%"),
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-  },
-  bannerImage: {
-    resizeMode: "cover",
-  },
-  bannerOverlay: {
-    flex: 1,
-    padding: wp("5%"),
-    justifyContent: "center",
-  },
-  bannerContent: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  bannerTitle: {
-    color: "#FFFFFF",
-    fontSize: wp("5.5%"),
-    fontWeight: "700",
-    marginBottom: hp("1%"),
-  },
-  bannerInfoRow: {
+  // TÓM TẮT
+  summaryCard: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: hp("0.5%"),
+    gap: 14,
+    backgroundColor: PASTEL.surface,
+    borderRadius: RADIUS.lg,
+    padding: 10,
+    paddingRight: 16,
+    ...SOFT_SHADOW,
   },
-  starsContainer: {
+  summaryImage: {
+    width: 92,
+    height: 104,
+    borderRadius: 22,
+  },
+  summaryTitle: {
+    fontSize: 17,
+    fontWeight: "500",
+    color: PASTEL.ink,
+  },
+  summaryMeta: {
+    fontSize: 12.5,
+    color: PASTEL.inkSoft,
+    marginTop: 4,
+  },
+  chipRow: {
     flexDirection: "row",
-    marginLeft: wp("1%"),
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 10,
   },
-  bannerInfoText: {
-    color: "#EAF9FB",
-    fontSize: wp("3.2%"),
-    fontWeight: "400",
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
   },
-  bannerHighlightText: {
-    color: "#18BEC3", // Teal highlight
-    fontSize: wp("3.2%"),
+  chipText: {
+    fontSize: 11.5,
     fontWeight: "600",
-    marginVertical: hp("0.5%"),
   },
-  shareButton: {
-    position: "absolute",
-    bottom: wp("4%"),
-    right: wp("4%"),
-    width: wp("10%"),
-    height: wp("10%"),
-    borderRadius: wp("5%"),
-    backgroundColor: "rgba(24, 190, 195, 0.8)", // Semi-transparent teal
-    alignItems: "center",
-    justifyContent: "center",
+  summaryCount: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  summaryCountValue: {
+    fontSize: 30,
+    fontWeight: "300",
+    color: PASTEL.ink,
+  },
+  summaryCountTotal: {
+    fontSize: 14,
+    color: PASTEL.inkMuted,
+    marginBottom: 5,
   },
 
-  // List Header
+  // TIÊU ĐỀ DANH SÁCH
   listHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: hp("2%"),
-    paddingHorizontal: wp("1%"),
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 12,
   },
   listHeaderTitle: {
-    color: "#5B7C84",
-    fontSize: wp("4.2%"),
+    fontSize: 18,
     fontWeight: "600",
+    color: PASTEL.ink,
+  },
+  sortButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: PASTEL.surface,
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: RADIUS.pill,
+    ...SOFT_SHADOW,
+  },
+  sortButtonText: {
+    fontSize: 12.5,
+    fontWeight: "600",
+    color: PASTEL.ink,
   },
 
-  // Days List
-  daysListContainer: {
-    gap: hp("1.5%"),
-  },
+  // NGÀY TẬP
   dayCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: wp("4%"),
-    padding: wp("4%"),
-    minHeight: hp("13%"),
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
+    gap: 14,
+    backgroundColor: PASTEL.surface,
+    borderRadius: 24,
+    padding: 12,
+    paddingRight: 16,
+    marginBottom: 10,
+    ...SOFT_SHADOW,
   },
-
   dayCardLocked: {
-    opacity: 0.65,
-    backgroundColor: "#FCFCFC",
+    backgroundColor: PASTEL.surfaceSoft,
+    shadowOpacity: 0,
+    elevation: 0,
   },
-
-  dayCardIconWrapper: {
-    width: wp("17%"),
+  statusCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
   },
-
-  progressCircle: {
-    width: wp("12%"),
-    height: wp("12%"),
-    borderRadius: wp("6%"),
-    borderWidth: 2,
-    borderColor: "#FFB0B7",
-    alignItems: "center",
-    justifyContent: "center",
+  statusCircleLocked: {
+    backgroundColor: PASTEL.track,
   },
-
-  progressText: {
-    color: "#FF5262",
-    fontSize: wp("3.5%"),
+  statusText: {
+    fontSize: 13,
     fontWeight: "700",
   },
-
-  dayCardInfo: {
-    flex: 1,
-    marginLeft: wp("3%"),
-    justifyContent: "center",
+  dayLabel: {
+    fontSize: 12,
+    color: PASTEL.inkMuted,
+  },
+  dayTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: PASTEL.ink,
+    marginTop: 2,
+  },
+  dayMeta: {
+    fontSize: 12,
+    color: PASTEL.inkSoft,
+    marginTop: 3,
   },
 
-  dayLabelText: {
-    color: "#7293AF",
-    fontSize: wp("4%"),
-    marginBottom: hp("0.7%"),
-  },
-
-  dayTypeText: {
-    color: "#222222",
-    fontSize: wp("4.5%"),
-    fontWeight: "700",
-  },
-
-  activeDot: {
-    width: wp("3%"),
-    height: wp("3%"),
-    borderRadius: wp("1.5%"),
-    backgroundColor: "#18BEC3",
-    marginLeft: wp("2%"),
-  },
-  lockCircle: {
-    width: wp("12%"),
-    height: wp("12%"),
-    borderRadius: wp("6%"),
-    borderWidth: 2,
-    borderColor: "#FF9EA7",
+  // TRẠNG THÁI
+  stateBox: {
     alignItems: "center",
-    justifyContent: "center",
-    opacity: 0.65,
+    paddingVertical: 36,
+    gap: 10,
   },
-
-
-  
-  
+  stateText: {
+    fontSize: 13.5,
+    color: PASTEL.inkSoft,
+  },
 });
-
-export default WorkoutExercisePlan;

@@ -573,14 +573,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-refresh {
@@ -589,7 +589,7 @@ export default {
     border-radius: 11px;
     background: white;
     color: #0d7f8d;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -615,14 +615,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .content-card {
@@ -662,7 +662,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .filter-bar select {
@@ -674,7 +674,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .transaction-table {
@@ -686,8 +686,8 @@ export default {
     padding: 11px 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9px;
-    font-weight: 750;
+    font-size: 12.5px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -696,7 +696,7 @@ export default {
     padding: 13px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #456a70;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .transaction-table tbody tr {
@@ -714,18 +714,18 @@ export default {
 
 .transaction-code strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .transaction-code span {
     margin-top: 3px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .invoice-code {
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -745,7 +745,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -756,20 +756,20 @@ export default {
 
 .user-cell strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .user-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .method-badge {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -785,7 +785,7 @@ export default {
 
 .amount {
     color: #075e68;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .date-cell strong,
@@ -795,13 +795,13 @@ export default {
 
 .date-cell strong {
     color: #456a70;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .date-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .status {
@@ -810,7 +810,7 @@ export default {
     gap: 5px;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -848,7 +848,7 @@ export default {
     border-radius: 8px;
     background: white;
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -894,7 +894,7 @@ export default {
 
 .modal-header > div > span {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -902,13 +902,13 @@ export default {
 .modal-header h3 {
     margin: 3px 0 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 3px 0 0;
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .btn-close {
@@ -918,7 +918,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .transaction-status {
@@ -938,18 +938,18 @@ export default {
 
 .transaction-status > div span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .transaction-status > div strong {
     margin-top: 4px;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .status.large {
     padding: 7px 10px;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .section {
@@ -961,7 +961,7 @@ export default {
 .section h4 {
     margin: 0 0 10px;
     color: #11343a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .info-grid {
@@ -979,14 +979,14 @@ export default {
 .info-grid span {
     display: block;
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .info-grid strong {
     display: block;
     margin-top: 4px;
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .customer-card {
@@ -1010,13 +1010,13 @@ export default {
 
 .customer-card strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .customer-card span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .bank-info {
@@ -1039,12 +1039,12 @@ export default {
 
 .info-row span {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .info-row strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
     text-align: right;
 }
 
@@ -1088,13 +1088,13 @@ export default {
 
 .timeline-item strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .timeline-item span {
     margin-top: 3px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .success-box {
@@ -1118,19 +1118,19 @@ export default {
     border-radius: 50%;
     background: #2c7c60;
     color: white;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 800;
 }
 
 .success-box strong {
     color: #235f4c;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .success-box p {
     margin: 4px 0 0;
     color: #5d8175;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .modal-actions {
@@ -1144,7 +1144,7 @@ export default {
 .btn-invoice {
     padding: 9px 14px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 

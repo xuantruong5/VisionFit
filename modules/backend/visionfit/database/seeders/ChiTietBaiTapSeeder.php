@@ -29,8 +29,8 @@ class ChiTietBaiTapSeeder extends Seeder
             ],
             [ // Gym, Nhà
                 'id_bai_tap' => 2,
-                'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/0340-7gdLIXa.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/0343-zGSIWQi.gif',
+                'video_huong_dan' => 'storage/videos/INCLINE DUMBBELL PRESS/tadon_dung.mp4',
+                'video_sai' => 'storage/videos/INCLINE DUMBBELL PRESS/tadon_sai.mp4',
                 'mo_ta' => 'Dumbbell Floor Press là bài tập hiệu quả để rèn luyện cơ ngực và sức mạnh thân trên. Ưu điểm chính là sàn giới hạn biên độ hạ tạ, giúp kiểm soát chuyển động tốt hơn. Tải trọng chủ yếu tác động lên cơ ngực lớn, cơ tam đầu cánh tay và cơ vai trước.',
                 'ghi_chu' => 'Tạ đơn, thảm tập',
                 'huong_dan' => 'Nằm ngửa trên sàn, co gối và cầm hai tạ đơn ở hai bên ngực. Đẩy tạ lên trên đến khi cánh tay gần duỗi thẳng, sau đó từ từ hạ tạ xuống cho đến khi khuỷu tay chạm nhẹ sàn. Giữ cổ tay ổn định và kiểm soát chuyển động trong suốt bài tập.',
@@ -53,8 +53,8 @@ class ChiTietBaiTapSeeder extends Seeder
             ],
             [ // Gym, Nhà
                 'id_bai_tap' => 4,
-                'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/0662-I4hDWkc.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/0493-B1EVP9F.gif',
+                'video_huong_dan' => 'storage/videos/push_up/push_up_dung.mp4',
+                'video_sai' => 'storage/videos/push_up/push_up_sai.mp4',
                 'mo_ta' => 'Push-Up là bài tập dùng trọng lượng cơ thể để phát triển sức mạnh thân trên. Ưu điểm chính là không cần dụng cụ và có thể điều chỉnh độ khó theo khả năng. Cơ ngực lớn chịu tải chính, trong khi cơ tam đầu cánh tay, cơ vai trước và cơ bụng hỗ trợ ổn định cơ thể.',
                 'ghi_chu' => null,
                 'huong_dan' => 'Bắt đầu ở tư thế plank cao, hai tay đặt rộng bằng vai và giữ thân người thẳng. Từ từ gập khuỷu tay, hạ ngực xuống gần sàn, sau đó đẩy người trở về vị trí ban đầu. Giữ cơ bụng siết chặt trong suốt động tác.',
@@ -113,7 +113,7 @@ class ChiTietBaiTapSeeder extends Seeder
             ],
             [ // Gym
                 'id_bai_tap' => 9,
-                'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/0201-3ZflifB.gif',
+                'video_huong_dan' => 'storage/videos/CABLE TRICEPS PUSHDOWN/captaysau_dung.mp4',
                 'video_sai' => 'https://fujf.net/assets/exercises/videos/0207-VjYliFZ.gif',
                 'mo_ta' => 'Cable Pushdown là bài tập hiệu quả để phát triển sức mạnh cơ tay sau. Ưu điểm chính là dây cáp duy trì lực căng trong suốt chuyển động. Tải trọng chủ yếu tập trung vào cơ tam đầu cánh tay, trong khi cơ vai và cơ cẳng tay hỗ trợ giữ tay cầm ổn định.',
                 'ghi_chu' => 'Máy cáp',
@@ -271,8 +271,8 @@ class ChiTietBaiTapSeeder extends Seeder
             ],
             [ // Gym, Nhà
                 'id_bai_tap' => 22,
-                'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/1457-Kyd9Rz5.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/1456-wdRZISl.gif',
+                'video_huong_dan' => 'storage/videos/squat/squat_dung.mp4',
+                'video_sai' => 'storage/videos/squat/squat_sai.mp4',
                 'mo_ta' => 'Bodyweight Squat là bài tập cơ bản giúp rèn luyện sức mạnh phần thân dưới. Ưu điểm chính là không cần dụng cụ và phù hợp để luyện kỹ thuật squat. Tải trọng chủ yếu tác động lên cơ đùi trước và cơ mông, với cơ đùi sau, bắp chân và cơ bụng hỗ trợ.',
                 'ghi_chu' => null,
                 'huong_dan' => 'Đứng thẳng, hai chân rộng bằng vai, mũi chân hơi hướng ra ngoài. Đẩy hông ra sau, từ từ gập gối và hạ người xuống như đang ngồi trên ghế. Giữ lưng thẳng, sau đó đẩy chân để đứng trở lại tư thế ban đầu.',
@@ -597,8 +597,8 @@ class ChiTietBaiTapSeeder extends Seeder
             ],
             [ // Gym, Nhà
                 'id_bai_tap' => 49,
-                'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/0286-izMnLqz.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/0405-znQUdHY.gif',
+                'video_huong_dan' => 'storage/videos/INCLINE DUMBBELL PRESS/tadon_dung.mp4',
+                'video_sai' => 'storage/videos/INCLINE DUMBBELL PRESS/tadon_sai.mp4',
                 'mo_ta' => 'Dumbbell Arnold Press là bài tập đẩy vai kết hợp xoay cánh tay. Ưu điểm chính là huy động nhiều phần của cơ vai trong cùng chuyển động. Tải trọng chủ yếu tác động lên cơ delta trước và giữa, trong khi cơ tam đầu cánh tay và các cơ ổn định bả vai hỗ trợ.',
                 'ghi_chu' => 'Tạ đơn',
                 'huong_dan' => 'Ngồi hoặc đứng thẳng, cầm hai quả tạ đơn trước ngực với lòng bàn tay hướng về phía cơ thể. Đẩy tạ lên cao qua đầu đồng thời xoay cổ tay để lòng bàn tay hướng ra trước. Sau đó từ từ hạ tạ xuống và xoay cổ tay về vị trí ban đầu.',
@@ -607,14 +607,14 @@ class ChiTietBaiTapSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now()
             ],
-            [ // Gym
+            [
                 'id_bai_tap' => 50,
                 'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/2331-XSCHmiI.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/1160-dK9394r.gif',
-                'mo_ta' => 'Run on Treadmill là bài tập chạy trên máy giúp cải thiện sức bền tim mạch. Ưu điểm chính là dễ điều chỉnh tốc độ và độ dốc theo khả năng. Động tác huy động cơ đùi trước, cơ đùi sau, cơ mông và bắp chân, trong khi cơ bụng hỗ trợ giữ tư thế chạy.',
-                'ghi_chu' => 'Máy chạy bộ',
-                'huong_dan' => 'Chạy trên máy chạy bộ với tốc độ phù hợp, giữ tư thế thẳng và duy trì nhịp thở đều.',
-                'canh_bao' => '• Không dùng lực quán tính hoặc vung người để hoàn thành động tác.\\n• Giữ cổ tay ổn định và kiểm soát tạ ở cả chiều nâng lẫn chiều hạ.\\n• Không khóa cứng khớp khuỷu tay ở cuối động tác; dừng trước khi mất kiểm soát.\\n• Chọn mức tạ phù hợp; nếu đau nhói ở vai, khuỷu tay hoặc cổ tay thì dừng tập.',
+                'video_sai' => 'https://fujf.net/assets/exercises/videos/2138-H1PESYI.gif',
+                'mo_ta' => 'Walk Elliptical Cross Trainer là bài tập cardio trên máy tập elip, giúp cải thiện sức bền tim mạch. Bài tập mô phỏng động tác đi bộ hoặc chạy bằng cách đạp chân luân phiên và kéo tay cầm. Các nhóm cơ tham gia gồm cơ tứ đầu đùi, cơ gân kheo, cơ mông và cơ bắp chân.',
+                'ghi_chu' => 'Máy tập elip',
+                'huong_dan' => 'Điều chỉnh mức kháng lực và độ nghiêng của máy theo khả năng. Bước lên bàn đạp và nắm nhẹ tay cầm. Đạp chân luân phiên, đồng thời đẩy và kéo tay cầm theo chuyển động tự nhiên.Giữ lưng thẳng, siết cơ bụng và duy trì nhịp độ ổn định. Tiếp tục tập trong thời lượng mong muốn. Giảm tốc độ và mức kháng lực trước khi bước xuống máy.',
+                'canh_bao' => '• Kiểm tra độ ổn định của máy trước khi tập.\\n• Bước lên và xuống máy cẩn thận, giữ tay vào tay cầm để đảm bảo thăng bằng.\\n• Không khóa cứng đầu gối hoặc nghiêng người quá mức.\\n• Điều chỉnh tốc độ và mức kháng lực phù hợp với thể lực.\\n• Dừng tập nếu cảm thấy chóng mặt, khó thở bất thường hoặc đau nhức.',
                 'noi_tap' => 'Gym',
                 'created_at' => now(),
                 'updated_at' => now()

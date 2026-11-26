@@ -1,0 +1,144 @@
+{
+  "validation": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "confusion_matrix": [
+      [
+        5,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        5,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        5,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        5
+      ]
+    ],
+    "matrix_rows": "ground_truth",
+    "matrix_columns": "prediction",
+    "classes": [
+      "squat",
+      "push_up",
+      "lunge",
+      "standing"
+    ],
+    "per_class": {
+      "squat": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "push_up": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "lunge": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "standing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      }
+    },
+    "samples": 20,
+    "loss": 0.58576
+  },
+  "test": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "confusion_matrix": [
+      [
+        5,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        5,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        5,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        5
+      ]
+    ],
+    "matrix_rows": "ground_truth",
+    "matrix_columns": "prediction",
+    "classes": [
+      "squat",
+      "push_up",
+      "lunge",
+      "standing"
+    ],
+    "per_class": {
+      "squat": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "push_up": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "lunge": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "standing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      }
+    },
+    "samples": 20,
+    "loss": 0.58492
+  },
+  "split": {
+    "train": 80,
+    "validation": 20,
+    "test": 20,
+    "subject_disjoint": true,
+    "train_subjects": 4,
+    "validation_subjects": 1,
+    "test_subjects": 1
+  },
+  "note": "Demo/synthetic measurements are NOT estimates of real-world performance."
+}

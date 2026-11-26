@@ -15,12 +15,10 @@ return new class extends Migration
             $table->id('id_luot_thich');
             $table->unsignedBigInteger('id_bai_dang');
             $table->unsignedBigInteger('id_nguoi_dung');
+            $table->string('loai_nguoi_dung', 20)->default('client');
             $table->timestamps();
 
-            $table->unique([
-                'id_bai_dang',
-                'id_nguoi_dung'
-            ]);
+            $table->unique( ['id_bai_dang', 'id_nguoi_dung', 'loai_nguoi_dung'], 'unique_luot_thich');
         });
     }
 

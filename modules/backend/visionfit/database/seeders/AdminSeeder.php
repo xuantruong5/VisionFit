@@ -18,6 +18,19 @@ class AdminSeeder extends Seeder
 
         DB::table('admins')->insert([
             [
+                'ho_ten' => 'VisionFit Administrator',
+                'email' => 'admin@visionfit.vn',
+                'password' => Hash::make('123456'),
+                'so_dien_thoai' => '0901234567',
+                'hinh_anh' => 'admin1.jpg',
+                'tinh_trang' => 1,
+                'id_chuc_vu' => 1,
+                'is_master' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
                 'ho_ten' => 'Nguyễn Văn Admin',
                 'email' => 'admin@gmail.com',
                 'password' => Hash::make('123456'),

@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Animated, ActivityIndicator, DeviceEventEmitter, Alert, } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
+import { widthPercentageToDP as wp } from "react-native-responsive-screen";
 import apiFitlife from "../../../../general/api";
+import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
+import { COLORS, SHADOWS } from "../../../../general/theme";
+import { notify } from "../../../../general/notification";
 
 type Exercise = {
   id: number;
@@ -20,7 +25,8 @@ type Exercise = {
   canh_bao: string;
   noi_tap: string;
   mo_ta: string;
-
+  thu_tu: number;
+  total_exercises: number;
   // Các trường phục vụ hiển thị danh sách
   name: string;
   sets: string;
@@ -36,33 +42,130 @@ const ExercisePage = ({ navigation, route }: any) => {
   const [loading, setLoading] = useState<boolean>(true);
   const idDangKy = route?.params?.id_dang_ky_chuong_trinh;
   const idNgayTap = route?.params?.id_chuong_trinh_bai_tap;
+  const idLichTap = route?.params?.id_lich_tap;
   const [skipping, setSkipping] = useState(false);
- 
+  const workoutStartRef = useRef<Date | null>(null);
+
+  // đồng hồ khi bắt đầu 
+  const [isTraining, setIsTraining] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  // Tổng thời gian nghỉ, tính bằng giây
+  const [totalRestSeconds, setTotalRestSeconds] = useState(0);
+  const [showTimeSummary, setShowTimeSummary] = useState(false);
+
+  // Thời điểm bắt đầu nghỉ
+  const restStartRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // tổng số bài tập 
+  const [totalExercises, setTotalExercises] = useState<number>(0);
+
+  // gán api bắt đầu 
+  const [idBuoiTap, setIdBuoiTap] = useState<number | null>(null);
+  const [progressByExercise, setProgressByExercise] = useState<Record<number, number>>({});
+  const [progressStatusByExercise, setProgressStatusByExercise] = useState<Record<number, number>>({});
+  const [endingSession, setEndingSession] = useState(false);
+
+
+
+
+  // const fetchExercises = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await apiFitlife.get(`/client/list-program-exercises/${idNgayTap}`);
+  //     if (res.data.success && Array.isArray(res.data.data)) {
+  //       setTotalExercises(Number(res.data.total_exercises ?? 0));
+  //       const dataNgayTap = res.data.data.filter(
+  //         (item: any) =>
+  //           Number(item.id_chuong_trinh_bai_tap) === Number(idNgayTap)
+  //       );
+
+  //       const danhSachBaiTap: Exercise[] = dataNgayTap.map(
+  //         (item: any) => ({
+  //           id: Number(item.id_bai_tap ?? item.id),
+  //           id_bai_tap: Number(item.id_bai_tap ?? item.id),
+  //           name: item.ten_bai_tap,
+  //           sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${String(item.muc_ta_toi_thieu ?? "0").match(/\d+(?:\.\d+)?/)?.[0] ?? "0"} kg`,
+  //           duration: `${item.thoi_gian_phut ?? 0} phút`,
+  //           image: item.anh_bai_tap ?? "",
+  //           video: item.video_huong_dan ?? "",
+  //           completed: false,
+  //           ten_bai_tap: item.ten_bai_tap ?? "",
+  //           thoi_gian_phut: item.thoi_gian_phut ?? 0,
+  //           rep_yeu_cau: item.rep_yeu_cau ?? 0,
+  //           set_yeu_cau: item.set_yeu_cau ?? 0,
+  //           giay_yeu_cau: item.giay_yeu_cau ?? 0,
+  //           muc_ta_toi_thieu: item.muc_ta_toi_thieu ?? "",
+  //           thiet_bi: item.thiet_bi ?? "",
+  //           video_huong_dan: item.video_huong_dan ?? "",
+  //           video_sai: item.video_sai ?? "",
+  //           huong_dan: item.huong_dan ?? "",
+  //           canh_bao: item.canh_bao ?? "",
+  //           noi_tap: item.noi_tap ?? "",
+  //           mo_ta: item.mo_ta ?? "",
+  //           thu_tu: Number(item.thu_tu ?? 0),
+  //           total_exercises: Number(res.data.total_exercises ?? 0),
+  //         }))
+  //         .sort((a: any, b: any) => a.thu_tu - b.thu_tu);
+  //       setExercises(danhSachBaiTap);
+  //       console.log(
+  //         "DANH SÁCH BÀI TẬP SAU KHI MAP:",
+  //         danhSachBaiTap.map((e) => ({
+  //           id: e.id,
+  //           id_bai_tap: e.id_bai_tap,
+  //           ten_bai_tap: e.ten_bai_tap,
+  //           thu_tu: e.thu_tu,
+  //         }))
+  //       );
+  //     } else {
+  //       setExercises([]);
+  //     }
+  //   } catch (error: any) {
+  //     console.log("LỖI API:", error.response?.data ?? error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
 
   const fetchExercises = async () => {
     try {
       setLoading(true);
-      const res = await apiFitlife.get(`/client/list-program-exercises/${idNgayTap}`);
-      if (res.data.success && Array.isArray(res.data.data)) {
-        const dataNgayTap = res.data.data.filter(
-          (item: any) =>
-            Number(item.id_chuong_trinh_bai_tap) === Number(idNgayTap)
+
+      console.log("ROUTE PARAMS:", route?.params);
+      console.log("ID NGÀY TẬP:", idNgayTap);
+
+      const res = await apiFitlife.get(
+        `/client/list-program-exercises/${idNgayTap}`
+      );
+
+      console.log("DỮ LIỆU API BÀI TẬP:", res.data);
+
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        const data = res.data.data;
+
+        setTotalExercises(
+          Number(res.data.total_exercises ?? data.length)
         );
 
-        const danhSachBaiTap: Exercise[] = dataNgayTap.map(
-          (item: any) => ({
-            id: item.id_bai_tap,
-            name: item.ten_bai_tap,
-            sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${item.muc_ta_toi_thieu ?? 0}`,
+        const danhSachBaiTap: Exercise[] = data
+          .map((item: any) => ({
+            id: Number(item.id_bai_tap ?? item.id),
+            id_bai_tap: Number(item.id_bai_tap ?? item.id),
+            name: item.ten_bai_tap ?? "",
+            sets: `${item.set_yeu_cau ?? 0} hiệp x ${item.rep_yeu_cau ?? 0} lần x ${String(item.muc_ta_toi_thieu ?? "0")
+              .match(/\d+(?:\.\d+)?/)?.[0] ?? "0"
+              } kg`,
             duration: `${item.thoi_gian_phut ?? 0} phút`,
             image: item.anh_bai_tap ?? "",
             video: item.video_huong_dan ?? "",
             completed: false,
             ten_bai_tap: item.ten_bai_tap ?? "",
-            thoi_gian_phut: item.thoi_gian_phut ?? 0,
-            rep_yeu_cau: item.rep_yeu_cau ?? 0,
-            set_yeu_cau: item.set_yeu_cau ?? 0,
-            giay_yeu_cau: item.giay_yeu_cau ?? 0,
+            thoi_gian_phut: Number(item.thoi_gian_phut ?? 0),
+            rep_yeu_cau: Number(item.rep_yeu_cau ?? 0),
+            set_yeu_cau: Number(item.set_yeu_cau ?? 0),
+            giay_yeu_cau: Number(item.giay_yeu_cau ?? 0),
             muc_ta_toi_thieu: item.muc_ta_toi_thieu ?? "",
             thiet_bi: item.thiet_bi ?? "",
             video_huong_dan: item.video_huong_dan ?? "",
@@ -71,42 +174,320 @@ const ExercisePage = ({ navigation, route }: any) => {
             canh_bao: item.canh_bao ?? "",
             noi_tap: item.noi_tap ?? "",
             mo_ta: item.mo_ta ?? "",
+            thu_tu: Number(item.thu_tu ?? 0),
+            total_exercises: Number(
+              res.data.total_exercises ?? data.length
+            ),
+          }))
+          .sort((a: any, b: any) => a.thu_tu - b.thu_tu);
 
-          })
-        );
-          setExercises(danhSachBaiTap);
-        } else {
-          setExercises([]);
-        }
+        setExercises(danhSachBaiTap);
+
+        console.log("DANH SÁCH BÀI TẬP:", danhSachBaiTap);
+      } else {
+        setExercises([]);
+        console.log("API KHÔNG TRẢ VỀ DANH SÁCH BÀI TẬP");
+      }
     } catch (error: any) {
-      console.log("LỖI API:", error.response?.data ?? error.message);
+      console.log("LỖI API:", error.response?.status);
+      console.log("CHI TIẾT LỖI:", error.response?.data ?? error.message);
+      setExercises([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSkip = async () => {
-    try {
-      await apiFitlife.post(`/client/chuong-trinh-bai-tap/${idNgayTap}/bo-qua`, {
-        cho_phep_bo_qua: 1,
-      });
-      navigation.goBack();
-    } catch (error) {
-      console.log("Lỗi bỏ qua:", error);
+
+
+
+
+  const taoBuoiTap = async () => {
+    console.log("ExercisePage route.params:", route?.params);
+    const idLichTap = route?.params?.id_lich_tap;
+    console.log("id_lich_tap:", idLichTap);
+    console.log("id_chuong_trinh_bai_tap:", idNgayTap);
+
+    if (!idLichTap || !idNgayTap) {
+      Alert.alert(
+        "Thiếu dữ liệu",
+        "Không tìm thấy id_lich_tap hoặc id_chuong_trinh_bai_tap."
+      );
+      return null;
     }
+
+    // 1. Tạo buổi tập
+    const resBatDau = await apiFitlife.post(
+      "/client/buoi-tap/bat-dau",
+      {
+        id_lich_tap: Number(idLichTap),
+        id_chuong_trinh_bai_tap: Number(idNgayTap),
+      }
+    );
+
+    const buoiTap = resBatDau.data?.data?.buoi_tap;
+    const idMoi = Number(
+      resBatDau.data?.data?.id_buoi_tap ?? buoiTap?.id
+    );
+
+    if (!resBatDau.data?.success || !idMoi) {
+      throw new Error("Không tạo được buổi tập.");
+    }
+
+    // 2. Khởi tạo tiến độ cho các bài của buổi tập
+    const resTienDo = await apiFitlife.post(
+      `/client/buoi-tap/${idMoi}/khoi-tao-tien-do`
+    );
+
+    if (!resTienDo.data?.success) {
+      throw new Error(
+        resTienDo.data?.message ?? "Không khởi tạo được tiến độ."
+      );
+    }
+
+    // 3. Ánh xạ ID bài tập -> ID bản ghi tiến độ
+    const danhSachTienDo = resTienDo.data?.data?.danh_sach_tien_do ?? [];
+
+    const progressMap: Record<number, number> = {};
+    const statusMap: Record<number, number> = {};
+
+    danhSachTienDo.forEach((item: any) => {
+      const idBaiTap = Number(item.id_bai_tap);
+      progressMap[idBaiTap] = Number(item.id_tien_do_bai_tap);
+      statusMap[idBaiTap] = Number(item.tinh_trang ?? 0);
+    });
+
+    console.log("PROGRESS MAP:", progressMap);
+    console.log("PROGRESS STATUS MAP:", statusMap);
+
+    setIdBuoiTap(idMoi);
+    setProgressByExercise(progressMap);
+    setProgressStatusByExercise(statusMap);
+
+    return {
+      idBuoiTap: idMoi,
+      progressMap,
+      statusMap,
+    };
+  };
+
+
+  const handleSkip = async () => {
+    if (!idNgayTap || !idDangKy || skipping || hasStarted) {
+      return;
+    }
+
+    Alert.alert(
+      "Xác nhận bỏ qua",
+      "Bạn có chắc chắn muốn bỏ qua ngày tập này không?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+        {
+          text: "Bỏ qua",
+          onPress: async () => {
+            try {
+              setSkipping(true);
+
+              console.log("ID đăng ký:", idDangKy);
+              console.log("ID ngày tập:", idNgayTap);
+
+              const res = await apiFitlife.post(
+                `/client/chuong-trinh-bai-tap/${idNgayTap}/bo-qua`,
+                {
+                  cho_phep_bo_qua: 1,
+                  id_dang_ky_chuong_trinh: Number(idDangKy),
+                }
+              );
+
+              console.log("KẾT QUẢ BỎ QUA:", res.data);
+
+              if (res.data?.success) {
+                Alert.alert(
+                  "Thành công",
+                  res.data?.message || "Đã bỏ qua ngày tập.",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => navigation.goBack(),
+                    },
+                  ]
+                );
+              } else {
+                Alert.alert(
+                  "Thông báo",
+                  res.data?.message || "Không thể bỏ qua ngày tập."
+                );
+              }
+            } catch (error: any) {
+              console.log(
+                "LỖI BỎ QUA:",
+                error.response?.data ?? error.message
+              );
+
+              Alert.alert(
+                "Lỗi",
+                error.response?.data?.message ||
+                "Không thể bỏ qua ngày tập. Vui lòng thử lại."
+              );
+            } finally {
+              setSkipping(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
 
 
-  useEffect(() => {
-    fetchExercises();
-  }, [idDangKy, idNgayTap]);
-  const completedCount = exercises.filter((e) => e.completed).length;
-  const progressPercent = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
+
+
+
+
+
+  // API lấy dữ liệu phần trăm hoàn thành
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const progressColor = progressPercent <= 0 ? "#FF5262" : progressPercent <= 50 ? "#FFE08A" : "#3F8FA6";
+
+  const [exerciseProgress, setExerciseProgress] = useState<
+    { id_bai_tap: number; phan_tram_hoan_thanh: number; tinh_trang: number; }[]>([]);
+
+  // Tách API thành hàm để gọi lại khi quay về màn hình
+  const getLatestProgress = useCallback(async () => {
+    if (!idLichTap || !idNgayTap) {
+      return;
+    }
+
+    try {
+      const response = await apiFitlife.get(
+        "/client/buoi-tap/phan-tram-hoan-thanh",
+        {
+          params: {
+            id_lich_tap: Number(idLichTap),
+            id_chuong_trinh_bai_tap: Number(idNgayTap),
+          },
+        }
+      );
+
+      console.log("API TIẾN ĐỘ BUỔI TẬP:", response.data);
+
+      if (response.data?.success) {
+        const data = response.data.data;
+
+        setProgressPercent(
+          Number(data?.phan_tram_hoan_thanh) || 0
+        );
+
+        setCompletedCount(
+          Number(data?.so_bai_hoan_thanh) || 0
+        );
+
+        setTotalCount(
+          Number(data?.tong_so_bai) || 0
+        );
+
+        setExerciseProgress(
+          Array.isArray(data?.danh_sach_bai_tap)
+            ? data.danh_sach_bai_tap
+            : []
+        );
+
+        // Cập nhật map trạng thái để giao diện dùng dữ liệu mới
+        const newStatusMap: Record<number, number> = {};
+
+        (data?.danh_sach_bai_tap ?? []).forEach((item: any) => {
+          newStatusMap[Number(item.id_bai_tap)] =
+            Number(item.tinh_trang ?? 0);
+        });
+
+        setProgressStatusByExercise(newStatusMap);
+      }
+    } catch (error: any) {
+      console.log(
+        "LỖI LẤY TIẾN ĐỘ TẬP LUYỆN:",
+        error.response?.data ?? error.message
+      );
+    }
+  }, [idLichTap, idNgayTap]);
+
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!idNgayTap) {
+        setLoading(false);
+        return;
+      }
+
+      fetchExercises();
+      getLatestProgress();
+    }, [idNgayTap, getLatestProgress])
+  );
+
+
+
 
 
   const handleExercisePress = (exercise: Exercise) => {
-    navigation?.navigate("ReportPage", {
+    // Trường hợp chưa bắt đầu tập: chỉ xem bài tập
+    if (!idBuoiTap) {
+      navigation.navigate("ReportPage", {
+        id_buoi_tap: idBuoiTap,
+        id_tien_do_bai_tap: null,
+
+        // BỔ SUNG 2 DÒNG NÀY
+        id_lich_tap: idLichTap,
+        id_chuong_trinh_bai_tap: idNgayTap,
+        elapsedSeconds,
+        isTraining: false,
+        total_exercises: totalExercises,
+        isPreview: true, // Chế độ xem trước, không ghi nhận tiến độ
+        exercise: {
+          id_bai_tap: exercise.id_bai_tap,
+          ten_bai_tap: exercise.ten_bai_tap,
+          thoi_gian_phut: exercise.thoi_gian_phut,
+          rep_yeu_cau: exercise.rep_yeu_cau,
+          set_yeu_cau: exercise.set_yeu_cau,
+          giay_yeu_cau: exercise.giay_yeu_cau,
+          muc_ta_toi_thieu: exercise.muc_ta_toi_thieu,
+          thiet_bi: exercise.thiet_bi,
+          video_huong_dan: exercise.video_huong_dan,
+          video_sai: exercise.video_sai,
+          huong_dan: exercise.huong_dan,
+          canh_bao: exercise.canh_bao,
+          noi_tap: exercise.noi_tap,
+          mo_ta: exercise.mo_ta,
+          thu_tu: exercise.thu_tu,
+        },
+      });
+
+      return;
+    }
+
+    // Trường hợp đã bắt đầu tập: giữ nguyên logic hiện tại
+    const idTienDo = progressByExercise[Number(exercise.id_bai_tap)];
+
+    if (!idTienDo) {
+      Alert.alert(
+        "Lỗi tiến độ",
+        "Không tìm thấy bản ghi tiến độ của bài tập này."
+      );
+      return;
+    }
+
+    navigation.navigate("ReportPage", {
+      id_buoi_tap: idBuoiTap,
+      id_tien_do_bai_tap: idTienDo,
+      id_lich_tap: idLichTap,
+      id_chuong_trinh_bai_tap: idNgayTap,
+      elapsedSeconds,
+      isTraining,
+      total_exercises: totalExercises,
+      isPreview: false,
       exercise: {
         id_bai_tap: exercise.id_bai_tap,
         ten_bai_tap: exercise.ten_bai_tap,
@@ -122,61 +503,380 @@ const ExercisePage = ({ navigation, route }: any) => {
         canh_bao: exercise.canh_bao,
         noi_tap: exercise.noi_tap,
         mo_ta: exercise.mo_ta,
+        thu_tu: exercise.thu_tu,
       },
     });
   };
 
-  const handleStart = () => {
-    console.log("Bắt đầu tập luyện...");
+
+
+
+
+
+
+
+  useEffect(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (!isTraining) return;
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds((prev) => {
+        const next = prev + 1;
+        return next;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isTraining]);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  };
+
+
+  const ketThucBuoiTap = async (quayVeKeHoach = false) => {
+    if (!idBuoiTap || endingSession) return;
+    setEndingSession(true);
+    let restSeconds = totalRestSeconds;
+    if (restStartRef.current !== null) {
+      restSeconds += Math.floor(
+        (Date.now() - restStartRef.current) / 1000
+      );
+    }
+    try {
+      const res = await apiFitlife.post(
+        `/client/buoi-tap/${idBuoiTap}/ket-thuc`,
+        { tong_thoi_gian_nghi: restSeconds }
+      );
+      if (!res.data?.success) {
+        throw new Error(
+          res.data?.message ?? "Không thể kết thúc buổi tập."
+        );
+      }
+
+      // Kiểm tra chuỗi ngày tập và phần thưởng mới
+      try {
+        console.log("========== KIỂM TRA PHẦN THƯỞNG ==========");
+        const thongKe = await apiFitlife.get("/client/thong-ke-chuoi-ngay-tap",
+          {
+            params: {
+              id_dang_ky_chuong_trinh: idDangKy,
+            },
+          }
+        );
+        console.log("Dữ liệu thống kê:", thongKe.data);
+
+        const phanThuongMoi = thongKe.data.phan_thuong_moi || [];
+        console.log("Danh sách phần thưởng mới:", phanThuongMoi);
+        console.log("Số phần thưởng mới:", phanThuongMoi.length);
+
+        phanThuongMoi.forEach((item: any) => {
+          console.log("Đang gửi thông báo phần thưởng:", item);
+          notify({
+            type: "success",
+            message: `Chúc mừng! Bạn đã hoàn thành chuỗi ${item.so_ngay} ngày tập liên tiếp và đạt được ${item.ten_phan_thuong}!`,
+          });
+          console.log("Đã gọi notify()!");
+        });
+
+      } catch (error) {
+        console.log("Lỗi thống kê chuỗi ngày tập:", error);
+      }
+
+      setIsTraining(false);
+      setHasStarted(false);
+      setShowTimeSummary(true);
+      setTotalRestSeconds(restSeconds);
+      restStartRef.current = null;
+
+      DeviceEventEmitter.emit("workout-session-finish");
+
+      // Hoàn thành tất cả bài: quay về kế hoạch, không hỏi thêm.
+      // if (quayVeKeHoach) {
+      //   navigation.navigate("headerPage", {
+      //     // initialTab: "WorkoutExercisePlan",
+      //     screen: "WorkoutExercisePlan",
+      //   });
+      //   return;
+      // }
+      navigation.navigate("ResultPage", {
+        id_buoi_tap: idBuoiTap,
+      });
+
+
+      const data = res.data.data;
+
+      // Alert.alert(
+      //   "Thành công",
+      //   data?.da_mo_ngay_tiep_theo
+      //     ? `Đã kết thúc buổi tập. Ngày tập ${data.ngay_tiep_theo.ngay_thu} đã được mở.`
+      //     : `Đã kết thúc buổi tập. Hoàn thành ${data?.phan_tram_hoan_thanh ?? 0
+      //     }%.`
+      // );
+
+    } catch (error: any) {
+      Alert.alert(
+        "Lỗi",
+        error.response?.data?.message ??
+        error.message ??
+        "Không thể kết thúc buổi tập."
+      );
+    } finally {
+      setEndingSession(false);
+    }
   };
 
 
 
+
+  const handleStart = async () => {
+    // Kết thúc buổi tập đang diễn ra
+    if (hasStarted) {
+      if (!idBuoiTap || endingSession) return;
+
+      try {
+        // Lấy trạng thái tiến độ mới nhất từ backend
+        const response = await apiFitlife.get(
+          "/client/buoi-tap/phan-tram-hoan-thanh",
+          {
+            params: {
+              id_lich_tap: Number(idLichTap),
+              id_chuong_trinh_bai_tap: Number(idNgayTap),
+            },
+          }
+        );
+
+        const danhSachTienDo =
+          response.data?.data?.danh_sach_bai_tap ?? [];
+
+        // Kiểm tra tất cả bài tập của ngày hiện tại đã hoàn thành chưa
+        const tatCaDaHoanThanh =
+          exercises.length > 0 &&
+          exercises.every((exercise) => {
+            const tienDo = danhSachTienDo.find(
+              (item: any) =>
+                Number(item.id_bai_tap) ===
+                Number(exercise.id_bai_tap)
+            );
+
+            return Number(tienDo?.tinh_trang) === 2;
+          });
+        if (tatCaDaHoanThanh) {
+          await ketThucBuoiTap(true);
+        } else {
+          await ketThucBuoiTap(false);
+        }
+      } catch (error: any) {
+        Alert.alert(
+          "Lỗi",
+          error.response?.data?.message ??
+          "Không thể kiểm tra tiến độ bài tập."
+        );
+      }
+
+      return;
+    }
+
+    // Bắt đầu phiên tập mới
+    const sortedExercises = [...exercises].sort(
+      (a, b) => Number(a.thu_tu) - Number(b.thu_tu)
+    );
+
+    if (sortedExercises.length === 0) {
+      Alert.alert("Thông báo", "Danh sách bài tập đang trống.");
+      return;
+    }
+
+    try {
+      // Tạo phiên tập và lấy tiến độ đã lưu từ BE
+      const session = await taoBuoiTap();
+
+      if (!session) return;
+
+      // Tìm bài chưa hoàn thành đầu tiên theo thứ tự
+      const baiTiepTheo = sortedExercises.find(
+        (exercise) =>
+          Number(session.statusMap[Number(exercise.id_bai_tap)] ?? 0) !== 2
+      );
+
+      // Nếu mọi bài đã hoàn thành, đóng phiên vừa tạo để không
+      // để lại một phiên đang tập nhưng người dùng không thực sự tập.
+      if (!baiTiepTheo) {
+        try {
+          await apiFitlife.post(
+            `/client/buoi-tap/${session.idBuoiTap}/ket-thuc`,
+            { tong_thoi_gian_nghi: 0 }
+          );
+        } catch (error) {
+          console.log("Lỗi đóng phiên tập rỗng:", error);
+        }
+
+        setIdBuoiTap(null);
+
+        Alert.alert(
+          "Đã hoàn thành",
+          "Bạn đã hoàn thành tất cả bài tập trong ngày này."
+        );
+        return;
+      }
+
+      const idTienDo =
+        session.progressMap[Number(baiTiepTheo.id_bai_tap)];
+
+      if (!idTienDo) {
+        Alert.alert(
+          "Lỗi tiến độ",
+          `Không tìm thấy tiến độ của bài tập ${baiTiepTheo.ten_bai_tap}.`
+        );
+        return;
+      }
+
+      // Khởi tạo đồng hồ của phiên hiện tại
+      workoutStartRef.current = new Date();
+      setElapsedSeconds(0);
+      setTotalRestSeconds(0);
+      setShowTimeSummary(false);
+      setHasStarted(true);
+      setIsTraining(true);
+      restStartRef.current = null;
+
+      // Mở bài chưa hoàn thành đầu tiên
+      navigation.navigate("ReportPage", {
+        id_buoi_tap: session.idBuoiTap,
+        id_tien_do_bai_tap: idTienDo,
+        id_lich_tap: route.params?.id_lich_tap,
+        id_chuong_trinh_bai_tap: route.params?.id_chuong_trinh_bai_tap,
+        elapsedSeconds: 0,
+        isTraining: true,
+        total_exercises: totalExercises,
+        exercise: {
+          id_bai_tap: baiTiepTheo.id_bai_tap,
+          ten_bai_tap: baiTiepTheo.ten_bai_tap,
+          thoi_gian_phut: baiTiepTheo.thoi_gian_phut,
+          rep_yeu_cau: baiTiepTheo.rep_yeu_cau,
+          set_yeu_cau: baiTiepTheo.set_yeu_cau,
+          giay_yeu_cau: baiTiepTheo.giay_yeu_cau,
+          muc_ta_toi_thieu: baiTiepTheo.muc_ta_toi_thieu,
+          thiet_bi: baiTiepTheo.thiet_bi,
+          video_huong_dan: baiTiepTheo.video_huong_dan,
+          video_sai: baiTiepTheo.video_sai,
+          huong_dan: baiTiepTheo.huong_dan,
+          canh_bao: baiTiepTheo.canh_bao,
+          noi_tap: baiTiepTheo.noi_tap,
+          mo_ta: baiTiepTheo.mo_ta,
+          thu_tu: baiTiepTheo.thu_tu,
+        },
+      });
+    } catch (error: any) {
+      Alert.alert(
+        "Không thể bắt đầu",
+        error.response?.data?.message ??
+        error.message ??
+        "Có lỗi khi tạo buổi tập."
+      );
+    }
+  };
+
+
+  // nhận tạm nghỉ từ trang ReportPage xang 
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(
+      "workout-training-change",
+      (running: boolean) => {
+        if (running) {
+          // Tiếp tục tập: kết thúc khoảng nghỉ
+          if (restStartRef.current !== null) {
+            const restDuration = Math.floor(
+              (Date.now() - restStartRef.current) / 1000
+            );
+
+            setTotalRestSeconds((prev) => prev + restDuration);
+            restStartRef.current = null;
+          }
+
+          setIsTraining(true);
+        } else {
+          // Tạm nghỉ: chỉ ghi nhận thời điểm bắt đầu nghỉ
+          if (restStartRef.current === null) {
+            restStartRef.current = Date.now();
+          }
+
+          setIsTraining(false);
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="dark-content" />
-      {/* ================= HEADER ================= */}
 
-      <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} style={styles.backButton} onPress={() => navigation?.goBack()} >
-          <Ionicons name="arrow-back" size={wp("5.5%")} color="#607D8B" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bài tập </Text>
-        <TouchableOpacity activeOpacity={0.7} style={styles.moreButton} onPress={handleSkip}disabled={skipping}>
-            {skipping ? (
-              <ActivityIndicator size="small" color="#607D8B" />
-            ) : (
-              <Text style={styles.skipText}>Bỏ qua</Text>
-            )}
-        </TouchableOpacity>
-      </View>
+      <View style={styles.body}>
+        {/* ================= HEADER GRADIENT ================= */}
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.circleLg} />
+          <View style={styles.circleSm} />
 
-      {/* ================= CONTENT ================= */}
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.glassButton}
+              onPress={() => navigation?.goBack()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* ================= SESSION CARD ================= */}
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerSub}>Kế hoạch tập luyện</Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>Bài tập hôm nay</Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.moreButton, hasStarted && styles.moreButtonActive]}
+              onPress={handleSkip}
+              disabled={skipping || hasStarted}
+            >
+              {skipping ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : hasStarted ? (
+                <View style={styles.timerRow}>
+                  <View style={styles.timerDot} />
+                  <Text style={styles.timerText}>
+                    {formatTime(elapsedSeconds)}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.skipText}>Bỏ qua</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* ================= SESSION CARD (nổi) ================= */}
         <View style={styles.sessionCard}>
           {/* Left: Progress circle */}
           <View style={styles.progressCircleWrapper}>
             <View style={styles.progressCircleBg}>
               <View
-                style={[
-                  styles.progressCircleFill,
-                  {
-                    borderColor:
-                      progressPercent === 100 ? "#18BEC3" : "#FF9EA7",
-                  },
-                ]}
-              />
+                style={[styles.progressCircleFill, { borderColor: progressColor, },]} />
               <View style={styles.progressCircleCenter}>
-                <Text
-                  style={[
-                    styles.progressText,
-                    {
-                      color: progressPercent === 100 ? "#18BEC3" : "#FF5262",
-                    },
-                  ]}
-                >
+                <Text style={[styles.progressText, { color: progressColor, },]}>
                   {progressPercent}%
                 </Text>
               </View>
@@ -185,121 +885,180 @@ const ExercisePage = ({ navigation, route }: any) => {
 
           {/* Middle: Info */}
           <View style={styles.sessionInfo}>
-            <Text style={styles.sessionDayLabel}> Ngày tập {route.params?.ngayThu ?? 1} </Text>
-            <Text style={styles.sessionType}>{route.params?.dayType ?? "Ngày tập luyện"} </Text>
+            <Text style={styles.sessionDayLabel}>Ngày tập {route.params?.ngayThu ?? 1}</Text>
+            <Text style={styles.sessionType} numberOfLines={1}>{route.params?.dayType ?? "Ngày tập luyện"}</Text>
             <View style={styles.sessionMeta}>
-              <Ionicons name="time-outline" size={wp("3.2%")} color="#8FA9B2" />
-              <Text style={styles.sessionMetaText}> ~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
+              <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
+              <Text style={styles.sessionMetaText}>~ {route.params?.thoi_gian_phut ?? 0} phút</Text>
               <View style={styles.metaDivider} />
-              <Ionicons name="barbell-outline" size={wp("3.2%")} color="#8FA9B2" />
+              <Ionicons name="barbell-outline" size={13} color={COLORS.textMuted} />
               <Text style={styles.sessionMetaText}>
-                10 bài
+                {totalExercises} bài
               </Text>
             </View>
           </View>
 
           {/* Right: Completed badge */}
           <View style={styles.completedBadge}>
-            <Text style={styles.completedCount}>0</Text>
-            <Text style={styles.completedLabel}>xong</Text>
+            <Text style={styles.completedCount}>{completedCount}</Text>
+            <Text style={styles.completedLabel}>bài xong</Text>
           </View>
         </View>
 
-        {/* ================= SECTION TITLE ================= */}
+        {/* ================= CONTENT ================= */}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
-          <Text style={styles.sectionSubtitle}>
-            0/10 hoàn thành
-          </Text>
-        </View>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* ================= SECTION TITLE ================= */}
 
-        {/* ================= EXERCISE LIST ================= */}
-        {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#18BEC3"
-            style={{ marginVertical: 30 }}
-          />
-        ) : exercises.length === 0 ? (
-          <Text style={{ textAlign: "center", color: "#5B7C84", padding: 20 }}>
-            Ngày tập này chưa có bài tập.
-          </Text>
-        ) : (
-          <View style={styles.exerciseList}>
-            {exercises.map((exercise, index) => (
-              <View key={exercise.id}>
-                <TouchableOpacity activeOpacity={0.75} style={styles.exerciseItem} onPress={() => handleExercisePress(exercise)}>
-                  {/* Image */}
-                  <View style={styles.exerciseImageWrapper}>
-                    <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain"/>
-                  </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Danh sách bài tập</Text>
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionSubtitle}>
+                {completedCount}/{totalCount} hoàn thành
+              </Text>
+            </View>
+          </View>
 
-                  {/* Info */}
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseName} numberOfLines={2}>
-                      {exercise.name}
-                    </Text>
-
-                    <View style={styles.exerciseTags}>
-                      <View style={styles.tagPill}>
-                        <Ionicons name="repeat-outline" size={wp("3%")} color="#18BEC3" />
-                        <Text style={styles.tagText}>{exercise.sets}</Text>
-                      </View>
-
-                      <View style={[styles.tagPill, styles.tagPillGray]}>
-                        <Ionicons name="body-outline" size={wp("3%")} color="#8FA9B2"/>
-                        <Text style={[styles.tagText, styles.tagTextGray]}>
-                          {exercise.duration}
-                        </Text>
+          {/* ================= EXERCISE LIST ================= */}
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
+          ) : exercises.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="barbell-outline" size={34} color={COLORS.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>
+                Ngày tập này chưa có bài tập.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.exerciseList}>
+              {exercises.map((exercise, index) => (
+                <View key={exercise.id}>
+                  <TouchableOpacity activeOpacity={0.75} style={styles.exerciseItem} onPress={() => handleExercisePress(exercise)}>
+                    {/* Image */}
+                    <View style={styles.exerciseImageWrapper}>
+                      <Image source={{ uri: exercise.image }} style={styles.exerciseImage} resizeMode="contain" />
+                      <View style={styles.orderBadge}>
+                        <Text style={styles.orderText}>{index + 1}</Text>
                       </View>
                     </View>
-                  </View>
 
-                  {/* Arrow */}
-                  <Ionicons
-                    name="chevron-forward"
-                    size={wp("5%")}
-                    color="#18BEC3"
-                  />
-                </TouchableOpacity>
+                    {/* Info */}
+                    <View style={styles.exerciseInfo}>
+                      <Text style={styles.exerciseName} numberOfLines={2}>
+                        {exercise.name}
+                      </Text>
 
-                {/* Divider: không hiển thị sau bài cuối */}
-                {index < exercises.length - 1 && (
-                  <View style={styles.divider} />
-                )}
+                      <View style={styles.exerciseTags}>
+                        <View style={styles.tagPill}>
+                          <Ionicons name="repeat-outline" size={11} color={COLORS.primary} />
+                          <Text style={styles.tagText}>{exercise.sets}</Text>
+                        </View>
+
+                        <View style={[styles.tagPill, styles.tagPillGray]}>
+                          <Ionicons name="time-outline" size={11} color={COLORS.textMuted} />
+                          <Text style={[styles.tagText, styles.tagTextGray]}>
+                            {exercise.duration}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    {/* Phần trăm hoàn thành */}
+                    {(() => {
+                      const progress = exerciseProgress.find((item) => Number(item.id_bai_tap) === Number(exercise.id_bai_tap));
+                      const percent = Number(progress?.phan_tram_hoan_thanh ?? 0);
+                      if (percent <= 0) return null;
+                      const exerciseColor = percent <= 50 ? "#E3B04B" : "#3F8FA6";
+                      return (
+                        <Text style={[styles.exercisePercent, { color: exerciseColor }]}>
+                          {percent}%
+                        </Text>
+                      );
+                    })()}
+                  </TouchableOpacity>
+
+                  {/* Divider: không hiển thị sau bài cuối */}
+                  {index < exercises.length - 1 && (
+                    <View style={styles.divider} />
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ================= TIPS CARD ================= */}
+
+          <View style={styles.tipsCard}>
+            <View style={styles.tipsHeader}>
+              <View style={styles.tipsIcon}>
+                <Ionicons name="bulb-outline" size={18} color="#E8A020" />
               </View>
-            ))}
+              <Text style={styles.tipsTitle}>Lưu ý buổi tập</Text>
+            </View>
+            <Text style={styles.tipsText}>
+              Khởi động kỹ trước khi bắt đầu. Nghỉ giữa hiệp 30–60 giây. Uống đủ
+              nước trong suốt buổi tập để duy trì năng lượng tốt nhất.
+            </Text>
           </View>
-        )}
 
-        {/* ================= TIPS CARD ================= */}
+          {/* nhap tinh thoi gian  */}
+          {showTimeSummary && (
+            <View style={styles.timeSummary}>
+              <View style={styles.timeSummaryItem}>
+                <View style={[styles.timeSummaryIcon, { backgroundColor: COLORS.surfaceTeal }]}>
+                  <Ionicons
+                    name="barbell-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                </View>
+                <Text style={styles.timeSummaryLabel}>
+                  Tổng thời gian tập
+                </Text>
+                <Text style={styles.timeSummaryValue}>
+                  {formatTime(elapsedSeconds)}
+                </Text>
+              </View>
 
-        <View style={styles.tipsCard}>
-          <View style={styles.tipsHeader}>
-            <Ionicons name="bulb-outline" size={wp("4.5%")} color="#E8A020" />
-            <Text style={styles.tipsTitle}>Lưu ý buổi tập</Text>
-          </View>
-          <Text style={styles.tipsText}>
-            Khởi động kỹ trước khi bắt đầu. Nghỉ giữa hiệp 30–60 giây. Uống đủ
-            nước trong suốt buổi tập để duy trì năng lượng tốt nhất.
-          </Text>
+              <View style={styles.timeSummaryDivider} />
+
+              <View style={styles.timeSummaryItem}>
+                <View style={[styles.timeSummaryIcon, { backgroundColor: "#FFF7ED" }]}>
+                  <Ionicons
+                    name="pause-circle-outline"
+                    size={20}
+                    color="#E8A020"
+                  />
+                </View>
+                <Text style={styles.timeSummaryLabel}>
+                  Tổng thời gian nghỉ
+                </Text>
+                <Text style={[styles.timeSummaryValue, { color: "#E8A020" }]}>
+                  {formatTime(totalRestSeconds)}
+                </Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* ================= BOTTOM AREA ================= */}
+
+        <View style={styles.bottomArea}>
+          <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, isTraining && styles.startButtonStop,]} onPress={handleStart} >
+            <LinearGradient
+              colors={isTraining ? ["#F05252", "#C62828"] : [COLORS.primary, COLORS.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.startGradient}
+            >
+              <Ionicons name={isTraining ? "stop-circle" : "play"} size={20} color="#FFFFFF" style={styles.startIcon} />
+              <Text style={styles.startButtonText}>
+                {endingSession ? "ĐANG LƯU..." : isTraining ? "KẾT THÚC TẬP" : "BẮT ĐẦU TẬP"}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      {/* ================= BOTTOM AREA ================= */}
-
-      <View style={styles.bottomArea}>
-        <TouchableOpacity activeOpacity={0.85} style={[styles.startButton, progressPercent === 100 && styles.startButtonDone,]} onPress={handleStart}>
-          <Ionicons name={progressPercent === 100 ? "checkmark-circle" : "play"} size={wp("5%")} color="#FFFFFF" style={styles.startIcon} />
-          <Text style={styles.startButtonText}>
-            {progressPercent === 100
-              ? "HOÀN THÀNH BUỔI TẬP"
-              : progressPercent > 0
-                ? "TIẾP TỤC TẬP"
-                : "BẮT ĐẦU TẬP"}
-          </Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -310,63 +1069,111 @@ const ExercisePage = ({ navigation, route }: any) => {
 // ================================
 
 const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: "#F6FAFB",
-    paddingTop: hp("7%"),
+    backgroundColor: COLORS.background,
   },
+
+  // =================================================
+  // HEADER
+  // =================================================
   header: {
-    height: hp("7%"),
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 50,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: "hidden",
+  },
+  circleLg: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -90,
+    right: -60,
+  },
+  circleSm: {
+    position: "absolute",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    bottom: -50,
+    left: -30,
+  },
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: wp("4%"),
-    // backgroundColor: "#FFFFFF",
-    // borderBottomWidth: 1,
-    borderBottomColor: "#EEF3F5",
-    // elevation: 2,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
   },
-
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  headerSub: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.75)",
+  },
   headerTitle: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-    fontSize: wp("4.7%"),
+    fontSize: 19,
     fontWeight: "800",
-    color: "#111C1E",
+    color: COLORS.white,
+    marginTop: 2,
   },
-
-  backButton: {
-    width: wp("9%"),
-    height: wp("9%"),
-    borderRadius: wp("4.5%"),
+  glassButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F2F8F9",
-    zIndex: 10,
   },
 
   moreButton: {
-    width: wp("20%"),
-    height: wp("12%"),
-    borderRadius: wp("8%"),
-    // borderWidth: 1.5,
-    // borderColor: "#607D8B",
+    minWidth: 72,
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  moreButtonActive: {
+    backgroundColor: "rgba(255,255,255,0.24)",
   },
   skipText: {
-    fontSize: wp("4.2%"),
-    color: "#607D8B",
-    fontWeight: "600",
+    fontSize: 14,
+    color: COLORS.white,
+    fontWeight: "700",
   },
-
+  timerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  timerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#FF6B6B",
+  },
+  timerText: {
+    color: COLORS.white,
+    fontWeight: "800",
+    fontSize: 14,
+  },
 
   // =================================================
   // SCROLL VIEW
@@ -374,12 +1181,13 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
 
   scrollContent: {
-    paddingHorizontal: wp("4%"),
-    paddingTop: hp("2%"),
-    paddingBottom: hp("16%"),
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 110,
   },
 
   // =================================================
@@ -389,29 +1197,28 @@ const styles = StyleSheet.create({
   sessionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: wp("4%"),
-    paddingHorizontal: wp("4%"),
-    paddingVertical: hp("2%"),
-    marginBottom: hp("2%"),
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: -34,
     borderWidth: 1,
-    borderColor: "#DFF0F3",
-    elevation: 3,
-    shadowColor: "#0D7F8D",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    borderColor: COLORS.border,
+    zIndex: 2,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
 
   progressCircleWrapper: {
-    marginRight: wp("3.5%"),
+    marginRight: 14,
   },
 
   progressCircleBg: {
-    width: wp("14%"),
-    height: wp("14%"),
-    borderRadius: wp("7%"),
-    backgroundColor: "#F6FAFB",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -419,10 +1226,10 @@ const styles = StyleSheet.create({
 
   progressCircleFill: {
     position: "absolute",
-    width: wp("14%"),
-    height: wp("14%"),
-    borderRadius: wp("7%"),
-    borderWidth: 2.5,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 3,
   },
 
   progressCircleCenter: {
@@ -431,8 +1238,8 @@ const styles = StyleSheet.create({
   },
 
   progressText: {
-    fontSize: wp("3.5%"),
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
   },
 
   sessionInfo: {
@@ -440,55 +1247,57 @@ const styles = StyleSheet.create({
   },
 
   sessionDayLabel: {
-    color: "#8FA9B2",
-    fontSize: wp("3%"),
-    marginBottom: hp("0.2%"),
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 2,
   },
 
   sessionType: {
-    color: "#1A2F35",
-    fontSize: wp("4%"),
-    fontWeight: "700",
-    marginBottom: hp("0.5%"),
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 6,
   },
 
   sessionMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("1%"),
+    gap: 4,
   },
 
   sessionMetaText: {
-    color: "#8FA9B2",
-    fontSize: wp("2.9%"),
+    color: COLORS.textMuted,
+    fontSize: 12,
   },
 
   metaDivider: {
     width: 1,
-    height: hp("1.5%"),
-    backgroundColor: "#C9DADE",
-    marginHorizontal: wp("1.5%"),
+    height: 12,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 6,
   },
 
   completedBadge: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EAF9FB",
-    borderRadius: wp("2.5%"),
-    paddingHorizontal: wp("2.5%"),
-    paddingVertical: hp("0.6%"),
-    minWidth: wp("11%"),
+    backgroundColor: COLORS.surfaceTeal,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: 54,
   },
 
   completedCount: {
-    color: "#0D7F8D",
-    fontSize: wp("4.5%"),
+    color: COLORS.primary,
+    fontSize: 20,
     fontWeight: "800",
   },
 
   completedLabel: {
-    color: "#4AAAB5",
-    fontSize: wp("2.5%"),
+    color: COLORS.textMuted,
+    fontSize: 10.5,
+    fontWeight: "600",
   },
 
   // =================================================
@@ -499,18 +1308,58 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: hp("1.5%"),
+    marginTop: 24,
+    marginBottom: 12,
   },
 
   sectionTitle: {
-    color: "#1A2F35",
-    fontSize: wp("4%"),
-    fontWeight: "700",
+    color: COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: "800",
+  },
+
+  sectionBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
 
   sectionSubtitle: {
-    color: "#8FA9B2",
-    fontSize: wp("3.2%"),
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  loader: {
+    marginVertical: 30,
+  },
+
+  emptyBox: {
+    alignItems: "center",
+    paddingVertical: 30,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 16,
+    ...SHADOWS.card,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
 
   // =================================================
@@ -518,24 +1367,22 @@ const styles = StyleSheet.create({
   // =================================================
 
   exerciseList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: wp("4%"),
-    paddingHorizontal: wp("1%"),
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "#EEF3F5",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    marginBottom: hp("2%"),
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+    marginBottom: 16,
   },
 
   exerciseItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: wp("3%"),
-    paddingVertical: hp("1.2%"),
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    gap: 4,
   },
 
   exerciseItemDone: {
@@ -555,21 +1402,43 @@ const styles = StyleSheet.create({
   },
 
   checkboxDone: {
-    backgroundColor: "#18BEC3",
-    borderColor: "#18BEC3",
+    backgroundColor: "#3F8FA6",
+    borderColor: "#3F8FA6",
   },
 
   exerciseImageWrapper: {
-    width: wp("15%"),
-    height: hp("7%"),
+    width: 60,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: wp("2%"),
+    marginRight: 8,
   },
 
   exerciseImage: {
-    width: "85%",
-    height: "85%",
+    width: "82%",
+    height: "82%",
+  },
+
+  orderBadge: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  orderText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontWeight: "800",
   },
 
   exerciseImageDone: {
@@ -578,15 +1447,15 @@ const styles = StyleSheet.create({
 
   exerciseInfo: {
     flex: 1,
-    paddingRight: wp("2%"),
+    paddingRight: 6,
   },
 
   exerciseName: {
-    color: "#1A2F35",
-    fontSize: wp("3.4%"),
-    fontWeight: "600",
-    lineHeight: wp("4.5%"),
-    marginBottom: hp("0.5%"),
+    color: COLORS.textPrimary,
+    fontSize: 14.5,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginBottom: 6,
   },
 
   exerciseNameDone: {
@@ -597,32 +1466,39 @@ const styles = StyleSheet.create({
   exerciseTags: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("2%"),
+    gap: 6,
     flexWrap: "wrap",
   },
 
   tagPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("1%"),
-    backgroundColor: "#EAF9FB",
-    borderRadius: wp("3%"),
-    paddingHorizontal: wp("2%"),
-    paddingVertical: hp("0.3%"),
+    gap: 4,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
 
   tagPillGray: {
-    backgroundColor: "#F2F8F9",
+    backgroundColor: COLORS.borderLight,
   },
 
   tagText: {
-    color: "#18BEC3",
-    fontSize: wp("2.7%"),
-    fontWeight: "500",
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "700",
   },
 
   tagTextGray: {
-    color: "#8FA9B2",
+    color: COLORS.textMuted,
+  },
+
+  exercisePercent: {
+    fontSize: 13,
+    fontWeight: "800",
+    minWidth: 38,
+    textAlign: "right",
   },
 
   durationBadge: {
@@ -639,8 +1515,9 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#EEF3F5",
-    marginLeft: wp("14%"),
+    backgroundColor: COLORS.borderLight,
+    marginLeft: 78,
+    marginRight: 12,
   },
 
   // =================================================
@@ -648,31 +1525,42 @@ const styles = StyleSheet.create({
   // =================================================
 
   tipsCard: {
-    backgroundColor: "#FFFDF0",
-    borderRadius: wp("3.5%"),
-    padding: wp("4%"),
+    backgroundColor: "#FFFBEB",
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#F5E8C0",
-    marginBottom: hp("5%"),
+    marginBottom: 16,
   },
 
   tipsHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp("2%"),
-    marginBottom: hp("0.8%"),
+    gap: 10,
+    marginBottom: 8,
+  },
+
+  tipsIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: "#FFF7ED",
+    borderWidth: 1,
+    borderColor: "#F5E8C0",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   tipsTitle: {
-    color: "#C07010",
-    fontSize: wp("3.5%"),
-    fontWeight: "700",
+    color: "#B45309",
+    fontSize: 15,
+    fontWeight: "800",
   },
 
   tipsText: {
     color: "#7A5A20",
-    fontSize: wp("3.2%"),
-    lineHeight: wp("4.8%"),
+    fontSize: 13,
+    lineHeight: 20,
   },
 
   // =================================================
@@ -684,33 +1572,35 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: wp("4%"),
-    paddingTop: hp("1.5%"),
-    paddingBottom: hp("10%"),
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: "#EEF3F5",
+    borderTopColor: COLORS.borderLight,
     elevation: 10,
-    shadowColor: "#000",
+    shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
 
   startButton: {
     width: "100%",
-    height: hp("7%"),
-    backgroundColor: "#18BEC3",
-    borderRadius: wp("3%"),
+    height: 52,
+    borderRadius: 999,
+    overflow: "hidden",
+    ...SHADOWS.glow,
+  },
+
+  startGradient: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: wp("2%"),
-    elevation: 4,
-    shadowColor: "#0D7F8D",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    gap: 8,
   },
 
   startButtonDone: {
@@ -718,15 +1608,63 @@ const styles = StyleSheet.create({
   },
 
   startIcon: {
-    marginRight: wp("1%"),
+    marginRight: 2,
   },
 
   startButtonText: {
     color: "#FFFFFF",
-    fontSize: wp("4.2%"),
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontSize: 15.5,
+    fontWeight: "800",
+    letterSpacing: 0.6,
   },
+  startButtonStop: {
+    shadowColor: "#C62828",
+  },
+  timeSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+
+  timeSummaryItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+  },
+
+  timeSummaryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  timeSummaryDivider: {
+    width: 1,
+    height: 60,
+    backgroundColor: COLORS.borderLight,
+  },
+
+  timeSummaryLabel: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: "center",
+  },
+
+  timeSummaryValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: COLORS.primary,
+  },
+
 });
 
 export default ExercisePage;

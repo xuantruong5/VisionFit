@@ -16,7 +16,7 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user   = Auth::guard('admin')->user() ?: Auth::guard('sanctum')->user();
+        $user   = Auth::guard('sanctum')->user() ?: Auth::guard('admin')->user();
         if($user && $user instanceof \App\Models\Admin && $user->tinh_trang == 1) {
             return $next($request);
         } else {

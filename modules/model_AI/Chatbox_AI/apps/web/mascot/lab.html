@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VisionFit — Mascot Lab & Testing Studio</title>
+  <link rel="stylesheet" href="/mascot/mascot.css">
+  <link rel="stylesheet" href="/mascot/lab.css">
+</head>
+<body class="lab-bg-light">
+  <div class="lab-container">
+    <header class="lab-header">
+      <div class="lab-header-info">
+        <h1>
+          <span>Phòng Thử Nghiệm Linh Vật VisionFit</span>
+          <span class="lab-badge">Kinematic Rig v2</span>
+        </h1>
+        <p>Kiểm thử khớp nối động học, animation hữu hạn và 4 cấp độ tiến hóa của Gấu &amp; Mèo VIF.</p>
+      </div>
+      <div class="lab-nav-links">
+        <a href="/" id="link-chat">Trang Chat</a>
+        <a href="/widget-demo" id="btn-test-widget">Thử Widget Messenger</a>
+      </div>
+    </header>
+
+    <div class="lab-grid">
+      <!-- Cột chính: Khung hiển thị linh vật lớn & Bảng trạng thái -->
+      <main class="lab-main-card">
+        <div class="lab-status-bar">
+          <div class="status-item">
+            <span class="status-label">Loài:</span>
+            <span class="status-val" id="lbl-species">Gấu VIF</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Cấp độ:</span>
+            <span class="status-val" id="lbl-stage">starter</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Trạng thái:</span>
+            <span class="status-val" id="lbl-state">idle</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Buổi tập:</span>
+            <span class="status-val" id="lbl-workout-status">Nghỉ ngơi</span>
+          </div>
+        </div>
+
+        <div id="lab-mascot-preview" class="lab-preview-box">
+          <!-- MascotRenderer mount vào đây -->
+        </div>
+
+        <!-- Công cụ xem trước nền và tốc độ -->
+        <div class="lab-view-toolbar">
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-bg-light" aria-pressed="true">Nền Sáng</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-bg-dark" aria-pressed="false">Nền Tối</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-bg-grid" aria-pressed="false">Nền Caro</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-speed-normal" aria-pressed="true">Tốc độ 1x</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-speed-slow" aria-pressed="false">Chậm 0.25x</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-speed-pause" aria-pressed="false">Tạm Dừng</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-toggle-motion" aria-pressed="false">Giảm Chuyển Động</button>
+          <button type="button" class="lab-btn lab-btn-sm" id="btn-toggle-joints" aria-pressed="false">Hiển Thị Khớp (Debug)</button>
+        </div>
+
+        <!-- So sánh nhanh 4 cấp độ tiến hóa -->
+        <div class="stages-comparison-grid" id="stages-comparison-grid">
+          <!-- 4 preview cấp tiến hóa mount qua JS dùng chung generator -->
+        </div>
+      </main>
+
+      <!-- Cột bên: Bảng điều khiển chọn Loài, Cấp, Trạng thái & Tình huống -->
+      <aside class="lab-sidebar">
+        <!-- 1. Chọn Loài -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">1. Chọn Nhân Vật</h2>
+          <div class="lab-btn-group" id="species-group">
+            <button type="button" class="lab-btn" data-species="bear" id="btn-species-bear" aria-pressed="true">🐻 Gấu VIF</button>
+            <button type="button" class="lab-btn" data-species="cat" id="btn-species-cat" aria-pressed="false">🐱 Mèo VIF</button>
+          </div>
+        </div>
+
+        <!-- 2. Chọn Cấp Tiến Hóa -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">2. Cấp Tiến Hóa</h2>
+          <div class="lab-btn-group" id="stages-group">
+            <button type="button" class="lab-btn" data-stage="starter" id="btn-stage-starter" aria-pressed="true">Starter</button>
+            <button type="button" class="lab-btn" data-stage="active" id="btn-stage-active" aria-pressed="false">Active</button>
+            <button type="button" class="lab-btn" data-stage="strong" id="btn-stage-strong" aria-pressed="false">Strong</button>
+            <button type="button" class="lab-btn" data-stage="champion" id="btn-stage-champion" aria-pressed="false">Champion</button>
+          </div>
+        </div>
+
+        <!-- 3. Chọn 9 Trạng Thái Cảm Xúc -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">3. Trạng Thái Cảm Xúc (9 States)</h2>
+          <div class="lab-btn-group" id="states-grid">
+            <!-- Render tự động 9 buttons từ MASCOT_STATES -->
+          </div>
+        </div>
+
+        <!-- 4. Mô Phỏng Buổi Tập (Host Workout Signal) -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">4. Tín Hiệu Buổi Tập &amp; Nhắc Nước</h2>
+          <div class="lab-btn-group">
+            <button type="button" class="lab-btn" id="btn-workout-start">Bắt Đầu Tập</button>
+            <button type="button" class="lab-btn" id="btn-workout-pause">Tạm Dừng</button>
+            <button type="button" class="lab-btn" id="btn-workout-complete">Hoàn Thành</button>
+            <button type="button" class="lab-btn" id="btn-drink-water" style="background:#0284c7;color:#fff;font-weight:bold;">💧 Nhắc Uống Nước (2h)</button>
+            <button type="button" class="lab-btn lab-btn-danger" id="btn-workout-stop">Dừng Nghỉ</button>
+          </div>
+        </div>
+
+        <!-- 5. Kịch Bản Tương Tác Thử Nghiệm -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">5. Kịch Bản Phản Hồi API</h2>
+          <div class="lab-btn-group">
+            <button type="button" class="lab-btn" id="btn-scenario-chat">Gửi Tin &amp; Nhận Trả Lời</button>
+            <button type="button" class="lab-btn" id="btn-scenario-celebrate">Mừng Đạt Mục Tiêu</button>
+            <button type="button" class="lab-btn" id="btn-scenario-stretch" style="background:#168b67;color:#fff;font-weight:bold;">🤸 Khởi Động Vươn Vai</button>
+            <button type="button" class="lab-btn lab-btn-danger" id="btn-scenario-error">Mô Phỏng Lỗi Mạng</button>
+            <button type="button" class="lab-btn" id="btn-reset-all">Khôi Phục Mặc Định</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="/mascot/lab.js"></script>
+</body>
+</html>

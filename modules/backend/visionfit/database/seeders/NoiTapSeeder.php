@@ -17,13 +17,13 @@ class NoiTapSeeder extends Seeder
 
         DB::table('noi_tap')->insert([
             [
-                'ten_noi_tap' => 'Ở nhà',
+                'ten_noi_tap' => 'Tại nhà',
                 'mo_ta' => 'Tập luyện tại nhà',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'ten_noi_tap' => 'Phòng tập',
+                'ten_noi_tap' => 'Tại Phòng tập',
                 'mo_ta' => 'Tập luyện tại phòng gym',
                 'created_at' => now(),
                 'updated_at' => now(),

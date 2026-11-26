@@ -17,9 +17,12 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { launchImageLibrary } from "react-native-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 import apiFitlife, { BASE_URL } from "../../general/api";
+import { COLORS, SHADOWS } from "../../general/theme";
 
 const EMOJI_LIST = ["❤️", "👍", "🔥", "😂", "😮", "😢"];
 
@@ -31,10 +34,60 @@ const getImageUrl = (url: string | null) => {
 
 const ChatRoom = ({ navigation, route }: any) => {
     const conversation = route?.params?.conversation || {};
-    const currentUser = route?.params?.currentUser || {
-        id_nguoi_dung: 1,
-        ho_ten: "Lê Hoàng Nam",
+    const getChatEndpoint = async (action: "history" | "send") => {
+        const role = await AsyncStorage.getItem("role");
+        const prefix = role === "trainer" ? "/trainer/chat" : "/chat";
+    
+        return action === "history"
+            ? `${prefix}/history-message`
+            : `${prefix}/send-message`;
     };
+    // ID phải thuộc tài khoản đang đăng nhập; không dùng ID mặc định.
+    const currentUser = route?.params?.currentUser;
+    const rawCurrentUserId = currentUser?.id_nguoi_dung ?? currentUser?.id;
+    const currentUserId = rawCurrentUserId == null || rawCurrentUserId === ''
+        ? NaN : Number(rawCurrentUserId);
+
+    
+const [accountRole, setAccountRole] = useState<string>("");
+
+useEffect(() => {
+    AsyncStorage.getItem("role").then((role) => {
+        const normalizedRole =
+            role?.toLowerCase() === "trainer" ? "trainer" : "client";
+
+        setAccountRole(normalizedRole);
+        console.log("[ChatRoom] Account role:", normalizedRole);
+    });
+}, []);
+
+    const isMyMessage = (message: any): boolean => {
+        if (!message || !accountRole) return false;
+
+        const senderId = Number(
+            message.id_nguoi_gui ?? message.sender_id ?? message.client_id
+        );
+
+        const senderType = String(
+            message.sender_type ?? ""
+        ).toLowerCase();
+
+        if (!Number.isFinite(currentUserId) ||
+            !Number.isFinite(senderId)) {
+            return false;
+        }
+
+        // Phân biệt Trainer 1 và Member 1
+        if (senderType === "trainer" || senderType === "client") {
+            return senderId === currentUserId &&
+                senderType === accountRole;
+        }
+
+        // Chỉ áp dụng cho dữ liệu Member cũ không có sender_type
+        return accountRole === "client" &&
+            senderId === currentUserId;
+    };
+
 
     const isGroup = conversation.loai === "NHOM";
     const partner = conversation.doi_phuong;
@@ -56,55 +109,99 @@ const ChatRoom = ({ navigation, route }: any) => {
 
     const flatListRef = useRef<FlatList>(null);
 
+    // Lấy lịch sử và polling chỉ khi màn hình đang được focus.
     useEffect(() => {
-        fetchMessages();
+        let disposed = false;
+        let inFlight = false;
+        let pollingBlocked = false;
+        let timer: ReturnType<typeof setInterval> | undefined;
+        const roomUuid = conversation?.room_uuid;
+        const roomId = conversation?.id_cuoc_tro_chuyen;
 
-        // Polling định kỳ mỗi 3.5s để cập nhật tin nhắn mới
-        const interval = setInterval(() => {
-            const roomUuid = conversation?.room_uuid;
-            const roomId = conversation?.id_cuoc_tro_chuyen;
-            apiFitlife.get("/chat/history-message", {
-                params: {
-                    room_uuid: roomUuid,
-                    room_id: roomId,
-                },
-            }).then((res) => {
-                if (res.data && res.data.status && Array.isArray(res.data.data)) {
-                    setMessages(res.data.data);
+        const stop = () => {
+            disposed = true;
+            if (timer) clearInterval(timer);
+        };
+
+        const load = async (endpoint: string, initial: boolean) => {
+            if (disposed || inFlight || pollingBlocked) return;
+            inFlight = true;
+            if (initial) setIsMessagesLoading(true);
+            try {
+                const response = await apiFitlife.get(endpoint, {
+                    params: { room_uuid: roomUuid, room_id: roomId },
+                });
+                if (!disposed && response.data?.status && Array.isArray(response.data.data)) {
+                    setMessages(response.data.data);
                 }
-            }).catch((err) => {
-                console.error("Polling error:", err);
-            });
-        }, 3500);
+            } catch (error: any) {
+                const status = error?.response?.status;
+                console.error('[ChatRoom] History error:', {
+                    endpoint,
+                    status,
+                    data: error?.response?.data,
+                });
+                // Chặn vòng lặp gọi API khi token/role không hợp lệ.
+                if (status === 401 || status === 403 || status === 404) {
+                    pollingBlocked = true;
+                    if (timer) clearInterval(timer);
+                }
+            } finally {
+                inFlight = false;
+                if (initial && !disposed) setIsMessagesLoading(false);
+            }
+        };
 
-        return () => clearInterval(interval);
-    }, [conversation?.room_uuid, conversation?.id_cuoc_tro_chuyen]);
+        const begin = async () => {
+            if (!roomUuid && !roomId) {
+                console.warn('[ChatRoom] Thiếu room_uuid/room_id');
+                setIsMessagesLoading(false);
+                return;
+            }
+            const endpoint = await getChatEndpoint('history');
+            if (disposed) return;
+            console.log('[ChatRoom] history endpoint:', endpoint);
+            await load(endpoint, true);
+            if (!disposed && !pollingBlocked) {
+                timer = setInterval(() => {
+                    void load(endpoint, false);
+                }, 3500);
+            }
+        };
 
-    // Tải lịch sử tin nhắn từ Backend theo phong cách WorkoutPlanScreen
+        void begin();
+        const unsubscribe = navigation.addListener('blur', stop);
+        return () => {
+            stop();
+            unsubscribe();
+        };
+    }, [conversation?.room_uuid, conversation?.id_cuoc_tro_chuyen, navigation]);
+
+    // Dùng để làm mới sau khi gửi tin nhắn thành công.
     const fetchMessages = async () => {
         try {
-            setIsMessagesLoading(true);
-            const roomUuid = conversation?.room_uuid;
-            const roomId = conversation?.id_cuoc_tro_chuyen;
-            const response = await apiFitlife.get("/chat/history-message", {
+            const endpoint = await getChatEndpoint('history');
+            const response = await apiFitlife.get(endpoint, {
                 params: {
-                    room_uuid: roomUuid,
-                    room_id: roomId,
+                    room_uuid: conversation?.room_uuid,
+                    room_id: conversation?.id_cuoc_tro_chuyen,
                 },
             });
-            if (response.data && response.data.status) {
+            if (response.data?.status && Array.isArray(response.data.data)) {
                 setMessages(response.data.data);
             }
-        } catch (error) {
-            console.error("Error fetching chat history:", error);
-        } finally {
-            setIsMessagesLoading(false);
+        } catch (error: any) {
+            console.error('[ChatRoom] Refresh messages:', error?.response?.status, error?.response?.data);
         }
     };
 
     // Gửi tin nhắn mới
     const handleSend = async (text: string, type: string = "VAN_BAN", mediaUrl?: string, workoutData?: any) => {
         if (!text.trim() && !mediaUrl && type === "VAN_BAN") return;
+        if (!Number.isFinite(currentUserId) || currentUserId <= 0) {
+            Alert.alert("Chưa xác định tài khoản", "Không tìm thấy ID người dùng đang đăng nhập. Hãy kiểm tra màn hình mở ChatRoom.");
+            return;
+        }
 
         const now = new Date();
         const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
@@ -112,7 +209,8 @@ const ChatRoom = ({ navigation, route }: any) => {
         const tempId = Date.now();
         const newMsg: any = {
             id_tin_nhan: tempId,
-            id_nguoi_gui: currentUser.id_nguoi_dung,
+            id_nguoi_gui: currentUserId,
+            sender_type: String(currentUser?.loai_nguoi_dung ?? "").toLowerCase() === "trainer" ? "trainer" : "client",
             loai_tin_nhan: type,
             noi_dung: text,
             media_url: mediaUrl,
@@ -125,7 +223,7 @@ const ChatRoom = ({ navigation, route }: any) => {
         if (replyingTo) {
             newMsg.id_tin_nhan_tra_loi = replyingTo.id_tin_nhan;
             newMsg.tra_loi_noi_dung = replyingTo.noi_dung;
-            newMsg.tra_loi_nguoi_gui = replyingTo.id_nguoi_gui === currentUser.id_nguoi_dung ? "Bạn" : partner?.ho_ten;
+            newMsg.tra_loi_nguoi_gui = isMyMessage(replyingTo) ? "Bạn" : partner?.ho_ten;
         }
 
         setMessages((prev) => [...prev, newMsg]);
@@ -138,7 +236,8 @@ const ChatRoom = ({ navigation, route }: any) => {
 
         // Gửi lên Backend
         try {
-            const res = await apiFitlife.post("/chat/send-message", {
+            const endpoint = await getChatEndpoint("send");
+            const res = await apiFitlife.post(endpoint, {
                 room_uuid: conversation.room_uuid,
                 room_id: conversation.id_cuoc_tro_chuyen,
                 message: text,
@@ -154,8 +253,11 @@ const ChatRoom = ({ navigation, route }: any) => {
                     prev.map((m) => (m.id_tin_nhan === tempId ? { ...m, ...savedMsg, id_tin_nhan: savedMsg.id_tin_nhan || savedMsg.id } : m))
                 );
             }
-        } catch (err) {
-            console.log("Lỗi khi gửi tin nhắn lên Backend:", err);
+        } catch (err: any) {
+            setMessages((prev) => prev.filter((m) => m.id_tin_nhan !== tempId));
+            setInputText(text);
+            console.error("Lỗi khi gửi tin nhắn lên Backend:", err?.response?.status, err?.response?.data);
+            Alert.alert("Gửi thất bại", "Không gửi được tin nhắn. Vui lòng thử lại.");
         }
     };
 
@@ -175,7 +277,9 @@ const ChatRoom = ({ navigation, route }: any) => {
                         name: asset.fileName || `chat_${Date.now()}.jpg`,
                     } as any);
 
-                    const uploadRes = await apiFitlife.post("/chat/upload", formData, {
+                    const role = await AsyncStorage.getItem("role");
+                    const uploadEndpoint = role === "trainer" ? "/trainer/chat/upload" : "/chat/upload";
+                    const uploadRes = await apiFitlife.post(uploadEndpoint, formData, {
                         headers: { "Content-Type": "multipart/form-data" },
                     });
 
@@ -187,7 +291,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                     console.log("Upload ảnh lên Backend thất bại, dùng ảnh local:", uploadError);
                 }
 
-                handleSend("Đã gửi một hình ảnh", "HINH_ANH", asset.uri);
+                Alert.alert("Không thể tải ảnh", "Ảnh chưa được tải lên máy chủ. Vui lòng thử lại.");
             }
         } catch (e) {
             console.log("Lỗi khi chọn ảnh:", e);
@@ -210,7 +314,9 @@ const ChatRoom = ({ navigation, route }: any) => {
         setSelectedMsgForReaction(null);
 
         try {
-            await apiFitlife.post(`/chat/message/${msgId}/reaction`, { emoji });
+            const role = await AsyncStorage.getItem("role");
+            const prefix = role === "trainer" ? "/trainer/chat" : "/chat";
+            await apiFitlife.post(`${prefix}/message/${msgId}/reaction`, { emoji });
         } catch (e) {
             console.log("Lỗi gửi reaction lên Backend:", e);
         }
@@ -228,7 +334,9 @@ const ChatRoom = ({ navigation, route }: any) => {
         setSelectedMsgForReaction(null);
 
         try {
-            await apiFitlife.post(`/chat/message/${msgId}/recall`);
+            const role = await AsyncStorage.getItem("role");
+            const prefix = role === "trainer" ? "/trainer/chat" : "/chat";
+            await apiFitlife.post(`${prefix}/message/${msgId}/recall`);
         } catch (e) {
             console.log("Lỗi thu hồi tin nhắn trên Backend:", e);
         }
@@ -236,12 +344,19 @@ const ChatRoom = ({ navigation, route }: any) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <StatusBar barStyle="dark-content" {...({ backgroundColor: "#EAF9FB", translucent: false } as any)} />
+            <StatusBar barStyle="dark-content" />
 
             {/* Header phòng chat */}
-            <View style={styles.header}>
+            <View style={styles.headerWrap}>
+            <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.header}
+            >
+                <View style={styles.headerCircle} />
                 <TouchableOpacity style={styles.headerBackBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="chevron-back" size={26} color="#075E68" />
+                    <Ionicons name="chevron-back" size={22} color={COLORS.white} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.headerUserInfo} activeOpacity={0.7} onPress={() => setShowInfoModal(true)}>
@@ -268,24 +383,25 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerActionBtn} onPress={() => Alert.alert("Cuộc gọi thoại", `Đang gọi thoại tới ${displayName}...`)}>
-                        <Ionicons name="call" size={20} color="#0D7F8D" />
+                        <Ionicons name="call" size={17} color={COLORS.white} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.headerActionBtn} onPress={() => Alert.alert("Cuộc gọi Video", `Đang kết nối video call với ${displayName}...`)}>
-                        <Ionicons name="videocam" size={21} color="#0D7F8D" />
+                        <Ionicons name="videocam" size={18} color={COLORS.white} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.headerActionBtn} onPress={() => setShowInfoModal(true)}>
-                        <Ionicons name="information-circle" size={22} color="#0D7F8D" />
+                        <Ionicons name="information-circle" size={20} color={COLORS.white} />
                     </TouchableOpacity>
                 </View>
+            </LinearGradient>
             </View>
 
             {/* Khung tin nhắn */}
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+            <KeyboardAvoidingView style={styles.chatBody} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 {isMessagesLoading ? (
                     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <ActivityIndicator size="large" color="#0D7F8D" />
+                        <ActivityIndicator size="large" color="#0F5468" />
                     </View>
                 ) : (
                     <FlatList
@@ -297,13 +413,13 @@ const ChatRoom = ({ navigation, route }: any) => {
                         onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
                         ListEmptyComponent={
                             <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>
-                                <Ionicons name="chatbubbles-outline" size={48} color="#71949A" style={{ marginBottom: 12 }} />
-                                <Text style={{ fontSize: 16, fontWeight: "600", color: "#193B40" }}>Chưa có tin nhắn nào</Text>
-                                <Text style={{ fontSize: 13, color: "#71949A", marginTop: 4 }}>Hãy gửi lời chào để bắt đầu cuộc trò chuyện!</Text>
+                                <Ionicons name="chatbubbles-outline" size={48} color="#6F8F9C" style={{ marginBottom: 12 }} />
+                                <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.textPrimary }}>Chưa có tin nhắn nào</Text>
+                                <Text style={{ fontSize: 13, color: "#6F8F9C", marginTop: 4 }}>Hãy gửi lời chào để bắt đầu cuộc trò chuyện!</Text>
                             </View>
                         }
                         renderItem={({ item }) => {
-                            const isSender = item.id_nguoi_gui === currentUser.id_nguoi_dung;
+                            const isSender = isMyMessage(item);
                             const isRecalled = item.trang_thai === "DA_THU_HOI";
 
                             return (
@@ -336,7 +452,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                         >
                                             {isRecalled ? (
                                                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                                    <Ionicons name="ban" size={16} color="#71949A" style={{ marginRight: 6 }} />
+                                                    <Ionicons name="ban" size={16} color="#6F8F9C" style={{ marginRight: 6 }} />
                                                     <Text style={styles.recalledText}>Tin nhắn đã được thu hồi</Text>
                                                 </View>
                                             ) : (
@@ -365,15 +481,15 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                                                             <View style={{ marginBottom: 10 }}>
                                                                 <View style={styles.workoutDetailRow}>
-                                                                    <Ionicons name="calendar-outline" size={14} color="#0D7F8D" />
+                                                                    <Ionicons name="calendar-outline" size={14} color="#0F5468" />
                                                                     <Text style={styles.workoutDetailText}>{item.workout.ngay_tap}</Text>
                                                                 </View>
                                                                 <View style={styles.workoutDetailRow}>
-                                                                    <Ionicons name="time-outline" size={14} color="#0D7F8D" />
+                                                                    <Ionicons name="time-outline" size={14} color="#0F5468" />
                                                                     <Text style={styles.workoutDetailText}>{item.workout.gio_tap}</Text>
                                                                 </View>
                                                                 <View style={styles.workoutDetailRow}>
-                                                                    <Ionicons name="flame-outline" size={14} color="#FA3E3E" />
+                                                                    <Ionicons name="flame-outline" size={14} color={COLORS.accentRed} />
                                                                     <Text style={styles.workoutDetailText}>Mục tiêu: {item.workout.calo_muc_tieu} kcal</Text>
                                                                 </View>
                                                             </View>
@@ -419,7 +535,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                                 <Ionicons
                                                     name={item.da_xem ? "checkmark-done" : "checkmark"}
                                                     size={13}
-                                                    color={item.da_xem ? "#0D7F8D" : "#71949A"}
+                                                    color={item.da_xem ? "#0F5468" : "#6F8F9C"}
                                                     style={{ marginLeft: 4 }}
                                                 />
                                             )}
@@ -450,14 +566,14 @@ const ChatRoom = ({ navigation, route }: any) => {
                         <View style={styles.replyBanner}>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.replyBannerTitle}>
-                                    Đang trả lời <Text style={{ fontWeight: "bold" }}>{replyingTo.id_nguoi_gui === currentUser.id_nguoi_dung ? "chính bạn" : partner?.ho_ten}</Text>
+                                    Đang trả lời <Text style={{ fontWeight: "bold" }}>{isMyMessage(replyingTo) ? "chính bạn" : partner?.ho_ten}</Text>
                                 </Text>
                                 <Text style={styles.replyBannerText} numberOfLines={1}>
                                     {replyingTo.noi_dung}
                                 </Text>
                             </View>
                             <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                                <Ionicons name="close" size={18} color="#71949A" />
+                                <Ionicons name="close" size={18} color="#6F8F9C" />
                             </TouchableOpacity>
                         </View>
                     )}
@@ -478,7 +594,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                 }}
                             >
                                 <View style={[styles.attachIconWrap, { backgroundColor: "#DFF6F8" }]}>
-                                    <Ionicons name="barbell" size={20} color="#0D7F8D" />
+                                    <Ionicons name="barbell" size={20} color="#0F5468" />
                                 </View>
                                 <Text style={styles.attachLabel}>Gửi bài tập</Text>
                             </TouchableOpacity>
@@ -526,39 +642,46 @@ const ChatRoom = ({ navigation, route }: any) => {
 
                     <View style={styles.toolbarInputRow}>
                         <TouchableOpacity style={styles.toolIconBtn} onPress={() => setShowAttachMenu(!showAttachMenu)}>
-                            <Ionicons name={showAttachMenu ? "close-circle" : "add-circle"} size={26} color="#0D7F8D" />
+                            <Ionicons name={showAttachMenu ? "close-circle" : "add-circle"} size={26} color="#0F5468" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.toolIconBtn} onPress={() => Alert.alert("Camera", "Chụp ảnh bài tập")}>
-                            <Ionicons name="camera" size={24} color="#0D7F8D" />
+                            <Ionicons name="camera" size={24} color="#0F5468" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.toolIconBtn} onPress={handlePickImage}>
-                            <Ionicons name="images" size={23} color="#0D7F8D" />
+                            <Ionicons name="images" size={23} color="#0F5468" />
                         </TouchableOpacity>
 
                         <View style={styles.inputBox}>
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nhắn tin..."
-                                placeholderTextColor="#71949A"
+                                placeholderTextColor="#6F8F9C"
                                 value={inputText}
                                 onChangeText={setInputText}
                                 multiline
                             />
                             <TouchableOpacity style={styles.emojiBtn} onPress={() => setInputText((prev) => prev + " 😊")}>
-                                <Ionicons name="happy-outline" size={22} color="#075E68" />
+                                <Ionicons name="happy-outline" size={22} color={COLORS.textMuted} />
                             </TouchableOpacity>
                         </View>
 
                         {/* Nút Like 👍 khi trống, nút Gửi ✈️ khi có chữ */}
                         {inputText.trim().length === 0 ? (
                             <TouchableOpacity style={styles.likeBtn} onPress={() => handleSend("👍")} activeOpacity={0.7}>
-                                <Ionicons name="thumbs-up" size={26} color="#0D7F8D" />
+                                <Ionicons name="thumbs-up" size={26} color="#0F5468" />
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity style={styles.sendBtn} onPress={() => handleSend(inputText)} activeOpacity={0.8}>
-                                <Ionicons name="send" size={18} color="#FFFFFF" />
+                                <LinearGradient
+                                    colors={[COLORS.primary, COLORS.primaryDark]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.sendBtnGradient}
+                                >
+                                    <Ionicons name="send" size={17} color="#FFFFFF" />
+                                </LinearGradient>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -587,7 +710,7 @@ const ChatRoom = ({ navigation, route }: any) => {
                                     setSelectedMsgForReaction(null);
                                 }}
                             >
-                                <Ionicons name="arrow-undo-outline" size={20} color="#11343A" />
+                                <Ionicons name="arrow-undo-outline" size={20} color="#10303C" />
                                 <Text style={styles.msgActionText}>Trả lời tin nhắn</Text>
                             </TouchableOpacity>
 
@@ -598,17 +721,17 @@ const ChatRoom = ({ navigation, route }: any) => {
                                     setSelectedMsgForReaction(null);
                                 }}
                             >
-                                <Ionicons name="copy-outline" size={20} color="#11343A" />
+                                <Ionicons name="copy-outline" size={20} color="#10303C" />
                                 <Text style={styles.msgActionText}>Sao chép</Text>
                             </TouchableOpacity>
 
-                            {selectedMsgForReaction?.id_nguoi_gui === currentUser.id_nguoi_dung && selectedMsgForReaction?.trang_thai !== "DA_THU_HOI" && (
+                            {isMyMessage(selectedMsgForReaction) && selectedMsgForReaction?.trang_thai !== "DA_THU_HOI" && (
                                 <TouchableOpacity
-                                    style={[styles.msgActionRow, { borderTopWidth: 1, borderTopColor: "#DFF6F8" }]}
+                                    style={[styles.msgActionRow, { borderTopWidth: 1, borderTopColor: COLORS.borderLight }]}
                                     onPress={() => selectedMsgForReaction && handleRecall(selectedMsgForReaction.id_tin_nhan)}
                                 >
-                                    <Ionicons name="arrow-undo" size={20} color="#FA3E3E" />
-                                    <Text style={[styles.msgActionText, { color: "#FA3E3E" }]}>Thu hồi tin nhắn</Text>
+                                    <Ionicons name="arrow-undo" size={20} color={COLORS.accentRed} />
+                                    <Text style={[styles.msgActionText, { color: COLORS.accentRed }]}>Thu hồi tin nhắn</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -620,9 +743,10 @@ const ChatRoom = ({ navigation, route }: any) => {
             <Modal visible={showInfoModal} animationType="slide" transparent={true} onRequestClose={() => setShowInfoModal(false)}>
                 <View style={styles.infoModalOverlay}>
                     <View style={styles.infoModalContent}>
+                        <View style={styles.dragHandle} />
                         <View style={styles.infoModalHeader}>
                             <TouchableOpacity onPress={() => setShowInfoModal(false)}>
-                                <Ionicons name="close" size={26} color="#11343A" />
+                                <Ionicons name="close" size={26} color="#10303C" />
                             </TouchableOpacity>
                             <Text style={styles.infoModalTitle}>Chi tiết đoạn chat</Text>
                             <View style={{ width: 26 }} />
@@ -638,28 +762,28 @@ const ChatRoom = ({ navigation, route }: any) => {
                             <View style={styles.quickActions}>
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Hồ sơ", `Xem hồ sơ của ${displayName}`)}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="person-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="person-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Trang cá nhân</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Thông báo", "Đã đổi trạng thái thông báo")}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="notifications-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="notifications-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Tắt thông báo</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Tìm kiếm", "Tìm kiếm tin nhắn trong chat")}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="search-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="search-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Tìm kiếm</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity style={styles.quickActionBtn} onPress={() => Alert.alert("Chủ đề", "Đổi chủ đề màu sắc")}>
                                     <View style={styles.quickActionCircle}>
-                                        <Ionicons name="color-palette-outline" size={22} color="#0D7F8D" />
+                                        <Ionicons name="color-palette-outline" size={22} color="#0F5468" />
                                     </View>
                                     <Text style={styles.quickActionText}>Chủ đề</Text>
                                 </TouchableOpacity>
@@ -668,33 +792,33 @@ const ChatRoom = ({ navigation, route }: any) => {
                             <View style={styles.infoSection}>
                                 <Text style={styles.infoSectionTitle}>TÙY CHỈNH ĐOẠN CHAT</Text>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="pencil-outline" size={20} color="#11343A" />
+                                    <Ionicons name="pencil-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>Đổi tên đoạn chat</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="images-outline" size={20} color="#11343A" />
+                                    <Ionicons name="images-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>File phương tiện, file và liên kết</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="fitness-outline" size={20} color="#11343A" />
+                                    <Ionicons name="fitness-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>Lịch sử buổi tập & Phân tích AI</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                             </View>
 
                             <View style={styles.infoSection}>
                                 <Text style={styles.infoSectionTitle}>QUYỀN RIÊNG TƯ & HỖ TRỢ</Text>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="shield-checkmark-outline" size={20} color="#11343A" />
+                                    <Ionicons name="shield-checkmark-outline" size={20} color="#10303C" />
                                     <Text style={styles.infoRowText}>Xác minh bảo mật đầu cuối</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.infoRow}>
-                                    <Ionicons name="warning-outline" size={20} color="#FA3E3E" />
-                                    <Text style={[styles.infoRowText, { color: "#FA3E3E" }]}>Báo cáo sự cố / PT</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#71949A" />
+                                    <Ionicons name="warning-outline" size={20} color={COLORS.accentRed} />
+                                    <Text style={[styles.infoRowText, { color: COLORS.accentRed }]}>Báo cáo sự cố / PT</Text>
+                                    <Ionicons name="chevron-forward" size={18} color="#6F8F9C" />
                                 </TouchableOpacity>
                             </View>
                         </ScrollView>
@@ -718,25 +842,41 @@ const ChatRoom = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#EAF9FB",
+        backgroundColor: COLORS.background,
+    },
+    headerWrap: {
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 12,
-        paddingVertical: 10,
-        backgroundColor: "#FFFFFF",
-        borderBottomWidth: 1,
-        borderBottomColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+        paddingTop: 8,
+        paddingBottom: 16,
+        borderRadius: 28,
+        marginHorizontal: 12,
+        marginTop: 6,
+        overflow: "hidden",
+    },
+    headerCircle: {
+        position: "absolute",
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: "rgba(255,255,255,0.07)",
+        top: -90,
+        right: -40,
     },
     headerBackBtn: {
-        padding: 6,
-        marginRight: 4,
+        width: 38,
+        height: 38,
+        borderRadius: 13,
+        backgroundColor: "rgba(255,255,255,0.15)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 10,
     },
     headerUserInfo: {
         flex: 1,
@@ -748,9 +888,12 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     headerAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.6)",
+        backgroundColor: COLORS.primaryLight,
     },
     headerOnlineDot: {
         position: "absolute",
@@ -759,42 +902,52 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: "#31A24C",
+        backgroundColor: COLORS.accentGreen,
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: COLORS.white,
     },
     headerName: {
-        fontSize: 15,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontSize: 16,
+        fontWeight: "800",
+        color: COLORS.white,
     },
     headerStatus: {
-        fontSize: 11,
-        color: "#71949A",
+        fontSize: 11.5,
+        color: "rgba(255,255,255,0.8)",
     },
     headerPtTag: {
-        backgroundColor: "#DFF6F8",
-        paddingHorizontal: 5,
+        backgroundColor: "rgba(255,255,255,0.2)",
+        paddingHorizontal: 6,
         paddingVertical: 1,
-        borderRadius: 4,
+        borderRadius: 5,
         marginLeft: 6,
     },
     headerPtTagText: {
         fontSize: 9,
-        fontWeight: "bold",
-        color: "#0D7F8D",
+        fontWeight: "800",
+        color: COLORS.white,
     },
     headerActions: {
         flexDirection: "row",
         alignItems: "center",
     },
     headerActionBtn: {
-        padding: 7,
-        marginLeft: 4,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: "rgba(255,255,255,0.15)",
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: 6,
+    },
+    chatBody: {
+        flex: 1,
+        backgroundColor: COLORS.background,
     },
     messagesList: {
         paddingHorizontal: 14,
-        paddingVertical: 16,
+        paddingTop: 18,
+        paddingBottom: 16,
     },
     msgRow: {
         flexDirection: "row",
@@ -808,34 +961,31 @@ const styles = StyleSheet.create({
         justifyContent: "flex-start",
     },
     msgAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         marginRight: 8,
-        marginBottom: 16,
+        marginBottom: 18,
+        backgroundColor: COLORS.primaryLight,
     },
     msgBubbleWrap: {
         maxWidth: "76%",
     },
     bubble: {
-        borderRadius: 20,
+        borderRadius: 18,
         paddingHorizontal: 14,
         paddingVertical: 10,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 2,
+        ...SHADOWS.small,
     },
     bubbleSender: {
-        backgroundColor: "#0D7F8D",
-        borderBottomRightRadius: 4,
+        backgroundColor: COLORS.primary,
+        borderBottomRightRadius: 6,
     },
     bubbleReceiver: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        borderBottomLeftRadius: 4,
+        borderColor: COLORS.border,
+        borderBottomLeftRadius: 6,
     },
     bubbleText: {
         fontSize: 14.5,
@@ -845,18 +995,18 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
     },
     bubbleTextReceiver: {
-        color: "#11343A",
+        color: COLORS.textPrimary,
     },
     bubbleRecalled: {
-        backgroundColor: "#F0F4F6",
-        borderColor: "#CFD8DC",
+        backgroundColor: COLORS.borderLight,
+        borderColor: COLORS.border,
         borderStyle: "dashed",
         borderWidth: 1,
     },
     recalledText: {
         fontSize: 13,
         fontStyle: "italic",
-        color: "#71949A",
+        color: COLORS.textMuted,
     },
     bubbleImage: {
         width: 220,
@@ -865,40 +1015,36 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     workoutCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 16,
         padding: 12,
         marginBottom: 6,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+        borderColor: COLORS.border,
     },
     workoutIconWrap: {
         width: 34,
         height: 34,
-        borderRadius: 17,
-        backgroundColor: "#0D7F8D",
+        borderRadius: 11,
+        backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "center",
     },
     workoutTag: {
         fontSize: 10,
-        fontWeight: "bold",
-        color: "#0D7F8D",
+        fontWeight: "800",
+        color: COLORS.primary,
+        letterSpacing: 0.4,
     },
     workoutTitle: {
         fontSize: 13,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "700",
+        color: COLORS.textPrimary,
         marginTop: 2,
     },
     workoutDivider: {
         height: 1,
-        backgroundColor: "#DFF6F8",
+        backgroundColor: COLORS.borderLight,
         marginVertical: 10,
     },
     workoutDetailRow: {
@@ -908,20 +1054,20 @@ const styles = StyleSheet.create({
     },
     workoutDetailText: {
         fontSize: 12,
-        color: "#11343A",
+        color: COLORS.textSecondary,
         marginLeft: 6,
         fontWeight: "500",
     },
     confirmBtn: {
-        backgroundColor: "#0D7F8D",
-        paddingVertical: 8,
-        borderRadius: 10,
+        backgroundColor: COLORS.primary,
+        paddingVertical: 9,
+        borderRadius: 12,
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
     },
     confirmedBtn: {
-        backgroundColor: "#2E7D32",
+        backgroundColor: COLORS.accentGreen,
     },
     confirmBtnText: {
         color: "#FFFFFF",
@@ -931,19 +1077,15 @@ const styles = StyleSheet.create({
     reactionBadge: {
         position: "absolute",
         bottom: -10,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 12,
         paddingHorizontal: 6,
         paddingVertical: 2,
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 2,
+        borderColor: COLORS.border,
+        ...SHADOWS.small,
     },
     timeRow: {
         flexDirection: "row",
@@ -952,8 +1094,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     timeText: {
-        fontSize: 11,
-        color: "#71949A",
+        fontSize: 10.5,
+        color: COLORS.textLight,
     },
     typingBubble: {
         flexDirection: "row",
@@ -967,48 +1109,54 @@ const styles = StyleSheet.create({
         width: 7,
         height: 7,
         borderRadius: 4,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
     },
     replyBox: {
         flexDirection: "row",
         padding: 8,
         borderRadius: 10,
         marginBottom: 4,
-        backgroundColor: "rgba(13, 127, 141, 0.12)",
+        backgroundColor: "rgba(15, 84, 104, 0.12)",
     },
     replyBoxSender: {
-        backgroundColor: "rgba(13, 127, 141, 0.15)",
+        backgroundColor: "rgba(15, 84, 104, 0.15)",
     },
     replyBoxReceiver: {
         backgroundColor: "rgba(113, 148, 154, 0.15)",
     },
     replyLine: {
         width: 3,
-        backgroundColor: "#0D7F8D",
+        backgroundColor: COLORS.primary,
         borderRadius: 2,
         marginRight: 6,
     },
     replyAuthor: {
         fontSize: 11,
-        fontWeight: "bold",
-        color: "#075E68",
+        fontWeight: "700",
+        color: COLORS.primaryDark,
     },
     replyText: {
         fontSize: 12,
-        color: "#11343A",
+        color: COLORS.textSecondary,
     },
     toolbar: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderTopWidth: 1,
-        borderTopColor: "#9ED9DF",
+        borderTopColor: COLORS.border,
         paddingHorizontal: 10,
-        paddingTop: 8,
+        paddingTop: 10,
         paddingBottom: Platform.OS === "ios" ? 24 : 10,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
+        ...SHADOWS.card,
+        shadowOffset: { width: 0, height: -3 },
     },
     replyBanner: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#DFF6F8",
+        backgroundColor: COLORS.primarySoft,
+        borderLeftWidth: 3,
+        borderLeftColor: COLORS.primary,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 12,
@@ -1016,11 +1164,11 @@ const styles = StyleSheet.create({
     },
     replyBannerTitle: {
         fontSize: 12,
-        color: "#075E68",
+        color: COLORS.primaryDark,
     },
     replyBannerText: {
         fontSize: 12,
-        color: "#11343A",
+        color: COLORS.textSecondary,
         marginTop: 2,
     },
     attachMenu: {
@@ -1028,24 +1176,24 @@ const styles = StyleSheet.create({
         justifyContent: "space-around",
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: "#DFF6F8",
+        borderBottomColor: COLORS.borderLight,
         marginBottom: 8,
     },
     attachItem: {
         alignItems: "center",
     },
     attachIconWrap: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 48,
+        height: 48,
+        borderRadius: 16,
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: 4,
+        marginBottom: 6,
     },
     attachLabel: {
         fontSize: 11,
         fontWeight: "600",
-        color: "#11343A",
+        color: COLORS.textSecondary,
     },
     toolbarInputRow: {
         flexDirection: "row",
@@ -1059,18 +1207,19 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#EAF9FB",
+        backgroundColor: COLORS.background,
         borderRadius: 22,
         paddingHorizontal: 14,
-        paddingVertical: Platform.OS === "ios" ? 8 : 4,
+        paddingVertical: Platform.OS === "ios" ? 9 : 4,
+        minHeight: 42,
         marginHorizontal: 6,
         borderWidth: 1,
-        borderColor: "#9ED9DF",
+        borderColor: COLORS.border,
     },
     input: {
         flex: 1,
         fontSize: 14.5,
-        color: "#11343A",
+        color: COLORS.textPrimary,
         maxHeight: 100,
         padding: 0,
     },
@@ -1083,22 +1232,30 @@ const styles = StyleSheet.create({
         marginLeft: 2,
     },
     sendBtn: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: "#0D7F8D",
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        marginLeft: 2,
+        ...SHADOWS.glow,
+    },
+    sendBtnGradient: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         justifyContent: "center",
         alignItems: "center",
-        marginLeft: 4,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 6,
-        elevation: 3,
+    },
+    dragHandle: {
+        alignSelf: "center",
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
+        marginBottom: 12,
     },
     reactionOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        backgroundColor: "rgba(17, 52, 58, 0.45)",
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 24,
@@ -1109,32 +1266,26 @@ const styles = StyleSheet.create({
     },
     emojiBar: {
         flexDirection: "row",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 30,
         paddingHorizontal: 14,
         paddingVertical: 8,
         marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#9ED9DF",
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.9,
-        shadowRadius: 10,
-        elevation: 5,
+        ...SHADOWS.card,
+        shadowOpacity: 0.15,
+        elevation: 6,
     },
     emojiItem: {
         paddingHorizontal: 8,
     },
     msgActionMenu: {
         width: "100%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         borderRadius: 20,
         paddingVertical: 8,
-        shadowColor: "#D9D7FF",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.9,
-        shadowRadius: 10,
-        elevation: 5,
+        ...SHADOWS.card,
+        shadowOpacity: 0.15,
+        elevation: 6,
     },
     msgActionRow: {
         flexDirection: "row",
@@ -1144,21 +1295,21 @@ const styles = StyleSheet.create({
     },
     msgActionText: {
         fontSize: 15,
-        fontWeight: "500",
-        color: "#11343A",
+        fontWeight: "600",
+        color: COLORS.textPrimary,
         marginLeft: 14,
     },
     infoModalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        backgroundColor: "rgba(17, 52, 58, 0.45)",
         justifyContent: "flex-end",
     },
     infoModalContent: {
-        backgroundColor: "#FFFFFF",
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingTop: 10,
         paddingBottom: 36,
         maxHeight: "85%",
     },
@@ -1170,29 +1321,30 @@ const styles = StyleSheet.create({
     },
     infoModalTitle: {
         fontSize: 17,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     infoProfile: {
         alignItems: "center",
         marginVertical: 12,
     },
     infoAvatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 84,
+        height: 84,
+        borderRadius: 42,
         borderWidth: 3,
-        borderColor: "#0D7F8D",
+        borderColor: COLORS.primary,
         marginBottom: 10,
+        backgroundColor: COLORS.primaryLight,
     },
     infoName: {
         fontSize: 19,
-        fontWeight: "bold",
-        color: "#11343A",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     infoSub: {
         fontSize: 13,
-        color: "#71949A",
+        color: COLORS.textMuted,
         marginTop: 4,
         textAlign: "center",
     },
@@ -1208,8 +1360,8 @@ const styles = StyleSheet.create({
     quickActionCircle: {
         width: 48,
         height: 48,
-        borderRadius: 24,
-        backgroundColor: "#DFF6F8",
+        borderRadius: 16,
+        backgroundColor: COLORS.primaryLight,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 6,
@@ -1217,7 +1369,7 @@ const styles = StyleSheet.create({
     quickActionText: {
         fontSize: 11,
         fontWeight: "600",
-        color: "#11343A",
+        color: COLORS.textSecondary,
         textAlign: "center",
     },
     infoSection: {
@@ -1225,8 +1377,8 @@ const styles = StyleSheet.create({
     },
     infoSectionTitle: {
         fontSize: 11,
-        fontWeight: "bold",
-        color: "#71949A",
+        fontWeight: "800",
+        color: COLORS.textMuted,
         letterSpacing: 0.8,
         marginBottom: 8,
     },
@@ -1235,13 +1387,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 13,
         borderBottomWidth: 1,
-        borderBottomColor: "#DFF6F8",
+        borderBottomColor: COLORS.borderLight,
     },
     infoRowText: {
         flex: 1,
         fontSize: 14.5,
         fontWeight: "500",
-        color: "#11343A",
+        color: COLORS.textPrimary,
         marginLeft: 12,
     },
     fullImageOverlay: {

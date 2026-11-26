@@ -21,11 +21,11 @@
                     @click="showMenu = !showMenu"
                 >
                     <div class="admin-avatar">
-                        AD
+                        {{ avatarInitial }}
                     </div>
 
                     <div class="admin-info">
-                        <strong>VisionFit Admin</strong>
+                        <strong>{{ adminName }}</strong>
                         <span>Gym Admin</span>
                     </div>
 
@@ -43,12 +43,12 @@
                 >
                     <div class="menu-profile">
                         <div class="admin-avatar large">
-                            AD
+                            {{ avatarInitial }}
                         </div>
 
                         <div>
-                            <strong>VisionFit Admin</strong>
-                            <span>admin@visionfit.vn</span>
+                            <strong>{{ adminName }}</strong>
+                            <span>{{ adminEmail }}</span>
                         </div>
                     </div>
 
@@ -84,12 +84,27 @@
 </template>
 
 <script>
+import api from '../../../core/baseRequestAdmin';
+import { createToaster } from '@meforma/vue-toaster'
+
+const toaster = createToaster({ position: 'top-right' })
+
 export default {
     name: "TopRocker",
 
     data() {
         return {
-            showMenu: false
+            showMenu: false,
+            adminName: localStorage.getItem('ho_ten_admin') || 'VisionFit Admin',
+            adminEmail: localStorage.getItem('email_admin') || 'admin@visionfit.vn',
+        }
+    },
+
+    computed: {
+        avatarInitial() {
+            if (!this.adminName) return 'AD';
+            const parts = this.adminName.trim().split(' ');
+            return parts[parts.length - 1].charAt(0).toUpperCase();
         }
     },
 
@@ -101,6 +116,14 @@ export default {
 
         logout() {
             this.showMenu = false;
+            const token = localStorage.getItem('token_admin');
+            if (token) {
+                api.post('/admin/logout').catch(() => {});
+            }
+            localStorage.removeItem('token_admin');
+            localStorage.removeItem('ho_ten_admin');
+            localStorage.removeItem('email_admin');
+            toaster.success('Đã đăng xuất khỏi hệ thống quản trị');
             this.$router.push('/admin/login');
         }
     }
@@ -131,7 +154,7 @@ export default {
 .page-info > span {
     display: block;
     color: #0d7f8d;
-    font-size: 7.5px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: 1.4px;
 }
@@ -140,7 +163,7 @@ export default {
     display: block;
     margin-top: 2px;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .top-right {
@@ -155,7 +178,7 @@ export default {
     border-radius: 999px;
     background: #eaf8f2;
     color: #2c7c60;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -202,7 +225,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -218,18 +241,18 @@ export default {
 
 .admin-info strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .admin-info span {
     margin-top: 2px;
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .arrow {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
     transition: 0.2s ease;
 }
 
@@ -263,13 +286,13 @@ export default {
 
 .menu-profile strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .menu-profile span {
     margin-top: 3px;
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .menu-divider {
@@ -304,7 +327,7 @@ export default {
     border-radius: 9px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -315,13 +338,13 @@ export default {
 
 .menu-item strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .menu-item small {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 .menu-item.logout:hover {

@@ -1,17 +1,18 @@
-﻿import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
+import { navigationRef } from "./src/general/rootNavigation";
 import { Alert, Animated, View, Text } from "react-native";
 import React, { useEffect, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { notificationEmitter } from "./src/general/notification";
+import { FloatingMascotWidget } from "./src/components/mascot/FloatingMascotWidget";
 import MemberHome from "./src/page/member/MemberHome";
 import WorkoutPlanScreen from "./src/page/member/WorkoutPlanScreen";
 import Homepage from "./src/page/trainners/HomePage";
 import AuthScreen from "./src/page/member/AuthScreen";
 import Login from "./src/page/login";
-import GenderSelection from "./src/page/member/GenderSelection";
-import BodyMetrics from "./src/page/member/BodyMetrics";
+import PhongTap from "./src/page/member/PhongTap";
 import TrainerAuthScreen from "./src/page/trainners/TrainerAuthScreen";
 import Dashboard from "./src/page/trainners/Dashboard";
 import Income from "./src/page/trainners/Income";
@@ -21,6 +22,8 @@ import Schedule from "./src/page/trainners/Schedule";
 import SessionHistory from "./src/page/trainners/SessionHistory";
 import SessionReview from "./src/page/trainners/SessionReview";
 import Members from "./src/page/trainners/Members";
+import TrainerChat from "./src/page/trainners/TrainerChat";
+import TrainerFeed from "./src/page/trainners/TrainerFeed";
 import SportFeed from "./src/page/member/SportFeed";
 import headerPage from "./src/page/member/TrainingPlan/Header/page";
 import DashboardScreen from "./src/page/member/TrainingPlan/Tab/DashboardScreen";
@@ -61,48 +64,67 @@ import OnboardingScreen1 from "./src/page/screens/OnboardingScreen1";
 import OnboardingScreen2 from "./src/page/screens/OnboardingScreen2";
 import OnboardingScreen3 from "./src/page/screens/OnboardingScreen3";
 import ExerciseDetailScreen from "./src/page/member/TrainingPlan/Tab/ExerciseDetailScreen";
+import AiConsultationScreen from "./src/page/member/AiConsultationScreen";
+import PTListScreen from "./src/page/member/PTListScreen";
+import WorkoutSelectionScreen from "./src/page/member/WorkoutSelectionScreen";
+import RegistrationReviewScreen from "./src/page/member/RegistrationReviewScreen";
+import PaymentScreen from "./src/page/member/PaymentScreen";
+import RegistrationSuccessScreen from "./src/page/member/RegistrationSuccessScreen";
+import MyPackagesScreen from "./src/page/member/MyPackagesScreen";
+import MyPackageDetailScreen from "./src/page/member/MyPackageDetailScreen";
+import WorkoutHistory from "./src/page/member/WorkoutHistory";
+import EnterTrainerCodeScreen from "./src/page/member/EnterTrainerCodeScreen";
+import ChangeWorkoutScheduleScreen from "./src/page/member/ChangeWorkoutScheduleScreen";
+import CreateSchedule from "./src/page/trainners/CreateSchedule";
+import TrainerNotifications from "./src/page/trainners/TrainerNotifications";
+import EditTrainerProfile from "./src/page/trainners/EditTrainerProfile";
+import AddMember from "./src/page/trainners/AddMember";
+import TrainerSettings from "./src/page/trainners/TrainerSettings";
+import selectcalendar from "./src/page/trainners/SelectCalendar";
 
 
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const navigationRef = createNavigationContainerRef();
 
 const MemberWorkoutStack = createNativeStackNavigator();
 
 function MemberWorkoutNavigator() {
   return (
-    <MemberWorkoutStack.Navigator initialRouteName="ExercisePage" screenOptions={{ headerShown: false }}>
+    <MemberWorkoutStack.Navigator initialRouteName="headerPage" screenOptions={{ headerShown: false }}>
 
       <MemberWorkoutStack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+      <MemberWorkoutStack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
 
       <MemberWorkoutStack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
 
       <MemberWorkoutStack.Screen name="WorkoutPlan" component={WorkoutPlan} />
 
-      <MemberWorkoutStack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen}/>
+      <MemberWorkoutStack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
 
       <MemberWorkoutStack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
 
       <MemberWorkoutStack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
+      <MemberWorkoutStack.Screen name="PhongTap" component={PhongTap} />
 
 
-      <MemberWorkoutStack.Screen name="headerPage" component={headerPage}/>
+      <MemberWorkoutStack.Screen name="headerPage" component={headerPage} />
       <MemberWorkoutStack.Screen name="DashboardScreen" component={DashboardScreen} />
       <MemberWorkoutStack.Screen name="DietScreen" component={DietScreen} />
       <MemberWorkoutStack.Screen name="DietDetail" component={DietDetail} />
-      <MemberWorkoutStack.Screen name="ExercisePage" component={ExercisePage}/>
-      <MemberWorkoutStack.Screen name="ReportPage" component={ReportPage}/>
+      <MemberWorkoutStack.Screen name="ExercisePage" component={ExercisePage} />
+      <MemberWorkoutStack.Screen name="ReportPage" component={ReportPage} />
       <MemberWorkoutStack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
-      <MemberWorkoutStack.Screen name="ResultPage" component={ResultPage}/>
+      <MemberWorkoutStack.Screen name="ResultPage" component={ResultPage} />
       <MemberWorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
-
-
-
-
+      <MemberWorkoutStack.Screen name="EnterTrainerCodeScreen" component={EnterTrainerCodeScreen} />
+      <MemberWorkoutStack.Screen name="EnterTrainerCode" component={EnterTrainerCodeScreen} />
+      <MemberWorkoutStack.Screen name="ChangeWorkoutScheduleScreen" component={ChangeWorkoutScheduleScreen} />
+      <MemberWorkoutStack.Screen name="ChangeWorkoutSchedule" component={ChangeWorkoutScheduleScreen} />
     </MemberWorkoutStack.Navigator>
   );
 }
+
 
 
 
@@ -123,41 +145,63 @@ function AnimatIcon({ name_icon, focused, color, size }: { name_icon: string; fo
 
 function MainTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          let name_icon = "";
-          // if (route.name === "Home") name_icon = focused ? "home" : "home-outline";
-          // else if (route.name === "Login") name_icon = focused ? "heart-sharp" : "heart-outline";
-          // else if (route.name === "ScanQR") name_icon = focused ? "scan-circle" : "scan";
-          // else if (route.name === "ChatBot") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
-          // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "people-outline";
-          return (
-            <AnimatIcon
-              name_icon={name_icon}
-              focused={focused}
-              color={color}
-              size={size}
-            />
-          );
-        },
-        tabBarActiveTintColor: "#0D7F8D",
-        tabBarInactiveTintColor: "#71949A",
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "bold"
-        }
-      })}
-    >
-      <Tab.Screen name="Home" component={Homepage} />
-      {/* <Tab.Screen name="login" component={StoreScheduleMember} /> */}
-      {/* <Tab.Screen name="ScanQR" component={ScanQR} />
-      <Tab.Screen name="ChatBot" component={ChatBot} /> */}
-      {/* <Tab.Screen name="Profile" component={Profile} /> */}
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => {
+            let name_icon = "";
+            if (route.name === "Home") name_icon = focused ? "home" : "home-outline";
+            else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
+            else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
+            else if (route.name === "Schedule") name_icon = focused ? "calendar" : "calendar-outline";
+            else if (route.name === "Members") name_icon = focused ? "people" : "people-outline";
+            else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
+            return (
+              <AnimatIcon
+                name_icon={name_icon}
+                focused={focused}
+                color={color}
+                size={size}
+              />
+            );
+          },
+          tabBarActiveTintColor: "#0D7F8D",
+          tabBarInactiveTintColor: "#71949A",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "bold",
+            marginBottom: 5,
+          },
+          tabBarStyle: {
+            marginHorizontal: 13,
+            marginBottom: 25,
+            height: 70,
+            borderRadius: 40,
+            backgroundColor: "#FFFFFF",
+            borderTopWidth: 0,
+            elevation: 10,
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 0,
+              height: 4,
+            },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            paddingTop: 5,
+            paddingBottom: 5,
+          },
+        })}
+      >
+        <Tab.Screen name="Home" component={Homepage} options={{ tabBarLabel: "Trang chủ" }} />
+        <Tab.Screen name="Feed" component={TrainerFeed} options={{ tabBarLabel: "Bảng tin" }} />
+        <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
+        <Tab.Screen name="Schedule" component={Schedule} options={{ tabBarLabel: "Lịch dạy" }} />
+        <Tab.Screen name="Members" component={Members} options={{ tabBarLabel: "Học viên" }} />
+        <Tab.Screen name="Profile" component={Profile} options={{ tabBarLabel: "Hồ sơ" }} />
+      </Tab.Navigator>
 
-    </Tab.Navigator>
-
+    </View>
   );
 }
 
@@ -167,7 +211,7 @@ function SoTayStack() {
   return (
     <SoTayStackNav.Navigator screenOptions={{ headerShown: false }}>
       <SoTayStackNav.Screen name="SoTayHome" component={SoTayHomeScreen} />
-      
+
       {/* Exercises */}
       <SoTayStackNav.Screen name="ExerciseCategories" component={ExerciseCategoriesScreen} />
       <SoTayStackNav.Screen name="ExerciseList" component={ExerciseListScreen} />
@@ -193,78 +237,89 @@ function SoTayStack() {
 
 function MemberTabs() {
   return (
-    <Tab.Navigator screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarIcon: ({ focused, color, size }) => {
-        let name_icon = "";
-        if (route.name === "Kế Hoạch Tập") name_icon = focused ? "barbell-sharp" : "barbell";
-        else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
-        else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
-        else if (route.name === "Sổ Tay") name_icon = focused ? "book-sharp" : "book-outline";
-        else if (route.name === "Thêm") name_icon = focused ? "ellipsis-horizontal-circle-sharp" : "ellipsis-horizontal-outline";
-        // else if (route.name === "Profile") name_icon = focused ? "person-circle-sharp" : "person-outline";
-        return (
-          <AnimatIcon
-            name_icon={name_icon}
-            focused={focused}
-            color={color}
-            size={size}
-          />
-        );
-      },
-      tabBarActiveTintColor: "#0D7F8D",
-      tabBarInactiveTintColor: "#71949A",
-      tabBarLabelStyle: {
-        fontSize: 12,
-        fontWeight: "bold",
-        marginBottom: 5,
-      },
-      tabBarStyle: {
-        position: "absolute",
-        // Cách trái + phải
-        marginHorizontal: 13,
-        // Cách đáy
-        bottom: 25,
-        height: 70,
-        // Bo tròn
-        borderRadius: 40,
-        backgroundColor: "rgba(255,255,255,0.80)",
-        // Xóa đường viền mặc định
-        borderTopWidth: 0,
-        // Shadow Android
-        elevation: 8,
-        // Shadow iOS
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: 3,
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          let name_icon = "";
+          if (route.name === "Kế Hoạch Tập") name_icon = focused ? "barbell-sharp" : "barbell";
+          else if (route.name === "Feed") name_icon = focused ? "albums-sharp" : "albums-outline";
+          else if (route.name === "Chatroom") name_icon = focused ? "chatbubbles" : "chatbubbles-outline";
+          else if (route.name === "Sổ Tay") name_icon = focused ? "book-sharp" : "book-outline";
+          else if (route.name === "Thêm") name_icon = focused ? "ellipsis-horizontal-circle-sharp" : "ellipsis-horizontal-outline";
+         
+          return (
+            <AnimatIcon
+              name_icon={name_icon}
+              focused={focused}
+              color={color}
+              size={size}
+            />
+          );
         },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        paddingTop: 5,
-        paddingBottom: 5,
-      },
-    })}>
-      <Tab.Screen name="Kế Hoạch Tập" component={MemberWorkoutNavigator} />
-      <Tab.Screen name="Feed" component={SportFeed} />
-      <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
-      <Tab.Screen name="Sổ Tay" component={SoTayStack} />
-      <Tab.Screen name="Thêm" component={MemberProfile} />
-    </Tab.Navigator>
+        tabBarActiveTintColor: "#0D7F8D",
+        tabBarInactiveTintColor: "#71949A",
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "bold",
+          marginBottom: 5,
+        },
+        tabBarStyle: {
+          marginHorizontal: 13,
+          marginBottom: 25,
+          height: 70,
+          borderRadius: 40,
+          backgroundColor: "#FFFFFF",
+          borderTopWidth: 0,
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 3,
+          },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          paddingTop: 5,
+          paddingBottom: 5,
+        },
+      })}>
+        <Tab.Screen name="Kế Hoạch Tập" component={MemberWorkoutNavigator} />
+        <Tab.Screen name="Feed" component={SportFeed} />
+        <Tab.Screen name="Chatroom" component={ChatList} options={{ tabBarLabel: "Đoạn chat" }} />
+        <Tab.Screen name="Sổ Tay" component={SoTayStack} />
+        <Tab.Screen name="Thêm" component={MemberProfile} />
+        
+      </Tab.Navigator>
+
+    </View>
   );
 }
 
 
+const HIDDEN_MASCOT_ROUTES = [
+  'Onloading',
+  'Login',
+  'AuthScreen',
+  'TrainerAuthScreen',
+  'OnboardingScreen',
+  'OnboardingScreen1',
+  'OnboardingScreen2',
+  'OnboardingScreen3',
+];
+
 const App = () => {
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+  const [currentRoute, setCurrentRoute] = useState<string>("Onloading");
   useEffect(() => {
     const sub = (payload: any) => {
       const { type, message } = payload;
       if (type === "auth") {
         Alert.alert("Authentication Error", message);
         navigationRef.navigate("Login" as never);
+      } else if (message) {
+        Alert.alert(type === "success" ? "Thành công" : "Thông báo", message);
       }
-    }
+    };
     notificationEmitter.on("thong_bao", sub);
 
     return () => {
@@ -272,75 +327,116 @@ const App = () => {
     };
   }, []);
   return (
-    <NavigationContainer
-      ref={navigationRef}
-      onReady={() => {
-        if (pendingRoute) {
-          navigationRef.navigate(pendingRoute as never);
-          setPendingRoute(null);
-        }
-      }}
-    >
-      <Stack.Navigator
-        initialRouteName="Onloading"        // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
-        screenOptions={{ headerShown: false }}
+    <View style={{ flex: 1 }}>
+      <NavigationContainer
+        ref={navigationRef}
+        onStateChange={() => {
+          const r = (navigationRef.getCurrentRoute() as any)?.name;
+          if (r) setCurrentRoute(r);
+        }}
+        onReady={() => {
+          const r = (navigationRef.getCurrentRoute() as any)?.name;
+          if (r) setCurrentRoute(r);
+          if (pendingRoute) {
+            navigationRef.navigate(pendingRoute as never);
+            setPendingRoute(null);
+          }
+        }}
       >
-        <Stack.Screen name="Onloading" component={Onloading}/>
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="MemberTabs" component={MemberTabs} />
-        <Stack.Screen name="MemberHome" component={MemberHome} />
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="AuthScreen" component={AuthScreen} />
-        {/* cua member */}
-        <Stack.Screen name="GenderSelection" component={GenderSelection} />
-        <Stack.Screen name="BodyMetrics" component={BodyMetrics} />
-        <Stack.Screen name="headerPage" component={headerPage} />
-        {/* <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
-        <Stack.Screen name="DietScreen" component={DietScreen} />
-       
-        <Stack.Screen name="DietDetail" component={DietDetail} /> 
-        <Stack.Screen name="ExercisePage" component={ExercisePage} />
-        <Stack.Screen name="ReportPage" component={ReportPage} />
-        <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} /> */}
-        {/* <Stack.Screen name="ResultPage" component={ResultPage}/> */}
-        {/* <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen}/> */}
+        <Stack.Navigator
+          initialRouteName="Onloading" // code trang nào thì lấy chỗ name ở dưới thay vào login thì nó sẽ hiện trang đó 
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="AiConsultationScreen" component={AiConsultationScreen} />
+          <Stack.Screen name="Onloading" component={Onloading} />
+          <Stack.Screen name="MemberTabs" component={MemberTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
+          <Stack.Screen name="MemberHome" component={MemberHome} />
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="AuthScreen" component={AuthScreen} />
+          {/* cua member */}
+          <Stack.Screen name="PhongTap" component={PhongTap} />
+          <Stack.Screen name="headerPage" component={headerPage} />
+          <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+          <Stack.Screen name="DietScreen" component={DietScreen} />
+          <Stack.Screen name="DietDetail" component={DietDetail} />
+          <Stack.Screen name="ExercisePage" component={ExercisePage} />
+          <Stack.Screen name="ReportPage" component={ReportPage} />
+          <Stack.Screen name="WorkoutExercisePlan" component={WorkoutExercisePlan} />
+          <Stack.Screen name="ResultPage" component={ResultPage} />
+          <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
+
+          <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
+          <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
+          <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} />
+          <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
+          <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
+          <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} />
+          <Stack.Screen name="WorkoutSelectionScreen" component={WorkoutSelectionScreen} />
+          <Stack.Screen name="WorkoutSelection" component={WorkoutSelectionScreen} />
+          <Stack.Screen name="PTListScreen" component={PTListScreen} />
+          <Stack.Screen name="PTList" component={PTListScreen} />
+          <Stack.Screen name="RegistrationReviewScreen" component={RegistrationReviewScreen} />
+          <Stack.Screen name="RegistrationReview" component={RegistrationReviewScreen} />
+          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+          <Stack.Screen name="Payment" component={PaymentScreen} />
+          <Stack.Screen name="RegistrationSuccessScreen" component={RegistrationSuccessScreen} />
+          <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccessScreen} />
+          <Stack.Screen name="MyPackagesScreen" component={MyPackagesScreen} />
+          <Stack.Screen name="MyPackages" component={MyPackagesScreen} />
+          <Stack.Screen name="MyPackageDetailScreen" component={MyPackageDetailScreen} />
+          <Stack.Screen name="MyPackageDetail" component={MyPackageDetailScreen} />
+          <Stack.Screen name="WorkoutHistory" component={WorkoutHistory} />
+          <Stack.Screen name="EnterTrainerCodeScreen" component={EnterTrainerCodeScreen} />
+          <Stack.Screen name="EnterTrainerCode" component={EnterTrainerCodeScreen} />
+          <Stack.Screen name="ChangeWorkoutScheduleScreen" component={ChangeWorkoutScheduleScreen} />
+          <Stack.Screen name="ChangeWorkoutSchedule" component={ChangeWorkoutScheduleScreen} />
+
+
+          {/* // gioi thieu */}
+          <Stack.Screen name="OnboardingScreen" component={OnboardingScreen} />
+          <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1} />
+          <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2} />
+          <Stack.Screen name="OnboardingScreen3" component={OnboardingScreen3} />
 
 
 
-         {/* <Stack.Screen name="WorkoutPlanScreen" component={WorkoutPlanScreen} />
-        <Stack.Screen name="WorkoutUnPlan" component={WorkoutUnPlan} />
-        <Stack.Screen name="WorkoutPlan" component={WorkoutPlan} /> 
-        <Stack.Screen name="WorkoutLocationScreen" component={WorkoutLocationScreen} />
-        <Stack.Screen name="WorkoutDifficultyScreen" component={WorkoutDifficultyScreen} />
-        <Stack.Screen name="WorkoutProgramDetailScreen" component={WorkoutProgramDetailScreen} /> */}
+
+          {/* cua trainner  */}
+          <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
+          {/* <Stack.Screen name="Dashboard" component={Dashboard} /> */}
+          <Stack.Screen name="MainTabs" component={MainTabs} options={{ contentStyle: { backgroundColor: "#F4FAFB" } }} />
+          <Stack.Screen name="TrainerFeed" component={TrainerFeed} />
+          <Stack.Screen name="Income" component={Income} />
+          <Stack.Screen name="MemberDetail" component={MemberDetail} />
+          <Stack.Screen name="Members" component={Members} />
+          <Stack.Screen name="TrainerChat" component={TrainerChat} />
+          <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="Schedule" component={Schedule} />
+          <Stack.Screen name="SessionHistory" component={SessionHistory} />
+          <Stack.Screen name="SessionReview" component={SessionReview} />
+          <Stack.Screen name="CreateSchedule" component={CreateSchedule} />
+          <Stack.Screen name="TrainerNotifications" component={TrainerNotifications} />
+          <Stack.Screen name="EditTrainerProfile" component={EditTrainerProfile} />
+          <Stack.Screen name="AddMember" component={AddMember} />
+          <Stack.Screen name="TrainerSettings" component={TrainerSettings} />
+          <Stack.Screen name="MemberProfile" component={MemberProfile} />
+          <Stack.Screen name="selectcalendar" component={selectcalendar}/>
 
 
-        {/* // gioi thieu */}
-       <Stack.Screen name="OnboardingScreen" component={OnboardingScreen}/>
-       <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1}/>
-       <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2}/>
-       <Stack.Screen name="OnboardingScreen3" component={OnboardingScreen3}/>
-
-
-
-        {/* cua trainner  */}
-        <Stack.Screen name="TrainerAuthScreen" component={TrainerAuthScreen} />
-        <Stack.Screen name="Dashboard" component={Dashboard} />
-        <Stack.Screen name="Income" component={Income} />
-        <Stack.Screen name="MemberDetail" component={MemberDetail} />
-        <Stack.Screen name="Members" component={Members} />
-        <Stack.Screen name="Profile" component={Profile} />
-        <Stack.Screen name="Schedule" component={Schedule} />
-        <Stack.Screen name="SessionHistory" component={SessionHistory} />
-        <Stack.Screen name="SessionReview" component={SessionReview} />
-        <Stack.Screen name="MemberProfile" component={MemberProfile} />
-
-
-        {/* cua chat */}
-        <Stack.Screen name="ChatList" component={ChatList} />
-        <Stack.Screen name="ChatRoom" component={ChatRoom} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  )
-}
+          {/* cua chat */}
+          <Stack.Screen name="ChatList" component={ChatList} />
+          <Stack.Screen name="ChatRoom" component={ChatRoom} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      {currentRoute &&
+        !HIDDEN_MASCOT_ROUTES.includes(currentRoute) &&
+        !currentRoute.toLowerCase().includes('onloading') &&
+        !currentRoute.toLowerCase().includes('login') &&
+        !currentRoute.toLowerCase().includes('auth') &&
+        !currentRoute.toLowerCase().includes('onboarding') && (
+          <FloatingMascotWidget />
+      )}
+ </View>
+ );
+};
 export default App;

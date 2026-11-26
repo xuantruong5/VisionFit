@@ -10,6 +10,7 @@ class ChuongTrinhBaiTap extends Model
     protected $fillable = [
         'id_chuong_trinh',
         'id_bai_tap',
+        'id_dang_ky_chuong_trinh',
         'ngay_thu',
         'ten_ngay_tap',
         'thoi_gian_phut',

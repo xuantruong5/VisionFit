@@ -1,112 +1,183 @@
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, StatusBar, ActivityIndicator, } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useRoute } from '@react-navigation/native';
-import apiFitlife from '../../general/api';
 import LinearGradient from 'react-native-linear-gradient';
-const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
-  const { goalId,goalName,gender,id_noi_tap,ten_noi_tap, } = route.params || {};
+import AppHeader from '../../components/AppHeader';
+import { COLORS, SHADOWS } from '../../general/theme';
+import apiFitlife from '../../general/api';
+
+const WorkoutDifficultyScreen = ({ navigation, route }: any) => {
+  const { goalId, goalName, gender, id_noi_tap, ten_noi_tap } = route.params || {};
+
   const [difficulties, setDifficulties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchDifficulties = async () => {
       try {
         setLoading(true);
-        const res = await apiFitlife.get('/client/chuong-trinh-tap/cap-do');
+
+        const res = await apiFitlife.get(
+          '/client/chuong-trinh-tap/cap-do',
+          {
+            params: {
+              ten_chuong_trinh: goalName?.trim(),
+              gioi_tinh_ap_dung: gender,
+              id_noi_tap: id_noi_tap,
+            },
+          },
+        );
+
         const data = res.data?.data || [];
-        // Lọc cấp độ theo chương trình đã chọn
-        const filteredData = goalName
-          ? data.filter(
-            (item: any) => item.ten_chuong_trinh === goalName,
-          )
-          : data;
-        setDifficulties(filteredData);
-      } catch (error) {
-        console.log('Lỗi lấy cấp độ:', error);
+        setDifficulties(data);
+      } catch (error: any) {
+        console.log(
+          'Lỗi lấy cấp độ:',
+          error.response?.data || error.message,
+        );
         setDifficulties([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDifficulties();
-  }, [goalName]);
+    if (goalName && gender !== undefined && id_noi_tap !== undefined) {
+      fetchDifficulties();
+    } else {
+      setDifficulties([]);
+      setLoading(false);
+    }
+  }, [goalName, gender, id_noi_tap]);
+
+  const defaultBackgrounds = [
+    'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={27} color="#376D88" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cấp độ khó</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
+      <AppHeader
+        title="Cấp độ tập luyện"
+        onBack={() => navigation.goBack()}
+      />
+
+      {/* Thông tin chương trình và địa điểm đã chọn */}
       <View style={styles.goalSection}>
         <View style={styles.goalCard}>
-          <View style={styles.goalIcon}>
-            <Ionicons name="flag-outline" size={22} color="#0D7F8D" />
-          </View>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.goalIcon}
+          >
+            <Ionicons name="barbell" size={20} color={COLORS.white} />
+          </LinearGradient>
           <View style={styles.goalInfo}>
-            <Text style={styles.goalLabel}>Chương trình của bạn</Text>
-            <Text style={styles.goalName}>
+            <Text style={styles.goalLabel}>Chương trình đang chọn</Text>
+            <Text style={styles.goalName} numberOfLines={1}>
               {goalName || 'Chưa chọn chương trình'}
             </Text>
+            {ten_noi_tap && (
+              <View style={styles.locationChip}>
+                <Ionicons name="location-outline" size={12} color={COLORS.primary} />
+                <Text style={styles.locationChipText}>{ten_noi_tap}</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <Text style={styles.sectionTitle}>
+          Chọn cấp độ phù hợp với thể lực hiện tại:
+        </Text>
+
         {loading ? (
-          <ActivityIndicator size="large" color="#0D7F8D" style={{ marginTop: 40 }} />) : difficulties.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải cấp độ...</Text>
+          </View>
+        ) : difficulties.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconTile}>
+              <Ionicons name="alert-circle-outline" size={30} color={COLORS.accentOrange} />
+            </View>
             <Text style={styles.emptyText}>
               Không tìm thấy cấp độ cho chương trình này.
             </Text>
-          ) : (
+          </View>
+        ) : (
           difficulties.map((item, index) => {
+            const cardBgUri = item.hinh_anh || defaultBackgrounds[index % defaultBackgrounds.length];
+
             return (
-              <TouchableOpacity key={`${item.id}-${item.ten_chuong_trinh}`} style={styles.card} activeOpacity={0.88}
-                onPress={() => navigation.navigate('WorkoutProgramDetailScreen', { ...route.params, goalId, goalName, gender, id_noi_tap, ten_noi_tap, capDoId: item.id, capDoName: item.ten_cap_do, })} >
-                <ImageBackground
-                  source={item.hinh_anh? { uri: item.hinh_anh }: undefined}
-                  style={styles.cardImage} imageStyle={styles.cardImageStyle}>
+              <TouchableOpacity
+                key={`${item.id_chuong_trinh}-${item.id_cap_do}`}
+                style={styles.card}
+                activeOpacity={0.88}
+                onPress={() =>
+                  navigation.navigate('WorkoutProgramDetailScreen', {
+                    ...route.params,
+                    goalId: item.id_chuong_trinh,
+                    capDoId: item.id_cap_do,
+                    capDoName: item.ten_cap_do,
+                    gender: gender,
+                    goalName: item.ten_chuong_trinh,
+                    id_noi_tap,
+                    ten_noi_tap,
+                    mo_ta_chuong_trinh: item.mo_ta_chuong_trinh,
+                    so_ngay: item.so_ngay,
+                    so_buoi_moi_tuan: item.so_buoi_moi_tuan,
+                  })
+                }
+              >
+                <View style={styles.cardImage}>
+                  <Image
+                    source={{ uri: cardBgUri }}
+                    style={styles.cardImageStyle}
+                    resizeMode="cover"
+                  />
                   <LinearGradient
                     colors={[
-                      'rgba(0, 55, 75, 0.98)',
-                      'rgba(0, 75, 92, 0.90)',
-                      'rgba(0, 90, 105, 0.62)',
-                      'rgba(0, 100, 115, 0.28)',
-                      'rgba(0, 100, 115, 0)',
+                      'rgba(7, 88, 101, 0.95)',
+                      'rgba(15, 84, 104, 0.85)',
+                      'rgba(15, 84, 104, 0.35)',
                     ]}
-                    locations={[0, 0.25, 0.5, 0.75, 1]}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
-                    style={styles.blueGradient}
+                    style={styles.gradientOverlay}
                   />
 
                   <View style={styles.cardContent}>
                     <View style={styles.starRow}>
-                      {[1, 2, 3, 4, 5].map(star => (
+                      {[1, 2, 3, 4, 5].map((star) => (
                         <Ionicons
                           key={star}
                           name={star <= item.so_sao ? 'star' : 'star-outline'}
-                          size={25}
-                          color="#08BAC2"
+                          size={18}
+                          color={COLORS.accentGold}
                           style={styles.star}
                         />
                       ))}
                     </View>
 
-                    <Text style={styles.cardTitle}>
-                      {item.ten_cap_do}
+                    <Text style={styles.cardTitle}>{item.ten_cap_do}</Text>
+
+                    <Text style={styles.description} numberOfLines={2}>
+                      {item.mo_ta_cap_do || 'Phù hợp với thể trạng và sức bền cấp độ này'}
                     </Text>
 
-                    <Text style={styles.description}>
-                      {item.mo_ta}
-                    </Text>
+                    <View style={styles.detailLinkRow}>
+                      <Text style={styles.detailLinkText}>Xem chi tiết</Text>
+                    </View>
                   </View>
-                </ImageBackground>
+                </View>
               </TouchableOpacity>
             );
           })
@@ -116,149 +187,191 @@ const WorkoutDifficultyScreen = ({ navigation,route  }: any) => {
   );
 };
 
+export default WorkoutDifficultyScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
-  },
-  header: {
-    height: 72,
-    // backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F0FAFB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: '#11343A',
-  },
-  headerPlaceholder: {
-    width: 44,
+    backgroundColor: COLORS.background,
   },
   goalSection: {
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
   goalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D9EFF1',
-    shadowColor: '#8FAEB2',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   goalIcon: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: '#E3F7F8',
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 13,
+    marginRight: 12,
   },
   goalInfo: {
     flex: 1,
   },
   goalLabel: {
-    fontSize: 13,
-    color: '#71949A',
-    marginBottom: 3,
-    fontWeight: '500',
+    fontSize: 12,
+    color: COLORS.textMuted,
+    fontWeight: '600',
   },
   goalName: {
-    fontSize: 18,
-    color: '#11343A',
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 3,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceTeal,
+    borderWidth: 1,
+    borderColor: COLORS.borderFocus,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: 6,
+    gap: 4,
+  },
+  locationChipText: {
+    fontSize: 11,
+    color: COLORS.primary,
     fontWeight: '700',
   },
   scrollContent: {
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 110,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 14,
+  },
+  loadingContainer: {
+    paddingVertical: 50,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: COLORS.textMuted,
+    fontSize: 14,
+  },
+  emptyContainer: {
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  emptyIconTile: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: '#FFF1EC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 12,
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   card: {
     width: '100%',
-    height: 185,
-    marginBottom: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#78959A',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 9,
-    elevation: 5,
-    
+    height: 160,
+    borderRadius: 26,
+    marginBottom: 16,
+    backgroundColor: COLORS.primaryDark,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
   cardImage: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    borderRadius: 26,
+    overflow: 'hidden',
   },
   cardImageStyle: {
-    borderRadius: 20,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
-  blueGradient: {
+  gradientOverlay: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    width: '78%',
+    width: '85%',
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
   },
   cardContent: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingVertical: 14,
   },
   starRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 6,
   },
   star: {
-    marginRight: 3,
+    marginRight: 4,
   },
   cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
+    color: COLORS.white,
+    fontSize: 21,
     fontWeight: '800',
-    marginBottom: 5,
-    textShadowColor: 'rgba(0,0,0,0.35)',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowRadius: 3,
   },
   description: {
-    color: '#F1FAFB',
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.88)',
+    fontSize: 13,
+    lineHeight: 18,
+    maxWidth: '75%',
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#71949A',
-    fontSize: 15,
-    marginTop: 40,
+  detailLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  detailLinkText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
-
-export default WorkoutDifficultyScreen;

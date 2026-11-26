@@ -458,14 +458,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-history {
@@ -474,7 +474,7 @@ export default {
     border-radius: 10px;
     background: white;
     color: #0d7f8d;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -519,7 +519,7 @@ export default {
     border-radius: 10px;
     background: #0d7f8d;
     color: white;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 800;
 }
 
@@ -527,13 +527,13 @@ export default {
 .checkout-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .section-title p {
     margin: 3px 0 0;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .search-box {
@@ -557,7 +557,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .gymmer-list {
@@ -600,7 +600,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -615,18 +615,18 @@ export default {
 
 .gymmer-info strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .gymmer-info span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .gymmer-code {
     color: #94afb3;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .package-grid {
@@ -664,7 +664,7 @@ export default {
 
 .package-head > span {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 0.7px;
 }
@@ -678,32 +678,32 @@ export default {
     border-radius: 50%;
     background: #0d7f8d;
     color: white;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .package-item h4 {
     margin: 8px 0 0;
     color: #11343a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .package-price {
     margin-top: 12px;
     color: #075e68;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 800;
 }
 
 .package-price span {
     color: #71949a;
-    font-size: 7.5px;
+    font-size: 11px;
     font-weight: 600;
 }
 
 .package-item > p {
     margin: 3px 0 0;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .benefits {
@@ -716,7 +716,7 @@ export default {
 
 .benefits span {
     color: #597d82;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .checkout-card {
@@ -731,14 +731,14 @@ export default {
 
 .checkout-header > span {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1px;
 }
 
 .checkout-header h3 {
     margin-top: 3px;
-    font-size: 15px;
+    font-size: 17px;
 }
 
 .checkout-section {
@@ -750,7 +750,7 @@ export default {
     display: block;
     margin-bottom: 8px;
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -767,13 +767,13 @@ export default {
 
 .selected-user strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .selected-user span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .selected-package {
@@ -789,18 +789,18 @@ export default {
 
 .selected-package strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .selected-package span {
     margin-top: 3px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .selected-package b {
     color: #075e68;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .empty-select {
@@ -808,7 +808,7 @@ export default {
     border-radius: 9px;
     background: #f7fcfd;
     color: #94afb3;
-    font-size: 9px;
+    font-size: 12.5px;
     text-align: center;
 }
 
@@ -822,7 +822,7 @@ export default {
 .price-row {
     margin-top: 11px;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .price-row strong {
@@ -841,7 +841,7 @@ export default {
     border-radius: 9px;
     outline: none;
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .discount-box input:focus {
@@ -857,13 +857,13 @@ export default {
 
 .total-row span {
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
 }
 
 .total-row strong {
     color: #075e68;
-    font-size: 20px;
+    font-size: 22px;
 }
 
 .btn-create {
@@ -874,8 +874,8 @@ export default {
     border-radius: 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 10.5px;
-    font-weight: 750;
+    font-size: 14px;
+    font-weight: 700;
 }
 
 .btn-create:hover:not(:disabled) {
@@ -918,7 +918,7 @@ export default {
 
 .modal-header span {
     color: #0d7f8d;
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: 1px;
 }
@@ -926,13 +926,13 @@ export default {
 .modal-header h3 {
     margin: 3px 0 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #a76b1d;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .btn-close {
@@ -942,7 +942,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .invoice-layout {
@@ -988,13 +988,13 @@ export default {
 
 .qr-section > strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .qr-section > p {
     margin: 7px 0 4px;
     color: #71949a;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .transfer-code {
@@ -1002,7 +1002,7 @@ export default {
     border-radius: 8px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 800;
 }
 
@@ -1020,12 +1020,12 @@ export default {
 
 .info-row span {
     color: #71949a;
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .info-row strong {
     color: #11343a;
-    font-size: 9.5px;
+    font-size: 13px;
     text-align: right;
 }
 
@@ -1043,7 +1043,7 @@ export default {
 
 .invoice-total span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .invoice-total strong {
@@ -1059,7 +1059,7 @@ export default {
     margin-top: 12px;
     padding: 6px 9px;
     border-radius: 999px;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 700;
 }
 
@@ -1092,7 +1092,7 @@ export default {
 .btn-paid {
     padding: 9px 14px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 

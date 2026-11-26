@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Switch} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Switch, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WorkoutPlan from './WorkoutPlan';
-import WorkoutUnPlan from './WorkoutUnPlan';  
+import WorkoutUnPlan from './WorkoutUnPlan';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS, SHADOWS } from '../../general/theme';
 
 const WorkoutPlanScreen = ({ navigation, route }: any) => {
   const [goalModeEnabled, setGoalModeEnabled] = useState(true);
@@ -11,30 +13,86 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-
-      <View style={styles.header}>
-        <View style={styles.headerPlaceholder} />
-
-        <Text style={styles.headerTitle}>Chọn kế hoạch tập luyện của bạn</Text>
-
-        <View style={styles.headerPlaceholder} />
-      </View>
+      <StatusBar barStyle="dark-content" />
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.circleLg} />
+        <View style={styles.circleSm} />
+        <View style={styles.headerRow}>
+          {navigation.canGoBack() && (
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.headerEyebrow}>VISIONFIT</Text>
+            <Text style={styles.headerTitle}>Kế hoạch tập luyện</Text>
+          </View>
+          <View style={styles.headerActionBtns}>
+            <TouchableOpacity
+              style={styles.scheduleHeaderBtn}
+              onPress={() => navigation.navigate('ChangeWorkoutScheduleScreen')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="calendar-outline" size={15} color={COLORS.white} />
+              <Text style={styles.headerBtnText}>Đổi lịch</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.aiHeaderBtn}
+              onPress={() => navigation.navigate('AiConsultationScreen')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="sparkles" size={15} color={COLORS.white} />
+              <Text style={styles.aiHeaderBtnText}>AI</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
 
       <View style={styles.content}>
+        {/* Toggle chế độ mục tiêu */}
         <View style={styles.goalModeHeader}>
           <View style={styles.goalModeTitleRow}>
-            <Text style={styles.goalModeTitle}>Nhóm theo mục tiêu</Text>
+            <View style={styles.goalModeIconBadge}>
+              <Ionicons
+                name={goalModeEnabled ? 'flag' : 'apps'}
+                size={18}
+                color={COLORS.primary}
+              />
+            </View>
+            <View>
+              <Text style={styles.goalModeTitle}>Nhóm theo mục tiêu</Text>
+              <Text style={styles.goalModeSubtitle}>
+                {goalModeEnabled ? 'Đang phân loại theo mục đích tập' : 'Hiển thị tất cả chương trình'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.controlsRow}>
             <Switch
-              trackColor={{ false: '#9ED9DF', true: '#0D7F8D' }}
-              thumbColor={goalModeEnabled ? '#FFFFFF' : '#EAF9FB'}
-              ios_backgroundColor="#EAF9FB"
+              trackColor={{ false: COLORS.border, true: COLORS.primary }}
+              thumbColor={COLORS.white}
+              ios_backgroundColor={COLORS.borderLight}
               onValueChange={() => setGoalModeEnabled(!goalModeEnabled)}
               value={goalModeEnabled}
             />
+            {goalModeEnabled && (
+              <TouchableOpacity
+                style={styles.expandButton}
+                onPress={() => setIsExpanded(!isExpanded)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+            )}
           </View>
-          <TouchableOpacity style={styles.expandButton} onPress={() => setIsExpanded(!isExpanded)} disabled={!goalModeEnabled}>
-            <Ionicons name={goalModeEnabled ? (isExpanded ? "chevron-up" : "chevron-down") : "remove"} size={24} color={goalModeEnabled ? "#0D7F8D" : "#71949A"} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.modeContainer}>
@@ -49,84 +107,165 @@ const WorkoutPlanScreen = ({ navigation, route }: any) => {
   );
 };
 
+export default WorkoutPlanScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.background,
   },
   header: {
-    height: 72,
-    // backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 52,
+    borderRadius: 28,
+    marginHorizontal: 12,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  circleLg: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -70,
+    right: -50,
+  },
+  circleSm: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    bottom: -40,
+    left: -25,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
   },
-
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  headerTextWrap: {
+    flex: 1,
+  },
+  headerEyebrow: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#A9D0DE',
+    letterSpacing: 1,
+  },
   headerTitle: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: '#11343A',
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginTop: 4,
+  },
+  headerActionBtns: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-
-  headerPlaceholder: {
-    width: 44,
+  scheduleHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  headerBtnText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 12.5,
+    marginLeft: 5,
+  },
+  aiHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  aiHeaderBtnText: {
+    color: COLORS.white,
+    fontWeight: '800',
+    fontSize: 13,
+    marginLeft: 6,
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 14,
+    backgroundColor: COLORS.background,
   },
-
   goalModeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    height: 64,
-
-    borderRadius: 18,
+    backgroundColor: COLORS.cardBg,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#B9E5E9',
-
-    marginBottom: 18,
-
-    elevation: 2,
-    shadowColor: '#78959A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
-    shadowRadius: 5,
+    borderColor: COLORS.border,
+    marginTop: -32,
+    marginBottom: 16,
+    ...SHADOWS.card,
+    shadowOpacity: 0.12,
+    elevation: 6,
   },
-
   goalModeTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    flex: 1,
   },
-
+  goalModeIconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
   goalModeTitle: {
-    color: '#11343A',
-    fontSize: 16,
-    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
   },
-
+  goalModeSubtitle: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: 3,
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   expandButton: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: COLORS.surfaceTeal,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   modeContainer: {
     flex: 1,
-    marginBottom: 10
   },
 });
-
-export default WorkoutPlanScreen;

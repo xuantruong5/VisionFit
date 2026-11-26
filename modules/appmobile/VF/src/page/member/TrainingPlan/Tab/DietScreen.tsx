@@ -1,10 +1,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ImageBackground, } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
+import { widthPercentageToDP as wp } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
 import apiFitlife from "../../../../general/api";
+import { COLORS, SHADOWS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
+
+// Nhãn thứ trong tuần cho dải chọn ngày
+const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 const DietScreen = () => {
     // do trang header dang reder trực tiếp nên mới dùng cách này còn kh mọi người cứ dùng cách cũ 
@@ -24,7 +29,6 @@ const DietScreen = () => {
     const today = new Date();
     const [selectedDay, setSelectedDay] = useState(today.getDate());
     const [selectedDate, setSelectedDate] = useState(formatDate(today));
-    const [showDays, setShowDays] = useState(false);
 
     // Danh sách 7 ngày, giữ nguyên giao diện chọn ngày
     const days = Array.from({ length: 7 }, (_, index) => {
@@ -121,37 +125,38 @@ const DietScreen = () => {
     return (
         <View style={styles.container}>
             {/* Thanh chọn ngày */}
-            <View style={styles.daySection}>
+            <LinearGradient colors={[PASTEL.tealSoft, PASTEL.surfaceSoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.daySection}>
                 <View style={styles.daysRow}>
-                    {days.map((item, index) => (
-                        <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => { setSelectedDay(item.day); setSelectedDate(item.date); }}
-                            style={[styles.dayItem, selectedDay === item.day && styles.selectedDay,]} >
-                            <Text style={[styles.dayText, selectedDay === item.day && styles.selectedDayText,]} >
-                                {item.day}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {days.map((item, index) => {
+                        const isSelected = selectedDay === item.day;
+                        const weekday = index === 0 ? "Hôm nay" : WEEKDAYS[new Date(item.date).getDay()];
+                        return (
+                            <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => { setSelectedDay(item.day); setSelectedDate(item.date); }}
+                                style={styles.dayItem} >
+                                <Text style={[styles.weekdayText, index === 0 && styles.todayLabel]} numberOfLines={1}>
+                                    {weekday}
+                                </Text>
+                                {isSelected ? (
+                                    <LinearGradient colors={["#5FD0DA", COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.dayCircle, styles.dayCircleSelected]}>
+                                        <Text style={[styles.dayText, styles.selectedDayText]}>{item.day}</Text>
+                                        <View style={styles.innerDot} />
+                                    </LinearGradient>
+                                ) : (
+                                    <View style={[styles.dayCircle, index === 0 && styles.dayCircleWithDot]}>
+                                        <Text style={styles.dayText}>{item.day}</Text>
+                                        {index === 0 && <View style={[styles.innerDot, styles.innerDotToday]} />}
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
-                {/* Nút mở rộng */}
-                <TouchableOpacity style={styles.dropdownButton} onPress={() => setShowDays(!showDays)} >
-                    <Ionicons name={showDays ? "chevron-up" : "chevron-down"} size={wp("5%")} color="#16B9B7" />
-                </TouchableOpacity>
-                {showDays && (
-                    <View style={styles.dropdownContent}>
-                        <Text style={styles.dropdownTitle}>
-                            Ngày đang chọn: {selectedDate}
-                        </Text>
-                        <Text style={styles.dropdownDescription}>
-                            Chọn ngày để xem thực đơn dinh dưỡng.
-                        </Text>
-                    </View>
-                )}
-            </View>
+            </LinearGradient>
             {/* Danh sách các bữa ăn */}
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
                 {loading ? (
-                    <View style={{ paddingVertical: hp("4%"), alignItems: "center" }}>
-                        <Text style={{ color: "#16B9B7", fontSize: wp("3.8%") }}>
+                    <View style={styles.stateBox}>
+                        <Text style={styles.loadingText}>
                             Đang tải thực đơn...
                         </Text>
                     </View>
@@ -159,12 +164,16 @@ const DietScreen = () => {
                     meals.map((meal) => (
                         <View key={meal.id} style={styles.mealSection}>
                             <View style={styles.mealHeader}>
-                                <Text style={styles.mealName}>
-                                    {meal.name}:
-                                </Text>
-                                <Text style={styles.mealTime}>
-                                    {meal.time}
-                                </Text>
+                                <View style={styles.mealHeaderLeft}>
+                                    <Text style={styles.mealName}>
+                                        {meal.name}
+                                    </Text>
+                                </View>
+                                <View style={styles.mealTimeBadge}>
+                                    <Text style={styles.mealTime}>
+                                        {meal.time}
+                                    </Text>
+                                </View>
                             </View>
                             <ScrollView  horizontal  showsHorizontalScrollIndicator={false} contentContainerStyle={styles.foodList} >
                                 {meal.foods.map((food: any) => (
@@ -173,32 +182,38 @@ const DietScreen = () => {
                                         activeOpacity={0.85}
                                         style={styles.foodCard}
                                         onPress={() => { navigation.navigate("DietDetail", { food: food,});}}>
-                                        <ImageBackground source={{ uri: food.image }} style={styles.foodImage} imageStyle={styles.foodImageRadius} >
-                                            <View style={styles.gradient}>
+                                        <View style={styles.foodImage}>
+                                            <Image source={{ uri: food.image }} style={styles.foodImageRadius} resizeMode="cover" />
+                                            <LinearGradient
+                                                colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.7)"]}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 0, y: 1 }}
+                                                style={styles.gradient}>
                                                 <View style={styles.foodInfo}>
                                                     <Text style={styles.foodTitle} numberOfLines={2} >
                                                         {food.title}
                                                     </Text>
                                                     <View style={styles.foodMeta}>
-                                                        <Text style={styles.foodMetaText}>
-                                                            {food.calories}
-                                                        </Text>
-
-                                                        <Text style={styles.foodMetaText}>
-                                                            {food.weight}
-                                                        </Text>
+                                                        <View style={styles.foodMetaPill}>
+                                                            <Text style={styles.foodMetaText}>
+                                                                {food.calories} · {food.weight}
+                                                            </Text>
+                                                        </View>
                                                     </View>
                                                 </View>
-                                            </View>
-                                        </ImageBackground>
+                                            </LinearGradient>
+                                        </View>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
                         </View>
                     ))
                 ) : (
-                    <View style={{ paddingVertical: hp("4%"), alignItems: "center" }}>
-                        <Text style={{ color: "#777", fontSize: wp("3.8%") }}>
+                    <View style={styles.stateBox}>
+                        <View style={styles.emptyIcon}>
+                            <Ionicons name="nutrition-outline" size={34} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.emptyTitle}>
                             Ngày này chưa có thực đơn.
                         </Text>
                     </View>
@@ -226,7 +241,7 @@ const DietScreen = () => {
                     {/* Chỉ hiển thị bảng dinh dưỡng ở tab Kế hoạch hiện tại */}
                     {activeTab === "plan" && (
                         <View style={styles.nutritionRow}>
-                            <View style={styles.nutritionItem}>
+                            <View style={[styles.nutritionItem, styles.nutritionTeal]}>
                                 <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.protein_muc_tieu ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeGreen}>
                                     -20 ↓
@@ -235,7 +250,7 @@ const DietScreen = () => {
                                     Protein, g
                                 </Text>
                             </View>
-                            <View style={styles.nutritionItem}>
+                            <View style={[styles.nutritionItem, styles.nutritionOrange]}>
                                 <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.fat_muc_tieu ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeOrange}>
                                     +2 ↑
@@ -244,7 +259,7 @@ const DietScreen = () => {
                                     Chất béo, g
                                 </Text>
                             </View>
-                            <View style={styles.nutritionItem}>
+                            <View style={[styles.nutritionItem, styles.nutritionGreen]}>
                                 <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.carb_muc_tieu ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeGreen}>
                                     0
@@ -253,7 +268,7 @@ const DietScreen = () => {
                                     Carb, g
                                 </Text>
                             </View>
-                            <View style={styles.nutritionItem}>
+                            <View style={[styles.nutritionItem, styles.nutritionRed]}>
                                 <Text style={styles.nutritionValue}>{Number(mealPlans[0]?.muc_tieu_calo ?? 0)}</Text>
                                 <Text style={styles.nutritionChangeRed}>
                                     -100 ↓
@@ -282,7 +297,7 @@ const DietScreen = () => {
                                     1800 Kcal
                                 </Text>
                             </View>
-                            <View style={styles.dailyInfoRow}>
+                            <View style={[styles.dailyInfoRow, styles.dailyInfoRowLast]}>
                                 <Text style={styles.dailyInfoLabel}>
                                     Số bữa ăn
                                 </Text>
@@ -301,117 +316,210 @@ const DietScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        // backgroundColor: "#FFFFFF",
+        backgroundColor: PASTEL.background,
     },
 
     daySection: {
-        paddingTop: hp("1%"),
-        paddingHorizontal: wp("5%"),
-        paddingBottom: hp("1%"),
-        borderBottomWidth: 1,
-        borderBottomColor: "#F0F0F0",
+        marginHorizontal: 16,
+        marginTop: 14,
+        paddingTop: 14,
+        paddingHorizontal: 8,
+        paddingBottom: 14,
+        borderRadius: 28,
     },
-
     daysRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "center",
     },
-
     dayItem: {
-        width: wp("10%"),
-        height: wp("10%"),
-        justifyContent: "center",
+        flex: 1,
         alignItems: "center",
-        borderRadius: wp("5%"),
     },
-
-    selectedDay: {
-        backgroundColor: "#18B9B8",
-    },
-
-    dayText: {
-        fontSize: wp("4.2%"),
-        color: "#333333",
+    weekdayText: {
+        fontSize: 11.5,
+        color: COLORS.textSecondary,
         fontWeight: "500",
+        marginBottom: 8,
     },
-
-    selectedDayText: {
-        color: "#FFFFFF",
+    todayLabel: {
+        color: COLORS.primary,
         fontWeight: "700",
     },
-
+    dayCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.95)",
+        backgroundColor: "rgba(255,255,255,0.5)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    dayCircleSelected: {
+        borderColor: COLORS.white,
+        paddingBottom: 7,
+    },
+    dayCircleWithDot: {
+        paddingBottom: 7,
+    },
+    dayText: {
+        fontSize: 15,
+        color: COLORS.textPrimary,
+        fontWeight: "700",
+    },
+    selectedDayText: {
+        color: COLORS.white,
+        fontWeight: "800",
+    },
+    innerDot: {
+        position: "absolute",
+        bottom: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        borderWidth: 1.5,
+        borderColor: COLORS.white,
+    },
+    innerDotToday: {
+        borderColor: COLORS.primary,
+    },
     dropdownButton: {
         alignSelf: "center",
-        marginTop: hp("1%"),
-        width: wp("13%"),
-        height: hp("3.5%"),
-        borderRadius: wp("3%"),
-        backgroundColor: "#F8FAFA",
+        marginTop: 4,
+        width: 44,
+        height: 22,
         justifyContent: "center",
         alignItems: "center",
     },
 
     dropdownContent: {
-        marginTop: hp("1%"),
-        padding: wp("3%"),
-        backgroundColor: "#F5FAFA",
-        borderRadius: wp("2%"),
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 10,
+        marginBottom: 6,
+        padding: 12,
+        backgroundColor: COLORS.surfaceTeal,
+        borderRadius: 14,
+        gap: 10,
+    },
+
+    dropdownIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: COLORS.white,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    dropdownTextWrap: {
+        flex: 1,
     },
 
     dropdownTitle: {
-        color: "#333333",
-        fontSize: wp("3.8%"),
-        fontWeight: "600",
+        color: COLORS.textPrimary,
+        fontSize: 14,
+        fontWeight: "700",
     },
 
     dropdownDescription: {
-        marginTop: hp("0.5%"),
-        color: "#777777",
-        fontSize: wp("3.2%"),
+        marginTop: 2,
+        color: COLORS.textMuted,
+        fontSize: 12,
     },
 
     scrollContent: {
-        paddingTop: hp("1.5%"),
-        paddingBottom: hp("12%"),
+        paddingTop: 8,
+        paddingBottom: 24,
+    },
+
+    stateBox: {
+        paddingVertical: 28,
+        alignItems: "center",
+    },
+
+    loadingText: {
+        color: COLORS.primary,
+        fontSize: 14,
+        fontWeight: "600",
+    },
+
+    emptyIcon: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: COLORS.surfaceTeal,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 12,
+    },
+
+    emptyTitle: {
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     mealSection: {
-        marginBottom: hp("2.5%"),
+        marginTop: 20,
     },
 
     mealHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: wp("5%"),
-        marginBottom: hp("1.5%"),
+        paddingHorizontal: 16,
+        marginBottom: 12,
+    },
+
+    mealHeaderLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+
+    mealIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: "#FFF1EC",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     mealName: {
-        fontSize: wp("4.5%"),
-        color: "#555555",
-        fontWeight: "500",
+        fontSize: 18,
+        color: PASTEL.ink,
+        fontWeight: "600",
+    },
+
+    mealTimeBadge: {
+        backgroundColor: PASTEL.surface,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: RADIUS.pill,
+        ...SOFT_SHADOW,
     },
 
     mealTime: {
-        fontSize: wp("4.5%"),
-        color: "#171717",
-        fontWeight: "700",
+        fontSize: 13,
+        color: PASTEL.ink,
+        fontWeight: "600",
     },
 
     foodList: {
-        paddingLeft: wp("5%"),
-        paddingRight: wp("2%"),
+        paddingLeft: 16,
+        paddingRight: 6,
+        paddingBottom: 6,
     },
 
     foodCard: {
         width: wp("72%"),
-        height: hp("15%"),
-        marginRight: wp("3%"),
-        borderRadius: wp("3%"),
+        height: 150,
+        marginRight: 12,
+        borderRadius: 24,
         overflow: "hidden",
-        backgroundColor: "#EDEDED",
+        backgroundColor: PASTEL.tealSoft,
     },
 
     foodImage: {
@@ -421,172 +529,198 @@ const styles = StyleSheet.create({
     },
 
     foodImageRadius: {
-        borderRadius: wp("3%"),
+        ...StyleSheet.absoluteFill,
+        width: "100%",
+        height: "100%",
     },
 
     gradient: {
         width: "100%",
-        height: "75%",
+        height: "80%",
         justifyContent: "flex-end",
     },
 
     foodInfo: {
-        paddingHorizontal: wp("4%"),
-        paddingBottom: hp("1.5%"),
+        paddingHorizontal: 14,
+        paddingBottom: 12,
     },
 
     foodTitle: {
-        color: "#FFFFFF",
-        fontSize: wp("4%"),
-        fontWeight: "600",
-        lineHeight: wp("5.5%"),
+        color: COLORS.white,
+        fontSize: 15.5,
+        fontWeight: "800",
+        lineHeight: 20,
     },
 
     foodMeta: {
         flexDirection: "row",
         alignItems: "center",
-        marginTop: hp("0.8%"),
-        gap: wp("4%"),
+        marginTop: 8,
+        gap: 6,
+    },
+
+    foodMetaPill: {
+        alignSelf: "flex-start",
+        backgroundColor: "rgba(255,255,255,0.22)",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: RADIUS.pill,
     },
 
     foodMetaText: {
-        color: "#FFFFFF",
-        fontSize: wp("3.5%"),
-        fontWeight: "500",
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: "600",
     },
     // Card tổng chứa tab và dinh dưỡng
     planCard: {
-        marginHorizontal: wp("1%"),
-        marginTop: hp("1%"),
-        marginBottom: hp("1.5%"),
-        padding: wp("2%"),
-        borderRadius: wp("3%"),
-        backgroundColor: "#F8FAFC",
-        // borderWidth: 1,
-        // borderColor: "#E2EDEF",
+        marginHorizontal: 16,
+        marginTop: 24,
+        padding: 14,
+        borderRadius: RADIUS.lg,
+        backgroundColor: PASTEL.surface,
+        ...SOFT_SHADOW,
     },
     // Thanh tab
     tabRow: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: hp("1.5%"),
+        marginBottom: 14,
+        padding: 4,
+        gap: 4,
+        borderRadius: RADIUS.pill,
+        backgroundColor: PASTEL.background,
     },
     tabButton: {
         flex: 1,
-        minHeight: hp("4%"),
+        minHeight: 38,
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: wp("1%"),
-        borderRadius: wp("1.8%"),
+        paddingHorizontal: 6,
+        borderRadius: RADIUS.pill,
     },
     activeTabButton: {
-        backgroundColor: "#58758C",
+        backgroundColor: PASTEL.dark,
     },
     tabText: {
-        fontSize: wp("3.1%"),
-        color: "#81909D",
-        fontWeight: "500",
+        fontSize: 12.5,
+        color: COLORS.textMuted,
+        fontWeight: "600",
         textAlign: "center",
     },
     activeTabText: {
-        color: "#FFFFFF",
-        fontWeight: "600",
+        color: COLORS.white,
+        fontWeight: "700",
     },
     // Hàng dinh dưỡng
     nutritionRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: hp("1%"),
-        backgroundColor: "#FFFFFF",
-        borderRadius: wp("2%"),
+        alignItems: "stretch",
+        gap: 8,
     },
     nutritionItem: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
+        paddingVertical: 12,
+        borderRadius: 14,
+    },
+    nutritionTeal: {
+        backgroundColor: COLORS.surfaceTeal,
+    },
+    nutritionOrange: {
+        backgroundColor: "#FFF7ED",
+    },
+    nutritionGreen: {
+        backgroundColor: "#ECFDF5",
+    },
+    nutritionRed: {
+        backgroundColor: "#FFF1EC",
     },
     nutritionValue: {
-        fontSize: wp("4.5%"),
-        color: "#20252B",
-        fontWeight: "600",
+        fontSize: 17,
+        color: COLORS.textPrimary,
+        fontWeight: "800",
     },
     nutritionChangeGreen: {
-        marginTop: hp("0.3%"),
-        fontSize: wp("4%"),
-        color: "#4CBF91",
-        fontWeight: "500",
+        marginTop: 2,
+        fontSize: 12,
+        color: COLORS.accentGreen,
+        fontWeight: "700",
     },
     nutritionChangeOrange: {
-        marginTop: hp("0.3%"),
-        fontSize: wp("4%"),
-        color: "#EBA73F",
-        fontWeight: "500",
+        marginTop: 2,
+        fontSize: 12,
+        color: COLORS.accentGold,
+        fontWeight: "700",
     },
     nutritionChangeRed: {
-        marginTop: hp("0.3%"),
-        fontSize: wp("4%"),
-        color: "#E88D91",
-        fontWeight: "500",
+        marginTop: 2,
+        fontSize: 12,
+        color: COLORS.accentOrange,
+        fontWeight: "700",
     },
     nutritionLabel: {
-        marginTop: hp("0.5%"),
-        fontSize: wp("3%"),
-        color: "#7B7F83",
+        marginTop: 4,
+        fontSize: 11,
+        color: COLORS.textMuted,
         textAlign: "center",
     },
     // Nội dung khẩu phần ăn
     dailyContent: {
-        paddingHorizontal: wp("2%"),
-        paddingBottom: hp("1%"),
+        paddingHorizontal: 4,
     },
     dailyTitle: {
-        fontSize: wp("4%"),
-        color: "#333333",
-        fontWeight: "600",
-        marginBottom: hp("0.5%"),
+        fontSize: 15,
+        color: COLORS.textPrimary,
+        fontWeight: "800",
+        marginBottom: 4,
     },
     dailyDescription: {
-        fontSize: wp("3.3%"),
-        color: "#777777",
-        lineHeight: wp("5%"),
-        marginBottom: hp("1%"),
+        fontSize: 12.5,
+        color: COLORS.textMuted,
+        lineHeight: 18,
+        marginBottom: 8,
     },
     dailyInfoRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: hp("0.8%"),
+        paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: "#EDF0F2",
+        borderBottomColor: COLORS.borderLight,
+    },
+    dailyInfoRowLast: {
+        borderBottomWidth: 0,
     },
     dailyInfoLabel: {
-        fontSize: wp("3.5%"),
-        color: "#666666",
+        fontSize: 13.5,
+        color: COLORS.textSecondary,
     },
     dailyInfoValue: {
-        fontSize: wp("3.6%"),
-        color: "#18B9B8",
-        fontWeight: "600",
+        fontSize: 14,
+        color: COLORS.primary,
+        fontWeight: "800",
     },
     // Nội dung kế hoạch
     planDescription: {
         alignItems: "center",
-        paddingHorizontal: wp("5%"),
-        paddingVertical: hp("2%"),
+        paddingHorizontal: 20,
+        paddingVertical: 16,
     },
     planDescriptionTitle: {
-        marginTop: hp("1%"),
-        fontSize: wp("4%"),
-        color: "#333333",
-        fontWeight: "600",
+        marginTop: 8,
+        fontSize: 15,
+        color: COLORS.textPrimary,
+        fontWeight: "700",
         textAlign: "center",
     },
     planDescriptionText: {
-        marginTop: hp("0.8%"),
-        fontSize: wp("3.4%"),
-        color: "#777777",
-        lineHeight: wp("5%"),
+        marginTop: 6,
+        fontSize: 13,
+        color: COLORS.textMuted,
+        lineHeight: 19,
         textAlign: "center",
     },
 });

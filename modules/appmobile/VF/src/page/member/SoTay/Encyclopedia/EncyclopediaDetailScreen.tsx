@@ -7,10 +7,13 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import apiFitlife from '../../../../general/api';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface EncyclopediaDetailScreenProps {
   navigation: any;
@@ -60,61 +63,77 @@ const EncyclopediaDetailScreen: React.FC<EncyclopediaDetailScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerIconBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.flex}>
+        {loading && !article ? (
+          <View style={styles.loadingBox}>
+            <View style={styles.loadingIcon}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Ảnh bìa */}
+            {currentArticle.anh_bia && (
+              <View style={styles.imageBox}>
+                <Image
+                  source={{ uri: currentArticle.anh_bia }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0)', 'rgba(7,40,48,0.7)']}
+                  locations={[0, 0.4, 1]}
+                  style={styles.heroOverlay}
+                />
+              </View>
+            )}
 
-        <Text style={styles.headerTitle}>Bách khoa toàn thư</Text>
+            <View style={[styles.sheet, !currentArticle.anh_bia && styles.sheetNoHero]}>
+              {/* Chủ đề tag nếu có */}
+              {currentArticle.chu_de && (
+                <View style={styles.topicBadge}>
+                  <Text style={styles.topicBadgeText}>{currentArticle.chu_de}</Text>
+                </View>
+              )}
 
-        <TouchableOpacity style={styles.headerIconBtn} onPress={toggleFontSize}>
-          <Ionicons name="text-outline" size={22} color="#4B5563" />
-        </TouchableOpacity>
-      </View>
+              {/* Tiêu đề bài viết */}
+              <Text style={[styles.articleTitle, { fontSize: 20 * fontSizeScale }]}>
+                {currentArticle.tieu_de}
+              </Text>
 
-      {loading && !article ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#0D7F8D" />
+              <View style={styles.sourceRow}>
+                <Text style={styles.sourceText}>Bách khoa toàn thư</Text>
+              </View>
+
+              {/* Nội dung chi tiết */}
+              <View style={styles.bodyCard}>
+                <Text style={[styles.articleBody, { fontSize: 14.5 * fontSizeScale }]}>
+                  {currentArticle.noi_dung}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        )}
+
+        {/* Thanh nút nổi */}
+        <View style={styles.topBar} pointerEvents="box-none">
+          <TouchableOpacity
+            style={styles.glassBtn}
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.glassBtn} activeOpacity={0.8} onPress={toggleFontSize}>
+            <Ionicons name="text-outline" size={20} color={COLORS.white} />
+          </TouchableOpacity>
         </View>
-      ) : (
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Ảnh bìa */}
-          {currentArticle.anh_bia && (
-            <View style={styles.imageBox}>
-              <Image
-                source={{ uri: currentArticle.anh_bia }}
-                style={styles.heroImage}
-                resizeMode="cover"
-              />
-            </View>
-          )}
-
-          {/* Chủ đề tag nếu có */}
-          {currentArticle.chu_de && (
-            <View style={styles.topicBadge}>
-              <Text style={styles.topicBadgeText}>{currentArticle.chu_de}</Text>
-            </View>
-          )}
-
-          {/* Tiêu đề bài viết */}
-          <Text style={[styles.articleTitle, { fontSize: 20 * fontSizeScale }]}>
-            {currentArticle.tieu_de}
-          </Text>
-
-          {/* Nội dung chi tiết */}
-          <Text style={[styles.articleBody, { fontSize: 14.5 * fontSizeScale }]}>
-            {currentArticle.noi_dung}
-          </Text>
-        </ScrollView>
-      )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -124,71 +143,136 @@ export default EncyclopediaDetailScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
   },
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  headerIconBtn: {
-    padding: 6,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
+  flex: {
+    flex: 1,
   },
   loadingBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 18,
+    backgroundColor: COLORS.background,
   },
   scrollContainer: {
-    paddingTop: 12,
-    paddingBottom: 60,
+    paddingBottom: 24,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 20,
+    left: 24,
+    right: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  glassBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheet: {
+    marginTop: -24,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 16,
+    paddingTop: 22,
+  },
+  topicBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  topicBadgeText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  bodyCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    ...SHADOWS.card,
+  },
+  sheetNoHero: {
+    marginTop: 0,
+    paddingTop: 70,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   imageBox: {
-    width: '100%',
-    height: 210,
-    borderRadius: 16,
+    height: 270,
+    marginHorizontal: 12,
+    marginTop: 6,
+    borderRadius: 28,
     overflow: 'hidden',
-    marginBottom: 16,
+    backgroundColor: COLORS.primaryDark,
   },
   heroImage: {
     width: '100%',
     height: '100%',
   },
-  topicBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E6F4F8',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  topicBadgeText: {
-    color: '#0D7F8D',
-    fontSize: 12,
-    fontWeight: '700',
-  },
   articleTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 10,
     lineHeight: 28,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 16,
+  },
+  sourceIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sourceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textMuted,
   },
   articleBody: {
     fontSize: 14.5,
-    color: '#374151',
+    color: COLORS.textSecondary,
     lineHeight: 25,
     letterSpacing: 0.15,
   },

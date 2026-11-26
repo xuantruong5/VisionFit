@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
 
@@ -49,7 +50,8 @@ class AssignGymWards extends Command
             $wardLookup = $this->buildWardLookup();
 
             $gyms = DB::table('phong_gyms')
-                ->select('id', 'id_ward', 'vi_do', 'kinh_do')
+                ->select('id', 'id_ward', 'dia_chi', 'vi_do', 'kinh_do')
+                ->whereNull('id_ward')
                 ->whereNotNull('vi_do')
                 ->whereNotNull('kinh_do')
                 ->get();
@@ -71,6 +73,43 @@ class AssignGymWards extends Command
                     continue;
                 }
 
+                
+                // Chi lay dia chi neu dang NULL hoac rong
+                if (empty(trim((string) $gym->dia_chi))) {
+                    if ($apply) {
+                        $address = $this->getAddressFromCoordinates($lat, $lon);
+
+                        if ($address !== null) {
+                            $updatedAddress = DB::table('phong_gyms')
+                                ->where('id', $gym->id)
+                                ->where(function ($query) {
+                                    $query->whereNull('dia_chi')
+                                        ->orWhereRaw("TRIM(dia_chi) = ''");
+                                })
+                                ->update([
+                                    'dia_chi' => $address,
+                                    'updated_at' => now(),
+                                ]);
+
+                            if ($updatedAddress > 0) {
+                                $this->line(
+                                    "Gym #{$gym->id}: da cap nhat dia chi: {$address}"
+                                );
+                            }
+                        } else {
+                            $this->warn(
+                                "Gym #{$gym->id}: khong lay duoc dia chi."
+                            );
+                        }
+
+                        // Gioi han tan suat goi Nominatim
+                        sleep(1);
+                    } else {
+                        $this->line(
+                            "Gym #{$gym->id}: se lay dia chi khi chay --apply."
+                        );
+                    }
+                }
                 $candidates = [];
 
                 foreach ($boundaries as $boundary) {
@@ -426,5 +465,37 @@ class AssignGymWards extends Command
             && $y >= min($y1, $y2) - 1e-9
             && $y <= max($y1, $y2) + 1e-9;
     }
+    private function getAddressFromCoordinates(float $lat, float $lon): ?string
+    {
+        try {
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'User-Agent' => 'VisionFit/1.0 (Laravel application)',
+                ])
+                ->get('https://nominatim.openstreetmap.org/reverse', [
+                    'format' => 'jsonv2',
+                    'lat' => $lat,
+                    'lon' => $lon,
+                    'addressdetails' => 1,
+                    'accept-language' => 'vi',
+                ]);
+
+            if (!$response->successful()) {
+                $this->warn("Khong lay duoc dia chi GPS: {$lat}, {$lon}");
+                return null;
+            }
+
+            $data = $response->json();
+
+            return !empty($data['display_name'])
+                ? $data['display_name']
+                : null;
+        } catch (Throwable $e) {
+            $this->warn("Loi lay dia chi GPS: {$e->getMessage()}");
+            return null;
+        }
+    }
+
+    
 }
 

@@ -48,6 +48,12 @@ class ImportPhongGym extends Command
         foreach ($features as $feature) {
 
             $properties = $feature['properties'] ?? [];
+            if (!empty($properties['image'])) {
+                $this->line(
+                    'Co anh: ' . ($properties['name'] ?? 'Khong ten')
+                    . ' -> ' . $properties['image']
+                );
+            }
             $geometry = $feature['geometry'] ?? [];
 
             /*
@@ -114,6 +120,30 @@ class ImportPhongGym extends Command
                 $properties['addr:city'] ?? null,
                 $properties['addr:province'] ?? null,
             ]));
+            // Lay URL hinh anh tu OpenStreetMap
+            // Lay URL hinh anh tu GeoJSON
+            $image = $properties['image']
+                ?? $properties['wikimedia_commons']
+                ?? null;
+
+            if (is_string($image)) {
+                $image = trim($image);
+
+                if (
+                    $image === '' ||
+                    !filter_var($image, FILTER_VALIDATE_URL) ||
+                    !in_array(
+                        strtolower(parse_url($image, PHP_URL_SCHEME) ?? ''),
+                        ['http', 'https'],
+                        true
+                    )
+                ) {
+                    $image = null;
+                }
+            } else {
+                $image = null;
+            }
+
 
             DB::table('phong_gyms')->updateOrInsert(
                 [
@@ -141,6 +171,8 @@ class ImportPhongGym extends Command
                         $properties['website']
                         ?? $properties['contact:website']
                         ?? null,
+
+                    'hinh_anh' => $image,
 
                     'nguon_du_lieu' => 'OpenStreetMap',
 

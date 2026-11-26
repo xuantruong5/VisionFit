@@ -47,12 +47,12 @@
 
                 <transition name="submenu">
                     <div v-if="openGroup.management" class="submenu">
-                        <router-link to="/admin/gymmer" class="submenu-item">
+                        <router-link to="/admin/gymmer" class="submenu-item" :class="{ 'router-link-active': isUnder('/admin/gymmer') }">
                             <span class="submenu-dot"></span>
                             Gymmer
                         </router-link>
 
-                        <router-link to="/admin/trainer" class="submenu-item">
+                        <router-link to="/admin/trainer" class="submenu-item" :class="{ 'router-link-active': isUnder('/admin/trainer') }">
                             <span class="submenu-dot"></span>
                             Huấn luyện viên
                         </router-link>
@@ -248,14 +248,14 @@ export default {
                 '/admin/gymmer',
                 '/admin/trainer',
                 '/admin/phan-cong'
-            ].includes(this.currentPath);
+            ].some((path) => this.isUnder(path));
         },
 
         isServiceActive() {
             return [
                 '/admin/goi-tap',
                 '/admin/lich-lop'
-            ].includes(this.currentPath);
+            ].some((path) => this.isUnder(path));
         },
 
         isAIActive() {
@@ -263,7 +263,7 @@ export default {
                 '/admin/video',
                 '/admin/trainer-review',
                 '/admin/bao-cao-ai'
-            ].includes(this.currentPath);
+            ].some((path) => this.isUnder(path));
         },
 
         isFinanceActive() {
@@ -271,7 +271,7 @@ export default {
                 '/admin/hoa-don',
                 '/admin/giao-dich',
                 '/admin/bao-cao-doanh-thu'
-            ].includes(this.currentPath);
+            ].some((path) => this.isUnder(path));
         }
     },
 
@@ -286,6 +286,11 @@ export default {
     },
 
     methods: {
+        // Khớp cả trang con, ví dụ /admin/gymmer/00127 thuộc /admin/gymmer
+        isUnder(path) {
+            return this.currentPath === path || this.currentPath.startsWith(path + '/');
+        },
+
         toggleGroup(group) {
             this.openGroup[group] =
                 !this.openGroup[group];
@@ -370,8 +375,8 @@ export default {
 
     color: white;
 
-    font-size: 14px;
-    font-weight: 850;
+    font-size: 16.5px;
+    font-weight: 800;
 
     box-shadow:
         0 8px 18px rgba(13, 127, 141, 0.18);
@@ -385,7 +390,7 @@ export default {
 .brand-info strong {
     color: #11343a;
 
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 800;
 }
 
@@ -394,7 +399,7 @@ export default {
 
     color: #7ba0a6;
 
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
 
     letter-spacing: 1.8px;
@@ -447,7 +452,7 @@ export default {
 
     color: #81a6ab;
 
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
 
     letter-spacing: 1.5px;
@@ -474,7 +479,7 @@ export default {
 
     color: #648b91;
 
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
 
     text-decoration: none;
@@ -508,7 +513,7 @@ export default {
 
     color: #7da8ae;
 
-    font-size: 12px;
+    font-size: 15px;
 
     text-align: center;
 }
@@ -541,7 +546,7 @@ export default {
 .chevron {
     color: #9bb8bc;
 
-    font-size: 17px;
+    font-size: 19px;
 
     transition: 0.2s ease;
 }
@@ -584,8 +589,8 @@ export default {
 
     color: #789ba0;
 
-    font-size: 9.5px;
-    font-weight: 650;
+    font-size: 13px;
+    font-weight: 600;
 
     text-decoration: none;
 
@@ -603,7 +608,7 @@ export default {
 
     color: #075e68;
 
-    font-weight: 750;
+    font-weight: 700;
 }
 
 .submenu-dot {
@@ -665,7 +670,7 @@ export default {
 
     color: #94b1b5;
 
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 600;
 }
 
@@ -734,7 +739,7 @@ export default {
 
     color: #075e68;
 
-    font-size: 8px;
+    font-size: 11.5px;
     font-weight: 800;
 }
 
@@ -746,7 +751,7 @@ export default {
 .admin-text strong {
     color: #11343a;
 
-    font-size: 9px;
+    font-size: 12.5px;
 }
 
 .admin-text span {
@@ -754,7 +759,7 @@ export default {
 
     color: #8ba7ab;
 
-    font-size: 7.5px;
+    font-size: 11px;
 }
 
 /* LOGOUT */
@@ -781,7 +786,7 @@ export default {
 
     color: #718f94;
 
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 
     text-align: left;
@@ -802,7 +807,7 @@ export default {
 
     color: #9aafb2;
 
-    font-size: 13px;
+    font-size: 16px;
 
     text-align: center;
 }

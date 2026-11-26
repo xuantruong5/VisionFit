@@ -12,6 +12,7 @@ class BaiDang extends Model
 
     protected $fillable = [
         'id_nguoi_dung',
+        'loai_nguoi_dung',
         'caption',
         'pham_vi_hien_thi',
         'tinh_trang',
@@ -60,5 +61,9 @@ class BaiDang extends Model
             'id_bai_dang',
             'id_bai_dang'
         );
+    }
+    public function trainer()
+    {
+        return $this->belongsTo(Trainer::class, 'id_nguoi_dung', 'id');
     }
 }

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('dang_ky_goi', function (Blueprint $table) {
             $table->id();
             $table->integer('id_hoi_vien');
+            $table->unsignedBigInteger('id_gioi_thieu')->nullable();
             $table->date('ngay_dang_ky')->nullable();
             $table->integer('tinh_trang')->default(1)->comment('0: huy, 1: dang_ky, 2: hoan_thanh');
             $table->string('phuong_thuc_thanh_toan', 30)->nullable()->comment('0: tien_mat, 1: chuyen_khoan, 2: the');

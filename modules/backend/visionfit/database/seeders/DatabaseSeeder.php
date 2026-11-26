@@ -38,6 +38,12 @@ class DatabaseSeeder extends Seeder
             LichTapChuongTrinhSeeder::class,
             NoiTapSeeder::class,
             MucTieuDinhDuongSeeder::class,
+            ChuongTrinhBaiTapChiTietSeeder::class,
+            BaiTapPhanLoaiSeeder::class,
+            GoiTapSeeder::class,
+            // DangKyGoiSeeder::class,
+            KhuyenMaiSeeder::class,
+            MocPhanThuongChuoiTapSeeder::class,
        ]);
     }
 }

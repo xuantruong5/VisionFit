@@ -15,6 +15,7 @@ class PhongGym extends Model
         'id_ward',
         'so_dien_thoai',
         'website',
+        'hinh_anh',
         'nguon_du_lieu',
         'osm_type',
         'osm_id',

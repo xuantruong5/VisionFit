@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    TextInput,
-    Modal,
-    Image,
-    StatusBar,
-    Alert,
-    Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, StatusBar, Alert, Platform,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api from '../../general/api';
+import { useIsFocused } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
+import { COLORS, SHADOWS } from '../../general/theme';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import { launchImageLibrary, Asset, } from 'react-native-image-picker';
+import api, { BASE_URL } from '../../general/api';
+
+const resolveMediaUrl = (url?: string | null): string => {
+    if (!url) return '';
+    const storageIdx = url.indexOf('/storage/');
+    if (storageIdx !== -1) {
+        return `${BASE_URL}${url.substring(storageIdx)}`;
+    }
+    if (url.startsWith('/')) {
+        return `${BASE_URL}${url}`;
+    }
+    return url;
+};
 
 type Media = {
     id_media: number;
@@ -64,14 +67,12 @@ type BinhLuan = {
 const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-
     const diffMs = now.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / 60000);
 
     if (diffMinutes < 1) {
         return 'Vừa xong';
     }
-
     if (diffMinutes < 60) {
         return `${diffMinutes} phút trước`;
     }
@@ -121,6 +122,7 @@ const formatTime = (dateString: string) => {
 };
 
 const SportFeed = () => {
+    const isFocused = useIsFocused();
     const [showFilter, setShowFilter] = useState(false);
     const [showCreateMenu, setShowCreateMenu] = useState(false);
     const [showCreatePost, setShowCreatePost] = useState(false);
@@ -154,8 +156,22 @@ const SportFeed = () => {
     const [showPostMenu, setShowPostMenu] = useState<number | null>(null);
     const [editingPost, setEditingPost] = useState<BaiDang | null>(null);
     const [editCaption, setEditCaption] = useState('');
+    const [user, setUser] = useState<any>(null);
 
     const [playingVideoId, setPlayingVideoId] = useState<number | null>(null);
+
+
+    const loadUser = async () => {
+        try {
+            const response = await api.get('/client/user');
+
+            if (response.data.success) {
+                setUser(response.data.data);
+            }
+        } catch (error) {
+            console.log('Lỗi lấy thông tin người dùng:', error);
+        }
+    };
 
     const chonMedia = async () => {
         const result = await launchImageLibrary({
@@ -178,12 +194,8 @@ const SportFeed = () => {
         }
     };
 
-    const privacyLabel =
-        phamViHienThi === '0'
-            ? 'Cộng đồng'
-            : phamViHienThi === '1'
-                ? 'Bạn bè'
-                : 'Người được phép xem';
+    const privacyLabel = phamViHienThi === '0' ? 'Cộng đồng' : phamViHienThi === '1' ? 'Bạn bè' : 'Người được phép xem';
+
 
     const dangBai = async () => {
         if (!caption.trim() && !selectedMedia) {
@@ -193,17 +205,11 @@ const SportFeed = () => {
             );
             return;
         }
-
         try {
             const formData = new FormData();
-
-            formData.append('id_nguoi_dung', '1');
+            // formData.append('id_nguoi_dung', '1');
             formData.append('caption', caption.trim());
-            formData.append(
-                'pham_vi_hien_thi',
-                phamViHienThi
-            );
-
+            formData.append( 'pham_vi_hien_thi',  phamViHienThi );
             if (selectedMedia?.uri) {
                 const isVideo = selectedMedia.type?.startsWith('video') || 
                                 selectedMedia.uri.toLowerCase().endsWith('.mp4') || 
@@ -218,12 +224,8 @@ const SportFeed = () => {
                     name: fileName,
                 } as any);
             }
-
             console.log('Đang gửi bài đăng...');
-
-            const response = await api.post(
-                '/bai-dang',
-                formData,
+            const response = await api.post(  '/client/bai-dang/store', formData,
                 {
                     headers: {
                         'Content-Type': 'multipart/form-data',
@@ -231,9 +233,7 @@ const SportFeed = () => {
                     transformRequest: (data) => data, // prevent Axios from converting FormData to JSON
                 }
             );
-
             console.log('Kết quả đăng bài:', response.data);
-
             if (response.data.status) {
                 Alert.alert(
                     'Thành công',
@@ -263,7 +263,7 @@ const SportFeed = () => {
     };
     const loadBaiDang = async () => {
         try {
-            const response = await api.get('/bai-dang');
+            const response = await api.get('/client/bai-dang');
 
             if (response.data.status) {
                 const data = response.data.data.map((item: any) => ({
@@ -273,14 +273,11 @@ const SportFeed = () => {
 
                     avatar: item.avatar || 'VF',
 
-                    anh_dai_dien: item.anh_dai_dien || null,
+                    anh_dai_dien: item.anh_dai_dien ? resolveMediaUrl(item.anh_dai_dien) : null,
 
                     media: (item.media || []).map((media: any) => ({
                         ...media,
-                        media_url: media.media_url?.replace(
-                            '127.0.0.1',
-                            '10.0.2.2'
-                        ),
+                        media_url: resolveMediaUrl(media.media_url),
                     })),
                 }));
 
@@ -295,11 +292,11 @@ const SportFeed = () => {
         try {
             if (item.da_thich) {
                 await api.delete(
-                    `/bai-dang/${item.id_bai_dang}/like`
+                    `/client/bai-dang/${item.id_bai_dang}/unlike`
                 );
             } else {
                 await api.post(
-                    `/bai-dang/${item.id_bai_dang}/like`
+                    `/client/bai-dang/${item.id_bai_dang}/like`
                 );
             }
 
@@ -331,11 +328,11 @@ const SportFeed = () => {
         try {
             if (item.da_luu) {
                 await api.delete(
-                    `/bai-dang/${item.id_bai_dang}/save`
+                    `/client/bai-dang/${item.id_bai_dang}/save`
                 );
             } else {
                 await api.post(
-                    `/bai-dang/${item.id_bai_dang}/save`
+                    `/client/bai-dang/${item.id_bai_dang}/save`
                 );
             }
 
@@ -369,11 +366,18 @@ const SportFeed = () => {
             setLoadingSavedPosts(true);
 
             const response = await api.get(
-                '/bai-dang-da-luu'
+                '/client/bai-dang-da-luu'
             );
 
             if (response.data.status) {
-                setSavedPostsData(response.data.data);
+                const data = (response.data.data || []).map((item: any) => ({
+                    ...item,
+                    media: (item.media || []).map((m: any) => ({
+                        ...m,
+                        media_url: resolveMediaUrl(m.media_url),
+                    })),
+                }));
+                setSavedPostsData(data);
             }
         } catch (error: any) {
             console.log(
@@ -393,7 +397,7 @@ const SportFeed = () => {
     const boLuuBaiDang = async (item: BaiDang) => {
         try {
             const response = await api.delete(
-                `/bai-dang/${item.id_bai_dang}/save`
+                `/client/bai-dang/${item.id_bai_dang}/save`
             );
 
             if (response.data.status) {
@@ -429,11 +433,11 @@ const SportFeed = () => {
         try {
             if (comment.da_thich) {
                 await api.delete(
-                    `/binh-luan/${comment.id_binh_luan}/like`
+                    `/client/binh-luan/${comment.id_binh_luan}/like`
                 );
             } else {
                 await api.post(
-                    `/binh-luan/${comment.id_binh_luan}/like`
+                    `/client/binh-luan/${comment.id_binh_luan}/like`
                 );
             }
 
@@ -467,8 +471,8 @@ const SportFeed = () => {
 
             // ĐANG CHỈNH SỬA
             if (editingComment) {
-                const response = await api.put(
-                    `/binh-luan/${editingComment.id_binh_luan}`,
+                const response = await api.post(
+                    `/client/binh-luan/${editingComment.id_binh_luan}`,
                     {
                         noi_dung: commentText.trim(),
                     }
@@ -488,7 +492,7 @@ const SportFeed = () => {
 
             // COMMENT / REPLY
             const response = await api.post(
-                `/bai-dang/${selectedPost.id_bai_dang}/binh-luan`,
+                `/client/bai-dang/${selectedPost.id_bai_dang}/binh-luan`,
                 {
                     noi_dung: commentText.trim(),
 
@@ -533,8 +537,8 @@ const SportFeed = () => {
         }
 
         try {
-            const response = await api.put(
-                `/bai-dang/${editingPost.id_bai_dang}`,
+            const response = await api.post(
+                `/client/bai-dang/${editingPost.id_bai_dang}`,
                 {
                     caption: editCaption.trim(),
                     pham_vi_hien_thi:
@@ -582,7 +586,7 @@ const SportFeed = () => {
                     onPress: async () => {
                         try {
                             const response = await api.delete(
-                                `/bai-dang/${item.id_bai_dang}`
+                                `/client/bai-dang/${item.id_bai_dang}`
                             );
 
                             if (response.data.status) {
@@ -610,6 +614,7 @@ const SportFeed = () => {
     };
     useEffect(() => {
         loadBaiDang();
+        loadUser();
     }, []);
 
     const openCreate = (title: string) => {
@@ -623,7 +628,7 @@ const SportFeed = () => {
             setLoadingComments(true);
 
             const response = await api.get(
-                `/bai-dang/${idBaiDang}/binh-luan`
+                `/client/bai-dang/${idBaiDang}/binh-luan`
             );
 
             if (response.data.status) {
@@ -642,7 +647,7 @@ const SportFeed = () => {
     const xoaBinhLuan = async (comment: BinhLuan) => {
         try {
             const response = await api.delete(
-                `/binh-luan/${comment.id_binh_luan}`
+                `/client/binh-luan/${comment.id_binh_luan}`
             );
 
             if (response.data.status) {
@@ -685,14 +690,18 @@ const SportFeed = () => {
             style={styles.safe}
             edges={['top']}>
 
-            <StatusBar barStyle="dark-content" />
+            {/* Chỉ đặt chữ thanh trạng thái màu tối khi tab này đang hiển thị */}
+            {isFocused && <StatusBar barStyle="dark-content" />}
 
             <View style={styles.container}>
 
                 {/* HEADER */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.brand}>VISIONFIT</Text>
+                        <View style={styles.brandRow}>
+                            <View style={styles.brandDot} />
+                            <Text style={styles.brand}>VISIONFIT</Text>
+                        </View>
 
                         <TouchableOpacity
                             style={styles.titleRow}
@@ -704,8 +713,8 @@ const SportFeed = () => {
 
                             <Ionicons
                                 name="chevron-down"
-                                size={17}
-                                color="#11343A"
+                                size={18}
+                                color={COLORS.primary}
                             />
                         </TouchableOpacity>
                     </View>
@@ -719,8 +728,8 @@ const SportFeed = () => {
 
                             <Ionicons
                                 name="bookmark-outline"
-                                size={24}
-                                color="#075E68"
+                                size={21}
+                                color={COLORS.primaryDark}
                             />
 
                         </TouchableOpacity>
@@ -733,11 +742,17 @@ const SportFeed = () => {
                                 setShowFilter(false);
                             }}>
 
-                            <Ionicons
-                                name="add"
-                                size={27}
-                                color="#075E68"
-                            />
+                            <LinearGradient
+                                colors={[COLORS.primary, COLORS.primaryDark]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.addButtonGradient}>
+                                <Ionicons
+                                    name="add"
+                                    size={26}
+                                    color={COLORS.white}
+                                />
+                            </LinearGradient>
 
                         </TouchableOpacity>
 
@@ -752,7 +767,7 @@ const SportFeed = () => {
                             <Ionicons
                                 name="checkmark"
                                 size={19}
-                                color="#0D7F8D"
+                                color="#0F5468"
                             />
                         </TouchableOpacity>
 
@@ -777,11 +792,13 @@ const SportFeed = () => {
                         <TouchableOpacity
                             style={styles.createItem}
                             onPress={() => openCreate('Tạo bài đăng')}>
-                            <Ionicons
-                                name="create-outline"
-                                size={22}
-                                color="#11343A"
-                            />
+                            <View style={[styles.createIconTile, { backgroundColor: COLORS.primaryLight }]}>
+                                <Ionicons
+                                    name="create-outline"
+                                    size={20}
+                                    color={COLORS.primary}
+                                />
+                            </View>
 
                             <View style={styles.createInfo}>
                                 <Text style={styles.createName}>Bài viết</Text>
@@ -794,11 +811,13 @@ const SportFeed = () => {
                         <TouchableOpacity
                             style={styles.createItem}
                             onPress={() => openCreate('Chia sẻ khoảnh khắc')}>
-                            <Ionicons
-                                name="flash-outline"
-                                size={22}
-                                color="#11343A"
-                            />
+                            <View style={[styles.createIconTile, { backgroundColor: '#FFF4E5' }]}>
+                                <Ionicons
+                                    name="flash-outline"
+                                    size={20}
+                                    color={COLORS.accentGold}
+                                />
+                            </View>
 
                             <View style={styles.createInfo}>
                                 <Text style={styles.createName}>Khoảnh khắc</Text>
@@ -811,11 +830,13 @@ const SportFeed = () => {
                         <TouchableOpacity
                             style={styles.createItem}
                             onPress={() => openCreate('Chia sẻ thành tích')}>
-                            <Ionicons
-                                name="trophy-outline"
-                                size={22}
-                                color="#11343A"
-                            />
+                            <View style={[styles.createIconTile, { backgroundColor: '#FFEDE8' }]}>
+                                <Ionicons
+                                    name="trophy-outline"
+                                    size={20}
+                                    color={COLORS.accentOrange}
+                                />
+                            </View>
 
                             <View style={styles.createInfo}>
                                 <Text style={styles.createName}>
@@ -842,19 +863,29 @@ const SportFeed = () => {
                         activeOpacity={0.8}
                         onPress={() => openCreate('Tạo bài đăng')}>
 
-                        <View style={styles.myAvatar}>
-                            <Text style={styles.avatarText}>N</Text>
+                        <View style={styles.avatarRing}>
+                            <View style={styles.myAvatar}>
+                                <Text style={styles.avatarText}>N</Text>
+                            </View>
                         </View>
 
-                        <Text style={styles.quickText}>
-                            Chia sẻ khoảnh khắc tập luyện...
-                        </Text>
+                        <View style={styles.quickInput}>
+                            <Text style={styles.quickText} numberOfLines={1}>
+                                Chia sẻ khoảnh khắc tập luyện...
+                            </Text>
+                        </View>
 
-                        <Ionicons
-                            name="images-outline"
-                            size={22}
-                            color="#71949A"
-                        />
+                        <LinearGradient
+                            colors={[COLORS.accentOrange, COLORS.accentGold]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.quickMediaTile}>
+                            <Ionicons
+                                name="images"
+                                size={19}
+                                color={COLORS.white}
+                            />
+                        </LinearGradient>
                     </TouchableOpacity>
 
                     {baiDang
@@ -866,13 +897,11 @@ const SportFeed = () => {
 
                                 <View style={styles.postHeader}>
 
+                                    <View style={styles.avatarRing}>
                                     {item.anh_dai_dien ? (
                                         <Image
                                             source={{
-                                                uri: item.anh_dai_dien.replace(
-                                                    '127.0.0.1',
-                                                    '10.0.2.2'
-                                                ),
+                                                uri: resolveMediaUrl(item.anh_dai_dien),
                                             }}
                                             style={styles.avatarImage}
                                         />
@@ -883,6 +912,7 @@ const SportFeed = () => {
                                             </Text>
                                         </View>
                                     )}
+                                    </View>
 
                                     <View style={styles.postUser}>
                                         <Text style={styles.userName}>
@@ -903,7 +933,7 @@ const SportFeed = () => {
                                                         : 'people-outline'
                                                 }
                                                 size={12}
-                                                color="#71949A"
+                                                color="#6F8F9C"
                                             />
                                         </View>
                                     </View>
@@ -922,8 +952,8 @@ const SportFeed = () => {
 
                                             <Ionicons
                                                 name="ellipsis-horizontal"
-                                                size={22}
-                                                color="#506E73"
+                                                size={20}
+                                                color={COLORS.textMuted}
                                             />
 
                                         </TouchableOpacity>
@@ -944,7 +974,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="create-outline"
                                                                 size={19}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.postMenuText}>
@@ -962,7 +992,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="trash-outline"
                                                                 size={19}
-                                                                color="#D95B5B"
+                                                                color={COLORS.accentRed}
                                                             />
 
                                                             <Text style={styles.postDeleteText}>
@@ -979,7 +1009,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="flag-outline"
                                                                 size={19}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.postMenuText}>
@@ -994,7 +1024,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="eye-off-outline"
                                                                 size={19}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.postMenuText}>
@@ -1101,7 +1131,10 @@ const SportFeed = () => {
 
                                     <View style={styles.leftActions}>
                                         <TouchableOpacity
-                                            style={styles.actionButton}
+                                            style={[
+                                                styles.actionButton,
+                                                item.da_thich && styles.actionButtonLiked,
+                                            ]}
                                             onPress={() => toggleLike(item)}>
 
                                             <Ionicons
@@ -1110,13 +1143,20 @@ const SportFeed = () => {
                                                         ? 'heart'
                                                         : 'heart-outline'
                                                 }
-                                                size={27}
+                                                size={20}
                                                 color={
                                                     item.da_thich
-                                                        ? '#E74C3C'
-                                                        : '#11343A'
+                                                        ? COLORS.accentRed
+                                                        : COLORS.textSecondary
                                                 }
                                             />
+                                            <Text
+                                                style={[
+                                                    styles.actionCount,
+                                                    item.da_thich && styles.actionCountLiked,
+                                                ]}>
+                                                {item.so_luot_thich}
+                                            </Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
@@ -1125,21 +1165,28 @@ const SportFeed = () => {
 
                                             <Ionicons
                                                 name="chatbubble-outline"
-                                                size={25}
-                                                color="#11343A"
+                                                size={19}
+                                                color={COLORS.textSecondary}
                                             />
+                                            <Text style={styles.actionCount}>
+                                                {item.so_binh_luan}
+                                            </Text>
                                         </TouchableOpacity>
 
-                                        <TouchableOpacity>
+                                        <TouchableOpacity style={styles.actionIconButton}>
                                             <Ionicons
                                                 name="paper-plane-outline"
-                                                size={25}
-                                                color="#11343A"
+                                                size={19}
+                                                color={COLORS.textSecondary}
                                             />
                                         </TouchableOpacity>
                                     </View>
 
                                     <TouchableOpacity
+                                        style={[
+                                            styles.actionIconButton,
+                                            item.da_luu && styles.actionButtonSaved,
+                                        ]}
                                         onPress={() => toggleSave(item)}>
 
                                         <Ionicons
@@ -1148,11 +1195,11 @@ const SportFeed = () => {
                                                     ? 'bookmark'
                                                     : 'bookmark-outline'
                                             }
-                                            size={26}
+                                            size={19}
                                             color={
                                                 item.da_luu
-                                                    ? '#0D7F8D'
-                                                    : '#11343A'
+                                                    ? COLORS.primary
+                                                    : COLORS.textSecondary
                                             }
                                         />
                                     </TouchableOpacity>
@@ -1190,47 +1237,31 @@ const SportFeed = () => {
                 </ScrollView>
 
                 {/* CREATE POST */}
-                <Modal
-                    visible={showCreatePost}
-                    transparent
-                    animationType="slide"
-                    onRequestClose={() => setShowCreatePost(false)}>
-
+                <Modal visible={showCreatePost} transparent animationType="slide" onRequestClose={() => setShowCreatePost(false)}>
                     <View style={styles.modalOverlay}>
-
                         <View style={styles.modalContent}>
-
                             <View style={styles.modalHandle} />
-
                             <View style={styles.modalHeader}>
-
                                 <TouchableOpacity
                                     onPress={() => setShowCreatePost(false)}>
                                     <Text style={styles.cancel}>Hủy</Text>
                                 </TouchableOpacity>
-
                                 <Text style={styles.modalTitle}>
                                     {createTitle}
                                 </Text>
-
-                                <TouchableOpacity
-                                    style={styles.publish}
-                                    onPress={dangBai}>
+                                <TouchableOpacity style={styles.publish} onPress={dangBai}>
                                     <Text style={styles.publishText}>Đăng</Text>
                                 </TouchableOpacity>
-
                             </View>
-
                             <View style={styles.modalUser}>
                                 <View style={styles.myAvatar}>
                                     <Text style={styles.avatarText}>N</Text>
                                 </View>
-
                                 <View style={styles.modalUserInfo}>
                                     <Text style={styles.userName}>
-                                        Võ Thị Thái Ngọc
+                                        {user?.ho_ten || 'Đang tải...'}
+                                        {/* {user?.ho_ten || 'Đang tải...'} */}
                                     </Text>
-
                                     <Text style={styles.postTime}>
                                         Cộng đồng VisionFit
                                     </Text>
@@ -1243,7 +1274,7 @@ const SportFeed = () => {
                                 multiline
                                 style={styles.textArea}
                                 placeholder="Bạn muốn chia sẻ điều gì về buổi tập hôm nay?"
-                                placeholderTextColor="#8AA3A7"
+                                placeholderTextColor="#8CA4AF"
                             />
 
                             <TouchableOpacity
@@ -1256,7 +1287,7 @@ const SportFeed = () => {
                                             <Ionicons
                                                 name="videocam-outline"
                                                 size={32}
-                                                color="#075E68"
+                                                color="#0A3E4F"
                                             />
 
                                             <Text style={styles.addMediaText}>
@@ -1279,7 +1310,7 @@ const SportFeed = () => {
                                         <Ionicons
                                             name="image-outline"
                                             size={29}
-                                            color="#075E68"
+                                            color="#0A3E4F"
                                         />
 
                                         <Text style={styles.addMediaText}>
@@ -1302,7 +1333,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="barbell-outline"
                                         size={21}
-                                        color="#11343A"
+                                        color="#10303C"
                                     />
 
                                     <Text style={styles.optionText}>
@@ -1322,7 +1353,7 @@ const SportFeed = () => {
                                                 : 'chevron-down'
                                         }
                                         size={17}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -1355,7 +1386,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name="checkmark"
                                                     size={18}
-                                                    color="#0D7F8D"
+                                                    color="#0F5468"
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -1375,7 +1406,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="trophy-outline"
                                         size={21}
-                                        color="#11343A"
+                                        color="#10303C"
                                     />
 
                                     <Text style={styles.optionText}>
@@ -1400,7 +1431,7 @@ const SportFeed = () => {
                                                 : 'chevron-down'
                                         }
                                         size={17}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -1437,7 +1468,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name="checkmark"
                                                     size={18}
-                                                    color="#0D7F8D"
+                                                    color="#0F5468"
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -1468,7 +1499,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="earth-outline"
                                         size={21}
-                                        color="#11343A"
+                                        color="#10303C"
                                     />
 
                                     <Text style={styles.optionText}>
@@ -1488,7 +1519,7 @@ const SportFeed = () => {
                                                 : 'chevron-down'
                                         }
                                         size={17}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -1516,7 +1547,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name={item.icon}
                                                     size={19}
-                                                    color="#11343A"
+                                                    color="#10303C"
                                                 />
 
                                                 <Text style={styles.pickerLabel}>
@@ -1528,7 +1559,7 @@ const SportFeed = () => {
                                                 <Ionicons
                                                     name="checkmark"
                                                     size={18}
-                                                    color="#0D7F8D"
+                                                    color="#0F5468"
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -1562,11 +1593,12 @@ const SportFeed = () => {
                             </Text>
 
                             <TouchableOpacity
+                                style={styles.sheetCloseBtn}
                                 onPress={() => setShowComments(false)}>
                                 <Ionicons
                                     name="close"
-                                    size={25}
-                                    color="#11343A"
+                                    size={20}
+                                    color={COLORS.textPrimary}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -1584,7 +1616,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="chatbubbles-outline"
                                         size={42}
-                                        color="#9AB4B8"
+                                        color="#9DB5BF"
                                     />
 
                                     <Text style={styles.commentEmptyTitle}>
@@ -1618,13 +1650,15 @@ const SportFeed = () => {
                                         </View>
 
                                         <View style={styles.commentContent}>
-                                            <Text style={styles.commentUser}>
-                                                {comment.ten_nguoi_dung}
-                                            </Text>
+                                            <View style={styles.commentBubble}>
+                                                <Text style={styles.commentUser}>
+                                                    {comment.ten_nguoi_dung}
+                                                </Text>
 
-                                            <Text style={styles.commentBody}>
-                                                {comment.noi_dung}
-                                            </Text>
+                                                <Text style={styles.commentBody}>
+                                                    {comment.noi_dung}
+                                                </Text>
+                                            </View>
 
                                             <Text style={styles.commentTime}>
                                                 {formatTime(comment.created_at)}
@@ -1686,7 +1720,7 @@ const SportFeed = () => {
                                                     <Ionicons
                                                         name="ellipsis-horizontal"
                                                         size={20}
-                                                        color="#71949A"
+                                                        color="#6F8F9C"
                                                     />
 
                                                 </TouchableOpacity>
@@ -1710,7 +1744,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="create-outline"
                                                                 size={18}
-                                                                color="#11343A"
+                                                                color="#10303C"
                                                             />
 
                                                             <Text style={styles.commentMenuText}>
@@ -1729,7 +1763,7 @@ const SportFeed = () => {
                                                             <Ionicons
                                                                 name="trash-outline"
                                                                 size={18}
-                                                                color="#D95B5B"
+                                                                color={COLORS.accentRed}
                                                             />
 
                                                             <Text style={styles.commentDeleteText}>
@@ -1763,7 +1797,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="close"
                                         size={18}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
 
                                 </TouchableOpacity>
@@ -1787,7 +1821,7 @@ const SportFeed = () => {
                                     <Ionicons
                                         name="close"
                                         size={18}
-                                        color="#71949A"
+                                        color="#6F8F9C"
                                     />
 
                                 </TouchableOpacity>
@@ -1799,17 +1833,24 @@ const SportFeed = () => {
 
                             <View style={styles.myAvatar}>
                                 <Text style={styles.avatarText}>
-                                    TN
+                                    {user?.ho_ten
+                                        ?.split(' ')
+                                        .slice(-2)
+                                        .map((x: string) => x.charAt(0))
+                                        .join('')
+                                        .toUpperCase() || 'N'}
                                 </Text>
                             </View>
 
-                            <TextInput
-                                value={commentText}
-                                onChangeText={setCommentText}
-                                placeholder="Thêm bình luận..."
-                                placeholderTextColor="#8AA3A7"
-                                style={styles.commentInput}
-                            />
+                            <View style={styles.commentInputPill}>
+                                <TextInput
+                                    value={commentText}
+                                    onChangeText={setCommentText}
+                                    placeholder="Thêm bình luận..."
+                                    placeholderTextColor={COLORS.textLight}
+                                    style={styles.commentInput}
+                                />
+                            </View>
 
                             <TouchableOpacity
                                 onPress={guiBinhLuan}
@@ -1842,12 +1883,13 @@ const SportFeed = () => {
                     <View style={styles.savedHeader}>
 
                         <TouchableOpacity
+                            style={styles.savedBackBtn}
                             onPress={() => setShowSavedPosts(false)}>
 
                             <Ionicons
                                 name="arrow-back"
-                                size={25}
-                                color="#11343A"
+                                size={21}
+                                color={COLORS.textPrimary}
                             />
 
                         </TouchableOpacity>
@@ -1856,7 +1898,7 @@ const SportFeed = () => {
                             Bài viết đã lưu
                         </Text>
 
-                        <View style={{ width: 25 }} />
+                        <View style={{ width: 40 }} />
 
                     </View>
 
@@ -1870,7 +1912,7 @@ const SportFeed = () => {
                             <Ionicons
                                 name="bookmark-outline"
                                 size={55}
-                                color="#9AB4B8"
+                                color="#9DB5BF"
                             />
 
                             <Text style={styles.savedEmptyTitle}>
@@ -1883,7 +1925,7 @@ const SportFeed = () => {
 
                         </View>
                     ) : (
-                        <ScrollView>
+                        <ScrollView contentContainerStyle={styles.savedList}>
 
                             {savedPostsData.map(item => (
                                 <View
@@ -1910,7 +1952,7 @@ const SportFeed = () => {
                                             <Ionicons
                                                 name="bookmark"
                                                 size={24}
-                                                color="#0D7F8D"
+                                                color="#0F5468"
                                             />
 
                                         </TouchableOpacity>
@@ -1945,20 +1987,11 @@ const SportFeed = () => {
                 </SafeAreaView>
 
             </Modal>
-            <Modal
-                visible={editingPost !== null}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setEditingPost(null)}>
-
+            <Modal  visible={editingPost !== null} transparent animationType="slide" onRequestClose={() => setEditingPost(null)}>
                 <View style={styles.editPostOverlay}>
-
                     <View style={styles.editPostModal}>
-
                         <View style={styles.modalHandle} />
-
                         <View style={styles.editPostHeader}>
-
                             <TouchableOpacity
                                 onPress={() => {
                                     setEditingPost(null);
@@ -1968,35 +2001,20 @@ const SportFeed = () => {
                                     Hủy
                                 </Text>
                             </TouchableOpacity>
-
                             <Text style={styles.editPostTitle}>
                                 Chỉnh sửa bài viết
                             </Text>
-
                             <TouchableOpacity
                                 onPress={suaBaiDang}>
                                 <Text style={styles.editSave}>
                                     Lưu
                                 </Text>
                             </TouchableOpacity>
-
                         </View>
-
-                        <TextInput
-                            value={editCaption}
-                            onChangeText={setEditCaption}
-                            multiline
-                            placeholder="Nội dung bài viết..."
-                            placeholderTextColor="#8AA3A7"
-                            style={styles.editPostInput}
-                        />
-
+                        <TextInput value={editCaption} onChangeText={setEditCaption} multiline placeholder="Nội dung bài viết..." placeholderTextColor="#8CA4AF" style={styles.editPostInput} />
                     </View>
-
                 </View>
-
             </Modal>
-
         </SafeAreaView>
     );
 };
@@ -2006,28 +2024,47 @@ export default SportFeed;
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
     },
 
     container: {
         flex: 1,
-        backgroundColor: '#F5FBFC',
+        backgroundColor: COLORS.background,
     },
 
+    // HEADER
     header: {
-        height: 76,
         paddingHorizontal: 18,
-        backgroundColor: '#FFFFFF',
+        paddingTop: 10,
+        paddingBottom: 14,
+        backgroundColor: COLORS.white,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        ...SHADOWS.card,
+        zIndex: 50,
+    },
+
+    brandRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
+    brandDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: COLORS.accentOrange,
+        marginRight: 6,
     },
 
     brand: {
         fontSize: 11,
         fontWeight: '800',
         letterSpacing: 2,
-        color: '#0D7F8D',
+        color: COLORS.primary,
     },
 
     titleRow: {
@@ -2037,42 +2074,65 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        fontSize: 27,
+        fontSize: 26,
         fontWeight: '800',
-        color: '#11343A',
+        color: COLORS.textPrimary,
         marginRight: 5,
     },
 
-    addButton: {
-        width: 43,
-        height: 43,
-        borderRadius: 13,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.2,
-        borderColor: '#0D7F8D',
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+
+    savedButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: COLORS.primarySoft,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         justifyContent: 'center',
         alignItems: 'center',
     },
 
+    addButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        ...SHADOWS.glow,
+    },
+
+    addButtonGradient: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    // DROPDOWNS
     filterMenu: {
         position: 'absolute',
-        top: 78,
-        left: 17,
-        width: 215,
-        padding: 7,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        top: 84,
+        left: 16,
+        width: 220,
+        padding: 6,
+        backgroundColor: COLORS.white,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         zIndex: 100,
+        ...SHADOWS.card,
+        shadowOpacity: 0.14,
         elevation: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
     },
 
     filterActive: {
-        height: 43,
-        backgroundColor: '#E5F7F8',
-        borderRadius: 11,
+        height: 44,
+        backgroundColor: COLORS.primaryLight,
+        borderRadius: 12,
         paddingHorizontal: 13,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -2080,146 +2140,198 @@ const styles = StyleSheet.create({
     },
 
     filterItem: {
-        height: 43,
+        height: 44,
         justifyContent: 'center',
         paddingHorizontal: 13,
     },
 
     filterText: {
-        color: '#11343A',
+        color: COLORS.textSecondary,
         fontSize: 14,
+        fontWeight: '500',
     },
 
     filterActiveText: {
-        color: '#075E68',
+        color: COLORS.primaryDark,
         fontWeight: '700',
     },
 
     createMenu: {
         position: 'absolute',
-        top: 72,
+        top: 80,
         right: 14,
-        width: 245,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        width: 255,
+        backgroundColor: COLORS.white,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         paddingVertical: 6,
         zIndex: 100,
+        ...SHADOWS.card,
+        shadowOpacity: 0.14,
         elevation: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.09,
-        shadowRadius: 12,
     },
 
     createItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 11,
-        paddingHorizontal: 14,
+        paddingVertical: 9,
+        paddingHorizontal: 12,
+    },
+
+    createIconTile: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     createInfo: {
-        marginLeft: 13,
+        marginLeft: 12,
+        flex: 1,
     },
 
     createName: {
-        color: '#11343A',
+        color: COLORS.textPrimary,
         fontSize: 14,
         fontWeight: '700',
     },
 
     createDescription: {
-        color: '#71949A',
-        fontSize: 11,
+        color: COLORS.textMuted,
+        fontSize: 11.5,
         marginTop: 2,
     },
 
+    // FEED
     feedContent: {
-        paddingBottom: 80,
+        paddingTop: 4,
+        paddingBottom: 24,
     },
 
     quickShare: {
-        height: 72,
-        marginHorizontal: 12,
-        marginVertical: 10,
-        paddingHorizontal: 13,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 18,
+        marginHorizontal: 16,
+        marginTop: 14,
+        marginBottom: 14,
+        padding: 12,
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         flexDirection: 'row',
         alignItems: 'center',
+        ...SHADOWS.card,
+    },
 
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOpacity: 0.03,
-        shadowRadius: 6,
+    avatarRing: {
+        padding: 2,
+        borderRadius: 26,
+        borderWidth: 2,
+        borderColor: COLORS.primaryLight,
     },
 
     myAvatar: {
-        width: 43,
-        height: 43,
-        borderRadius: 22,
-        backgroundColor: '#20A5B3',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     avatar: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        backgroundColor: '#10A6B5',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
     },
 
+    avatarImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.primaryLight,
+    },
+
     avatarText: {
-        color: '#FFFFFF',
+        color: COLORS.white,
         fontWeight: '800',
     },
 
-    quickText: {
+    quickInput: {
         flex: 1,
-        marginLeft: 12,
-        fontSize: 14,
-        color: '#78979C',
+        height: 42,
+        marginHorizontal: 10,
+        paddingHorizontal: 14,
+        borderRadius: 21,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.borderLight,
+        justifyContent: 'center',
     },
 
+    quickText: {
+        fontSize: 13.5,
+        color: COLORS.textMuted,
+    },
+
+    quickMediaTile: {
+        width: 42,
+        height: 42,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // POST CARD
     post: {
-        backgroundColor: '#FFFFFF',
-        marginBottom: 8,
+        backgroundColor: COLORS.white,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        paddingBottom: 4,
+        ...SHADOWS.card,
     },
 
     postHeader: {
-        height: 64,
         paddingHorizontal: 14,
+        paddingTop: 14,
+        paddingBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
+        zIndex: 20,
     },
 
     postUser: {
         flex: 1,
-        marginLeft: 11,
+        marginLeft: 10,
     },
 
     postMeta: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
+        marginTop: 1,
     },
 
     dot: {
         marginHorizontal: 5,
-        color: '#71949A',
+        color: COLORS.textLight,
         fontSize: 11,
     },
 
     userName: {
         fontSize: 15,
-        fontWeight: '700',
-        color: '#11343A',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     postTime: {
-        color: '#71949A',
+        color: COLORS.textMuted,
         fontSize: 12,
         marginTop: 2,
     },
@@ -2227,20 +2339,23 @@ const styles = StyleSheet.create({
     caption: {
         paddingHorizontal: 14,
         paddingBottom: 12,
-        color: '#11343A',
+        color: COLORS.textPrimary,
         fontSize: 14,
-        lineHeight: 20,
+        lineHeight: 21,
     },
 
     postImage: {
-        width: '100%',
-        height: 390,
-        backgroundColor: '#EAF9FB',
+        height: 340,
+        marginHorizontal: 12,
+        marginBottom: 6,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
     },
 
     actionRow: {
-        height: 50,
-        paddingHorizontal: 14,
+        paddingHorizontal: 12,
+        paddingTop: 8,
+        paddingBottom: 4,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -2248,62 +2363,108 @@ const styles = StyleSheet.create({
 
     leftActions: {
         flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
 
     actionButton: {
-        marginRight: 17,
+        height: 36,
+        paddingHorizontal: 12,
+        borderRadius: 999,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.borderLight,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+
+    actionButtonLiked: {
+        backgroundColor: '#FEECEC',
+        borderColor: '#FBD5D5',
+    },
+
+    actionButtonSaved: {
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.borderFocus,
+    },
+
+    actionIconButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.borderLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    actionCount: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.textSecondary,
+    },
+
+    actionCountLiked: {
+        color: COLORS.accentRed,
     },
 
     postInfo: {
         paddingHorizontal: 14,
-        paddingBottom: 13,
+        paddingTop: 6,
+        paddingBottom: 12,
     },
 
     likes: {
         fontWeight: '700',
         fontSize: 13,
-        color: '#11343A',
+        color: COLORS.textPrimary,
     },
 
     postCaption: {
-        marginTop: 5,
-        color: '#11343A',
+        marginTop: 4,
+        color: COLORS.textSecondary,
         fontSize: 13,
+        lineHeight: 19,
     },
 
     captionUser: {
-        fontWeight: '700',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     comments: {
         marginTop: 6,
-        color: '#83999D',
+        color: COLORS.textMuted,
         fontSize: 13,
+        fontWeight: '500',
     },
 
+    // CREATE POST MODAL
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.25)',
+        backgroundColor: 'rgba(17,52,58,0.4)',
         justifyContent: 'flex-end',
     },
 
     modalContent: {
-        backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 25,
-        borderTopRightRadius: 25,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingHorizontal: 18,
         paddingBottom: 25,
         minHeight: '75%',
     },
 
     modalHandle: {
-        width: 45,
-        height: 4,
-        backgroundColor: '#DCE4E6',
-        borderRadius: 10,
+        width: 40,
+        height: 5,
+        backgroundColor: COLORS.border,
+        borderRadius: 3,
         alignSelf: 'center',
-        marginTop: 8,
-        marginBottom: 13,
+        marginTop: 10,
+        marginBottom: 14,
     },
 
     modalHeader: {
@@ -2313,26 +2474,29 @@ const styles = StyleSheet.create({
     },
 
     cancel: {
-        color: '#71949A',
+        color: COLORS.textMuted,
         fontWeight: '600',
+        fontSize: 14,
     },
 
     modalTitle: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '800',
-        color: '#11343A',
+        color: COLORS.textPrimary,
     },
 
     publish: {
-        backgroundColor: '#0D7F8D',
-        paddingHorizontal: 15,
-        paddingVertical: 9,
-        borderRadius: 12,
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 18,
+        height: 36,
+        justifyContent: 'center',
+        borderRadius: 18,
+        ...SHADOWS.glow,
     },
 
     publishText: {
-        color: '#FFFFFF',
-        fontWeight: '700',
+        color: COLORS.white,
+        fontWeight: '800',
     },
 
     modalUser: {
@@ -2347,32 +2511,42 @@ const styles = StyleSheet.create({
 
     textArea: {
         minHeight: 110,
-        marginTop: 18,
+        marginTop: 14,
+        marginBottom: 12,
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: COLORS.background,
         fontSize: 15,
-        color: '#11343A',
+        color: COLORS.textPrimary,
         textAlignVertical: 'top',
     },
 
     addMedia: {
-        height: 120,
-        backgroundColor: '#F1FAFB',
+        height: 130,
+        backgroundColor: COLORS.primarySoft,
         borderRadius: 16,
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        borderColor: COLORS.borderFocus,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 12,
+        overflow: 'hidden',
     },
 
     addMediaText: {
-        color: '#075E68',
+        color: COLORS.primaryDark,
         fontWeight: '700',
         marginTop: 7,
     },
 
     optionRow: {
-        height: 53,
+        height: 54,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
     },
 
     optionLeft: {
@@ -2383,16 +2557,17 @@ const styles = StyleSheet.create({
     optionText: {
         marginLeft: 12,
         fontSize: 14,
-        color: '#11343A',
+        fontWeight: '600',
+        color: COLORS.textPrimary,
     },
 
     optionValue: {
-        color: '#0D7F8D',
-        fontWeight: '600',
+        color: COLORS.primary,
+        fontWeight: '700',
     },
 
     optionPlaceholder: {
-        color: '#82999D',
+        color: COLORS.textMuted,
     },
 
     previewImage: {
@@ -2409,13 +2584,7 @@ const styles = StyleSheet.create({
     changeMedia: {
         marginTop: 5,
         fontSize: 11,
-        color: '#71949A',
-    },
-
-    avatarImage: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        color: COLORS.textMuted,
     },
 
     optionRight: {
@@ -2425,9 +2594,10 @@ const styles = StyleSheet.create({
     },
 
     pickerBox: {
-        backgroundColor: '#F5FBFC',
-        borderRadius: 14,
+        backgroundColor: COLORS.background,
+        borderRadius: 16,
         padding: 6,
+        marginTop: 8,
         marginBottom: 8,
     },
 
@@ -2437,50 +2607,53 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderRadius: 10,
+        borderRadius: 12,
     },
 
     pickerOptionActive: {
-        backgroundColor: '#E2F6F8',
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.borderFocus,
     },
 
     pickerText: {
         fontSize: 14,
-        color: '#11343A',
+        color: COLORS.textPrimary,
     },
 
     pickerTextActive: {
-        color: '#0D7F8D',
+        color: COLORS.primary,
         fontWeight: '700',
     },
 
     pickerLabel: {
         marginLeft: 10,
         fontSize: 14,
-        color: '#11343A',
+        color: COLORS.textPrimary,
     },
 
+    // COMMENTS SHEET
     commentOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.25)',
+        backgroundColor: 'rgba(17,52,58,0.4)',
         justifyContent: 'flex-end',
     },
 
     commentModal: {
         height: '62%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingHorizontal: 16,
     },
 
     commentHandle: {
-        width: 45,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#D8E3E5',
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
         alignSelf: 'center',
-        marginTop: 8,
+        marginTop: 10,
         marginBottom: 12,
     },
 
@@ -2489,54 +2662,76 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingBottom: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#D8EEF1',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderLight,
     },
 
     commentTitle: {
         fontSize: 17,
         fontWeight: '800',
-        color: '#11343A',
+        color: COLORS.textPrimary,
+    },
+
+    sheetCloseBtn: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: COLORS.background,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     commentEmpty: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        paddingTop: 40,
     },
 
     commentEmptyTitle: {
         marginTop: 10,
         fontSize: 16,
-        fontWeight: '700',
-        color: '#11343A',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     commentEmptyText: {
         marginTop: 4,
         fontSize: 13,
-        color: '#71949A',
+        color: COLORS.textMuted,
     },
 
     commentInputRow: {
         minHeight: 68,
         flexDirection: 'row',
         alignItems: 'center',
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: '#D8EEF1',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
+    },
+
+    commentInputPill: {
+        flex: 1,
+        height: 42,
+        marginHorizontal: 10,
+        paddingHorizontal: 14,
+        borderRadius: 999,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        justifyContent: 'center',
     },
 
     commentInput: {
-        flex: 1,
-        marginHorizontal: 10,
         fontSize: 14,
-        color: '#11343A',
+        color: COLORS.textPrimary,
+        paddingVertical: 0,
     },
 
     sendComment: {
-        color: '#0D7F8D',
-        fontWeight: '700',
+        color: COLORS.primary,
+        fontWeight: '800',
         fontSize: 14,
+        paddingHorizontal: 4,
     },
 
     sendCommentDisabled: {
@@ -2550,19 +2745,19 @@ const styles = StyleSheet.create({
     commentLoading: {
         textAlign: 'center',
         marginTop: 30,
-        color: '#71949A',
+        color: COLORS.textMuted,
     },
 
     commentItem: {
         flexDirection: 'row',
-        paddingVertical: 12,
+        paddingVertical: 8,
     },
 
     commentAvatar: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: '#DDF3F5',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 10,
@@ -2572,128 +2767,38 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
+    commentBubble: {
+        alignSelf: 'flex-start',
+        maxWidth: '100%',
+        backgroundColor: COLORS.background,
+        borderRadius: 16,
+        borderTopLeftRadius: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 9,
+    },
+
     commentUser: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#11343A',
+        fontSize: 13.5,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
     },
 
     commentBody: {
         marginTop: 2,
         fontSize: 14,
         lineHeight: 20,
-        color: '#24484E',
+        color: COLORS.textSecondary,
     },
 
     commentTime: {
-        marginTop: 4,
+        marginTop: 5,
+        marginLeft: 4,
         fontSize: 11,
-        color: '#8AA3A7',
+        color: COLORS.textLight,
     },
 
     deleteCommentButton: {
         padding: 6,
-    },
-
-    savedContainer: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
-
-    savedHeader: {
-        height: 56,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#D8EEF1',
-    },
-
-    savedTitle: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#11343A',
-    },
-
-    savedMessage: {
-        textAlign: 'center',
-        marginTop: 40,
-        color: '#71949A',
-    },
-
-    savedEmpty: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    savedEmptyTitle: {
-        marginTop: 12,
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#11343A',
-    },
-
-    savedEmptyText: {
-        marginTop: 5,
-        fontSize: 13,
-        color: '#71949A',
-    },
-
-    savedPost: {
-        paddingVertical: 15,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#D8EEF1',
-    },
-
-    savedPostHeader: {
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-
-    savedUser: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#11343A',
-    },
-
-    savedTime: {
-        marginTop: 2,
-        fontSize: 11,
-        color: '#81999D',
-    },
-
-    savedCaption: {
-        paddingHorizontal: 16,
-        marginTop: 10,
-        marginBottom: 10,
-        fontSize: 14,
-        color: '#24484E',
-    },
-
-    savedImage: {
-        width: '100%',
-        height: 280,
-    },
-
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-
-    savedButton: {
-        width: 43,
-        height: 43,
-        borderRadius: 13,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.2,
-        borderColor: '#D8EEF1',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 
     commentMenuWrapper: {
@@ -2708,10 +2813,14 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 5,
         top: 30,
-        width: 135,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
+        width: 140,
+        backgroundColor: COLORS.white,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         paddingVertical: 5,
+        ...SHADOWS.card,
+        shadowOpacity: 0.14,
         elevation: 8,
         zIndex: 100,
     },
@@ -2726,46 +2835,51 @@ const styles = StyleSheet.create({
     commentMenuText: {
         marginLeft: 9,
         fontSize: 13,
-        color: '#11343A',
+        fontWeight: '500',
+        color: COLORS.textPrimary,
     },
 
     commentDeleteText: {
         marginLeft: 9,
         fontSize: 13,
-        color: '#D95B5B',
+        fontWeight: '500',
+        color: COLORS.accentRed,
     },
 
     commentActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 6,
+        marginTop: 4,
+        marginLeft: 4,
         gap: 14,
     },
 
     commentActionText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#71949A',
+        fontWeight: '700',
+        color: COLORS.textMuted,
     },
 
     commentLikedText: {
-        color: '#0D7F8D',
+        color: COLORS.accentRed,
     },
 
     commentLikeCount: {
         fontSize: 11,
-        color: '#71949A',
+        color: COLORS.textMuted,
         marginLeft: -8,
     },
 
     replyComment: {
-        marginLeft: 42,
+        marginLeft: 46,
     },
 
     inputModeBar: {
-        height: 37,
-        paddingHorizontal: 8,
-        backgroundColor: '#F1FAFB',
+        height: 38,
+        paddingHorizontal: 12,
+        marginTop: 6,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -2773,34 +2887,154 @@ const styles = StyleSheet.create({
 
     inputModeText: {
         fontSize: 12,
-        color: '#50757B',
+        fontWeight: '600',
+        color: COLORS.primaryDark,
     },
 
+    // SAVED POSTS
+    savedContainer: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+    },
+
+    savedHeader: {
+        height: 60,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: COLORS.white,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+
+    savedBackBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: COLORS.background,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    savedTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+    },
+
+    savedMessage: {
+        textAlign: 'center',
+        marginTop: 40,
+        color: COLORS.textMuted,
+    },
+
+    savedEmpty: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    savedEmptyTitle: {
+        marginTop: 12,
+        fontSize: 17,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+    },
+
+    savedEmptyText: {
+        marginTop: 5,
+        fontSize: 13,
+        color: COLORS.textMuted,
+    },
+
+    savedList: {
+        paddingTop: 14,
+        paddingBottom: 30,
+    },
+
+    savedPost: {
+        marginHorizontal: 16,
+        marginBottom: 14,
+        paddingTop: 14,
+        paddingBottom: 12,
+        backgroundColor: COLORS.white,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
+    },
+
+    savedPostHeader: {
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+
+    savedUser: {
+        fontSize: 14.5,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+    },
+
+    savedTime: {
+        marginTop: 2,
+        fontSize: 11.5,
+        color: COLORS.textMuted,
+    },
+
+    savedCaption: {
+        paddingHorizontal: 14,
+        marginTop: 10,
+        marginBottom: 10,
+        fontSize: 14,
+        lineHeight: 20,
+        color: COLORS.textSecondary,
+    },
+
+    savedImage: {
+        height: 260,
+        marginHorizontal: 12,
+        marginTop: 4,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
+    },
+
+    // POST MENU
     postMenuWrapper: {
         position: 'relative',
     },
 
     postMoreButton: {
-        padding: 5,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: COLORS.background,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     postMenu: {
         position: 'absolute',
         right: 0,
-        top: 32,
-        width: 165,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 13,
+        top: 40,
+        width: 170,
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         paddingVertical: 5,
-        elevation: 10,
         zIndex: 200,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 10,
+        ...SHADOWS.card,
+        shadowOpacity: 0.14,
+        elevation: 10,
     },
 
     postMenuItem: {
-        minHeight: 45,
+        minHeight: 44,
         paddingHorizontal: 13,
         flexDirection: 'row',
         alignItems: 'center',
@@ -2808,25 +3042,28 @@ const styles = StyleSheet.create({
 
     postMenuText: {
         marginLeft: 10,
-        fontSize: 13,
-        color: '#11343A',
+        fontSize: 13.5,
+        fontWeight: '500',
+        color: COLORS.textPrimary,
     },
 
     postDeleteText: {
         marginLeft: 10,
-        fontSize: 13,
-        color: '#D95B5B',
+        fontSize: 13.5,
+        fontWeight: '500',
+        color: COLORS.accentRed,
     },
 
+    // EDIT POST
     editPostOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.25)',
+        backgroundColor: 'rgba(17,52,58,0.4)',
         justifyContent: 'flex-end',
     },
 
     editPostModal: {
         minHeight: '45%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingHorizontal: 18,
@@ -2842,39 +3079,47 @@ const styles = StyleSheet.create({
     editPostTitle: {
         fontSize: 17,
         fontWeight: '800',
-        color: '#11343A',
+        color: COLORS.textPrimary,
     },
 
     editCancel: {
         fontSize: 14,
-        color: '#71949A',
+        fontWeight: '600',
+        color: COLORS.textMuted,
     },
 
     editSave: {
         fontSize: 14,
-        fontWeight: '700',
-        color: '#0D7F8D',
+        fontWeight: '800',
+        color: COLORS.primary,
     },
 
     editPostInput: {
         minHeight: 150,
-        marginTop: 20,
+        marginTop: 18,
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: COLORS.background,
         fontSize: 15,
-        color: '#11343A',
+        color: COLORS.textPrimary,
         textAlignVertical: 'top',
     },
 
+    // VIDEO
     videoContainer: {
-        width: '100%',
-        height: 390,
-        backgroundColor: '#000000',
+        height: 340,
+        marginHorizontal: 12,
+        marginBottom: 6,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: COLORS.black,
         position: 'relative',
     },
 
     postVideo: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#000000',
+        backgroundColor: COLORS.black,
     },
 
     videoPlayOverlay: {
@@ -2887,7 +3132,9 @@ const styles = StyleSheet.create({
         width: 62,
         height: 62,
         borderRadius: 31,
-        backgroundColor: 'rgba(0,0,0,0.55)',
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.6)',
         alignItems: 'center',
         justifyContent: 'center',
     },

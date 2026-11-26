@@ -25,14 +25,22 @@ return new class extends Migration
             $table->decimal('can_nang_kg', 5, 2)->nullable();
             $table->string('dang_nguoi', 500)->nullable(); // kiểu như đưa hình cho người ta chọn 
             $table->string('muc_tieu_hien_tai', 50)->nullable();
+            $table->string('muc_tieu_hoat_dong')->default(0)->comment('1: Ít vận động, 2: Vận động nhẹ, 3: Vận động thường xuyên, 4: Vận động nhiều');
             $table->string('cap_do_hien_tai', 50)->nullable();
             $table->string('noi_tap_uu_tien', 30)->nullable();
             $table->string('trang_thai_ho_so', 30)->nullable();
-            $table->integer('tinh_trang')->default(0);
+            $table->integer('ngan_sach_ban_dau')->nullable();
+            $table->string('ma_gioi_thieu', 50)->nullable()->unique();
+            $table->integer('tinh_trang')->default(0); 
+            $table->text('note')->nullable();
+            $table->json('di_ung')->nullable();
+            $table->json('che_do_an_ua_thich')->nullable();
+            $table->unsignedTinyInteger('muc_ngan_sach_an_uong')->nullable()->comment('1: Tiết kiệm (<50k/ngày), 2: Vừa phải (50k-100k/ngày), 3: Thoải mái (>100k/ngày)');
             $table->string('hash_reset')->nullable(); // quên mật khẩu 
             $table->string('hash_active')->nullable(); // kích hoạt tài khoản 
             $table->integer('is_active')->default(0); // đã kích hoạt chưa 
             $table->integer('is_block')->default(0);// có bị khóa không 
+            $table->timestamp('ngay_cap_nhat_chi_so')->nullable();
             $table->timestamps();
         });
     }

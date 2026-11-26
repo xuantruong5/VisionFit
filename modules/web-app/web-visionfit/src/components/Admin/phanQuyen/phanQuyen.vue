@@ -681,14 +681,14 @@ export default {
 .page-header h2 {
     margin: 0;
     color: #11343a;
-    font-size: 25px;
-    font-weight: 750;
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
     margin: 5px 0 0;
     color: #71949a;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .btn-add {
@@ -697,7 +697,7 @@ export default {
     border-radius: 11px;
     background: #0d7f8d;
     color: white;
-    font-size: 11px;
+    font-size: 14.5px;
     font-weight: 700;
 }
 
@@ -723,14 +723,14 @@ export default {
 .mini-card span {
     display: block;
     color: #71949a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .mini-card strong {
     display: block;
     margin-top: 6px;
     color: #11343a;
-    font-size: 23px;
+    font-size: 26px;
 }
 
 .tab-list {
@@ -749,7 +749,7 @@ export default {
     border-radius: 9px;
     background: transparent;
     color: #71949a;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 
@@ -799,7 +799,7 @@ export default {
     outline: none;
     background: transparent;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .filter-bar select {
@@ -811,7 +811,7 @@ export default {
     outline: none;
     background: white;
     color: #51777d;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .account-table,
@@ -825,8 +825,8 @@ export default {
     padding: 11px 10px;
     border-bottom: 1px solid #d8eef1;
     color: #84a5aa;
-    font-size: 9px;
-    font-weight: 750;
+    font-size: 12.5px;
+    font-weight: 700;
     text-align: left;
     text-transform: uppercase;
 }
@@ -836,7 +836,7 @@ export default {
     padding: 13px 10px;
     border-bottom: 1px solid #eef6f7;
     color: #456a70;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .account-table tbody tr:hover,
@@ -860,7 +860,7 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 800;
 }
 
@@ -871,21 +871,21 @@ export default {
 
 .user-cell strong {
     color: #11343a;
-    font-size: 10.5px;
+    font-size: 14px;
 }
 
 .user-cell span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .role-badge {
     display: inline-flex;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
-    font-weight: 750;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .role-badge.admin {
@@ -910,13 +910,13 @@ export default {
 
 .login-time strong {
     color: #456a70;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .login-time span {
     margin-top: 2px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .status {
@@ -925,7 +925,7 @@ export default {
     gap: 5px;
     padding: 5px 8px;
     border-radius: 999px;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -952,7 +952,7 @@ export default {
     border-radius: 8px;
     background: white;
     color: #0d7f8d;
-    font-size: 9.5px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -977,13 +977,13 @@ export default {
 .role-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 14px;
+    font-size: 16.5px;
 }
 
 .role-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 9.5px;
+    font-size: 13px;
 }
 
 .note {
@@ -991,7 +991,7 @@ export default {
     border-radius: 999px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -1002,18 +1002,18 @@ export default {
 
 .permission-name strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .permission-name span {
     margin-top: 3px;
     color: #8aa7ab;
-    font-size: 8px;
+    font-size: 11.5px;
 }
 
 .permission-state {
     color: #b0bfc1;
-    font-size: 9px;
+    font-size: 12.5px;
     font-weight: 700;
 }
 
@@ -1049,19 +1049,19 @@ export default {
     border-radius: 10px;
     background: #dff6f8;
     color: #075e68;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 800;
 }
 
 .security-card strong {
     color: #11343a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .security-card p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
     line-height: 1.5;
 }
 
@@ -1070,7 +1070,7 @@ export default {
     top: 9px;
     right: 9px;
     color: #8aa7ab;
-    font-size: 7px;
+    font-size: 11px;
 }
 
 .modal-overlay {
@@ -1107,13 +1107,13 @@ export default {
 .modal-header h3 {
     margin: 0;
     color: #11343a;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .modal-header p {
     margin: 4px 0 0;
     color: #71949a;
-    font-size: 10px;
+    font-size: 13.5px;
 }
 
 .btn-close {
@@ -1123,7 +1123,7 @@ export default {
     border-radius: 9px;
     background: #edf8f9;
     color: #51777d;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .form-grid {
@@ -1140,7 +1140,7 @@ export default {
     display: block;
     margin-bottom: 6px;
     color: #51777d;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 
@@ -1153,7 +1153,7 @@ export default {
     border-radius: 10px;
     outline: none;
     color: #11343a;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .form-group input:focus,
@@ -1176,19 +1176,19 @@ export default {
 
 .role-preview span {
     color: #71949a;
-    font-size: 8.5px;
+    font-size: 12px;
 }
 
 .role-preview strong {
     margin-top: 4px;
     color: #075e68;
-    font-size: 11px;
+    font-size: 14.5px;
 }
 
 .role-preview p {
     margin: 6px 0 0;
     color: #597d82;
-    font-size: 9px;
+    font-size: 12.5px;
     line-height: 1.6;
 }
 
@@ -1203,7 +1203,7 @@ export default {
 .btn-save {
     padding: 9px 15px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 13.5px;
     font-weight: 700;
 }
 

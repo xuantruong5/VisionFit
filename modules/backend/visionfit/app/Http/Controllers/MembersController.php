@@ -7,12 +7,75 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ChuongTrinhTap;
 use App\Models\NoiTap;
-
+use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\Client\HoSo\StoreHoSoRequest;
+use App\Services\NutritionService;
+use App\Models\LichSuKhuyenCao;
+use App\Services\RecommendationService;
 
 class MembersController extends Controller
 {
+    // Đăng ký tài khoản hội viên
+    public function register(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:clients,email',
+            'password' => 'required|string|min:6',
+            'ho_ten' => 'required|string|max:255',
+            'so_dien_thoai' => 'nullable|string|max:20',
+        ], [
+            'email.required' => 'Vui lòng nhập địa chỉ email.',
+            'email.email' => 'Địa chỉ email không đúng định dạng.',
+            'email.unique' => 'Địa chỉ email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
+            'ho_ten.required' => 'Vui lòng nhập họ và tên của bạn.',
+        ]);
+
+        $maGioiThieu = 'VF' . strtoupper(substr(md5(uniqid()), 0, 6));
+
+        $client = \App\Models\Client::create([
+            'id_phong_tap' => $request->id_phong_tap ?? 1,
+            'email' => trim($request->email),
+            'password' => Hash::make($request->password),
+            'ho_ten' => trim($request->ho_ten),
+            'so_dien_thoai' => $request->so_dien_thoai ?? null,
+            'ma_gioi_thieu' => $maGioiThieu,
+            'anh_dai_dien' => $request->anh_dai_dien ?? null,
+            'tinh_trang' => 1,
+            'is_active' => 1,
+            'is_block' => 0,
+        ]);
+
+        // Tạo token đăng nhập ngay
+        $token = $client->createToken('Token_client')->plainTextToken;
+
+        // Gửi email chào mừng từ Gmail hệ thống VisionFit
+        try {
+            $dataMail = [
+                'ho_ten' => $client->ho_ten,
+                'email' => $client->email,
+                'ma_gioi_thieu' => $client->ma_gioi_thieu,
+            ];
+            \Illuminate\Support\Facades\Mail::send('dang_ky_thanh_cong', ['data' => $dataMail], function ($message) use ($client) {
+                $message->to($client->email)
+                        ->subject('[VisionFit] Chào mừng bạn gia nhập Hệ Thống Thể Hình VisionFit!');
+            });
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Lỗi gửi mail chào mừng đăng ký: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Đăng ký tài khoản thành công! Chào mừng bạn đến với VisionFit.',
+            'token' => $token,
+            'client' => $client,
+        ]);
+    }
 
     public function login(Request $request)
     {
@@ -23,6 +86,12 @@ class MembersController extends Controller
 
         if($check) {
             $client = Auth::guard('client')->user();
+            if ($client->is_block == 1 || $client->tinh_trang == 0) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động. Vui lòng liên hệ ban quản lý!',
+                ], 403);
+            }
             $token     = $client->createToken('Token_client')->plainTextToken;
             return response()->json([
                 'status'    => true,
@@ -138,10 +207,32 @@ class MembersController extends Controller
     }
     public function getCapDoChuongTrinh(Request $request)
     {
-        $data = ChuongTrinhTap::join('cap_do','chuong_trinh_tap.id_cap_do','=','cap_do.id')
+        $tenChuongTrinh = $request->input('ten_chuong_trinh');
+        $gioiTinh = $request->input('gioi_tinh_ap_dung');
+
+        $data = ChuongTrinhTap::join(
+            'cap_do',
+            'chuong_trinh_tap.id_cap_do',
+            '=',
+            'cap_do.id'
+        )
+            ->where('chuong_trinh_tap.ten_chuong_trinh', $tenChuongTrinh)
+            ->where('chuong_trinh_tap.gioi_tinh_ap_dung', $gioiTinh)
             ->where('chuong_trinh_tap.tinh_trang', 1)
-            ->select('cap_do.id','cap_do.ten_cap_do','cap_do.mo_ta','cap_do.hinh_anh' ,'chuong_trinh_tap.so_sao', 'chuong_trinh_tap.ten_chuong_trinh',)
-            ->distinct()
+            ->select(
+                'chuong_trinh_tap.id as id_chuong_trinh',
+                'chuong_trinh_tap.id_cap_do',
+                'cap_do.ten_cap_do',
+                'cap_do.mo_ta as mo_ta_cap_do',
+                'cap_do.hinh_anh',
+                'chuong_trinh_tap.so_sao',
+                'chuong_trinh_tap.ten_chuong_trinh',
+                'chuong_trinh_tap.mo_ta as mo_ta_chuong_trinh',
+                'chuong_trinh_tap.so_ngay',
+                'chuong_trinh_tap.so_buoi_moi_tuan',
+                'chuong_trinh_tap.id_noi_tap'
+            )
+            ->orderBy('chuong_trinh_tap.id_cap_do')
             ->get();
 
         return response()->json([
@@ -251,62 +342,106 @@ class MembersController extends Controller
         ]);
     }
 
+    private function formatAvatar($avatar)
+    {
+        if (empty($avatar)) {
+            return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
+        }
+        if (str_starts_with($avatar, 'http://') || str_starts_with($avatar, 'https://')) {
+            return $avatar;
+        }
+        return url(\Illuminate\Support\Facades\Storage::url($avatar));
+    }
+
     public function getProfile(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
-
-        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
-
-        if (!$client) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Không tìm thấy thông tin hội viên'
-            ], 404);
+        $hoiVien = Auth::guard('sanctum')->user() ?: Auth::guard('client')->user();
+        if (!$hoiVien && $request->filled('id_nguoi_dung')) {
+            $hoiVien = \App\Models\Client::find($request->id_nguoi_dung);
         }
 
-        $data = [
-            'id' => $client->id,
-            'ho_ten' => $client->ho_ten ?? 'Lê Hoàng Nam',
-            'email' => $client->email ?? 'nam.le@visionfit.vn',
-            'so_dien_thoai' => $client->so_dien_thoai ?? '0901 234 567',
-            'anh_dai_dien' => $client->anh_dai_dien,
-            'ngay_sinh' => $client->ngay_sinh ?? '15/08/1998',
-            'gioi_tinh' => ((int)$client->gioi_tinh === 1) ? 'Nữ' : 'Nam',
-            'chieu_cao_cm' => $client->chieu_cao_cm ?? 175,
-            'can_nang_kg' => $client->can_nang_kg ?? 68,
-            'dang_nguoi' => $client->dang_nguoi ?? 'Cân đối',
-            'muc_tieu_hien_tai' => $client->muc_tieu_hien_tai ?? 'Tăng cơ & Giảm mỡ',
-            'cap_do_hien_tai' => $client->cap_do_hien_tai ?? 'Trung cấp',
-            'noi_tap_uu_tien' => $client->noi_tap_uu_tien ?? 'Phòng gym',
-            'hang_thanh_vien' => 'Hội viên Premium',
-            'goi_tap' => 'Gói Hội Viên Toàn Diện 12 Tháng',
-            'ngay_het_han' => '18/12/2026',
-            'so_ngay_con_lai' => 92,
-            'hlv_phu_trach' => 'Trần Minh Tuấn (HLV Chuyên sâu)',
-            'thong_ke' => [
-                'so_buoi_tap' => 32,
-                'tong_gio_tap' => 48,
-                'tuan_duy_tri' => 8,
-                'calo_tieu_thu' => 14250,
-            ]
-        ];
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        // Lấy thông tin gói tập
+        $chiTietGoi = DB::table('dang_ky_goi')
+            ->join('chi_tiet_dang_ky_goi', 'dang_ky_goi.id', '=', 'chi_tiet_dang_ky_goi.id_dang_ky_goi')
+            ->leftJoin('goi_tap', 'chi_tiet_dang_ky_goi.id_goi_tap', '=', 'goi_tap.id')
+            ->leftJoin('trainers', 'chi_tiet_dang_ky_goi.id_trainer', '=', 'trainers.id')
+            ->where('dang_ky_goi.id_hoi_vien', $hoiVien->id)
+            ->where('dang_ky_goi.is_thanh_toan', 1)
+            ->where('dang_ky_goi.tinh_trang', 1)
+            ->where('chi_tiet_dang_ky_goi.tinh_trang', 1)
+            ->whereDate('chi_tiet_dang_ky_goi.ngay_ket_thuc', '>=', Carbon::today())
+            ->orderByDesc('chi_tiet_dang_ky_goi.ngay_ket_thuc')
+            ->select(
+                'dang_ky_goi.id as id_dang_ky_goi',
+                'goi_tap.ten_goi_tap',
+                'chi_tiet_dang_ky_goi.ngay_bat_dau',
+                'chi_tiet_dang_ky_goi.ngay_ket_thuc',
+                'trainers.ho_ten',
+                'trainers.chuc_danh'
+            )
+            ->first();
+
+        // Tính số ngày còn lại
+        $ngayConLai = null;
+
+        if ($chiTietGoi && $chiTietGoi->ngay_ket_thuc) {
+            $ngayConLai = max(0, Carbon::today()->diffInDays(
+                Carbon::parse($chiTietGoi->ngay_ket_thuc)->startOfDay(),
+                false
+            ));
+        }
 
         return response()->json([
-            'status' => true,
-            'data' => $data
+            'success' => true,
+            'message' => 'Lấy thông tin hồ sơ thành công.',
+            'data' => [
+                'ho_ten' => $hoiVien->ho_ten,
+                'email' => $hoiVien->email,
+                'so_dien_thoai' => $hoiVien->so_dien_thoai,
+                'anh_dai_dien' => $this->formatAvatar($hoiVien->anh_dai_dien),
+                'ngay_sinh' => $hoiVien->ngay_sinh? Carbon::parse($hoiVien->ngay_sinh)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y'): null,
+                'gioi_tinh' => $hoiVien->gioi_tinh,
+                'chieu_cao_cm' => $hoiVien->chieu_cao_cm,
+                'can_nang_kg' => $hoiVien->can_nang_kg,
+                'dang_nguoi' => $hoiVien->dang_nguoi,
+
+                'id' => $hoiVien->id,
+                'ma_thanh_vien' => $chiTietGoi ? 'VF-' . str_pad($chiTietGoi->id_dang_ky_goi, 6, '0', STR_PAD_LEFT): ($hoiVien->ma_gioi_thieu ? 'VF-' . $hoiVien->ma_gioi_thieu : 'VF-000001'),
+                'ma_gioi_thieu' => $hoiVien->ma_gioi_thieu,
+
+                'muc_tieu_hien_tai' => $hoiVien->muc_tieu_hien_tai,
+                'cap_do_hien_tai' => $hoiVien->cap_do_hien_tai,
+                'noi_tap_uu_tien' => $hoiVien->noi_tap_uu_tien,
+
+                'ten_goi_tap' => $chiTietGoi ? $chiTietGoi->ten_goi_tap : 'Chưa đăng ký gói',
+                'ngay_bat_dau' => $chiTietGoi ? $chiTietGoi->ngay_bat_dau : null,
+                'ngay_ket_thuc' => $chiTietGoi ? $chiTietGoi->ngay_ket_thuc : null,
+                'so_ngay_con_lai' => $ngayConLai ?? 0,
+                'ho_ten_hlv' => $chiTietGoi ? $chiTietGoi->ho_ten : null,
+                'chuc_danh' => $chiTietGoi ? $chiTietGoi->chuc_danh : null,
+            ],
         ]);
     }
 
     // Cập nhật thông tin hồ sơ hội viên
     public function updateProfile(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
-
-        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
+        $client = Auth::guard('sanctum')->user() ?: Auth::guard('client')->user();
+        if (!$client && $request->filled('id_nguoi_dung')) {
+            $client = \App\Models\Client::find($request->id_nguoi_dung);
+        }
 
         if (!$client) {
             return response()->json([
                 'status' => false,
+                'success' => false,
                 'message' => 'Không tìm thấy thông tin hội viên'
             ], 404);
         }
@@ -314,24 +449,101 @@ class MembersController extends Controller
         $request->validate([
             'ho_ten' => 'nullable|string|max:255',
             'so_dien_thoai' => 'nullable|string|max:20',
-            'chieu_cao_cm' => 'nullable|numeric|min:50|max:250',
+            'email' => 'nullable|email|max:255',
+            'chieu_cao_cm' => 'nullable|numeric|min:30|max:250',
             'can_nang_kg' => 'nullable|numeric|min:20|max:300',
             'muc_tieu_hien_tai' => 'nullable|string|max:255',
+            'cap_do_hien_tai' => 'nullable|string|max:255',
+            'noi_tap_uu_tien' => 'nullable|string|max:255',
+            'dang_nguoi' => 'nullable|string|max:255',
             'ngay_sinh' => 'nullable|string|max:50',
+            'gioi_tinh' => 'nullable',
+            'anh_dai_dien' => 'nullable|string',
         ]);
 
-        $client->update([
-            'ho_ten' => $request->ho_ten ?? $client->ho_ten,
-            'so_dien_thoai' => $request->so_dien_thoai ?? $client->so_dien_thoai,
-            'chieu_cao_cm' => $request->chieu_cao_cm ?? $client->chieu_cao_cm,
-            'can_nang_kg' => $request->can_nang_kg ?? $client->can_nang_kg,
-            'muc_tieu_hien_tai' => $request->muc_tieu_hien_tai ?? $client->muc_tieu_hien_tai,
-            'ngay_sinh' => $request->ngay_sinh ?? $client->ngay_sinh,
-            'noi_tap_uu_tien' => $request->noi_tap_uu_tien ?? $client->noi_tap_uu_tien,
-        ]);
+        $dataUpdate = [];
+
+        if ($request->has('ho_ten') && $request->ho_ten !== null) {
+            $dataUpdate['ho_ten'] = $request->ho_ten;
+        }
+        if ($request->has('so_dien_thoai') && $request->so_dien_thoai !== null) {
+            $dataUpdate['so_dien_thoai'] = $request->so_dien_thoai;
+        }
+        if ($request->has('email') && !empty($request->email)) {
+            $exists = \App\Models\Client::where('email', $request->email)->where('id', '!=', $client->id)->exists();
+            if (!$exists) {
+                $dataUpdate['email'] = $request->email;
+            }
+        }
+        if ($request->has('chieu_cao_cm') && $request->chieu_cao_cm !== null) {
+            $dataUpdate['chieu_cao_cm'] = $request->chieu_cao_cm;
+        }
+        if ($request->has('can_nang_kg') && $request->can_nang_kg !== null) {
+            $dataUpdate['can_nang_kg'] = $request->can_nang_kg;
+        }
+        if (
+            isset($dataUpdate['chieu_cao_cm'], $dataUpdate['can_nang_kg'])
+            && (float) $dataUpdate['chieu_cao_cm'] > 0
+            && (float) $dataUpdate['can_nang_kg'] > 0
+        ) {
+            $dataUpdate['ngay_cap_nhat_chi_so'] = now();
+        }
+        if ($request->has('muc_tieu_hien_tai') && $request->muc_tieu_hien_tai !== null) {
+            $dataUpdate['muc_tieu_hien_tai'] = $request->muc_tieu_hien_tai;
+        }
+        if ($request->has('cap_do_hien_tai') && $request->cap_do_hien_tai !== null) {
+            $dataUpdate['cap_do_hien_tai'] = $request->cap_do_hien_tai;
+        }
+        if ($request->has('noi_tap_uu_tien') && $request->noi_tap_uu_tien !== null) {
+            $dataUpdate['noi_tap_uu_tien'] = $request->noi_tap_uu_tien;
+        }
+        if ($request->has('dang_nguoi') && $request->dang_nguoi !== null) {
+            $dataUpdate['dang_nguoi'] = $request->dang_nguoi;
+        }
+        if ($request->has('anh_dai_dien') && !empty($request->anh_dai_dien)) {
+            $dataUpdate['anh_dai_dien'] = $request->anh_dai_dien;
+        }
+
+        // Xử lý ngày sinh (hỗ trợ DD/MM/YYYY hoặc YYYY-MM-DD)
+        if ($request->filled('ngay_sinh')) {
+            $rawDate = trim($request->ngay_sinh);
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $rawDate, $m)) {
+                $dataUpdate['ngay_sinh'] = sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
+            } else {
+                try {
+                    $dataUpdate['ngay_sinh'] = Carbon::parse($rawDate)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // giữ nguyên
+                }
+            }
+        }
+
+        // Xử lý giới tính: 'Nam' -> 0, 'Nữ' -> 1, hoặc số
+        if ($request->has('gioi_tinh')) {
+            $rawGender = trim((string)$request->gioi_tinh);
+            if (mb_strtolower($rawGender) === 'nam' || $rawGender === '0') {
+                $dataUpdate['gioi_tinh'] = 0;
+            } elseif (mb_strtolower($rawGender) === 'nữ' || mb_strtolower($rawGender) === 'nu' || $rawGender === '1') {
+                $dataUpdate['gioi_tinh'] = 1;
+            } else {
+                $dataUpdate['gioi_tinh'] = $rawGender;
+            }
+        }
+
+        // Xử lý upload avatar nếu gửi dạng file
+        if ($request->hasFile('avatar') || $request->hasFile('file')) {
+            $file = $request->file('avatar') ?? $request->file('file');
+            $path = $file->store('avatars', 'public');
+            $dataUpdate['anh_dai_dien'] = url(\Illuminate\Support\Facades\Storage::url($path));
+        }
+
+        if (!empty($dataUpdate)) {
+            $client->update($dataUpdate);
+        }
 
         return response()->json([
             'status' => true,
+            'success' => true,
             'message' => 'Cập nhật hồ sơ thành công',
             'data' => $client
         ]);
@@ -340,9 +552,10 @@ class MembersController extends Controller
     // Tải lên ảnh đại diện mới
     public function uploadAvatar(Request $request)
     {
-        $idNguoiDung = $request->id_nguoi_dung ?? 1;
-
-        $client = \App\Models\Client::find($idNguoiDung) ?? \App\Models\Client::first();
+        $client = Auth::guard('sanctum')->user() ?: Auth::guard('client')->user();
+        if (!$client && $request->filled('id_nguoi_dung')) {
+            $client = \App\Models\Client::find($request->id_nguoi_dung);
+        }
 
         if (!$client) {
             return response()->json([
@@ -354,18 +567,31 @@ class MembersController extends Controller
         $request->validate([
             'avatar' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
             'file' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+            'url' => 'nullable|string',
         ]);
+
+        if ($request->filled('url')) {
+            $client->update(['anh_dai_dien' => $request->url]);
+            return response()->json([
+                'status' => true,
+                'success' => true,
+                'message' => 'Cập nhật ảnh đại diện thành công',
+                'url' => $request->url,
+                'data' => $client
+            ]);
+        }
 
         $file = $request->file('avatar') ?? $request->file('file');
 
         if ($file) {
             $path = $file->store('avatars', 'public');
-            $url = $request->getSchemeAndHttpHost() . \Illuminate\Support\Facades\Storage::url($path);
+            $url = url(\Illuminate\Support\Facades\Storage::url($path));
 
             $client->update(['anh_dai_dien' => $url]);
 
             return response()->json([
                 'status' => true,
+                'success' => true,
                 'message' => 'Cập nhật ảnh đại diện thành công',
                 'url' => $url,
                 'data' => $client
@@ -377,6 +603,550 @@ class MembersController extends Controller
             'message' => 'Không tìm thấy file ảnh'
         ], 400);
     }
+
+    // Đổi mật khẩu tài khoản hội viên
+    public function changePassword(Request $request)
+    {
+        $client = Auth::guard('sanctum')->user() ?: Auth::guard('client')->user();
+
+        if (!$client) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để đổi mật khẩu.'
+            ], 401);
+        }
+
+        $request->validate([
+            'mat_khau_cu' => 'required|string',
+            'mat_khau_moi' => 'required|string|min:6',
+            'xac_nhan_mat_khau' => 'required|string|same:mat_khau_moi',
+        ], [
+            'mat_khau_cu.required' => 'Vui lòng nhập mật khẩu hiện tại.',
+            'mat_khau_moi.required' => 'Vui lòng nhập mật khẩu mới.',
+            'mat_khau_moi.min' => 'Mật khẩu mới phải có ít nhất 6 ký tự.',
+            'xac_nhan_mat_khau.required' => 'Vui lòng xác nhận mật khẩu mới.',
+            'xac_nhan_mat_khau.same' => 'Mật khẩu xác nhận không trùng khớp.',
+        ]);
+
+        // Kiểm tra mật khẩu cũ
+        if (!Hash::check($request->mat_khau_cu, $client->password)) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Mật khẩu hiện tại không chính xác.'
+            ], 400);
+        }
+
+        // Không cho phép mật khẩu mới trùng mật khẩu cũ
+        if (Hash::check($request->mat_khau_moi, $client->password)) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Mật khẩu mới không được trùng với mật khẩu hiện tại.'
+            ], 400);
+        }
+
+        // Cập nhật mật khẩu mới
+        $client->update([
+            'password' => Hash::make($request->mat_khau_moi),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Đổi mật khẩu thành công!'
+        ]);
+    }
+
+    // Quên mật khẩu - gửi mã xác nhận OTP
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Vui lòng nhập địa chỉ email.',
+            'email.email' => 'Địa chỉ email không đúng định dạng.',
+        ]);
+
+        $email = trim($request->email);
+
+        // Tìm trong Client trước, nếu không có thì tìm trong Trainer
+        $user = \App\Models\Client::where('email', $email)->first();
+        if (!$user) {
+            $user = \App\Models\Trainer::where('email', $email)->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Email này chưa được đăng ký trong hệ thống VisionFit.'
+            ], 404);
+        }
+
+        // Tạo mã OTP 6 chữ số ngẫu nhiên
+        $otp = (string)random_int(100000, 999999);
+        $expireAt = time() + 600; // Có hiệu lực trong 10 phút
+
+        $user->update([
+            'hash_reset' => $otp . '|' . $expireAt,
+        ]);
+
+        // Gửi Email qua SMTP Gmail (dùng giao diện VisionFit)
+        $mailSent = false;
+        try {
+            $dataMail = [
+                'ho_ten' => $user->ho_ten,
+                'otp' => $otp,
+            ];
+            \Illuminate\Support\Facades\Mail::send('quen_mat_khau', ['data' => $dataMail], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('[VisionFit] Mã xác nhận đặt lại mật khẩu');
+            });
+            $mailSent = true;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Lỗi gửi mail reset mật khẩu: ' . $e->getMessage());
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "Xin chào {$user->ho_ten},\n\nMã xác thực đặt lại mật khẩu VisionFit của bạn là: {$otp}\n\nMã này có hiệu lực trong vòng 10 phút.\n\nTrân trọng,\nVISIONFIT TEAM",
+                    function ($message) use ($user) {
+                        $message->to($user->email)->subject('[VisionFit] Mã xác nhận đặt lại mật khẩu');
+                    }
+                );
+                $mailSent = true;
+            } catch (\Exception $ex) {}
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => $mailSent 
+                ? 'Mã xác thực đã được gửi về email của bạn. Vui lòng kiểm tra hộp thư!' 
+                : 'Mã xác thực đã được gửi đến email của bạn.',
+        ]);
+    }
+
+    // Đặt lại mật khẩu mới với mã OTP
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string',
+            'mat_khau_moi' => 'required|string|min:6',
+            'xac_nhan_mat_khau' => 'required|string|same:mat_khau_moi',
+        ], [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'otp.required' => 'Vui lòng nhập mã xác thực OTP.',
+            'mat_khau_moi.required' => 'Vui lòng nhập mật khẩu mới.',
+            'mat_khau_moi.min' => 'Mật khẩu mới phải có ít nhất 6 ký tự.',
+            'xac_nhan_mat_khau.required' => 'Vui lòng xác nhận mật khẩu mới.',
+            'xac_nhan_mat_khau.same' => 'Mật khẩu xác nhận không trùng khớp.',
+        ]);
+
+        $email = trim($request->email);
+        $user = \App\Models\Client::where('email', $email)->first();
+        if (!$user) {
+            $user = \App\Models\Trainer::where('email', $email)->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Không tìm thấy tài khoản với email này.'
+            ], 404);
+        }
+
+        if (empty($user->hash_reset)) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Bạn chưa yêu cầu mã xác thực hoặc mã đã được sử dụng.'
+            ], 400);
+        }
+
+        $parts = explode('|', $user->hash_reset);
+        $storedOtp = $parts[0] ?? '';
+        $expireAt = isset($parts[1]) ? (int)$parts[1] : 0;
+
+        $inputOtp = trim($request->otp);
+
+        // Kiểm tra mã OTP khớp với mã đã gửi
+        if ($inputOtp !== $storedOtp) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Mã xác thực OTP không chính xác.'
+            ], 400);
+        }
+
+        // Kiểm tra thời gian hết hạn (10 phút)
+        if (time() > $expireAt) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Mã xác thực OTP đã hết hạn (chỉ có hiệu lực 10 phút). Vui lòng yêu cầu mã mới.'
+            ], 400);
+        }
+
+        // Cập nhật mật khẩu mới và hủy hash_reset
+        $user->update([
+            'password' => Hash::make($request->mat_khau_moi),
+            'hash_reset' => null,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'success' => true,
+            'message' => 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay bằng mật khẩu mới.'
+        ]);
+    }
+
+
+    // lấy dữ liệu phòng tập theo xã phường 
+    public function getProvinces()
+    {
+        $data = DB::table('provinces')
+            ->select(
+                'code',
+                'name',
+                'codename',
+                'division_type'
+            )
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    public function getWards($code)
+    {
+        $data = DB::table('provinces as p')
+            ->join('wards as w', 'p.id', '=', 'w.id_province')
+            ->where('p.code', $code)
+            ->select(
+                'p.code as ma_tinh',
+                'p.name as ten_tinh',
+                'w.id as id_ward',
+                'w.code as ma_phuong_xa',
+                'w.name as ten_phuong_xa',
+                'w.codename',
+                'w.division_type'
+            )
+            ->orderBy('w.name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    public function getGymsByProvince($code)
+    {
+        $data = DB::table('provinces as p')
+            ->join('wards as w', 'p.id', '=', 'w.id_province')
+            ->join('phong_gyms as pg', 'w.id', '=', 'pg.id_ward')
+            ->where('p.code', $code)
+            ->select(
+                'p.name as ten_tinh',
+                'w.name as ten_phuong_xa',
+                'pg.id',
+                'pg.ten_phong_gym',
+                'pg.dia_chi',
+                'pg.vi_do',
+                'pg.kinh_do',
+                'pg.id_ward',
+                'pg.so_dien_thoai',
+                'pg.website'
+            )
+            ->orderBy('w.name')
+            ->orderBy('pg.ten_phong_gym')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    public function getGymsByWard($code)
+    {
+        $data = DB::table('wards as w')
+            ->join('phong_gyms as pg', 'w.id', '=', 'pg.id_ward')
+            ->where('w.code', $code)
+            ->select(
+                'w.id as id_ward',
+                'w.code as ma_phuong_xa',
+                'w.name as ten_phuong_xa',
+                'pg.id as id_phong_gym',
+                'pg.ten_phong_gym',
+                'pg.dia_chi',
+                'pg.vi_do',
+                'pg.kinh_do',
+                'pg.so_dien_thoai',
+                'pg.website'
+            )
+            ->orderBy('pg.ten_phong_gym')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+    
+    public function luuHoSoBanDau(StoreHoSoRequest $request)
+    {
+        $hoiVien = Auth::guard('sanctum')->user();
+
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+
+        $validated = $request->validated();
+
+        // 1. Lưu hồ sơ hội viên
+        $hoiVien->update([
+            'ngay_sinh' => $validated['ngay_sinh'] ?? $hoiVien->ngay_sinh ?? '2000-01-01',
+            'gioi_tinh' => $validated['gioi_tinh'] ?? $hoiVien->gioi_tinh ?? 0,
+            'chieu_cao_cm' => $validated['chieu_cao_cm'],
+            'can_nang_kg' => $validated['can_nang_kg'],
+
+            'muc_tieu_hoat_dong' => $validated['muc_tieu_hoat_dong'],
+            'muc_tieu_hien_tai' => $validated['muc_tieu_hien_tai'] ?? $hoiVien->muc_tieu_hien_tai ?? 'tang_co',
+            'noi_tap_uu_tien' => $validated['noi_tap_uu_tien'] ?? $hoiVien->noi_tap_uu_tien ?? 'phong_gym',
+
+            'che_do_an_ua_thich' => $validated['che_do_an_ua_thich'] ?? $hoiVien->che_do_an_ua_thich ?? ['Eat Clean'],
+            'muc_ngan_sach_an_uong' => $validated['muc_ngan_sach_an_uong'] ?? $hoiVien->muc_ngan_sach_an_uong ?? 2,
+
+            'note' => $validated['note'] ?? $hoiVien->note,
+            'di_ung' => $validated['di_ung'] ?? $hoiVien->di_ung ?? [],
+
+            'ngay_cap_nhat_chi_so' => now(),
+        ]);
+
+        // 2. Tính tuổi
+        $ngaySinh = Carbon::parse($hoiVien->ngay_sinh);
+        $tuoi = $ngaySinh->age;
+
+        // 3. Quy đổi mức độ vận động
+        $activityMultipliers = [
+            1 => 1.2,
+            2 => 1.375,
+            3 => 1.55,
+            4 => 1.725,
+        ];
+
+        $activityLevel = (int) $hoiVien->muc_tieu_hoat_dong;
+
+        $activityMultiplier = $activityMultipliers[$activityLevel] ?? 1.2;
+
+        // 4. Tính toán và lưu lịch sử chỉ số dinh dưỡng
+        $chiSoDinhDuong = NutritionService::recordNutritionAssessment(
+            $hoiVien->id,
+            (float) $hoiVien->can_nang_kg,
+            (float) $hoiVien->chieu_cao_cm,
+            $tuoi,
+            $hoiVien->gioi_tinh,
+            $activityMultiplier,
+            $hoiVien->muc_tieu_hien_tai
+        );
+
+        // 5. Tạo khuyến cáo dựa trên hồ sơ và chỉ số dinh dưỡng
+        $khuyenCao = RecommendationService::generate(
+            $hoiVien,
+            $chiSoDinhDuong
+        );
+
+        // 6. Ngừng áp dụng khuyến cáo cũ
+        LichSuKhuyenCao::where('id_hoi_vien', $hoiVien->id)
+            ->where('trang_thai', 1)
+            ->update([
+                'trang_thai' => 0,
+            ]);
+
+        // 7. Lưu khuyến cáo mới
+        $lichSuKhuyenCao = LichSuKhuyenCao::create([
+            'id_hoi_vien' => $hoiVien->id,
+            'id_chi_so_dinh_duong' => $chiSoDinhDuong->id,
+
+            'danh_gia_the_trang' => $khuyenCao['danh_gia_the_trang'],
+            'dinh_huong_dinh_duong' => $khuyenCao['dinh_huong_dinh_duong'],
+            'goi_y_thuc_pham' => $khuyenCao['goi_y_thuc_pham'],
+            'dinh_huong_tap_luyen' => $khuyenCao['dinh_huong_tap_luyen'],
+            'viec_can_thuc_hien' => $khuyenCao['viec_can_thuc_hien'],
+            'chi_so_can_theo_doi' => $khuyenCao['chi_so_can_theo_doi'],
+
+            'trang_thai' => 1,
+        ]);
+
+        // 8. Trả kết quả về FE
+        return response()->json([
+            'success' => true,
+            'message' => 'Lưu hồ sơ, tính toán chỉ số và tạo khuyến cáo thành công.',
+
+            'data' => [
+                'id' => $hoiVien->id,
+                'gioi_tinh' => $hoiVien->gioi_tinh,
+                'ngay_sinh' => $ngaySinh->format('d/m/Y'),
+                'tuoi' => $tuoi,
+
+                'chieu_cao_cm' => $hoiVien->chieu_cao_cm,
+                'can_nang_kg' => $hoiVien->can_nang_kg,
+
+                'muc_tieu_hoat_dong' => $activityLevel,
+                'he_so_van_dong' => $activityMultiplier,
+
+                'muc_tieu_hien_tai' => $hoiVien->muc_tieu_hien_tai,
+                'noi_tap_uu_tien' => $hoiVien->noi_tap_uu_tien,
+
+                'che_do_an_ua_thich' => $hoiVien->che_do_an_ua_thich,
+                'muc_ngan_sach_an_uong' => $hoiVien->muc_ngan_sach_an_uong,
+                'note' => $hoiVien->note,
+                'di_ung' => $hoiVien->di_ung,
+
+                // Kết quả tính toán dinh dưỡng
+                'chi_so_dinh_duong' => [
+                    'id' => $chiSoDinhDuong->id,
+                    'can_nang' => $chiSoDinhDuong->can_nang,
+                    'bmi' => $chiSoDinhDuong->bmi,
+                    'bmr' => $chiSoDinhDuong->bmr,
+                    'tdee' => $chiSoDinhDuong->tdee,
+                    'kcal_muc_tieu' => $chiSoDinhDuong->kcal_muc_tieu,
+                    'protein' => $chiSoDinhDuong->protein,
+                    'carb' => $chiSoDinhDuong->carb,
+                    'fat' => $chiSoDinhDuong->fat,
+                ],
+
+                // Kết quả khuyến cáo
+                'khuyen_cao' => [
+                    'id' => $lichSuKhuyenCao->id,
+                    'danh_gia_the_trang' => $lichSuKhuyenCao->danh_gia_the_trang,
+                    'dinh_huong_dinh_duong' => $lichSuKhuyenCao->dinh_huong_dinh_duong,
+                    'goi_y_thuc_pham' => $lichSuKhuyenCao->goi_y_thuc_pham,
+                    'dinh_huong_tap_luyen' => $lichSuKhuyenCao->dinh_huong_tap_luyen,
+                    'viec_can_thuc_hien' => $lichSuKhuyenCao->viec_can_thuc_hien,
+                    'chi_so_can_theo_doi' => $lichSuKhuyenCao->chi_so_can_theo_doi,
+                    'trang_thai' => $lichSuKhuyenCao->trang_thai,
+                ],
+
+                'ngay_cap_nhat_chi_so' => $hoiVien->ngay_cap_nhat_chi_so,
+            ],
+        ]);
+    }
+
+    public function checkCapNhatLanDau()
+    {
+        // 1. Lấy hội viên đăng nhập
+        $hoiVien = Auth::guard('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+        // 2. Tìm thông tin hội viên
+        $client = Client::find($hoiVien->id);
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông tin hội viên.',
+            ], 404);
+        }
+        // 3. Kiểm tra đã cập nhật chỉ số lần nào chưa
+        if (!$client->ngay_cap_nhat_chi_so) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn chưa cập nhật chỉ số cơ thể. Vui lòng cập nhật ngay.',
+                'data' => [
+                    'da_cap_nhat' => false,
+                    'bat_buoc_cap_nhat' => true,
+                ],
+            ]);
+        }
+        // 4. Đã từng cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Bạn đã cập nhật chỉ số cơ thể.',
+            'data' => [
+                'da_cap_nhat' => true,
+                'bat_buoc_cap_nhat' => false,
+            ],
+        ]);
+    }
+
+
+
+    
+
+
+
+
+
+    public function checkCapNhatChiSo()
+    {
+        // 1. Lấy hội viên đăng nhập
+        $hoiVien = Auth::guard('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+        // 2. Lấy thông tin hội viên từ Model Client
+        $client = Client::find($hoiVien->id);
+
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông tin hội viên.',
+            ], 404);
+        }
+
+        // 3. Kiểm tra lần cập nhật chỉ số gần nhất
+        if (!$client->ngay_cap_nhat_chi_so) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn chưa cập nhật chỉ số cơ thể.',
+                'data' => [
+                    'can_cap_nhat' => true,
+                    'ngay_cap_nhat_cuoi' => null,
+                    'ngay_cap_nhat_tiep_theo' => null,
+                ],
+            ]);
+        }
+
+        // 4. Tính thời điểm cập nhật tiếp theo (sau 2 ngày)
+        $ngayCapNhatCuoi = Carbon::parse($client->ngay_cap_nhat_chi_so);
+
+        $ngayCapNhatTiepTheo = $ngayCapNhatCuoi->copy()->addDays(2);
+
+        // 5. Kiểm tra đã đủ 2 ngày chưa
+        $canCapNhat = now()->greaterThanOrEqualTo($ngayCapNhatTiepTheo);
+
+        return response()->json([
+            'success' => true,
+            'message' => $canCapNhat
+                ? 'Đã đến lúc cập nhật lại chỉ số cơ thể.'
+                : 'Chưa đến thời gian cập nhật chỉ số.',
+            'data' => [
+                'can_cap_nhat' => $canCapNhat,
+                'ngay_cap_nhat_cuoi' => $ngayCapNhatCuoi->toDateTimeString(),
+                'ngay_cap_nhat_tiep_theo' => $ngayCapNhatTiepTheo->toDateTimeString(),
+            ],
+        ]);
+    }
+
+
+
+
+
 
 
 

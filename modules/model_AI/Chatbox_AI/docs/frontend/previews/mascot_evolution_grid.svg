@@ -1,0 +1,1813 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 620" width="920" height="620" style="background:#edf5ef;">
+  <text x="460" y="28" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#1b8a5a">BẢNG TIẾN HÓA 4 CẤP ĐỘ — GẤU VÀ MÈO VISIONFIT</text>
+  
+    <g transform="translate(20, 50)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Gấu - STARTER</text>
+      
+<svg class="vif-mascot-svg species-bear stage-starter state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Gấu VisionFit cấp độ starter trạng thái idle" data-species="bear" data-stage="starter" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-b-starter-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-b-starter-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-b-starter-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Tách ngoài character-root, cố định khi nhân vật nhảy -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="55" ry="11" fill="url(#evo-b-starter-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông nền cơ thể, gắn liền khối vào hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 64 194 C 64 194 62 216 76 216 C 90 216 88 196 88 196 Z" fill="#BA875A"/>
+        <!-- Bàn chân trái bo tròn mềm mại cùng màu lông -->
+        <ellipse cx="76" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ dễ thương -->
+        <path d="M 72 216 L 72 219 M 76 216 L 76 220 M 80 216 L 80 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 196 C 112 196 110 216 124 216 C 138 216 136 194 136 194 Z" fill="#BA875A"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="124" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 120 216 L 120 219 M 124 216 L 124 220 M 128 216 L 128 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, đảm bảo gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại -->
+        <path class="body-torso" d="M 64 126 C 72 108 128 108 136 126 C 150 165 146 198 138 206 C 100 214 100 214 62 206 C 54 198 50 165 64 126 Z" fill="#BA875A"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#BA875A"/>
+
+        <!-- Họa tiết lông bụng mềm mại / Trang phục theo cấp tiến hóa -->
+        
+          <!-- Starter: Bụng kem tròn trĩnh dễ thương -->
+          <ellipse class="body-belly" cx="100" cy="168" rx="27" ry="30" fill="#FFE6C7"/>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ, không lắc theo mặt -->
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (64, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 64 126 C 54 128 46 138 48 152 C 50 156 56 156 58 150 C 62 142 66 134 66 128 Z" fill="#BA875A"/>
+          
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (50, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 50 150 C 44 156 38 166 42 176 C 45 183 54 182 56 174 C 57 166 58 156 52 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-left" cx="44" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 40 176 L 41 180 M 44 177 L 44 181 M 47 176 L 47 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+
+            <!-- Tạ tay trái (Dumbbell): Được bàn tay nắm giữ chắc chắn -->
+            <g class="prop-dumbbell-left">
+              <rect x="25" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="45" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="29" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (136, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 136 126 C 146 128 154 138 152 152 C 150 156 144 156 142 150 C 138 142 134 134 134 128 Z" fill="#BA875A"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (150, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 150 150 C 156 156 162 166 158 176 C 155 183 146 182 144 174 C 143 166 142 156 148 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-right" cx="156" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 153 176 L 153 180 M 156 177 L 156 181 M 159 176 L 159 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+
+            <!-- Tạ tay phải (Dumbbell) -->
+            <g class="prop-dumbbell-right">
+              <rect x="148" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="168" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="152" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai gấu tròn hiền lành -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <circle cx="56" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="56" cy="46" r="13" fill="#E8B690"/>
+          </g>
+          <g class="ear-right">
+            <circle cx="144" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="144" cy="46" r="13" fill="#E8B690"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu gấu tròn bo cong mềm mại, cùng màu lông nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="52" ry="45" fill="#BA875A"/>
+
+        <!-- Băng đô trán thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 49 64 C 74 54 126 54 151 64 L 150 75 C 126 66 74 66 50 75 Z" fill="#198D69"/>
+          <path d="M 51 69 C 75 61 125 61 149 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.8" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm gấu kem mềm -->
+        <ellipse class="part-snout" cx="100" cy="93" rx="24" ry="18" fill="#FFE6C7"/>
+
+        <!-- Mũi gấu bo tròn dễ thương -->
+        <path class="part-nose" d="M 94 85 C 98 81 102 81 106 85 C 108 91 104 94 100 94 C 96 94 92 91 94 85 Z" fill="#4A2E1B"/>
+        <ellipse cx="98" cy="86" rx="2" ry="1.2" fill="#FFFFFF" opacity="0.75"/>
+
+        <!-- Lông mày đặt ngoài cụm mắt (không bị đè/bẹp khi chớp mắt) -->
+        <path class="brow-left" d="M 72 63 C 76 60 84 60 88 64" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 64 C 116 60 124 60 128 63" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt gấu: Cụm đồng bộ chớp quanh tâm chính xác -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="77.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="81.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="117.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="121.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn thể thao -->
+          <ellipse cx="68" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng gấu -->
+        <g class="layer-mouth">
+          <!-- Miệng mỉm cười nhẹ -->
+          <path class="mouth-line" d="M 94 97 C 97 103 103 103 106 97" stroke="#4A2E1B" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 97 C 94 111 106 111 106 97 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 103 C 98 106 102 106 104 103 C 104 109 96 109 96 103 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking State) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS: Hiển thị thật khi bật chế độ debug-joints -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="64" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="50" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="136" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="150" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="76" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="124" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(240, 50)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Gấu - ACTIVE</text>
+      
+<svg class="vif-mascot-svg species-bear stage-active state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Gấu VisionFit cấp độ active trạng thái idle" data-species="bear" data-stage="active" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-b-active-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-b-active-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-b-active-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Tách ngoài character-root, cố định khi nhân vật nhảy -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="55" ry="11" fill="url(#evo-b-active-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông nền cơ thể, gắn liền khối vào hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 64 194 C 64 194 62 216 76 216 C 90 216 88 196 88 196 Z" fill="#BA875A"/>
+        <!-- Bàn chân trái bo tròn mềm mại cùng màu lông -->
+        <ellipse cx="76" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ dễ thương -->
+        <path d="M 72 216 L 72 219 M 76 216 L 76 220 M 80 216 L 80 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 196 C 112 196 110 216 124 216 C 138 216 136 194 136 194 Z" fill="#BA875A"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="124" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 120 216 L 120 219 M 124 216 L 124 220 M 128 216 L 128 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, đảm bảo gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại -->
+        <path class="body-torso" d="M 62 126 C 72 108 128 108 138 126 C 151 165 147 198 138 206 C 100 214 100 214 62 206 C 54 198 49 165 62 126 Z" fill="#BA875A"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#BA875A"/>
+
+        <!-- Họa tiết lông bụng mềm mại / Trang phục theo cấp tiến hóa -->
+        
+          <!-- Active: Áo thể thao năng động VisionFit ôm dáng theo đường cong thân -->
+          <path class="body-jersey" d="M 72 126 C 84 132 116 132 128 126 L 132 195 C 112 198 88 198 68 195 Z" fill="url(#evo-b-active-fabric)"/>
+          <path d="M 86 126 C 93 138 107 138 114 126" stroke="#0F6F52" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <text x="100" y="165" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">VIF</text>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ, không lắc theo mặt -->
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (64, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 64 126 C 54 128 46 138 48 152 C 50 156 56 156 58 150 C 62 142 66 134 66 128 Z" fill="#BA875A"/>
+          
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (50, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 50 150 C 44 156 38 166 42 176 C 45 183 54 182 56 174 C 57 166 58 156 52 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-left" cx="44" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 40 176 L 41 180 M 44 177 L 44 181 M 47 176 L 47 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+              <!-- Băng cổ tay thể thao -->
+              <rect x="39" y="167" width="13" height="6" rx="2" fill="#198D69" transform="rotate(-15 45 170)"/>
+            
+
+            <!-- Tạ tay trái (Dumbbell): Được bàn tay nắm giữ chắc chắn -->
+            <g class="prop-dumbbell-left">
+              <rect x="25" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="45" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="29" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (136, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 136 126 C 146 128 154 138 152 152 C 150 156 144 156 142 150 C 138 142 134 134 134 128 Z" fill="#BA875A"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (150, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 150 150 C 156 156 162 166 158 176 C 155 183 146 182 144 174 C 143 166 142 156 148 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-right" cx="156" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 153 176 L 153 180 M 156 177 L 156 181 M 159 176 L 159 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+              <!-- Băng cổ tay thể thao -->
+              <rect x="148" y="167" width="13" height="6" rx="2" fill="#198D69" transform="rotate(15 155 170)"/>
+            
+
+            <!-- Tạ tay phải (Dumbbell) -->
+            <g class="prop-dumbbell-right">
+              <rect x="148" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="168" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="152" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai gấu tròn hiền lành -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <circle cx="56" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="56" cy="46" r="13" fill="#E8B690"/>
+          </g>
+          <g class="ear-right">
+            <circle cx="144" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="144" cy="46" r="13" fill="#E8B690"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu gấu tròn bo cong mềm mại, cùng màu lông nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="52" ry="45" fill="#BA875A"/>
+
+        <!-- Băng đô trán thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 49 64 C 74 54 126 54 151 64 L 150 75 C 126 66 74 66 50 75 Z" fill="#198D69"/>
+          <path d="M 51 69 C 75 61 125 61 149 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.8" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm gấu kem mềm -->
+        <ellipse class="part-snout" cx="100" cy="93" rx="24" ry="18" fill="#FFE6C7"/>
+
+        <!-- Mũi gấu bo tròn dễ thương -->
+        <path class="part-nose" d="M 94 85 C 98 81 102 81 106 85 C 108 91 104 94 100 94 C 96 94 92 91 94 85 Z" fill="#4A2E1B"/>
+        <ellipse cx="98" cy="86" rx="2" ry="1.2" fill="#FFFFFF" opacity="0.75"/>
+
+        <!-- Lông mày đặt ngoài cụm mắt (không bị đè/bẹp khi chớp mắt) -->
+        <path class="brow-left" d="M 72 63 C 76 60 84 60 88 64" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 64 C 116 60 124 60 128 63" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt gấu: Cụm đồng bộ chớp quanh tâm chính xác -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="77.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="81.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="117.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="121.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn thể thao -->
+          <ellipse cx="68" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng gấu -->
+        <g class="layer-mouth">
+          <!-- Miệng mỉm cười nhẹ -->
+          <path class="mouth-line" d="M 94 97 C 97 103 103 103 106 97" stroke="#4A2E1B" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 97 C 94 111 106 111 106 97 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 103 C 98 106 102 106 104 103 C 104 109 96 109 96 103 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking State) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS: Hiển thị thật khi bật chế độ debug-joints -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="64" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="50" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="136" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="150" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="76" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="124" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(460, 50)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Gấu - STRONG</text>
+      
+<svg class="vif-mascot-svg species-bear stage-strong state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Gấu VisionFit cấp độ strong trạng thái idle" data-species="bear" data-stage="strong" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-b-strong-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-b-strong-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-b-strong-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Tách ngoài character-root, cố định khi nhân vật nhảy -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="55" ry="11" fill="url(#evo-b-strong-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông nền cơ thể, gắn liền khối vào hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 64 194 C 64 194 62 216 76 216 C 90 216 88 196 88 196 Z" fill="#BA875A"/>
+        <!-- Bàn chân trái bo tròn mềm mại cùng màu lông -->
+        <ellipse cx="76" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ dễ thương -->
+        <path d="M 72 216 L 72 219 M 76 216 L 76 220 M 80 216 L 80 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 196 C 112 196 110 216 124 216 C 138 216 136 194 136 194 Z" fill="#BA875A"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="124" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 120 216 L 120 219 M 124 216 L 124 220 M 128 216 L 128 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, đảm bảo gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại -->
+        <path class="body-torso" d="M 60 126 C 72 108 128 108 140 126 C 153 165 149 198 138 206 C 100 214 100 214 62 206 C 54 198 47 165 60 126 Z" fill="#BA875A"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#BA875A"/>
+
+        <!-- Họa tiết lông bụng mềm mại / Trang phục theo cấp tiến hóa -->
+        
+          <!-- Strong: Áo gym VIF PRO + Đai tập tạ gọn gàng -->
+          <path class="body-jersey" d="M 70 125 C 82 132 118 132 130 125 L 135 190 C 112 194 88 194 65 190 Z" fill="url(#evo-b-strong-fabric)"/>
+          <path d="M 84 125 C 92 136 108 136 116 125" stroke="#0F6F52" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+          <path d="M 74 132 L 69 188" stroke="#73DFAC" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 126 132 L 131 188" stroke="#73DFAC" stroke-width="2" stroke-linecap="round"/>
+          <text x="100" y="162" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="system-ui, sans-serif">PRO</text>
+          <!-- Đai cử tạ thể hình -->
+          <path d="M 62 188 C 100 193 100 193 138 188 L 137 202 C 100 207 100 207 63 202 Z" fill="#21262D"/>
+          <rect x="94" y="190" width="12" height="12" rx="2" fill="#F5C65C"/>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ, không lắc theo mặt -->
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (64, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 64 126 C 54 128 46 138 48 152 C 50 156 56 156 58 150 C 62 142 66 134 66 128 Z" fill="#BA875A"/>
+          
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (50, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 50 150 C 44 156 38 166 42 176 C 45 183 54 182 56 174 C 57 166 58 156 52 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-left" cx="44" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 40 176 L 41 180 M 44 177 L 44 181 M 47 176 L 47 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+              <!-- Băng cổ tay thể thao -->
+              <rect x="39" y="167" width="13" height="6" rx="2" fill="#198D69" transform="rotate(-15 45 170)"/>
+            
+
+            <!-- Tạ tay trái (Dumbbell): Được bàn tay nắm giữ chắc chắn -->
+            <g class="prop-dumbbell-left">
+              <rect x="25" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="45" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="29" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (136, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 136 126 C 146 128 154 138 152 152 C 150 156 144 156 142 150 C 138 142 134 134 134 128 Z" fill="#BA875A"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (150, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 150 150 C 156 156 162 166 158 176 C 155 183 146 182 144 174 C 143 166 142 156 148 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-right" cx="156" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 153 176 L 153 180 M 156 177 L 156 181 M 159 176 L 159 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+              <!-- Băng cổ tay thể thao -->
+              <rect x="148" y="167" width="13" height="6" rx="2" fill="#198D69" transform="rotate(15 155 170)"/>
+            
+
+            <!-- Tạ tay phải (Dumbbell) -->
+            <g class="prop-dumbbell-right">
+              <rect x="148" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="168" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="152" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai gấu tròn hiền lành -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <circle cx="56" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="56" cy="46" r="13" fill="#E8B690"/>
+          </g>
+          <g class="ear-right">
+            <circle cx="144" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="144" cy="46" r="13" fill="#E8B690"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu gấu tròn bo cong mềm mại, cùng màu lông nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="52" ry="45" fill="#BA875A"/>
+
+        <!-- Băng đô trán thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 49 64 C 74 54 126 54 151 64 L 150 75 C 126 66 74 66 50 75 Z" fill="#198D69"/>
+          <path d="M 51 69 C 75 61 125 61 149 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.8" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm gấu kem mềm -->
+        <ellipse class="part-snout" cx="100" cy="93" rx="24" ry="18" fill="#FFE6C7"/>
+
+        <!-- Mũi gấu bo tròn dễ thương -->
+        <path class="part-nose" d="M 94 85 C 98 81 102 81 106 85 C 108 91 104 94 100 94 C 96 94 92 91 94 85 Z" fill="#4A2E1B"/>
+        <ellipse cx="98" cy="86" rx="2" ry="1.2" fill="#FFFFFF" opacity="0.75"/>
+
+        <!-- Lông mày đặt ngoài cụm mắt (không bị đè/bẹp khi chớp mắt) -->
+        <path class="brow-left" d="M 72 63 C 76 60 84 60 88 64" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 64 C 116 60 124 60 128 63" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt gấu: Cụm đồng bộ chớp quanh tâm chính xác -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="77.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="81.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="117.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="121.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn thể thao -->
+          <ellipse cx="68" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng gấu -->
+        <g class="layer-mouth">
+          <!-- Miệng mỉm cười nhẹ -->
+          <path class="mouth-line" d="M 94 97 C 97 103 103 103 106 97" stroke="#4A2E1B" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 97 C 94 111 106 111 106 97 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 103 C 98 106 102 106 104 103 C 104 109 96 109 96 103 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking State) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS: Hiển thị thật khi bật chế độ debug-joints -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="64" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="50" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="136" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="150" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="76" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="124" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(680, 50)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Gấu - CHAMPION</text>
+      
+<svg class="vif-mascot-svg species-bear stage-champion state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Gấu VisionFit cấp độ champion trạng thái idle" data-species="bear" data-stage="champion" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-b-champion-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-b-champion-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-b-champion-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Tách ngoài character-root, cố định khi nhân vật nhảy -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="55" ry="11" fill="url(#evo-b-champion-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông nền cơ thể, gắn liền khối vào hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 64 194 C 64 194 62 216 76 216 C 90 216 88 196 88 196 Z" fill="#BA875A"/>
+        <!-- Bàn chân trái bo tròn mềm mại cùng màu lông -->
+        <ellipse cx="76" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ dễ thương -->
+        <path d="M 72 216 L 72 219 M 76 216 L 76 220 M 80 216 L 80 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 196 C 112 196 110 216 124 216 C 138 216 136 194 136 194 Z" fill="#BA875A"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="124" cy="214" rx="14" ry="9" fill="#BA875A"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 120 216 L 120 219 M 124 216 L 124 220 M 128 216 L 128 219" stroke="#8F5C34" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, đảm bảo gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại -->
+        <path class="body-torso" d="M 58 126 C 72 108 128 108 142 126 C 155 165 151 198 138 206 C 100 214 100 214 62 206 C 54 198 45 165 58 126 Z" fill="#BA875A"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#BA875A"/>
+
+        <!-- Họa tiết lông bụng mềm mại / Trang phục theo cấp tiến hóa -->
+        
+          <!-- Champion: Thể hình 6 múi bo cong tinh tế + Đai vàng vô địch -->
+          <path class="body-pecs" d="M 72 138 C 88 143 98 150 98 160 C 78 161 72 150 70 141 Z" fill="#FFE6C7" opacity="0.9"/>
+          <path class="body-pecs" d="M 128 138 C 112 143 102 150 102 160 C 122 161 128 150 130 141 Z" fill="#FFE6C7" opacity="0.9"/>
+          <!-- Múi cơ bụng thể thao -->
+          <rect x="80" y="165" width="17" height="9" rx="3" fill="#FFE6C7" opacity="0.85"/>
+          <rect x="103" y="165" width="17" height="9" rx="3" fill="#FFE6C7" opacity="0.85"/>
+          <rect x="82" y="177" width="15" height="8" rx="3" fill="#FFE6C7" opacity="0.8"/>
+          <rect x="103" y="177" width="15" height="8" rx="3" fill="#FFE6C7" opacity="0.8"/>
+          <!-- Đai vô địch Gold Champion Belt -->
+          <path d="M 58 190 C 100 196 100 196 142 190 L 140 206 C 100 212 100 212 60 206 Z" fill="#21262D"/>
+          <circle cx="100" cy="198" r="9.5" fill="url(#evo-b-champion-gold)"/>
+          <text x="100" y="202" font-size="9" font-weight="900" fill="#2C1E18" text-anchor="middle">★</text>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ, không lắc theo mặt -->
+      
+        <g class="acc-medal">
+          <path d="M 86 122 L 98 146 L 100 146 L 114 122" stroke="#198D69" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          <circle cx="100" cy="153" r="11" fill="url(#evo-b-champion-gold)" stroke="#D49419" stroke-width="1.5"/>
+          <text x="100" y="157" font-size="9.5" font-weight="900" fill="#2C1E18" text-anchor="middle">V</text>
+        </g>
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (64, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 64 126 C 54 128 46 138 48 152 C 50 156 56 156 58 150 C 62 142 66 134 66 128 Z" fill="#BA875A"/>
+          
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (50, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 50 150 C 44 156 38 166 42 176 C 45 183 54 182 56 174 C 57 166 58 156 52 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-left" cx="44" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 40 176 L 41 180 M 44 177 L 44 181 M 47 176 L 47 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+              <!-- Băng cổ tay thể thao -->
+              <rect x="39" y="167" width="13" height="6" rx="2" fill="#198D69" transform="rotate(-15 45 170)"/>
+            
+
+            <!-- Tạ tay trái (Dumbbell): Được bàn tay nắm giữ chắc chắn -->
+            <g class="prop-dumbbell-left">
+              <rect x="25" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="45" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="29" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (136, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 136 126 C 146 128 154 138 152 152 C 150 156 144 156 142 150 C 138 142 134 134 134 128 Z" fill="#BA875A"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (150, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <!-- Khối cẳng tay xuống bàn tay -->
+            <path class="forearm-shape" d="M 150 150 C 156 156 162 166 158 176 C 155 183 146 182 144 174 C 143 166 142 156 148 150 Z" fill="#BA875A"/>
+            <!-- Bàn tay tròn cùng màu lông -->
+            <ellipse class="paw paw-right" cx="156" cy="176" rx="7.5" ry="6.5" fill="#BA875A"/>
+            <path d="M 153 176 L 153 180 M 156 177 L 156 181 M 159 176 L 159 180" stroke="#8F5C34" stroke-width="1.2" stroke-linecap="round"/>
+
+            
+              <!-- Băng cổ tay thể thao -->
+              <rect x="148" y="167" width="13" height="6" rx="2" fill="#198D69" transform="rotate(15 155 170)"/>
+            
+
+            <!-- Tạ tay phải (Dumbbell) -->
+            <g class="prop-dumbbell-right">
+              <rect x="148" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="168" y="170" width="7" height="15" rx="2" fill="#2D3748"/>
+              <rect x="152" y="176" width="19" height="3.5" fill="#A0AEC0"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai gấu tròn hiền lành -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <circle cx="56" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="56" cy="46" r="13" fill="#E8B690"/>
+          </g>
+          <g class="ear-right">
+            <circle cx="144" cy="46" r="21" fill="#BA875A"/>
+            <circle cx="144" cy="46" r="13" fill="#E8B690"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu gấu tròn bo cong mềm mại, cùng màu lông nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="52" ry="45" fill="#BA875A"/>
+
+        <!-- Băng đô trán thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 49 64 C 74 54 126 54 151 64 L 150 75 C 126 66 74 66 50 75 Z" fill="#198D69"/>
+          <path d="M 51 69 C 75 61 125 61 149 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.8" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm gấu kem mềm -->
+        <ellipse class="part-snout" cx="100" cy="93" rx="24" ry="18" fill="#FFE6C7"/>
+
+        <!-- Mũi gấu bo tròn dễ thương -->
+        <path class="part-nose" d="M 94 85 C 98 81 102 81 106 85 C 108 91 104 94 100 94 C 96 94 92 91 94 85 Z" fill="#4A2E1B"/>
+        <ellipse cx="98" cy="86" rx="2" ry="1.2" fill="#FFFFFF" opacity="0.75"/>
+
+        <!-- Lông mày đặt ngoài cụm mắt (không bị đè/bẹp khi chớp mắt) -->
+        <path class="brow-left" d="M 72 63 C 76 60 84 60 88 64" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 64 C 116 60 124 60 128 63" stroke="#8F5C34" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt gấu: Cụm đồng bộ chớp quanh tâm chính xác -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="77.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="81.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="7.5" ry="9" fill="#2A1810"/>
+            <circle class="eye-glint" cx="117.5" cy="71" r="2.8" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="121.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn thể thao -->
+          <ellipse cx="68" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="85" rx="7" ry="4" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng gấu -->
+        <g class="layer-mouth">
+          <!-- Miệng mỉm cười nhẹ -->
+          <path class="mouth-line" d="M 94 97 C 97 103 103 103 106 97" stroke="#4A2E1B" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 97 C 94 111 106 111 106 97 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 103 C 98 106 102 106 104 103 C 104 109 96 109 96 103 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking State) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS: Hiển thị thật khi bật chế độ debug-joints -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="64" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="50" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="136" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="150" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="76" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="124" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(20, 340)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Mèo - STARTER</text>
+      
+<svg class="vif-mascot-svg species-cat stage-starter state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Mèo VisionFit cấp độ starter trạng thái idle" data-species="cat" data-stage="starter" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-c-starter-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-c-starter-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-c-starter-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Nằm ngoài character-root -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="52" ry="11" fill="url(#evo-c-starter-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- ĐUÔI MÈO: Gốc đuôi nối liền vào hông (135, 195) -->
+    <g class="layer-tail">
+      <path class="part-tail" d="M 135 195 C 168 190 178 165 178 152 C 178 135 166 128 162 136 C 166 148 168 170 135 186 Z" fill="#ED9859"/>
+      <!-- Chóp đuôi trắng kem tinh nghịch -->
+      <path d="M 178 152 C 178 135 166 128 162 136 C 165 146 172 150 178 152 Z" fill="#FFF4DF"/>
+    </g>
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông cam nền, liền khối với hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 66 195 C 66 195 64 216 77 216 C 89 216 88 197 88 197 Z" fill="#ED9859"/>
+        <!-- Bàn chân trái bo tròn mềm mại -->
+        <ellipse cx="77" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 73 216 L 73 219 M 77 216 L 77 220 M 81 216 L 81 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 197 C 112 197 111 216 123 216 C 136 216 134 195 134 195 Z" fill="#ED9859"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="123" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 119 216 L 119 219 M 123 216 L 123 220 M 127 216 L 127 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại thon gọn -->
+        <path class="body-torso" d="M 66 126 C 74 108 126 108 134 126 C 148 165 144 198 136 206 C 100 214 100 214 64 206 C 56 198 52 165 66 126 Z" fill="#ED9859"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#ED9859"/>
+
+        <!-- Yếm ngực / Trang phục thể thao theo cấp tiến hóa -->
+        
+          <!-- Starter: Yếm lông ngực trắng kem thon gọn -->
+          <path class="body-belly" d="M 85 126 C 94 140 106 140 115 126 C 124 165 116 194 100 196 C 84 194 76 165 85 126 Z" fill="undefined"/>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ -->
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (66, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 66 126 C 56 128 48 138 50 152 C 52 156 58 156 60 150 C 64 142 68 134 68 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (52, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <path class="forearm-shape" d="M 52 150 C 46 156 40 166 44 176 C 47 183 56 182 58 174 C 59 166 60 156 54 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-left" cx="46" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 43 176 L 43 179 M 46 177 L 46 180 M 49 176 L 49 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+
+            <!-- Tạ ấm / tạ đơn tay trái -->
+            <g class="prop-dumbbell-left">
+              <circle cx="36" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 32 172 C 34 167 38 167 40 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (134, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 134 126 C 144 128 152 138 150 152 C 148 156 142 156 140 150 C 136 142 132 134 132 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (148, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <path class="forearm-shape" d="M 148 150 C 154 156 160 166 156 176 C 153 183 144 182 142 174 C 141 166 140 156 146 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-right" cx="154" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 151 176 L 151 179 M 154 177 L 154 180 M 157 176 L 157 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+
+            <!-- Tạ ấm / tạ đơn tay phải -->
+            <g class="prop-dumbbell-right">
+              <circle cx="164" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 160 172 C 162 167 166 167 168 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai mèo nhọn lanh lợi -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <polygon points="50,75 58,26 88,58" fill="#ED9859"/>
+            <polygon points="55,70 61,35 82,58" fill="#FFAFAF"/>
+          </g>
+          <g class="ear-right">
+            <polygon points="150,75 142,26 112,58" fill="#ED9859"/>
+            <polygon points="145,70 139,35 118,58" fill="#FFAFAF"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu mèo bầu bĩnh, cùng màu lông cam nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="51" ry="44" fill="#ED9859"/>
+
+        <!-- Băng đô thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 52 64 C 75 55 125 55 148 64 L 147 75 C 125 67 75 67 53 75 Z" fill="#198D69"/>
+          <path d="M 54 69 C 76 61 124 61 146 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.5" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm mèo trắng tròn đôi -->
+        <ellipse class="part-snout" cx="91" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <ellipse class="part-snout" cx="109" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <!-- Mũi mèo hồng nhỏ -->
+        <polygon class="part-nose" points="96,86 104,86 100,91" fill="#FF6B81"/>
+
+        <!-- Râu mèo tinh nghịch -->
+        <g class="layer-whiskers">
+          <line x1="68" y1="91" x2="42" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="68" y1="96" x2="40" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="91" x2="158" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="96" x2="160" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+
+        <!-- Lông mày đặt ngoài cụm mắt -->
+        <path class="brow-left" d="M 72 62 C 76 58 84 58 88 63" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 63 C 116 58 124 58 128 62" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt mèo: Mắt xanh ngọc sắc sảo, chớp mắt đồng bộ tâm -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="80.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="77.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="82.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="119.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="117.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="122.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn -->
+          <ellipse cx="68" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng mèo -->
+        <g class="layer-mouth">
+          <!-- Đường miệng cười chúm chím -->
+          <path class="mouth-line" d="M 92 95 C 96 99 99 99 100 95 C 101 99 104 99 108 95" stroke="#FF6B81" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng mở cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 95 C 94 109 106 109 106 95 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 101 C 98 105 102 105 104 101 C 104 107 96 107 96 101 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking state) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="66" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="52" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="134" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="148" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="77" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="123" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(240, 340)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Mèo - ACTIVE</text>
+      
+<svg class="vif-mascot-svg species-cat stage-active state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Mèo VisionFit cấp độ active trạng thái idle" data-species="cat" data-stage="active" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-c-active-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-c-active-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-c-active-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Nằm ngoài character-root -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="52" ry="11" fill="url(#evo-c-active-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- ĐUÔI MÈO: Gốc đuôi nối liền vào hông (135, 195) -->
+    <g class="layer-tail">
+      <path class="part-tail" d="M 135 195 C 168 190 178 165 178 152 C 178 135 166 128 162 136 C 166 148 168 170 135 186 Z" fill="#ED9859"/>
+      <!-- Chóp đuôi trắng kem tinh nghịch -->
+      <path d="M 178 152 C 178 135 166 128 162 136 C 165 146 172 150 178 152 Z" fill="#FFF4DF"/>
+    </g>
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông cam nền, liền khối với hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 66 195 C 66 195 64 216 77 216 C 89 216 88 197 88 197 Z" fill="#ED9859"/>
+        <!-- Bàn chân trái bo tròn mềm mại -->
+        <ellipse cx="77" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 73 216 L 73 219 M 77 216 L 77 220 M 81 216 L 81 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 197 C 112 197 111 216 123 216 C 136 216 134 195 134 195 Z" fill="#ED9859"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="123" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 119 216 L 119 219 M 123 216 L 123 220 M 127 216 L 127 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại thon gọn -->
+        <path class="body-torso" d="M 65 126 C 74 108 126 108 135 126 C 149 165 145 198 136 206 C 100 214 100 214 64 206 C 56 198 51 165 65 126 Z" fill="#ED9859"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#ED9859"/>
+
+        <!-- Yếm ngực / Trang phục thể thao theo cấp tiến hóa -->
+        
+          <!-- Active: Áo thể thao năng động VIF bo cong -->
+          <path class="body-jersey" d="M 74 126 C 84 133 116 133 126 126 L 130 194 C 112 197 88 197 70 194 Z" fill="url(#evo-c-active-fabric)"/>
+          <path d="M 86 126 C 93 138 107 138 114 126" stroke="#0F6F52" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <text x="100" y="165" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">VIF</text>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ -->
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (66, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 66 126 C 56 128 48 138 50 152 C 52 156 58 156 60 150 C 64 142 68 134 68 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (52, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <path class="forearm-shape" d="M 52 150 C 46 156 40 166 44 176 C 47 183 56 182 58 174 C 59 166 60 156 54 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-left" cx="46" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 43 176 L 43 179 M 46 177 L 46 180 M 49 176 L 49 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+              <rect x="41" y="167" width="12" height="6" rx="2" fill="#198D69" transform="rotate(-15 47 170)"/>
+            
+
+            <!-- Tạ ấm / tạ đơn tay trái -->
+            <g class="prop-dumbbell-left">
+              <circle cx="36" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 32 172 C 34 167 38 167 40 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (134, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 134 126 C 144 128 152 138 150 152 C 148 156 142 156 140 150 C 136 142 132 134 132 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (148, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <path class="forearm-shape" d="M 148 150 C 154 156 160 166 156 176 C 153 183 144 182 142 174 C 141 166 140 156 146 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-right" cx="154" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 151 176 L 151 179 M 154 177 L 154 180 M 157 176 L 157 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+              <rect x="147" y="167" width="12" height="6" rx="2" fill="#198D69" transform="rotate(15 153 170)"/>
+            
+
+            <!-- Tạ ấm / tạ đơn tay phải -->
+            <g class="prop-dumbbell-right">
+              <circle cx="164" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 160 172 C 162 167 166 167 168 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai mèo nhọn lanh lợi -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <polygon points="50,75 58,26 88,58" fill="#ED9859"/>
+            <polygon points="55,70 61,35 82,58" fill="#FFAFAF"/>
+          </g>
+          <g class="ear-right">
+            <polygon points="150,75 142,26 112,58" fill="#ED9859"/>
+            <polygon points="145,70 139,35 118,58" fill="#FFAFAF"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu mèo bầu bĩnh, cùng màu lông cam nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="51" ry="44" fill="#ED9859"/>
+
+        <!-- Băng đô thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 52 64 C 75 55 125 55 148 64 L 147 75 C 125 67 75 67 53 75 Z" fill="#198D69"/>
+          <path d="M 54 69 C 76 61 124 61 146 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.5" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm mèo trắng tròn đôi -->
+        <ellipse class="part-snout" cx="91" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <ellipse class="part-snout" cx="109" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <!-- Mũi mèo hồng nhỏ -->
+        <polygon class="part-nose" points="96,86 104,86 100,91" fill="#FF6B81"/>
+
+        <!-- Râu mèo tinh nghịch -->
+        <g class="layer-whiskers">
+          <line x1="68" y1="91" x2="42" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="68" y1="96" x2="40" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="91" x2="158" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="96" x2="160" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+
+        <!-- Lông mày đặt ngoài cụm mắt -->
+        <path class="brow-left" d="M 72 62 C 76 58 84 58 88 63" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 63 C 116 58 124 58 128 62" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt mèo: Mắt xanh ngọc sắc sảo, chớp mắt đồng bộ tâm -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="80.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="77.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="82.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="119.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="117.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="122.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn -->
+          <ellipse cx="68" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng mèo -->
+        <g class="layer-mouth">
+          <!-- Đường miệng cười chúm chím -->
+          <path class="mouth-line" d="M 92 95 C 96 99 99 99 100 95 C 101 99 104 99 108 95" stroke="#FF6B81" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng mở cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 95 C 94 109 106 109 106 95 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 101 C 98 105 102 105 104 101 C 104 107 96 107 96 101 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking state) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="66" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="52" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="134" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="148" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="77" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="123" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(460, 340)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Mèo - STRONG</text>
+      
+<svg class="vif-mascot-svg species-cat stage-strong state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Mèo VisionFit cấp độ strong trạng thái idle" data-species="cat" data-stage="strong" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-c-strong-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-c-strong-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-c-strong-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Nằm ngoài character-root -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="52" ry="11" fill="url(#evo-c-strong-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- ĐUÔI MÈO: Gốc đuôi nối liền vào hông (135, 195) -->
+    <g class="layer-tail">
+      <path class="part-tail" d="M 135 195 C 168 190 178 165 178 152 C 178 135 166 128 162 136 C 166 148 168 170 135 186 Z" fill="#ED9859"/>
+      <!-- Chóp đuôi trắng kem tinh nghịch -->
+      <path d="M 178 152 C 178 135 166 128 162 136 C 165 146 172 150 178 152 Z" fill="#FFF4DF"/>
+    </g>
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông cam nền, liền khối với hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 66 195 C 66 195 64 216 77 216 C 89 216 88 197 88 197 Z" fill="#ED9859"/>
+        <!-- Bàn chân trái bo tròn mềm mại -->
+        <ellipse cx="77" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 73 216 L 73 219 M 77 216 L 77 220 M 81 216 L 81 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 197 C 112 197 111 216 123 216 C 136 216 134 195 134 195 Z" fill="#ED9859"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="123" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 119 216 L 119 219 M 123 216 L 123 220 M 127 216 L 127 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại thon gọn -->
+        <path class="body-torso" d="M 63 126 C 74 108 126 108 137 126 C 150.5 165 146.5 198 136 206 C 100 214 100 214 64 206 C 56 198 49.5 165 63 126 Z" fill="#ED9859"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#ED9859"/>
+
+        <!-- Yếm ngực / Trang phục thể thao theo cấp tiến hóa -->
+        
+          <!-- Strong: Áo tập Speed Gym + Đai tập thể thao -->
+          <path class="body-jersey" d="M 72 125 C 82 132 118 132 128 125 L 133 190 C 112 194 88 194 67 190 Z" fill="url(#evo-c-strong-fabric)"/>
+          <path d="M 85 125 C 92 136 108 136 115 125" stroke="#0F6F52" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+          <path d="M 75 132 L 71 188" stroke="#73DFAC" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 125 132 L 129 188" stroke="#73DFAC" stroke-width="2" stroke-linecap="round"/>
+          <text x="100" y="162" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="system-ui, sans-serif">SPEED</text>
+          <!-- Đai tập gọn gàng -->
+          <path d="M 64 188 C 100 193 100 193 136 188 L 135 202 C 100 207 100 207 65 202 Z" fill="#21262D"/>
+          <rect x="94" y="190" width="12" height="12" rx="2" fill="#F5C65C"/>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ -->
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (66, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 66 126 C 56 128 48 138 50 152 C 52 156 58 156 60 150 C 64 142 68 134 68 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (52, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <path class="forearm-shape" d="M 52 150 C 46 156 40 166 44 176 C 47 183 56 182 58 174 C 59 166 60 156 54 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-left" cx="46" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 43 176 L 43 179 M 46 177 L 46 180 M 49 176 L 49 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+              <rect x="41" y="167" width="12" height="6" rx="2" fill="#198D69" transform="rotate(-15 47 170)"/>
+            
+
+            <!-- Tạ ấm / tạ đơn tay trái -->
+            <g class="prop-dumbbell-left">
+              <circle cx="36" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 32 172 C 34 167 38 167 40 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (134, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 134 126 C 144 128 152 138 150 152 C 148 156 142 156 140 150 C 136 142 132 134 132 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (148, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <path class="forearm-shape" d="M 148 150 C 154 156 160 166 156 176 C 153 183 144 182 142 174 C 141 166 140 156 146 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-right" cx="154" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 151 176 L 151 179 M 154 177 L 154 180 M 157 176 L 157 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+              <rect x="147" y="167" width="12" height="6" rx="2" fill="#198D69" transform="rotate(15 153 170)"/>
+            
+
+            <!-- Tạ ấm / tạ đơn tay phải -->
+            <g class="prop-dumbbell-right">
+              <circle cx="164" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 160 172 C 162 167 166 167 168 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai mèo nhọn lanh lợi -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <polygon points="50,75 58,26 88,58" fill="#ED9859"/>
+            <polygon points="55,70 61,35 82,58" fill="#FFAFAF"/>
+          </g>
+          <g class="ear-right">
+            <polygon points="150,75 142,26 112,58" fill="#ED9859"/>
+            <polygon points="145,70 139,35 118,58" fill="#FFAFAF"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu mèo bầu bĩnh, cùng màu lông cam nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="51" ry="44" fill="#ED9859"/>
+
+        <!-- Băng đô thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 52 64 C 75 55 125 55 148 64 L 147 75 C 125 67 75 67 53 75 Z" fill="#198D69"/>
+          <path d="M 54 69 C 76 61 124 61 146 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.5" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm mèo trắng tròn đôi -->
+        <ellipse class="part-snout" cx="91" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <ellipse class="part-snout" cx="109" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <!-- Mũi mèo hồng nhỏ -->
+        <polygon class="part-nose" points="96,86 104,86 100,91" fill="#FF6B81"/>
+
+        <!-- Râu mèo tinh nghịch -->
+        <g class="layer-whiskers">
+          <line x1="68" y1="91" x2="42" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="68" y1="96" x2="40" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="91" x2="158" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="96" x2="160" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+
+        <!-- Lông mày đặt ngoài cụm mắt -->
+        <path class="brow-left" d="M 72 62 C 76 58 84 58 88 63" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 63 C 116 58 124 58 128 62" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt mèo: Mắt xanh ngọc sắc sảo, chớp mắt đồng bộ tâm -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="80.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="77.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="82.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="119.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="117.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="122.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn -->
+          <ellipse cx="68" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng mèo -->
+        <g class="layer-mouth">
+          <!-- Đường miệng cười chúm chím -->
+          <path class="mouth-line" d="M 92 95 C 96 99 99 99 100 95 C 101 99 104 99 108 95" stroke="#FF6B81" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng mở cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 95 C 94 109 106 109 106 95 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 101 C 98 105 102 105 104 101 C 104 107 96 107 96 101 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking state) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="66" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="52" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="134" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="148" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="77" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="123" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+    <g transform="translate(680, 340)">
+      <text x="100" y="-15" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#123326">Mèo - CHAMPION</text>
+      
+<svg class="vif-mascot-svg species-cat stage-champion state-idle" viewBox="0 0 200 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linh vật Mèo VisionFit cấp độ champion trạng thái idle" data-species="cat" data-stage="champion" data-state="idle">
+  <defs>
+    <!-- Đổ bóng mặt đất độc lập theo instance -->
+    <radialGradient id="evo-c-champion-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0F2D1F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0F2D1F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Vàng kim cho đai & huy chương Champion -->
+    <linearGradient id="evo-c-champion-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE899"/>
+      <stop offset="100%" stop-color="#F5C65C"/>
+    </linearGradient>
+    <!-- Vải thể thao VisionFit -->
+    <linearGradient id="evo-c-champion-fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73DFAC"/>
+      <stop offset="100%" stop-color="#198D69"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BÓNG MẶT ĐẤT: Nằm ngoài character-root -->
+  <g class="layer-shadow">
+    <ellipse cx="100" cy="225" rx="52" ry="11" fill="url(#evo-c-champion-shadow)"/>
+  </g>
+
+  <!-- GỐC NHÂN VẬT: Nhận các animation toàn thân (nhảy, tiếp đất) -->
+  <g class="character-root">
+
+    <!-- ĐUÔI MÈO: Gốc đuôi nối liền vào hông (135, 195) -->
+    <g class="layer-tail">
+      <path class="part-tail" d="M 135 195 C 168 190 178 165 178 152 C 178 135 166 128 162 136 C 166 148 168 170 135 186 Z" fill="#ED9859"/>
+      <!-- Chóp đuôi trắng kem tinh nghịch -->
+      <path d="M 178 152 C 178 135 166 128 162 136 C 165 146 172 150 178 152 Z" fill="#FFF4DF"/>
+    </g>
+
+    <!-- CHÂN & BÀN CHÂN: Cùng màu lông cam nền, liền khối với hông -->
+    <g class="layer-legs">
+      <!-- Chân trái -->
+      <g class="part-leg leg-left">
+        <path d="M 66 195 C 66 195 64 216 77 216 C 89 216 88 197 88 197 Z" fill="#ED9859"/>
+        <!-- Bàn chân trái bo tròn mềm mại -->
+        <ellipse cx="77" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 73 216 L 73 219 M 77 216 L 77 220 M 81 216 L 81 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+
+      <!-- Chân phải -->
+      <g class="part-leg leg-right">
+        <path d="M 112 197 C 112 197 111 216 123 216 C 136 216 134 195 134 195 Z" fill="#ED9859"/>
+        <!-- Bàn chân phải -->
+        <ellipse cx="123" cy="214" rx="13.5" ry="8.5" fill="#ED9859"/>
+        <!-- Ngón chân nhỏ -->
+        <path d="M 119 216 L 119 219 M 123 216 L 123 220 M 127 216 L 127 219" stroke="#C25816" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- HỆ KHUNG THÂN (TORSO RIG): Chứa thân, vai, tay, cổ và đầu -->
+    <g class="torso-rig">
+
+      <!-- KHỐI THÂN & CỔ CHỒNG LẤP: Cổ bắt đầu từ y=108, gối sâu dưới cằm y=123 -->
+      <g class="layer-body">
+        <!-- Khối thân chính: Màu lông đồng nhất, bo cong mềm mại thon gọn -->
+        <path class="body-torso" d="M 61 126 C 74 108 126 108 139 126 C 152 165 148 198 136 206 C 100 214 100 214 64 206 C 56 198 48 165 61 126 Z" fill="#ED9859"/>
+
+        <!-- Vùng cổ mềm gối sâu dưới cằm -->
+        <path class="body-neck" d="M 78 124 C 88 114 112 114 122 124 Z" fill="#ED9859"/>
+
+        <!-- Yếm ngực / Trang phục thể thao theo cấp tiến hóa -->
+        
+          <!-- Champion: Giáp cơ bắp điêu khắc + Đai vô địch ngôi sao -->
+          <path class="body-pecs" d="M 74 138 C 88 143 98 150 98 160 C 80 161 74 150 72 141 Z" fill="undefined" opacity="0.9"/>
+          <path class="body-pecs" d="M 126 138 C 112 143 102 150 102 160 C 120 161 126 150 128 141 Z" fill="undefined" opacity="0.9"/>
+          <!-- Múi cơ bụng thể thao -->
+          <rect x="81" y="165" width="16" height="9" rx="3" fill="undefined" opacity="0.85"/>
+          <rect x="103" y="165" width="16" height="9" rx="3" fill="undefined" opacity="0.85"/>
+          <rect x="83" y="177" width="14" height="8" rx="3" fill="undefined" opacity="0.8"/>
+          <rect x="103" y="177" width="14" height="8" rx="3" fill="undefined" opacity="0.8"/>
+          <!-- Đai vô địch Champion Gold Belt -->
+          <path d="M 60 190 C 100 195 100 195 140 190 L 138 205 C 100 211 100 211 62 205 Z" fill="#21262D"/>
+          <circle cx="100" cy="198" r="9" fill="url(#evo-c-champion-gold)"/>
+          <text x="100" y="202" font-size="8" font-weight="900" fill="#2C1E18" text-anchor="middle">★</text>
+        
+      </g>
+
+      <!-- HUY CHƯƠNG VÔ ĐỊCH: Gắn vào torso-rig quanh cổ -->
+      
+        <g class="acc-medal">
+          <path d="M 86 122 L 98 146 L 100 146 L 114 122" stroke="#198D69" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <circle cx="100" cy="153" r="10.5" fill="url(#evo-c-champion-gold)" stroke="#D49419" stroke-width="1.5"/>
+          <text x="100" y="157" font-size="9" font-weight="900" fill="#2C1E18" text-anchor="middle">V</text>
+        </g>
+      
+
+      <!-- HỆ CÁNH TAY 2 ĐOẠN (BẮP TAY + CẲNG TAY GẬP KHUỶU): Nằm trước thân -->
+      <g class="layer-arms">
+        <!-- Cánh tay trái: Pivot vai tại (66, 126) -->
+        <g class="part-arm arm-left">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 66 126 C 56 128 48 138 50 152 C 52 156 58 156 60 150 C 64 142 68 134 68 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay trái (Forearm): Pivot khuỷu tại (52, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-left">
+            <path class="forearm-shape" d="M 52 150 C 46 156 40 166 44 176 C 47 183 56 182 58 174 C 59 166 60 156 54 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-left" cx="46" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 43 176 L 43 179 M 46 177 L 46 180 M 49 176 L 49 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+              <rect x="41" y="167" width="12" height="6" rx="2" fill="#198D69" transform="rotate(-15 47 170)"/>
+            
+
+            <!-- Tạ ấm / tạ đơn tay trái -->
+            <g class="prop-dumbbell-left">
+              <circle cx="36" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 32 172 C 34 167 38 167 40 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Cánh tay phải: Pivot vai tại (134, 126) -->
+        <g class="part-arm arm-right">
+          <!-- Bắp tay trên (Upper Arm) -->
+          <path class="upper-arm" d="M 134 126 C 144 128 152 138 150 152 C 148 156 142 156 140 150 C 136 142 132 134 132 128 Z" fill="#ED9859"/>
+
+          <!-- Cẳng tay phải (Forearm): Pivot khuỷu tại (148, 152), chứa bàn tay & tạ -->
+          <g class="forearm forearm-right">
+            <path class="forearm-shape" d="M 148 150 C 154 156 160 166 156 176 C 153 183 144 182 142 174 C 141 166 140 156 146 150 Z" fill="#ED9859"/>
+            <!-- Bàn tay mèo trắng kem xinh xắn -->
+            <ellipse class="paw paw-right" cx="154" cy="176" rx="7" ry="6" fill="#FFF4DF"/>
+            <path d="M 151 176 L 151 179 M 154 177 L 154 180 M 157 176 L 157 179" stroke="#C25816" stroke-width="1.1" stroke-linecap="round"/>
+
+            
+              <rect x="147" y="167" width="12" height="6" rx="2" fill="#198D69" transform="rotate(15 153 170)"/>
+            
+
+            <!-- Tạ ấm / tạ đơn tay phải -->
+            <g class="prop-dumbbell-right">
+              <circle cx="164" cy="179" r="7.5" fill="#2D3748"/>
+              <path d="M 160 172 C 162 167 166 167 168 172" stroke="#A0AEC0" stroke-width="2.2" fill="none"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- HỆ ĐẦU & KHUÔN MẶT (HEAD GROUP): Pivot cổ tại (100, 118), gối sâu lên thân -->
+      <g class="layer-head-group">
+        <!-- Tai mèo nhọn lanh lợi -->
+        <g class="layer-ears">
+          <g class="ear-left">
+            <polygon points="50,75 58,26 88,58" fill="#ED9859"/>
+            <polygon points="55,70 61,35 82,58" fill="#FFAFAF"/>
+          </g>
+          <g class="ear-right">
+            <polygon points="150,75 142,26 112,58" fill="#ED9859"/>
+            <polygon points="145,70 139,35 118,58" fill="#FFAFAF"/>
+          </g>
+        </g>
+
+        <!-- Khối đầu mèo bầu bĩnh, cùng màu lông cam nền -->
+        <ellipse class="part-head" cx="100" cy="78" rx="51" ry="44" fill="#ED9859"/>
+
+        <!-- Băng đô thể thao VisionFit -->
+        <g class="head-headband">
+          <path d="M 52 64 C 75 55 125 55 148 64 L 147 75 C 125 67 75 67 53 75 Z" fill="#198D69"/>
+          <path d="M 54 69 C 76 61 124 61 146 69" stroke="#73DFAC" stroke-width="1.8" fill="none"/>
+          <circle cx="100" cy="67" r="3.5" fill="#FFFFFF"/>
+          <circle cx="100" cy="67" r="1.8" fill="#198D69"/>
+        </g>
+
+        <!-- Mõm mèo trắng tròn đôi -->
+        <ellipse class="part-snout" cx="91" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <ellipse class="part-snout" cx="109" cy="93" rx="13" ry="10" fill="#FFF4DF"/>
+        <!-- Mũi mèo hồng nhỏ -->
+        <polygon class="part-nose" points="96,86 104,86 100,91" fill="#FF6B81"/>
+
+        <!-- Râu mèo tinh nghịch -->
+        <g class="layer-whiskers">
+          <line x1="68" y1="91" x2="42" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="68" y1="96" x2="40" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="91" x2="158" y2="88" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="132" y1="96" x2="160" y2="98" stroke="#A95231" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+
+        <!-- Lông mày đặt ngoài cụm mắt -->
+        <path class="brow-left" d="M 72 62 C 76 58 84 58 88 63" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+        <path class="brow-right" d="M 112 63 C 116 58 124 58 128 62" stroke="#C25816" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+
+        <!-- Mắt mèo: Mắt xanh ngọc sắc sảo, chớp mắt đồng bộ tâm -->
+        <g class="layer-eyes">
+          <g class="part-eye eye-left">
+            <ellipse class="eye-ball" cx="80" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="80.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="77.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="82.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <g class="part-eye eye-right">
+            <ellipse class="eye-ball" cx="120" cy="74" rx="8" ry="9.5" fill="#154E38"/>
+            <ellipse cx="119.5" cy="74" rx="5" ry="8.5" fill="#0D2B1F"/>
+            <circle class="eye-glint" cx="117.5" cy="70" r="3" fill="#FFFFFF"/>
+            <circle class="eye-glint-small" cx="122.5" cy="76" r="1.4" fill="#FFFFFF"/>
+          </g>
+          <!-- Má hồng phấn -->
+          <ellipse cx="68" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+          <ellipse cx="132" cy="87" rx="6" ry="3.5" fill="#FF758F" opacity="0.32"/>
+        </g>
+
+        <!-- Miệng mèo -->
+        <g class="layer-mouth">
+          <!-- Đường miệng cười chúm chím -->
+          <path class="mouth-line" d="M 92 95 C 96 99 99 99 100 95 C 101 99 104 99 108 95" stroke="#FF6B81" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <!-- Vòm miệng mở cười nói khi greeting / speaking / celebrating -->
+          <path class="mouth-open" d="M 94 95 C 94 109 106 109 106 95 Z" fill="#C53030"/>
+          <path class="mouth-tongue" d="M 96 101 C 98 105 102 105 104 101 C 104 107 96 107 96 101 Z" fill="#FF8C8C"/>
+        </g>
+
+        <!-- Bong bóng suy nghĩ (Thinking state) -->
+        <g class="acc-thinking-bubbles">
+          <circle cx="146" cy="38" r="4" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="156" cy="26" r="6" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <circle cx="172" cy="18" r="9.5" fill="#FFFFFF" stroke="#198D69" stroke-width="1.5"/>
+          <text x="172" y="21" font-size="9" font-weight="bold" fill="#0F6F52" text-anchor="middle">···</text>
+        </g>
+      </g>
+
+      <!-- SVG DEBUG JOINT MARKERS -->
+      <g class="joint-markers">
+        <circle class="joint-marker" cx="66" cy="126" r="3.5" title="Shoulder Left"/>
+        <circle class="joint-marker" cx="52" cy="152" r="3" title="Elbow Left"/>
+        <circle class="joint-marker" cx="134" cy="126" r="3.5" title="Shoulder Right"/>
+        <circle class="joint-marker" cx="148" cy="152" r="3" title="Elbow Right"/>
+        <circle class="joint-marker" cx="100" cy="118" r="3.5" title="Neck"/>
+        <circle class="joint-marker" cx="77" cy="196" r="3" title="Hip Left"/>
+        <circle class="joint-marker" cx="123" cy="196" r="3" title="Hip Right"/>
+      </g>
+    </g>
+  </g>
+</svg>
+
+    </g>
+  
+</svg>

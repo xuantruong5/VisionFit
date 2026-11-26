@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('bai_dang', function (Blueprint $table) {
             $table->id('id_bai_dang');
             $table->unsignedBigInteger('id_nguoi_dung');
+            $table->string('loai_nguoi_dung', 20)->default('client');
             $table->text('caption')->nullable();
             $table->string('pham_vi_hien_thi')->default(0)->comment('0: cộng đồng , 1: bạn bè, 2: người được phép xem ');
             $table->string('tinh_trang')->default(1)->comment('1:hiện thị, 0:xóa');

@@ -7,10 +7,13 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import apiFitlife from '../../../../general/api';
+import { COLORS, SHADOWS } from '../../../../general/theme';
 
 interface NutritionDetailScreenProps {
   navigation: any;
@@ -87,52 +90,69 @@ const NutritionDetailScreen: React.FC<NutritionDetailScreenProps> = ({ navigatio
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerIconBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>{categoryName || 'Dinh dưỡng'}</Text>
-
-        <TouchableOpacity style={styles.headerIconBtn} onPress={toggleFontSize}>
-          <Ionicons name="text-outline" size={22} color="#4B5563" />
-        </TouchableOpacity>
-      </View>
-
-      {loading && !detail ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#0D7F8D" />
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Hũ sản phẩm lớn ở giữa */}
-          <View style={styles.productImageBox}>
-            <Image
-              source={getImageSource()}
-              style={styles.productHeroImage}
-              resizeMode="contain"
-            />
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.flex}>
+        {loading && !detail ? (
+          <View style={styles.loadingBox}>
+            <View style={styles.loadingIcon}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
           </View>
+        ) : (
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Hũ sản phẩm lớn ở giữa */}
+            <LinearGradient
+              colors={[COLORS.surfaceTeal, COLORS.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.productImageBox}
+            >
+              <View style={styles.heroCircle} />
+              <Image
+                source={getImageSource()}
+                style={styles.productHeroImage}
+                resizeMode="contain"
+              />
+            </LinearGradient>
 
-          {/* Tên sản phẩm */}
-          <Text style={[styles.productTitle, { fontSize: 20 * fontSizeScale }]}>
-            {currentProduct.name || currentProduct.ten_san_pham}
-          </Text>
+            <View style={styles.sheet}>
+              <View style={styles.topicBadge}>
+                <Text style={styles.topicBadgeText}>{categoryName || 'Dinh dưỡng'}</Text>
+              </View>
 
-          {/* Nội dung mô tả chi tiết */}
-          <Text style={[styles.productDescription, { fontSize: 14 * fontSizeScale }]}>
-            {currentProduct.description || currentProduct.noi_dung_chi_tiet}
-          </Text>
-        </ScrollView>
-      )}
+              {/* Tên sản phẩm */}
+              <Text style={[styles.productTitle, { fontSize: 20 * fontSizeScale }]}>
+                {currentProduct.name || currentProduct.ten_san_pham}
+              </Text>
+
+              {/* Nội dung mô tả chi tiết */}
+              <View style={styles.bodyCard}>
+                <Text style={[styles.productDescription, { fontSize: 14 * fontSizeScale }]}>
+                  {currentProduct.description || currentProduct.noi_dung_chi_tiet}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        )}
+
+        {/* Thanh nút nổi */}
+        <View style={styles.topBar} pointerEvents="box-none">
+          <TouchableOpacity
+            style={styles.lightBtn}
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.lightBtn} activeOpacity={0.8} onPress={toggleFontSize}>
+            <Ionicons name="text-outline" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -142,54 +162,112 @@ export default NutritionDetailScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4FAFB',
+    backgroundColor: COLORS.surfaceTeal,
   },
-  header: {
-    height: 64,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
+  flex: {
+    flex: 1,
+  },
+  loadingBox: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8F0F1',
+    backgroundColor: COLORS.background,
   },
-  headerIconBtn: {
-    padding: 6,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#11343A',
+  loadingIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: COLORS.surfaceTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    backgroundColor: COLORS.background,
   },
   scrollContainer: {
-    paddingTop: 16,
-    paddingBottom: 50,
+    paddingBottom: 24,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  lightBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderWidth: 1,
+    borderColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
+  },
+  sheet: {
+    marginTop: -24,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 16,
+    paddingTop: 22,
+  },
+  topicBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  topicBadgeText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  bodyCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    ...SHADOWS.card,
   },
   productImageBox: {
     width: '100%',
-    height: 260,
+    height: 280,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingTop: 30,
+    paddingBottom: 40,
+    overflow: 'hidden',
+  },
+  heroCircle: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(255,255,255,0.6)',
   },
   productHeroImage: {
-    width: '85%',
+    width: '70%',
     height: '100%',
   },
   productTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 14,
   },
   productDescription: {
     fontSize: 14,
-    color: '#374151',
+    color: COLORS.textSecondary,
     lineHeight: 24,
     letterSpacing: 0.2,
   },

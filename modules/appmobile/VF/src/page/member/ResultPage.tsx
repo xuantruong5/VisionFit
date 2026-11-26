@@ -1,12 +1,89 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, Modal, } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Gesture, GestureDetector, } from "react-native-gesture-handler";
 import { PieChart } from "react-native-gifted-charts";
 
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
-const ResultPage = () => {
+import { COLORS, SHADOWS } from "../../general/theme";
+import { triggerWorkoutComplete } from "../../components/mascot/mascotEvents";
+import apiFitlife from "../../general/api";
+import Svg, { Circle } from "react-native-svg";
+
+const ResultPage = ({ navigation, route }: any) => {
+    const idBuoiTap = route?.params?.id_buoi_tap ?? route?.params?.id;
+
+    const [report, setReport] = useState<any>(null);
+    const [loadingReport, setLoadingReport] = useState(true);
+
+    useEffect(() => {
+        triggerWorkoutComplete();
+    }, []);
+
+    useEffect(() => {
+        layBaoCaoBuoiTap();
+    }, [idBuoiTap]);
+
+    const layBaoCaoBuoiTap = async () => {
+        try {
+            if (!idBuoiTap) {
+                console.log("Không tìm thấy ID buổi tập");
+                setLoadingReport(false);
+                return;
+            }
+
+            setLoadingReport(true);
+
+            const response = await apiFitlife.get(
+                `/client/bao-cao/${idBuoiTap}`
+            );
+
+            if (response.data.success) {
+                setReport(response.data.data);
+            }
+        } catch (error: any) {
+            console.log(
+                "Lỗi lấy báo cáo buổi tập:",
+                error.response?.data || error.message
+            );
+        } finally {
+            setLoadingReport(false);
+        }
+    };
+
+    // Tính phần trăm hoàn thành
+    const tinhPhanTram = (thucTe: any, duKien: any) => {
+        const thucTeNumber = Number(thucTe) || 0;
+        const duKienNumber = Number(duKien) || 0;
+
+        if (duKienNumber <= 0) return 0;
+
+        return Math.min(
+            100,
+            Math.round((thucTeNumber / duKienNumber) * 100)
+        );
+    };
+
+    // Định dạng giây thành phút:giây
+    const dinhDangThoiGian = (giay: any) => {
+        const totalSeconds = Number(giay) || 0;
+        const phut = Math.floor(totalSeconds / 60);
+        const giayConLai = totalSeconds % 60;
+
+        return `${phut}:${String(giayConLai).padStart(2, "0")}`;
+    };
+
+    // Định dạng số
+    const dinhDangSo = (value: any) => {
+        return (Number(value) || 0).toLocaleString("vi-VN");
+    };
+
+
+
+
     // phóng to mô hình người và xoay 
     const [showBodyModal, setShowBodyModal] = useState(false);
     const scale = useSharedValue(1);
@@ -45,452 +122,548 @@ const ResultPage = () => {
         },
     ];
     // bài tập 
-    const exercises = [
-        {
-            id: 1,
-            name: "Chạy bộ trên máy",
-            type: "Phút",
-            value: 16,
-            image: {
-                uri: "https://cdn.hstatic.net/files/200001165929/file/20230816_dq2yqj1q.jpg"
-            },
-        },
-        {
-            id: 2,
-            name: "Bài tập giãn cơ ngực",
-            type: "Giây",
-            value: 60,
-            image: {
-                uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBS1KPmCUpJMFq1XA4ug_NXpNAji-mSNryl6_j7eEhIG7ddhskOF75gLE&s=10"
-            },
-        },
-    ];
+    const exercises = report?.bai_tap_thuc_te || [];
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            <StatusBar barStyle="dark-content" />
+            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
                 {/* HEADER */}
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.circleButton}>
-                        <Ionicons name="close" size={34} color="#55738C" />
-                    </TouchableOpacity>
-                    {/* LOGO FITNESS ONLINE */}
-                    <View style={styles.logoContainer}>
-                        {/* Sau này thay View này bằng Image logo */}
-                        {/* <Image
-                            source={require("../../assets/logo.png")}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        /> */}
-                        <Text style={styles.logoText}>
-                            VisionFit
-                        </Text>
-                    </View>
-                    <TouchableOpacity style={styles.circleButton}>
-                        <Ionicons name="share-outline" size={31} color="#55738C" />
-                    </TouchableOpacity>
-                </View>
-                {/* TITLE */}
-                <Text style={styles.title}>Kết quả tập luyện</Text>
-                <Text style={styles.date}>
-                    ngày 23 tháng 9, 2026, 15:08
-                </Text>
-                {/* WORKOUT SUMMARY */}
-                <View style={styles.summaryCard}>
-                    <View>
-                        <Text style={styles.smallText}>
-                            1 ngày tập luyện
-                        </Text>
-                        <Text style={styles.workoutName}>
-                            thân trên
-                        </Text>
-                    </View>
-                    {/* PROGRESS CIRCLE */}
-                    <View style={styles.progressCircle}>
-                        <Text style={styles.progressText}>
-                            18%
-                        </Text>
-                    </View>
-                </View>
-                {/* QUOTE */}
-                <Text style={styles.quote}>
-                    Khổng Tử đã nói rằng ngọc không giũa không
-                    sáng, con người trải qua thất bại mới thành
-                    công.
-                </Text>
-
-                {/* DURATION + REST */}
-                <View style={styles.row}>
-                    <View style={styles.infoCard}>
-                        <Text style={styles.infoValue}>
-                            2:05
-                        </Text>
-                        <Text style={styles.infoLabel}>
-                            Thời lượng tập luyện
-                        </Text>
-                    </View>
-                    <View style={styles.infoCard}>
-                        <Text style={styles.infoValue}>
-                            0:00
-                        </Text>
-                        <Text style={styles.infoLabel}>
-                            Nghỉ trung bình
-                        </Text>
-                    </View>
-                </View>
-
-                {/* STATISTICS */}
-                <View style={styles.statisticsCard}>
-                    {/* CALORIES */}
-                    <View style={styles.statItem}>
-                        <Ionicons name="flame-outline" size={26} color="#F7D9B2" />
-                        <Text style={styles.questionMark}>?</Text>
-                        <Text style={styles.statLabel}>
-                            Calo
-                        </Text>
-                    </View>
-                    {/* STEPS */}
-                    <View style={styles.statItem}>
-                        <Ionicons name="footsteps-outline" size={26} color="#DCE3E8" />
-                        <View style={styles.lockCircle}>
-                            <Ionicons name="lock-closed-outline" size={29} color="#FF6969" />
+                <LinearGradient
+                    colors={[COLORS.primary, COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.heroHeader}
+                >
+                    <View style={styles.heroCircleLg} />
+                    <View style={styles.heroCircleSm} />
+                    <View style={styles.header}>
+                        <TouchableOpacity style={styles.circleButton} onPress={() => {
+                            navigation.reset({
+                                index: 0,
+                                routes: [
+                                    {
+                                        name: 'MemberTabs',
+                                        params: {
+                                            screen: 'Kế Hoạch Tập',
+                                            params: {
+                                                screen: 'headerPage',
+                                            },
+                                        },
+                                    },
+                                ],
+                            });
+                        }} >
+                            <Ionicons name="close" size={22} color={COLORS.white} />
+                        </TouchableOpacity>
+                        {/* LOGO FITNESS ONLINE */}
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logoText}>
+                                VisionFit
+                            </Text>
                         </View>
-                        <Text style={styles.statLabel}>
-                            Bước
+                        <TouchableOpacity style={styles.circleButton} onPress={() => { }}>
+                            <Ionicons name="share-outline" size={20} color={COLORS.white} />
+                        </TouchableOpacity>
+                    </View>
+                    {/* TITLE */}
+                    <Text style={styles.title}>Kết quả tập luyện</Text>
+                    <View style={styles.datePill}>
+                        <Ionicons name="calendar-outline" size={13} color={COLORS.white} />
+                        <Text style={styles.date}>
+                            {report?.ngay_tap || "Đang tải ngày tập..."}
+                        </Text>
+                    </View>
+                </LinearGradient>
+                <View style={styles.body}>
+                    {/* WORKOUT SUMMARY */}
+                    <View style={styles.summaryCard}>
+                        <View style={styles.summaryIconTile}>
+                            <Ionicons name="trophy" size={22} color={COLORS.accentOrange} />
+                        </View>
+                        <View style={styles.summaryTextWrap}>
+                            <Text style={styles.smallText}>
+                                Ngày {report?.ngay_thu ?? "--"} tập luyện
+                            </Text>
+                            <Text style={styles.workoutName}>
+                                {report?.ten_ngay_tap || "Đang tải..."}
+                            </Text>
+                        </View>
+                        {/* PROGRESS CIRCLE */}
+                        <View style={styles.progressCircle}>
+                            {(() => {
+                                const size = 80;
+                                const strokeWidth = 6;
+                                const radius = (size - strokeWidth) / 2;
+                                const circumference = 2 * Math.PI * radius;
+                                const percent = Math.min( 100, Math.max(0, Number(report?.phan_tram_hoan_thanh) || 0));
+                                const offset = circumference - (percent / 100) * circumference;
+
+                                return (
+                                    <>
+                                        <Svg width={size} height={size}>
+                                            {/* VÒNG NỀN */}
+                                            <Circle cx={size / 2} cy={size / 2} r={radius} stroke="#FFE0D7" strokeWidth={strokeWidth} fill="none" />
+                                            {/* VÒNG TIẾN ĐỘ */}
+                                            <Circle cx={size / 2} cy={size / 2} r={radius} stroke={percent >= 50 ? "#18BEC3" : "#FF674F"} strokeWidth={strokeWidth} fill="none"
+                                                strokeDasharray={`${circumference} ${circumference}`}
+                                                strokeDashoffset={offset}
+                                                strokeLinecap="round"
+                                                rotation="-90"
+                                                origin={`${size / 2}, ${size / 2}`}
+                                            />
+                                        </Svg>
+                                        {/* PHẦN TRĂM Ở GIỮA */}
+                                        <View style={styles.progressTextContainer}>
+                                            <Text style={[ styles.progressText, { color: percent >= 50 ? "#18BEC3" : "#FF674F" } ]}>
+                                                {percent}%
+                                            </Text>
+                                        </View>
+                                    </>
+                                );
+                            })()}
+                        </View>
+                    </View>
+                    {/* QUOTE */}
+                    <View style={styles.quoteCard}>
+                        <Ionicons name="chatbox-ellipses-outline" size={20} color={COLORS.primary} style={styles.quoteIcon} />
+                        <Text style={styles.quote}>
+                            Khổng Tử đã nói rằng ngọc không giũa không
+                            sáng, con người trải qua thất bại mới thành
+                            công.
                         </Text>
                     </View>
 
-                    {/* HEART RATE */}
-                    <View style={styles.statItem}>
-                        <Ionicons name="heart-outline" size={27} color="#F6D8E1" />
-                        <Text style={styles.questionMark}>?</Text>
-                        <Text style={styles.statLabel}>
-                            Nhịp tim
-                        </Text>
-                    </View>
-                </View>
-                {/* MỤC TIÊU */}
-                <View style={styles.goalSection}>
-                    <Text style={styles.goalTitle}>Mục tiêu</Text>
-                    {/* REP */}
-                    <View style={styles.goalItem}>
-                        <View style={[styles.goalCircle, styles.redCircle]}>
-                            <Text style={styles.redText}>0%</Text>
+                    {/* DURATION + REST */}
+                    <View style={styles.row}>
+                        <View style={styles.infoCard}>
+                            <View style={[styles.infoIconTile, styles.tileTeal]}>
+                                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.infoValue}>
+                                {dinhDangThoiGian(report?.tong_thoi_gian_giay)}
+                            </Text>
+                            <Text style={styles.infoLabel}>
+                                Thời lượng tập luyện
+                            </Text>
                         </View>
-                        <View style={styles.goalContent}>
-                            <Text style={styles.goalName}>Rep thực hiện</Text>
-                            <Text style={styles.goalDescription}>
-                                0 reps của 150 reps dự kiến
+                        <View style={styles.infoCard}>
+                            <View style={[styles.infoIconTile, styles.tileViolet]}>
+                                <Ionicons name="pause-circle-outline" size={20} color="#7C3AED" />
+                            </View>
+                            <Text style={styles.infoValue}>
+                                {dinhDangThoiGian(report?.tong_thoi_gian_nghi)}
+                            </Text>
+                            <Text style={styles.infoLabel}>
+                                Nghỉ trung bình
                             </Text>
                         </View>
                     </View>
-                    {/* WEIGHT */}
-                    <View style={styles.goalItem}>
-                        <View style={[styles.goalCircle, styles.redCircle]}>
-                            <Text style={styles.redText}>0%</Text>
+
+                    {/* STATISTICS */}
+                    <View style={styles.statisticsCard}>
+                        {/* CALORIES */}
+                        <View style={styles.statItem}>
+                            <View style={[styles.statIconTile, styles.tileOrange]}>
+                                <Ionicons name="flame-outline" size={22} color={COLORS.accentOrange} />
+                            </View>
+                            <Text style={styles.questionMark}>?</Text>
+                            <Text style={styles.statLabel}>
+                                Calo
+                            </Text>
                         </View>
-                        <View style={styles.goalContent}>
-                            <Text style={styles.goalName}>Mức tạ nâng được</Text>
-                            <Text style={styles.goalDescription}>
-                                0 kg của 1.320 kg dự kiến
+                        {/* STEPS */}
+                        <View style={styles.statItem}>
+                            <View style={[styles.statIconTile, styles.tileTeal]}>
+                                <Ionicons name="footsteps-outline" size={22} color={COLORS.primary} />
+                            </View>
+                            <View style={styles.lockCircle}>
+                                <Ionicons name="lock-closed-outline" size={20} color={COLORS.accentRed} />
+                            </View>
+                            <Text style={styles.statLabel}>
+                                Bước
+                            </Text>
+                        </View>
+
+                        {/* HEART RATE */}
+                        <View style={styles.statItem}>
+                            <View style={[styles.statIconTile, styles.tileRose]}>
+                                <Ionicons name="heart-outline" size={22} color="#E11D48" />
+                            </View>
+                            <Text style={styles.questionMark}>?</Text>
+                            <Text style={styles.statLabel}>
+                                Nhịp tim
                             </Text>
                         </View>
                     </View>
-                    {/* CARDIO */}
-                    <View style={styles.goalItem}>
-                        <View style={[styles.goalCircle, styles.greenCircle]}>
-                            <Text style={styles.greenText}>89%</Text>
+                    {/* MỤC TIÊU */}
+                    <View style={styles.goalSection}>
+                        <Text style={styles.goalTitle}>Mục tiêu</Text>
+                        {/* REP */}
+                        <View style={styles.goalItem}>
+                            <View style={[styles.goalCircle, styles.redCircle]}>
+                                <Text style={styles.redText}>
+                                    {tinhPhanTram(
+                                        report?.tong_rep_thuc_te,
+                                        report?.tong_rep_yeu_cau
+                                    )}%
+                                </Text>
+                            </View>
+                            <View style={styles.goalContent}>
+                                <Text style={styles.goalName}>Rep thực hiện</Text>
+                                <Text style={styles.goalDescription}>
+                                    {dinhDangSo(report?.tong_rep_thuc_te)} reps của{" "}
+                                    {dinhDangSo(report?.tong_rep_yeu_cau)} reps dự kiến
+                                </Text>
+                            </View>
                         </View>
-
-                        <View style={styles.goalContent}>
-                            <Text style={styles.goalName}>Cardio</Text>
-                            <Text style={styles.goalDescription}>
-                                16 phút của 18 phút dự kiến
-                            </Text>
+                        {/* WEIGHT */}
+                        <View style={styles.goalItem}>
+                            <View style={[styles.goalCircle, styles.redCircle]}>
+                                <Text style={styles.redText}>
+                                    {tinhPhanTram(
+                                        report?.tong_ta_thuc_te,
+                                        report?.tong_ta_yeu_cau
+                                    )}%
+                                </Text>
+                            </View>
+                            <View style={styles.goalContent}>
+                                <Text style={styles.goalName}>Mức tạ nâng được</Text>
+                                <Text style={styles.goalDescription}>
+                                    {dinhDangSo(report?.tong_ta_thuc_te)} kg của{" "}
+                                    {dinhDangSo(report?.tong_ta_yeu_cau)} kg dự kiến
+                                </Text>
+                            </View>
                         </View>
-                    </View>
-                    {/* TIME */}
-                    <View style={styles.goalItem}>
-                        <View style={[styles.goalCircle, styles.orangeCircle]}>
-                            <Text style={styles.orangeText}>46%</Text>
+                        {/* CARDIO */}
+                        <View style={styles.goalItem}>
+                            <View style={[styles.goalCircle, styles.greenCircle]}>
+                                <Text style={styles.greenText}>
+                                    {tinhPhanTram(
+                                        report?.tong_phut_thuc_te,
+                                        report?.tong_thoi_gian_phut_yeu_cau
+                                    )}%
+                                </Text>
+                            </View>
+
+                            <View style={styles.goalContent}>
+                                <Text style={styles.goalName}>Cardio</Text>
+                                <Text style={styles.goalDescription}>
+                                    {dinhDangSo(report?.tong_phut_thuc_te)} phút của{" "}
+                                    {dinhDangSo(report?.tong_thoi_gian_phut_yeu_cau)} phút dự kiến
+                                </Text>
+                            </View>
                         </View>
-
-                        <View style={styles.goalContent}>
-                            <Text style={styles.goalName}>Giây</Text>
-                            <Text style={styles.goalDescription}>
-                                60 giây của 130 giây dự kiến
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-                {/* TẬP LUYỆN CÁC NHÓM CƠ */}
-                <View style={styles.muscleSection}>
-                    <Text style={styles.muscleTitle}>
-                        Tập luyện các nhóm cơ
-                    </Text>
-                    {/* KHU VỰC BODY */}
-                    <View style={styles.bodyContainer}>
-                        {/* LABEL BÊN TRÁI */}
-                        <View style={styles.leftLabels}>
-                            <View style={styles.muscleLabel}>
-                                <Text style={styles.muscleLabelText}>
-                                    Cơ ngực lớn
-                                    {"\n"}
-                                    (Pectoralis Major)
+                        {/* TIME */}
+                        <View style={styles.goalItem}>
+                            <View style={[styles.goalCircle, styles.orangeCircle]}>
+                                <Text style={styles.orangeText}>
+                                    {tinhPhanTram(
+                                        report?.tong_giay_thuc_te,
+                                        report?.tong_giay_yeu_cau
+                                    )}%
                                 </Text>
                             </View>
 
-                            <View style={styles.muscleLabel}>
-                                <Text style={styles.muscleLabelText}>
-                                    Cơ delta trước
-                                    {"\n"}
-                                    (Anterior Deltoid)
-                                </Text>
-                            </View>
-
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    66,7% Cơ khất
-                                    {"\n"}
-                                    rộng Hạp
-                                </Text>
-                            </View>
-
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    3,09% Cơ lung
-                                </Text>
-                            </View>
-
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    3,39% Cơ rứa
-                                </Text>
-                            </View>
-
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    3,39% Cơ răng dài
-                                </Text>
-                            </View>
-
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    3,29% Cơ Hơsi
-                                </Text>
-                            </View>
-
-                        </View>
-
-                        {/* BODY Ở GIỮA */}
-                        <View style={styles.bodyImageContainer}>
-                            <Image source={require("../../assets/muscleBody/body.jpg")} style={styles.bodyImage} resizeMode="contain" />
-                            {/* KHÓA */}
-                            <View style={styles.bodyLock}>
-                                <Ionicons name="lock-closed-outline" size={35} color="#FF535C" />
-                            </View>
-                            {/* NÚT PHÓNG TO */}
-                            <TouchableOpacity style={styles.expandButton} onPress={() => setShowBodyModal(true)}>
-                                <Ionicons name="scan-outline" size={34} color="#3DB8BA" />
-                            </TouchableOpacity>
-                        </View>
-                        {/* LABEL BÊN PHẢI */}
-                        <View style={styles.rightLabels}>
-                            <View style={styles.muscleLabel}>
-                                <Text style={styles.muscleLabelText}>
-                                    Cơ nhị đầu cánh
-                                    {"\n"}
-                                    tay (Biceps Brachii)
-                                </Text>
-                            </View>
-                            <View style={styles.muscleLabel}>
-                                <Text style={styles.muscleLabelText}>
-                                    Cơ delta giữa
-                                    {"\n"}
-                                    (Medial Deltoid)
-                                </Text>
-                            </View>
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    16,49% Cơ rộng
-                                    {"\n"}
-                                    mạp đỏ
-                                </Text>
-                            </View>
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    31,69% Cơ khẳng
-                                    {"\n"}
-                                    dài
-                                </Text>
-                            </View>
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    16,89% Cơ lăng
-                                    {"\n"}
-                                    (gon)
-                                </Text>
-                            </View>
-                            <View style={styles.muscleLabelSmall}>
-                                <Text style={styles.muscleLabelText}>
-                                    1,59% Cơ răng
-                                    {"\n"}
-                                    trong
+                            <View style={styles.goalContent}>
+                                <Text style={styles.goalName}>Giây</Text>
+                                <Text style={styles.goalDescription}>
+                                    {dinhDangSo(report?.tong_giay_thuc_te)} giây của{" "}
+                                    {dinhDangSo(report?.tong_giay_yeu_cau)} giây dự kiến
                                 </Text>
                             </View>
                         </View>
                     </View>
-                    {/* SWITCH */}
-                    <View style={styles.switchRow}>
-                        <Text style={styles.switchTitle}>
-                            Tên cơ
+                    {/* TẬP LUYỆN CÁC NHÓM CƠ */}
+                    <View style={styles.muscleSection}>
+                        <Text style={styles.muscleTitle}>
+                            Tập luyện các nhóm cơ
                         </Text>
-                        <View style={styles.switch}>
-                            <View style={styles.switchCircle} />
-                        </View>
-                    </View>
-                    {/* LEGEND */}
-                    <View style={styles.legend}>
-                        <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, styles.color1]} />
-                            <Text style={styles.legendText}>
-                                0 - 1.9%
-                            </Text>
-                        </View>
-                        <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, styles.color2]} />
-                            <Text style={styles.legendText}>
-                                2.0 - 10.9%
-                            </Text>
-                        </View>
-                        <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, styles.color3]} />
-                            <Text style={styles.legendText}>
-                                11.0 - 24.9%
-                            </Text>
-                        </View>
-                        <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, styles.color4]} />
-                            <Text style={styles.legendText}>
-                                25.0 - 100%
-                            </Text>
-                        </View>
-                    </View>
-                    {/* PHÂN BỔ TẢI TRỌNG CƠ */}
-                    <View style={styles.distributionSection}>
+                        {/* KHU VỰC BODY */}
+                        <View style={styles.bodyContainer}>
+                            {/* LABEL BÊN TRÁI */}
+                            <View style={styles.leftLabels}>
+                                <View style={styles.muscleLabel}>
+                                    <Text style={styles.muscleLabelText}>
+                                        Cơ ngực lớn
+                                        {"\n"}
+                                        (Pectoralis Major)
+                                    </Text>
+                                </View>
 
-                        <Text style={styles.distributionTitle}>
-                            Phân bổ tải trọng cơ
-                        </Text>
+                                <View style={styles.muscleLabel}>
+                                    <Text style={styles.muscleLabelText}>
+                                        Cơ delta trước
+                                        {"\n"}
+                                        (Anterior Deltoid)
+                                    </Text>
+                                </View>
 
-                        <View style={styles.distributionChart}>
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        66,7% Cơ khất
+                                        {"\n"}
+                                        rộng Hạp
+                                    </Text>
+                                </View>
 
-                            <PieChart
-                                data={muscleDistribution}
-                                donut
-                                radius={wp("32%")}
-                                innerRadius={wp("20%")}
-                                innerCircleColor="#FFFFFF"
-                                showText={false}
-                                showValuesAsLabels={false}
-                                focusOnPress={false}
-                                strokeWidth={0}
-                                centerLabelComponent={() => (
-                                    <View style={styles.chartCenter}>
-                                        <Text style={styles.chartCenterValue}>
-                                            100%
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        3,09% Cơ lung
+                                    </Text>
+                                </View>
+
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        3,39% Cơ rứa
+                                    </Text>
+                                </View>
+
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        3,39% Cơ răng dài
+                                    </Text>
+                                </View>
+
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        3,29% Cơ Hơsi
+                                    </Text>
+                                </View>
+
+                            </View>
+
+                            {/* BODY Ở GIỮA */}
+                            <View style={styles.bodyImageContainer}>
+                                <Image source={require("../../assets/muscleBody/body.jpg")} style={styles.bodyImage} resizeMode="contain" />
+                                {/* KHÓA */}
+                                <View style={styles.bodyLock}>
+                                    <Ionicons name="lock-closed-outline" size={30} color={COLORS.accentRed} />
+                                </View>
+                                {/* NÚT PHÓNG TO */}
+                                <TouchableOpacity style={styles.expandButton} onPress={() => setShowBodyModal(true)}>
+                                    <Ionicons name="scan-outline" size={26} color={COLORS.primary} />
+                                </TouchableOpacity>
+                            </View>
+                            {/* LABEL BÊN PHẢI */}
+                            <View style={styles.rightLabels}>
+                                <View style={styles.muscleLabel}>
+                                    <Text style={styles.muscleLabelText}>
+                                        Cơ nhị đầu cánh
+                                        {"\n"}
+                                        tay (Biceps Brachii)
+                                    </Text>
+                                </View>
+                                <View style={styles.muscleLabel}>
+                                    <Text style={styles.muscleLabelText}>
+                                        Cơ delta giữa
+                                        {"\n"}
+                                        (Medial Deltoid)
+                                    </Text>
+                                </View>
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        16,49% Cơ rộng
+                                        {"\n"}
+                                        mạp đỏ
+                                    </Text>
+                                </View>
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        31,69% Cơ khẳng
+                                        {"\n"}
+                                        dài
+                                    </Text>
+                                </View>
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        16,89% Cơ lăng
+                                        {"\n"}
+                                        (gon)
+                                    </Text>
+                                </View>
+                                <View style={styles.muscleLabelSmall}>
+                                    <Text style={styles.muscleLabelText}>
+                                        1,59% Cơ răng
+                                        {"\n"}
+                                        trong
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                        {/* SWITCH */}
+                        <View style={styles.switchRow}>
+                            <Text style={styles.switchTitle}>
+                                Tên cơ
+                            </Text>
+                            <View style={styles.switch}>
+                                <View style={styles.switchCircle} />
+                            </View>
+                        </View>
+                        {/* LEGEND */}
+                        <View style={styles.legend}>
+                            <View style={styles.legendItem}>
+                                <View style={[styles.legendDot, styles.color1]} />
+                                <Text style={styles.legendText}>
+                                    0 - 1.9%
+                                </Text>
+                            </View>
+                            <View style={styles.legendItem}>
+                                <View style={[styles.legendDot, styles.color2]} />
+                                <Text style={styles.legendText}>
+                                    2.0 - 10.9%
+                                </Text>
+                            </View>
+                            <View style={styles.legendItem}>
+                                <View style={[styles.legendDot, styles.color3]} />
+                                <Text style={styles.legendText}>
+                                    11.0 - 24.9%
+                                </Text>
+                            </View>
+                            <View style={styles.legendItem}>
+                                <View style={[styles.legendDot, styles.color4]} />
+                                <Text style={styles.legendText}>
+                                    25.0 - 100%
+                                </Text>
+                            </View>
+                        </View>
+                        {/* PHÂN BỔ TẢI TRỌNG CƠ */}
+                        <View style={styles.distributionSection}>
+
+                            <Text style={styles.distributionTitle}>
+                                Phân bổ tải trọng cơ
+                            </Text>
+
+                            <View style={styles.distributionChart}>
+
+                                <PieChart
+                                    data={muscleDistribution}
+                                    donut
+                                    radius={wp("32%")}
+                                    innerRadius={wp("20%")}
+                                    innerCircleColor={COLORS.white}
+                                    showText={false}
+                                    showValuesAsLabels={false}
+                                    focusOnPress={false}
+                                    strokeWidth={0}
+                                    centerLabelComponent={() => (
+                                        <View style={styles.chartCenter}>
+                                            <Text style={styles.chartCenterValue}>
+                                                100%
+                                            </Text>
+                                        </View>
+                                    )}
+                                />
+
+                            </View>
+
+                            {/* DANH SÁCH TỶ LỆ */}
+                            <View style={styles.distributionList}>
+
+                                {muscleDistribution.map((item, index) => (
+                                    <View
+                                        key={index}
+                                        style={styles.distributionItem}
+                                    >
+
+                                        <View style={styles.distributionName}>
+                                            <View
+                                                style={[
+                                                    styles.distributionDot,
+                                                    {
+                                                        backgroundColor: item.color,
+                                                    },
+                                                ]}
+                                            />
+
+                                            <Text style={styles.distributionLabel}>
+                                                {item.label}
+                                            </Text>
+                                        </View>
+
+                                        <Text style={styles.distributionValue}>
+                                            {item.value.toFixed(2)}%
                                         </Text>
+
                                     </View>
-                                )}
-                            />
+                                ))}
+
+                            </View>
 
                         </View>
+                        {/* =============================== */}
+                        {/* DANH SÁCH BÀI TẬP */}
+                        {/* =============================== */}
 
-                        {/* DANH SÁCH TỶ LỆ */}
-                        <View style={styles.distributionList}>
-
-                            {muscleDistribution.map((item, index) => (
-                                <View
-                                    key={index}
-                                    style={styles.distributionItem}
+                        <View style={styles.exerciseSection}>
+                            <Text style={styles.exerciseTitle}>
+                                Bài tập
+                            </Text>
+                            {loadingReport ? (
+                                <Text style={styles.exerciseValue}>
+                                    Đang tải danh sách bài tập...
+                                </Text>
+                            ) : exercises.length === 0 ? (
+                                <Text style={styles.exerciseValue}>
+                                    Chưa có bài tập nào được ghi nhận.
+                                </Text>
+                            ) : (
+                                exercises.map((exercise: any) => (
+                                    <View key={exercise.id_tien_do_bai_tap} style={styles.exerciseItem} >
+                                        {/* ẢNH BÀI TẬP */}
+                                        <View style={styles.exerciseImageContainer}>
+                                            {exercise.anh_dai_dien ? (
+                                                <Image source={{ uri: exercise.anh_dai_dien }} style={styles.exerciseImage} resizeMode="contain" />
+                                            ) : (
+                                                <Ionicons name="barbell-outline" size={35} color={COLORS.primary} />
+                                            )}
+                                        </View>
+                                        {/* THÔNG TIN BÀI TẬP */}
+                                        <View style={styles.exerciseInfo}>
+                                            <Text style={styles.exerciseName}>
+                                                {exercise.ten_bai_tap}
+                                            </Text>
+                                            <Text style={styles.exerciseValue}>
+                                                Số hiệp: {exercise.tong_so_hiep}
+                                            </Text>
+                                            <Text style={styles.exerciseValue}>
+                                                Rep: {dinhDangSo(exercise.tong_rep_thuc_te)}
+                                            </Text>
+                                            <Text style={styles.exerciseValue}>
+                                                Tạ: {dinhDangSo(exercise.tong_ta_thuc_te)} kg
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))
+                            )}
+                        </View>
+                        {/* NÚT CHIA SẺ + XÓA */}
+                        <View style={styles.actionSection}>
+                            {/* CHIA SẺ BÁO CÁO */}
+                            <TouchableOpacity style={styles.shareReportWrap} activeOpacity={0.8} onPress={() => { console.log("Chia sẻ báo cáo"); }} >
+                                <LinearGradient
+                                    colors={[COLORS.primary, COLORS.primaryDark]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.shareReportButton}
                                 >
-
-                                    <View style={styles.distributionName}>
-                                        <View
-                                            style={[
-                                                styles.distributionDot,
-                                                {
-                                                    backgroundColor: item.color,
-                                                },
-                                            ]}
-                                        />
-
-                                        <Text style={styles.distributionLabel}>
-                                            {item.label}
-                                        </Text>
-                                    </View>
-
-                                    <Text style={styles.distributionValue}>
-                                        {item.value.toFixed(2)}%
+                                    <Ionicons name="share-social-outline" size={20} color={COLORS.white} />
+                                    <Text style={styles.shareReportText}>
+                                        CHIA SẺ BÁO CÁO
                                     </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
 
-                                </View>
-                            ))}
+
+                            {/* XÓA KẾT QUẢ */}
+                            <TouchableOpacity style={styles.deleteResultButton} activeOpacity={0.8} onPress={() => { console.log("Xóa kết quả tập luyện"); }} >
+                                <Ionicons name="trash-outline" size={18} color={COLORS.accentRed} />
+                                <Text style={styles.deleteResultText}>
+                                    Xóa kết quả tập luyện
+                                </Text>
+                            </TouchableOpacity>
 
                         </View>
-
-                    </View>
-                    {/* =============================== */}
-                    {/* DANH SÁCH BÀI TẬP */}
-                    {/* =============================== */}
-
-                    <View style={styles.exerciseSection}>
-                        <Text style={styles.exerciseTitle}>
-                            Bài tập
-                        </Text>
-
-                        {exercises.map((exercise) => (
-                            <View key={exercise.id} style={styles.exerciseItem} >
-
-                                {/* ẢNH BÀI TẬP */}
-                                <View style={styles.exerciseImageContainer}>
-                                    <Image
-                                        source={exercise.image}
-                                        style={styles.exerciseImage}
-                                        resizeMode="contain"
-                                    />
-                                </View>
-
-                                {/* THÔNG TIN */}
-                                <View style={styles.exerciseInfo}>
-                                    <Text style={styles.exerciseName}>
-                                        {exercise.name}
-                                    </Text>
-                                    <Text style={styles.exerciseValue}>
-                                        {exercise.type}: {exercise.value}
-                                    </Text>
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                    {/* NÚT CHIA SẺ + XÓA */}
-                    <View style={styles.actionSection}>
-
-                        {/* CHIA SẺ BÁO CÁO */}
-                        <TouchableOpacity style={styles.shareReportButton} activeOpacity={0.8} onPress={() => {console.log("Chia sẻ báo cáo"); }} >
-                            <Text style={styles.shareReportText}>
-                                CHIA SẺ BÁO CÁO
-                            </Text>
-                        </TouchableOpacity>
-
-
-                        {/* XÓA KẾT QUẢ */}
-                        <TouchableOpacity style={styles.deleteResultButton} activeOpacity={0.8} onPress={() => {console.log("Xóa kết quả tập luyện"); }} >
-                            <Text style={styles.deleteResultText}>
-                                Xóa kết quả tập luyện
-                            </Text>
-                        </TouchableOpacity>
-
                     </View>
                 </View>
             </ScrollView>
@@ -498,7 +671,7 @@ const ResultPage = () => {
                 <View style={styles.modalContainer}>
                     {/* NÚT ĐÓNG */}
                     <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowBodyModal(false)} >
-                        <Ionicons name="close" size={32} color="#FFFFFF" />
+                        <Ionicons name="close" size={26} color={COLORS.white} />
                     </TouchableOpacity>
 
                     {/* TIÊU ĐỀ */}
@@ -519,7 +692,7 @@ const ResultPage = () => {
 
                     {/* RESET */}
                     <TouchableOpacity style={styles.resetButton} onPress={() => { scale.value = 1; rotation.value = 0; }} >
-                        <Ionicons name="refresh-outline" size={22} color="#3DB8BA" />
+                        <Ionicons name="refresh-outline" size={20} color={COLORS.primary} />
                         <Text style={styles.resetText}>
                             Đặt lại
                         </Text>
@@ -533,32 +706,59 @@ const ResultPage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
-
+        backgroundColor: COLORS.background,
+    },
+    scroll: {
+        backgroundColor: COLORS.background,
     },
     scrollContent: {
-        paddingHorizontal: wp("3.5%"),
-        paddingBottom: hp("3%"),
+        paddingBottom: 24,
+    },
+    body: {
+        paddingHorizontal: 16,
     },
     // HEADER
+    heroHeader: {
+        paddingHorizontal: 18,
+        paddingTop: 14,
+        paddingBottom: 58,
+        borderRadius: 28,
+        marginHorizontal: 12,
+        marginTop: 6,
+        overflow: "hidden",
+    },
+    heroCircleLg: {
+        position: "absolute",
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: "rgba(255,255,255,0.07)",
+        top: -70,
+        right: -60,
+    },
+    heroCircleSm: {
+        position: "absolute",
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: "rgba(255,255,255,0.06)",
+        bottom: -40,
+        left: -30,
+    },
     header: {
-        height: hp("12%"),
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginTop: hp("3%"),
     },
     circleButton: {
-        width: wp("11%"),
-        height: wp("11%"),
-        borderRadius: wp("7%"),
-        backgroundColor: "#FFFFFF",
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        backgroundColor: "rgba(255,255,255,0.16)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
     },
     logoContainer: {
         alignItems: "center",
@@ -569,119 +769,183 @@ const styles = StyleSheet.create({
         height: hp("5%"),
     },
     logoText: {
-        fontSize: wp("3.4%"),
-        fontWeight: "700",
-        color: "#333333",
-        marginTop: -hp("0.5%"),
+        fontSize: 12,
+        fontWeight: "800",
+        color: "#A9D0DE",
+        letterSpacing: 1.5,
+        textTransform: "uppercase",
     },
     // TITLE
     title: {
-        fontSize: wp("6%"),
+        fontSize: 24,
         fontWeight: "800",
-        color: "#171717",
+        color: COLORS.white,
         textAlign: "center",
-        marginTop: hp("1%"),
+        marginTop: 18,
+    },
+    datePill: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "center",
+        gap: 6,
+        marginTop: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.16)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
     },
     date: {
-        fontSize: wp("4%"),
-        color: "#6686A1",
-        textAlign: "center",
-        marginTop: hp("0.5%"),
+        fontSize: 12.5,
+        color: COLORS.white,
+        fontWeight: "600",
     },
     // SUMMARY
     summaryCard: {
-        marginTop: hp("4%"),
-        minHeight: hp("12%"),
-        borderRadius: 10,
-        backgroundColor: "#FFFFFF",
-        paddingHorizontal: wp("4%"),
-        paddingVertical: hp("2%"),
+        marginTop: -34,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 16,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        ...SHADOWS.card,
+        shadowOpacity: 0.12,
+        elevation: 6,
+    },
+    summaryIconTile: {
+        width: 46,
+        height: 46,
+        borderRadius: 14,
+        backgroundColor: "#FFF1EC",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    summaryTextWrap: {
+        flex: 1,
     },
     smallText: {
-        fontSize: wp("3.8%"),
-        color: "#6686A1",
+        fontSize: 12,
+        color: COLORS.textMuted,
+        fontWeight: "600",
     },
 
     workoutName: {
-        fontSize: wp("4.8%"),
-        fontWeight: "700",
-        color: "#171717",
-        marginTop: hp("1%"),
+        fontSize: 18,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginTop: 3,
+        textTransform: "capitalize",
     },
-    progressCircle: {
-        width: wp("18%"),
-        height: wp("18%"),
-        borderRadius: wp("9%"),
-        borderWidth: 4,
-        borderColor: "#FFD5C5",
-        borderTopColor: "#FF633E",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    progressText: {
-        fontSize: wp("4.5%"),
-        color: "#FF633E",
-        fontWeight: "600",
-    },
+    // progressCircle: {
+    //     width: 64,
+    //     height: 64,
+    //     borderRadius: 32,
+    //     borderWidth: 5,
+    //     borderColor: "#FFE1D6",
+    //     borderTopColor: COLORS.accentOrange,
+    //     justifyContent: "center",
+    //     alignItems: "center",
+    // },
+    // progressText: {
+    //     fontSize: 16,
+    //     color: COLORS.accentOrange,
+    //     fontWeight: "800",
+    // },
     // QUOTE
+    quoteCard: {
+        flexDirection: "row",
+        marginTop: 16,
+        padding: 14,
+        borderRadius: 18,
+        backgroundColor: COLORS.surfaceTeal,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
+    },
+    quoteIcon: {
+        marginRight: 10,
+        marginTop: 2,
+    },
     quote: {
-        fontSize: wp("4.5%"),
-        color: "#606060",
-        lineHeight: hp("3.3%"),
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("2%"),
+        flex: 1,
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        lineHeight: 21,
+        fontStyle: "italic",
     },
     // ROW
     row: {
         flexDirection: "row",
         justifyContent: "space-between",
-        gap: wp("3%"),
-        marginTop: hp("4%"),
+        gap: 12,
+        marginTop: 16,
     },
     infoCard: {
         flex: 1,
-        height: hp("12%"),
-        borderRadius: 10,
-        backgroundColor: "#FFFFFF",
+        paddingVertical: 16,
+        paddingHorizontal: 10,
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        ...SHADOWS.card,
+    },
+    infoIconTile: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 8,
+    },
+    tileTeal: {
+        backgroundColor: COLORS.surfaceTeal,
+    },
+    tileViolet: {
+        backgroundColor: "#F5F3FF",
+    },
+    tileOrange: {
+        backgroundColor: "#FFF1EC",
+    },
+    tileRose: {
+        backgroundColor: "#FFF1F2",
     },
     infoValue: {
-        fontSize: wp("6%"),
-        fontWeight: "500",
-        color: "#171717",
+        fontSize: 22,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     infoLabel: {
-        fontSize: wp("3.8%"),
-        color: "#707070",
-        marginTop: hp("1%"),
+        fontSize: 12,
+        color: COLORS.textMuted,
+        marginTop: 4,
         textAlign: "center",
     },
     // STATISTICS
     statisticsCard: {
-        marginTop: hp("4%"),
-        height: hp("16%"),
-        borderRadius: 10,
-        backgroundColor: "#FFFFFF",
+        marginTop: 16,
+        paddingVertical: 18,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         flexDirection: "row",
         justifyContent: "space-around",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        ...SHADOWS.card,
+    },
+    statIconTile: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
     },
     statItem: {
         flex: 1,
@@ -689,95 +953,107 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     questionMark: {
-        fontSize: wp("5%"),
-        color: "#D5D5D5",
-        marginTop: hp("1%"),
+        fontSize: 18,
+        fontWeight: "800",
+        color: COLORS.textLight,
+        marginTop: 8,
     },
     statLabel: {
-        fontSize: wp("3.8%"),
-        color: "#D5D5D5",
-        marginTop: hp("1%"),
+        fontSize: 12,
+        color: COLORS.textMuted,
+        fontWeight: "600",
+        marginTop: 4,
     },
     lockCircle: {
-        marginTop: hp("1%"),
+        marginTop: 8,
+        height: 24,
         alignItems: "center",
         justifyContent: "center",
     },
     // MỤC TIÊU
     goalSection: {
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("2%"),
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     goalTitle: {
-        fontSize: wp("4.8%"),
-        fontWeight: "500",
-        color: "#6686A1",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginBottom: 14,
     },
     goalItem: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: hp("2.8%"),
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
     },
     goalCircle: {
-        width: wp("18%"),
-        height: wp("18%"),
-        borderRadius: wp("9%"),
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         borderWidth: 4,
         justifyContent: "center",
         alignItems: "center",
     },
     redCircle: {
-        borderColor: "#FFB4B4",
+        borderColor: "#FECACA",
+        backgroundColor: "#FEF2F2",
     },
     greenCircle: {
-        borderColor: "#40BEB2",
+        borderColor: COLORS.accentGreen,
+        backgroundColor: "#ECFDF5",
     },
     orangeCircle: {
-        borderColor: "#FFD28A",
+        borderColor: "#FCD34D",
+        backgroundColor: "#FFF7ED",
     },
     redText: {
-        color: "#FF4D4D",
-        fontSize: wp("4.5%"),
-        fontWeight: "600",
+        color: COLORS.accentRed,
+        fontSize: 14,
+        fontWeight: "800",
     },
     greenText: {
-        color: "#35B5AA",
-        fontSize: wp("4.5%"),
-        fontWeight: "600",
+        color: COLORS.accentGreen,
+        fontSize: 14,
+        fontWeight: "800",
     },
     orangeText: {
-        color: "#F6B34E",
-        fontSize: wp("4.5%"),
-        fontWeight: "600",
+        color: COLORS.accentGold,
+        fontSize: 14,
+        fontWeight: "800",
     },
     goalContent: {
-        marginLeft: wp("4%"),
+        marginLeft: 14,
         flex: 1,
     },
     goalName: {
-        fontSize: wp("4.5%"),
-        fontWeight: "700",
-        color: "#222222",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     goalDescription: {
-        fontSize: wp("4.2%"),
-        color: "#6686A1",
-        marginTop: hp("0.5%"),
+        fontSize: 12.5,
+        color: COLORS.textMuted,
+        marginTop: 3,
     },
     // ===============================
     // TẬP LUYỆN CÁC NHÓM CƠ
     // ===============================
 
     muscleSection: {
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("1%"),
+        marginTop: 22,
     },
     muscleTitle: {
-        fontSize: wp("5%"),
-        color: "#526F87",
-        fontWeight: "500",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        color: COLORS.textPrimary,
+        fontWeight: "800",
+        marginBottom: 14,
     },
     bodyContainer: {
         height: hp("70%"),
@@ -826,7 +1102,9 @@ const styles = StyleSheet.create({
         zIndex: 4,
     },
     muscleLabel: {
-        backgroundColor: "#EDF1F5",
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
         borderRadius: 14,
         paddingHorizontal: wp("3%"),
         paddingVertical: hp("1.2%"),
@@ -835,7 +1113,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     muscleLabelSmall: {
-        backgroundColor: "#EDF1F5",
+        backgroundColor: COLORS.surfaceTeal,
         borderRadius: 12,
         paddingHorizontal: wp("2.5%"),
         paddingVertical: hp("0.8%"),
@@ -846,7 +1124,7 @@ const styles = StyleSheet.create({
 
     muscleLabelText: {
         fontSize: wp("3.1%"),
-        color: "#202020",
+        color: COLORS.textSecondary,
         lineHeight: hp("2.1%"),
     },
     expandButton: {
@@ -860,10 +1138,11 @@ const styles = StyleSheet.create({
         ],
         width: wp("13%"),
         height: wp("13%"),
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: "#83D6D5",
-        backgroundColor: "#F2FFFF",
+        borderRadius: 999,
+        borderWidth: 1.5,
+        borderColor: COLORS.borderFocus,
+        backgroundColor: COLORS.white,
+        ...SHADOWS.card,
         alignItems: "center",
         justifyContent: "center",
         zIndex: 10,
@@ -873,35 +1152,39 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: wp("2%"),
+        padding: 14,
+        borderRadius: 18,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
     switchTitle: {
-        fontSize: wp("5%"),
-        color: "#222222",
-        fontWeight: "500",
+        fontSize: 15,
+        color: COLORS.textPrimary,
+        fontWeight: "700",
     },
     switch: {
-        width: wp("17%"),
-        height: wp("8%"),
-        borderRadius: wp("5%"),
-        backgroundColor: "#32B8BA",
+        width: 52,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "flex-end",
         paddingHorizontal: wp("1%"),
     },
     switchCircle: {
-        width: wp("6%"),
-        height: wp("6%"),
-        borderRadius: wp("3%"),
-        backgroundColor: "#FFFFFF",
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: COLORS.white,
     },
     legend: {
-        marginTop: hp("3%"),
+        marginTop: 14,
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
-        paddingHorizontal: wp("2%"),
-        paddingBottom: hp("4%"),
+        paddingHorizontal: 4,
     },
     legendItem: {
         flexDirection: "row",
@@ -910,14 +1193,15 @@ const styles = StyleSheet.create({
         marginBottom: hp("2%"),
     },
     legendDot: {
-        width: wp("7%"),
-        height: wp("7%"),
-        borderRadius: wp("3.5%"),
-        marginRight: wp("2%"),
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        marginRight: 8,
     },
     legendText: {
-        fontSize: wp("3.5%"),
-        color: "#333333",
+        fontSize: 13,
+        color: COLORS.textSecondary,
+        fontWeight: "600",
     },
     color1: {
         backgroundColor: "#F8C28B",
@@ -933,7 +1217,7 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         flex: 1,
-        backgroundColor: "#111111",
+        backgroundColor: "#071F24",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -941,10 +1225,12 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: hp("6%"),
         right: wp("5%"),
-        width: wp("12%"),
-        height: wp("12%"),
-        borderRadius: wp("6%"),
-        backgroundColor: "#333333",
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: "rgba(255,255,255,0.16)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
         justifyContent: "center",
         alignItems: "center",
         zIndex: 10,
@@ -952,9 +1238,9 @@ const styles = StyleSheet.create({
     modalTitle: {
         position: "absolute",
         top: hp("7%"),
-        color: "#FFFFFF",
-        fontSize: wp("5%"),
-        fontWeight: "700",
+        color: COLORS.white,
+        fontSize: 18,
+        fontWeight: "800",
     },
     fullImageContainer: {
         width: "100%",
@@ -973,29 +1259,34 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: wp("5%"),
         paddingVertical: hp("1.5%"),
-        borderRadius: 25,
-        backgroundColor: "#F2FFFF",
+        borderRadius: 999,
+        backgroundColor: COLORS.white,
     },
     resetText: {
-        marginLeft: wp("2%"),
-        color: "#3DB8BA",
-        fontSize: wp("4%"),
-        fontWeight: "600",
+        marginLeft: 8,
+        color: COLORS.primary,
+        fontSize: 15,
+        fontWeight: "800",
     },
     // ===============================
     // PHÂN BỔ TẢI TRỌNG CƠ
     // ===============================
 
     distributionSection: {
-        marginTop: hp("4%"),
-        paddingHorizontal: wp("2%"),
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     distributionTitle: {
-        fontSize: wp("5%"),
-        color: "#526F87",
-        fontWeight: "500",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        color: COLORS.textPrimary,
+        fontWeight: "800",
+        marginBottom: 8,
     },
 
     distributionChart: {
@@ -1011,20 +1302,21 @@ const styles = StyleSheet.create({
 
     chartCenterValue: {
         fontSize: wp("7%"),
-        fontWeight: "500",
-        color: "#333333",
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     distributionList: {
-        marginTop: hp("1%"),
-        paddingHorizontal: wp("2%"),
+        marginTop: 8,
     },
 
     distributionItem: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: hp("1.8%"),
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
     },
 
     distributionName: {
@@ -1033,73 +1325,83 @@ const styles = StyleSheet.create({
     },
 
     distributionDot: {
-        width: wp("5%"),
-        height: wp("5%"),
-        borderRadius: wp("2.5%"),
-        marginRight: wp("3%"),
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        marginRight: 10,
     },
 
     distributionLabel: {
-        fontSize: wp("4%"),
-        color: "#333333",
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        fontWeight: "600",
     },
 
     distributionValue: {
-        fontSize: wp("4%"),
-        fontWeight: "600",
-        color: "#333333",
+        fontSize: 14,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
     // ===============================
     // BÀI TẬP
     // ===============================
 
     exerciseSection: {
-        marginTop: hp("3%"),
-        backgroundColor: "#FFFFFF",
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        ...SHADOWS.card,
     },
 
     exerciseTitle: {
-        fontSize: wp("5%"),
-        fontWeight: "500",
-        color: "#6686A1",
-        marginBottom: hp("2%"),
+        fontSize: 17,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginBottom: 10,
     },
 
     exerciseItem: {
         flexDirection: "row",
         alignItems: "center",
-        minHeight: hp("13%"),
-        marginBottom: hp("1%"),
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
     },
 
     exerciseImageContainer: {
-        width: wp("20%"),
-        height: hp("11%"),
+        width: 76,
+        height: 76,
+        borderRadius: 16,
+        backgroundColor: COLORS.surfaceTeal,
+        overflow: "hidden",
         alignItems: "center",
         justifyContent: "center",
     },
 
     exerciseImage: {
-        width: wp("19%"),
-        height: hp("10%"),
+        width: 72,
+        height: 72,
     },
 
     exerciseInfo: {
         flex: 1,
-        marginLeft: wp("3%"),
+        marginLeft: 14,
         justifyContent: "center",
     },
 
     exerciseName: {
-        fontSize: wp("4.3%"),
-        fontWeight: "500",
-        color: "#222222",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
     },
 
     exerciseValue: {
-        fontSize: wp("3.8%"),
-        color: "#6686A1",
-        marginTop: hp("0.7%"),
+        fontSize: 13,
+        color: COLORS.textMuted,
+        marginTop: 4,
     },
 
     // ===============================
@@ -1107,42 +1409,65 @@ const styles = StyleSheet.create({
     // ===============================
 
     actionSection: {
-        marginTop: hp("1%"),
-        paddingBottom: hp("3%"),
+        marginTop: 20,
+    },
+
+    shareReportWrap: {
+        borderRadius: 16,
+        marginBottom: 12,
+        ...SHADOWS.glow,
     },
 
     shareReportButton: {
-        height: hp("8%"),
-        borderRadius: 12,
-        backgroundColor: "#16B7BA",
+        height: 54,
+        borderRadius: 999,
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: hp("2.5%"),
+        gap: 8,
     },
 
     shareReportText: {
-        fontSize: wp("4.8%"),
-        fontWeight: "500",
-        color: "#FFFFFF",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.white,
+        letterSpacing: 0.5,
     },
 
     deleteResultButton: {
-        height: hp("8%"),
-        borderRadius: 12,
-        backgroundColor: "#FFFFFF",
+        height: 52,
+        borderRadius: 999,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: "#FECACA",
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        gap: 8,
     },
 
     deleteResultText: {
-        fontSize: wp("4.8%"),
-        fontWeight: "700",
-        color: "#16B7BA",
+        fontSize: 15,
+        fontWeight: "800",
+        color: COLORS.accentRed,
+    },
+    progressCircle: {
+        width: 80,
+        height: 80,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    progressTextContainer: {
+        position: "absolute",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    progressText: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#FF674F",
     },
 });
 

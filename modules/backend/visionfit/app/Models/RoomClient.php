@@ -17,6 +17,7 @@ class RoomClient extends Model
         'name',
         'avatar',
         'created_by',
+        'created_by_type',
         'last_message_at',
     ];
 
