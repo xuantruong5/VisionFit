@@ -500,10 +500,12 @@ const ReportPage = ({ navigation, route }: any) => {
                     <View style={styles.exerciseImageArea}>
                         {videoHuongDan ? (
                             videoHuongDan.toLowerCase().endsWith(".gif") ? (
-                                <Image source={{ uri: videoHuongDan }} style={styles.exerciseImage} resizeMode="contain" onError={(e) => console.log("Lỗi GIF:", e.nativeEvent) } />
+                                <Image source={{ uri: videoHuongDan }} style={styles.exerciseImage} resizeMode="cover" onError={(e) => console.log("Lỗi GIF:", e.nativeEvent) } />
                             ) : (
-                                <Video  source={{ uri: videoHuongDan }} style={styles.exerciseImage} resizeMode="contain" repeat paused={false} muted controls onError={(e) => console.log("LỖI VIDEO:", e) }  onLoad={() => console.log("VIDEO ĐÃ TẢI:", videoHuongDan) }/> )
-                        ) : (
+                                <Video  source={{ uri: videoHuongDan }} style={styles.exerciseImage} resizeMode="cover" repeat paused={false} muted controls onError={(e) => console.log("LỖI VIDEO:", e) }  onLoad={() => console.log("VIDEO ĐÃ TẢI:", videoHuongDan) }/> )
+                                            // resizeMode="cover"
+                       
+                            ) : (
                             <View style={styles.mediaFallback}>
                                 <Ionicons name="videocam-off-outline" size={34} color={COLORS.primary} />
                                 <Text style={styles.mediaFallbackText}>Video hướng dẫn bị lỗi</Text>
@@ -1060,11 +1062,13 @@ const styles = StyleSheet.create({
         height: "100%",
         alignItems: "center",
         justifyContent: "center",
+        
     },
 
     exerciseImage: {
         width: "100%",
         height: "100%",
+       
     },
 
     /* RIGHT ICONS */

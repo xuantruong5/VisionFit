@@ -4,7 +4,7 @@ import { notify } from './notification';
 
 
 
-export const BASE_URL = "http://172.29.192.1:8000";
+export const BASE_URL = "http://172.16.62.57:8000";
 
 // export const BASE_URL = "http://localhost:8000";
 // export const BASE_URL = "http://172.16.57.58:8000"; // IP của quán cf
