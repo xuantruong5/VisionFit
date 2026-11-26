@@ -8,25 +8,23 @@ use App\Services\Assistant\EmbeddingClientInterface;
 use App\Services\Assistant\FitnessDataService;
 use App\Services\Assistant\KnowledgeEmbeddingService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\UsesIsolatedTestDatabase;
 use Tests\TestCase;
 
 /**
  * Kiểm thử tìm kiếm ngữ nghĩa bằng Embeddings cho công cụ `search_fitness_knowledge`:
- * - Lập chỉ mục trước và cập nhật tăng dần (chỉ re-embed bản ghi mới/thay đổi, không re-embed toàn kho).
+ * - Lập chỉ mục trước và cập nhật tăng dần (thêm, sửa, xóa bản ghi đều đồng bộ vào chỉ mục).
  * - Xếp hạng cosine similarity chính xác theo ngữ nghĩa.
  * - Cảnh báo dị ứng khi tra cứu món ăn cho hội viên có dị ứng.
  */
 class KnowledgeEmbeddingSearchTest extends TestCase
 {
+    use UsesIsolatedTestDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->assertSame('sqlite', config('database.default'));
-        $this->assertSame(':memory:', config('database.connections.sqlite.database'));
-
-        Schema::dropAllTables();
-        foreach ([
+        $this->resetVerifiedTestDatabase([
             '2026_09_11_060235_create_clients_table.php',
             '2026_09_11_062608_create_bai_tap_table.php',
             '2026_10_15_170400_create_chi_tiet_bai_tap_table.php',
@@ -35,9 +33,7 @@ class KnowledgeEmbeddingSearchTest extends TestCase
             '2026_09_17_170000_create_bach_khoa_toan_thu_table.php',
             '2026_09_18_130000_create_dinh_duong_the_thao_table.php',
             '2026_11_26_000001_create_assistant_knowledge_embeddings_table.php',
-        ] as $migration) {
-            (require database_path('migrations/' . $migration))->up();
-        }
+        ]);
     }
 
     private function makeDeterministicEmbedder(): object
@@ -54,13 +50,13 @@ class KnowledgeEmbeddingSearchTest extends TestCase
             {
                 $this->embedCalls++;
                 $lower = mb_strtolower($text, 'UTF-8');
-                // 4-dim semantic toy space: [leg/squat, protein/chicken, seafood/shrimp, hypertrophy/science]
-                return [
-                    (str_contains($lower, 'squat') || str_contains($lower, 'chân') || str_contains($lower, 'đùi') || str_contains($lower, 'gối')) ? 1.0 : 0.05,
-                    (str_contains($lower, 'ức gà') || str_contains($lower, 'protein') || str_contains($lower, 'đạm') || str_contains($lower, 'whey')) ? 1.0 : 0.05,
-                    (str_contains($lower, 'tôm') || str_contains($lower, 'salad') || str_contains($lower, 'hải sản')) ? 1.0 : 0.05,
-                    (str_contains($lower, 'hypertrophy') || str_contains($lower, 'phì đại') || str_contains($lower, 'progressive')) ? 1.0 : 0.05,
-                ];
+                // 5-dim semantic toy space: [leg/squat, protein/chicken, seafood/shrimp, hypertrophy/science, off-topic]
+                $v0 = (str_contains($lower, 'squat') || str_contains($lower, 'chân') || str_contains($lower, 'đùi') || str_contains($lower, 'gối')) ? 1.0 : 0.0;
+                $v1 = (str_contains($lower, 'ức gà') || str_contains($lower, 'protein') || str_contains($lower, 'đạm') || str_contains($lower, 'whey')) ? 1.0 : 0.0;
+                $v2 = (str_contains($lower, 'tôm') || str_contains($lower, 'salad') || str_contains($lower, 'hải sản')) ? 1.0 : 0.0;
+                $v3 = (str_contains($lower, 'hypertrophy') || str_contains($lower, 'phì đại') || str_contains($lower, 'progressive')) ? 1.0 : 0.0;
+                $v4 = ($v0 + $v1 + $v2 + $v3) === 0.0 ? 1.0 : 0.0;
+                return [$v0, $v1, $v2, $v3, $v4];
             }
         };
     }
@@ -122,6 +118,32 @@ class KnowledgeEmbeddingSearchTest extends TestCase
         $foodRes = $service->search('Món salad buổi tối có tôm bao nhiêu calo?', 'food', 2, $actor);
         $this->assertSame('Salad tôm dầu oliu', $foodRes['results'][0]['title']);
         $this->assertNotEmpty($foodRes['results'][0]['allergy_warning'] ?? '');
+
+        // Truy vấn hoàn toàn không khớp (embedding score dưới ngưỡng) -> trả status='empty', không bịa trích dẫn
+        $unrelated = $service->search('Cách sửa máy giặt bị rò nước', 'all', 2, $actor);
+        $this->assertSame('empty', $unrelated['status']);
+        $this->assertEmpty($unrelated['results']);
+
+        // Thêm 1 tài liệu mới -> syncIndex lập chỉ mục đúng 1 bản ghi mới
+        $newFoodId = DB::table('mon_an')->insertGetId([
+            'ten_mon_an' => 'Ức gà áp chảo giàu đạm', 'loai_bua' => 'TRUA', 'the_loai' => 'Eat Clean',
+            'calo' => 380, 'protein' => 45, 'carb' => 10, 'fat' => 6, 'khoi_luong_gram' => 250,
+            'nguyen_lieu' => 'Ức gà, tiêu, dầu oliu', 'tinh_trang' => 1,
+        ]);
+        $sAdd = $service->syncIndex(false);
+        $this->assertSame(1, $sAdd['indexed']);
+        $this->assertSame(3, $sAdd['skipped']);
+        $this->assertSame(4, $sAdd['total_documents']);
+
+        // Xóa tài liệu vừa thêm -> syncIndex gỡ khỏi chỉ mục (removed=1) và search không còn trả về
+        DB::table('mon_an')->where('id', $newFoodId)->delete();
+        $sDel = $service->syncIndex(false);
+        $this->assertSame(0, $sDel['indexed']);
+        $this->assertSame(1, $sDel['removed']);
+        $this->assertSame(3, $sDel['total_documents']);
+        $afterDel = $service->search('Ức gà giàu đạm bao nhiêu protein?', 'food', 3, $actor);
+        $titlesAfterDel = array_map(fn ($r) => $r['title'], $afterDel['results']);
+        $this->assertNotContains('Ức gà áp chảo giàu đạm', $titlesAfterDel);
     }
 }
 

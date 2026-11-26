@@ -15,6 +15,7 @@ export const MASCOT_EVENTS = {
   SET_WATER_REMINDER: 'mascot:set_water_reminder',
   STRETCH: 'mascot:stretch',
   ERROR: 'mascot:error',
+  AUTH_SESSION_CHANGED: 'mascot:auth_session_changed',
 };
 
 /**
@@ -46,5 +47,13 @@ export function triggerWaterReminderSetting(enabled: boolean, intervalHours: num
 
 export function triggerMascotError() {
   mascotEmitter.emit(MASCOT_EVENTS.SET_STATE, 'error', 3500);
+}
+
+/**
+ * Phát sự kiện khi người dùng đăng xuất hoặc đăng nhập tài khoản khác
+ * để MascotChatModal hủy request đang chạy và xóa sạch lịch sử hội thoại/cache phiên cũ.
+ */
+export function triggerAuthSessionChanged() {
+  mascotEmitter.emit(MASCOT_EVENTS.AUTH_SESSION_CHANGED);
 }
 

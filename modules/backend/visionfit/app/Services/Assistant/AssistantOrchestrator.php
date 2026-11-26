@@ -188,6 +188,9 @@ class AssistantOrchestrator
                     'name' => $fcName,
                     'args' => $this->redactTraceArgs($fcArgs),
                     'status' => (string) ($exec['result']['status'] ?? 'ok'),
+                    'method' => $exec['api_call']['method'] ?? null,
+                    'endpoint' => $exec['api_call']['endpoint'] ?? null,
+                    'http_status' => $exec['api_call']['http_status'] ?? null,
                 ];
 
                 if (!empty($exec['intent_hint'])) {
@@ -336,14 +339,19 @@ THỜI GIAN HIỆN TẠI (múi giờ Asia/Ho_Chi_Minh): {$weekday}, {$todayVN} (
 
 NGUYÊN TẮC BẮT BUỘC:
 1. GỌI CÔNG CỤ KHI CẦN DỮ LIỆU THẬT:
-   - Mọi câu hỏi về lịch tập, gói tập, tiến độ/buổi đã tập, chỉ số cơ thể (BMI/BMR/TDEE/calo/nước theo cân nặng), kế hoạch bữa ăn, hoặc thống kê phòng tập BẮT BUỘC phải gọi đúng công cụ tương ứng (`get_my_schedule`, `get_my_packages`, `get_my_progress`, `get_my_body_metrics`, `get_my_meal_plan`, `get_gym_summary`).
+   - Mọi câu hỏi về lịch tập, gói tập, tiến độ/buổi đã tập, chỉ số cơ thể (BMI/BMR/TDEE/calo/nước theo cân nặng), kế hoạch bữa ăn, hoặc thống kê phòng tập BẮT BUỘC phải gọi đúng công cụ tương ứng (`get_my_schedule`, `get_my_packages`, `get_my_progress`, `get_my_body_metrics`, `get_my_meal_plan`, `get_gym_summary`) để xác minh dữ liệu thật trên hệ thống, kể cả khi người dùng tự nói rằng họ chưa cập nhật hoặc chưa đăng ký.
    - Có thể gọi nhiều công cụ cùng lúc nếu câu hỏi có nhiều ý (ví dụ vừa hỏi gói tập vừa hỏi lịch tập).
    - Với câu hỏi tiếp nối (vd: "Còn hôm sau thì sao?", "Thế ngày mốt?"), hãy tính ngày YYYY-MM-DD từ thời gian hiện tại và lịch sử hội thoại rồi gọi `get_my_schedule` hoặc `get_my_meal_plan` với ngày chính xác.
    - Mọi câu hỏi về kỹ thuật bài tập, calo/dinh dưỡng món ăn, thực phẩm bổ sung (Whey, Creatine...) hoặc kiến thức gym hãy gọi `search_fitness_knowledge`.
    - Chỉ gọi `set_water_reminder` khi người dùng yêu cầu BẬT hoặc TẮT nhắc uống nước. Không gọi khi họ chỉ hỏi lượng nước cần uống mỗi ngày.
-2. TRUNG THỰC TUYỆT ĐỐI VỚI DỮ LIỆU TỪ CÔNG CỤ:
-   - TUYỆT ĐỐI KHÔNG bịa số liệu, lịch tập, gói tập, BMI/TDEE hoặc thực đơn.
-   - Nếu công cụ trả `status: no_registered_program`, `missing_body_metrics`, `no_package`, `all_expired`, `no_session_in_range`, `unauthenticated` hoặc `remaining_sessions: null`: nói rõ trạng thái thiếu dữ liệu, KHÔNG biến `null`/chưa biết thành số `0`.
+2. TRUNG THỰC TUYỆT ĐỐI & QUY TẮC KHI THIẾU THÔNG TIN (BẮT BUỘC):
+   - TUYỆT ĐỐI KHÔNG bịa lịch tập, gói tập, số buổi, cân nặng, chỉ số cơ thể (BMI/BMR/TDEE), thực đơn hay trích dẫn kiến thức.
+   - API thành công nhưng KHÔNG CÓ DỮ LIỆU (`status` thuộc `empty`, `no_registered_program`, `missing_body_metrics`, `no_package`, `no_session_in_range`, `no_registered_program_and_metrics`): BẮT BUỘC trả lời rõ nguyên văn câu: "Tôi chưa có thông tin đó trong dữ liệu hiện có." (có thể kèm giải thích ngắn trạng thái thiếu dữ liệu hoặc hướng dẫn cập nhật/đăng ký).
+   - CHỈ CÓ MỘT PHẦN DỮ LIỆU (ví dụ gói tập thường có `total_sessions` và `expires_at` nhưng `used_sessions: null`, `remaining_sessions: null`; hoặc gói PT có đầy đủ `total_sessions`, `used_sessions`, `remaining_sessions` từ `buoi_tap_pt`; hoặc có cân nặng nhưng thiếu chiều cao): luôn phân biệt rõ tổng số buổi, số buổi đã sử dụng và số buổi còn lại; trả lời chính xác phần đã có và nói rõ phần nào chưa có trong dữ liệu hiện có kèm lý do; TUYỆT ĐỐI KHÔNG lấy tổng số buổi thay cho số buổi còn lại, KHÔNG biến dữ liệu chưa biết (`null`) thành số `0` và KHÔNG mượn dữ liệu tài khoản khác.
+   - KHÔNG CÓ QUYỀN (`status: forbidden`): thông báo rõ ràng tài khoản hiện tại không có quyền truy cập thông tin này.
+   - CHƯA ĐĂNG NHẬP (`status: unauthenticated`): nhắc đăng nhập để xem dữ liệu cá nhân, không bịa số liệu.
+   - LỖI API / TIMEOUT / MẤT KẾT NỐI (`status: api_error` hoặc `embedding_unavailable`): thông báo rõ hiện chưa thể truy xuất dữ liệu từ máy chủ lúc này và đề nghị thử lại sau; TUYỆT ĐỐI KHÔNG kết luận rằng dữ liệu không tồn tại hay người dùng chưa đăng ký.
+   - KHO KIẾN THỨC TRỐNG (`search_fitness_knowledge` trả `status: empty`): nói rõ "Tôi chưa có thông tin đó trong dữ liệu hiện có." (chưa có bài viết/mục phù hợp trong kho kiến thức VisionFit), TUYỆT ĐỐI KHÔNG tự bịa nguồn trích dẫn.
    - Khi công cụ `get_my_body_metrics` trả về `bmi_status` (chuẩn châu Á), dùng đúng nhãn đó.
    - Khi `search_fitness_knowledge` trả về `allergy_warning`, BẮT BUỘC cảnh báo dị ứng rõ ràng cho người dùng.
 3. AN TOÀN & BẢO MẬT:
@@ -362,7 +370,7 @@ PROMPT;
             return !empty($action['params']['enabled']) ? 'reminding' : 'neutral';
         }
         foreach ($toolTrace as $t) {
-            if (in_array($t['status'] ?? '', ['error', 'forbidden', 'unauthenticated'], true)) {
+            if (in_array($t['status'] ?? '', ['error', 'api_error', 'embedding_unavailable', 'forbidden', 'unauthenticated'], true)) {
                 return 'apologetic';
             }
         }

@@ -89,5 +89,97 @@ class GeminiEmbeddingClient implements EmbeddingClientInterface
 
         return array_map('floatval', $values);
     }
+
+    /**
+     * Batch-embed up to 100 documents per HTTP request via official `:batchEmbedContents`.
+     * Dramatically reduces RPM usage and latency when indexing full knowledge tables.
+     *
+     * @param array<int, string> $texts
+     * @return array<int, array<int, float>>
+     * @throws LlmProviderException
+     */
+    public function embedBatch(array $texts, string $taskType = 'RETRIEVAL_DOCUMENT'): array
+    {
+        if (empty($texts)) {
+            return [];
+        }
+
+        $apiKey = $this->apiKey ?? config('assistant.gemini_api_key');
+        if (!is_string($apiKey) || trim($apiKey) === '') {
+            throw new LlmProviderException(
+                'AI_KEY_MISSING',
+                'Thiếu GEMINI_API_KEY cho dịch vụ tìm kiếm ngữ nghĩa.',
+                503,
+                false
+            );
+        }
+
+        $model = ltrim($this->modelName(), '/');
+        if (str_starts_with($model, 'models/')) {
+            $model = substr($model, 7);
+        }
+
+        $base = rtrim((string) ($this->baseUrl ?? config('assistant.gemini_base_url', 'https://generativelanguage.googleapis.com/v1beta')), '/');
+        $url = "{$base}/models/{$model}:batchEmbedContents";
+
+        $requests = [];
+        foreach ($texts as $t) {
+            $requests[] = [
+                'model' => "models/{$model}",
+                'content' => [
+                    'parts' => [
+                        ['text' => mb_substr(trim((string) $t), 0, 2000, 'UTF-8')],
+                    ],
+                ],
+                'taskType' => $taskType,
+            ];
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_CONNECTTIMEOUT => 6,
+            CURLOPT_TIMEOUT => max(20, (int) config('assistant.embedding_timeout_seconds', 10) * 2),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'x-goog-api-key: ' . $apiKey,
+            ],
+            CURLOPT_POSTFIELDS => json_encode(['requests' => $requests], JSON_UNESCAPED_UNICODE),
+            CURLOPT_SSL_VERIFYPEER => (bool) config('assistant.ssl_verify', true),
+        ]);
+
+        $raw = curl_exec($ch);
+        $curlErr = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($raw === false || $curlErr !== '') {
+            throw new LlmProviderException('EMBEDDING_TIMEOUT', 'Không kết nối được dịch vụ batch embedding Gemini.', 503, true);
+        }
+        if ($httpCode === 429) {
+            throw new LlmProviderException('AI_QUOTA_EXCEEDED', 'Dịch vụ embedding Gemini tạm hết hạn mức.', 503, true);
+        }
+        if ($httpCode !== 200) {
+            throw new LlmProviderException('EMBEDDING_ERROR', "Dịch vụ batch embedding Gemini trả mã lỗi HTTP {$httpCode}.", 503, $httpCode >= 500);
+        }
+
+        $decoded = json_decode((string) $raw, true);
+        $embeddings = $decoded['embeddings'] ?? null;
+        if (!is_array($embeddings) || count($embeddings) !== count($texts)) {
+            throw new LlmProviderException('EMBEDDING_MALFORMED', 'Phản hồi batch embedding từ Gemini không khớp số lượng tài liệu.', 503, true);
+        }
+
+        $vectors = [];
+        foreach ($embeddings as $item) {
+            $vals = $item['values'] ?? null;
+            if (!is_array($vals) || empty($vals)) {
+                throw new LlmProviderException('EMBEDDING_MALFORMED', 'Vector embedding rỗng trong phản hồi batch.', 503, true);
+            }
+            $vectors[] = array_map('floatval', $vals);
+        }
+
+        return $vectors;
+    }
 }
 

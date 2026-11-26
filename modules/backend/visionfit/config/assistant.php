@@ -19,6 +19,8 @@ return [
 
     // Verified Gemini Embedding model for semantic search in search_fitness_knowledge
     'gemini_embedding_model' => env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001'),
+    // Calibrated on isolated 230-doc MySQL validation set (margin [0.68..0.74], midpoint 0.70 -> Val P=1.00, R=1.00, FP=0)
+    'knowledge_min_similarity' => (float) env('ASSISTANT_KNOWLEDGE_MIN_SIMILARITY', 0.70),
 
     // Function Calling orchestration safety budgets
     'max_tool_rounds' => (int) env('ASSISTANT_MAX_TOOL_ROUNDS', 5),

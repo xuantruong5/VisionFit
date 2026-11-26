@@ -50,6 +50,7 @@ class KnowledgeEmbeddingService
         $skipped = 0;
         $now = now();
 
+        $pending = [];
         foreach ($documents as $doc) {
             $key = $doc['source_table'] . ':' . $doc['source_id'];
             $seenKeys[$key] = true;
@@ -61,28 +62,46 @@ class KnowledgeEmbeddingService
                 continue;
             }
 
-            $vector = $this->embeddingClient->embed($doc['title'] . "\n" . $doc['content_text'], 'RETRIEVAL_DOCUMENT');
-
-            $row = [
-                'source_table' => $doc['source_table'],
-                'source_id' => $doc['source_id'],
-                'category' => $doc['category'],
-                'title' => mb_substr($doc['title'], 0, 255, 'UTF-8'),
-                'content_text' => $doc['content_text'],
-                'metadata_json' => json_encode($doc['metadata'], JSON_UNESCAPED_UNICODE),
-                'content_hash' => $hash,
-                'embedding_model' => $model,
-                'embedding_json' => json_encode($vector),
-                'updated_at' => $now,
+            $pending[] = [
+                'doc' => $doc,
+                'hash' => $hash,
+                'prev' => $prev,
+                'embed_text' => $doc['title'] . "\n" . $doc['content_text'],
             ];
+        }
 
-            if ($prev) {
-                DB::table(self::INDEX_TABLE)->where('id', $prev->id)->update($row);
-                $updated++;
-            } else {
-                $row['created_at'] = $now;
-                DB::table(self::INDEX_TABLE)->insert($row);
-                $indexed++;
+        $canBatch = method_exists($this->embeddingClient, 'embedBatch');
+        $chunks = $canBatch ? array_chunk($pending, 25) : array_map(fn ($item) => [$item], $pending);
+
+        foreach ($chunks as $chunk) {
+            $vectors = $canBatch
+                ? $this->embeddingClient->embedBatch(array_column($chunk, 'embed_text'), 'RETRIEVAL_DOCUMENT')
+                : [$this->embeddingClient->embed($chunk[0]['embed_text'], 'RETRIEVAL_DOCUMENT')];
+
+            foreach ($chunk as $idx => $item) {
+                $doc = $item['doc'];
+                $prev = $item['prev'];
+                $row = [
+                    'source_table' => $doc['source_table'],
+                    'source_id' => $doc['source_id'],
+                    'category' => $doc['category'],
+                    'title' => mb_substr($doc['title'], 0, 255, 'UTF-8'),
+                    'content_text' => $doc['content_text'],
+                    'metadata_json' => json_encode($doc['metadata'], JSON_UNESCAPED_UNICODE),
+                    'content_hash' => $item['hash'],
+                    'embedding_model' => $model,
+                    'embedding_json' => json_encode($vectors[$idx]),
+                    'updated_at' => $now,
+                ];
+
+                if ($prev) {
+                    DB::table(self::INDEX_TABLE)->where('id', $prev->id)->update($row);
+                    $updated++;
+                } else {
+                    $row['created_at'] = $now;
+                    DB::table(self::INDEX_TABLE)->insert($row);
+                    $indexed++;
+                }
             }
         }
 
@@ -174,6 +193,7 @@ class KnowledgeEmbeddingService
             ];
         }
 
+        $minSimilarity = (float) config('assistant.knowledge_min_similarity', 0.48);
         $scored = [];
         foreach ($rows as $row) {
             $vec = json_decode((string) $row->embedding_json, true);
@@ -181,6 +201,9 @@ class KnowledgeEmbeddingService
                 continue;
             }
             $score = $this->cosineSimilarity($queryVector, $vec);
+            if ($score < $minSimilarity) {
+                continue;
+            }
             $meta = json_decode((string) $row->metadata_json, true) ?: [];
 
             $item = [
@@ -217,6 +240,7 @@ class KnowledgeEmbeddingService
             'query' => $cleanQuery,
             'category' => $cat ?: 'all',
             'results' => $top,
+            'message' => empty($top) ? 'Không tìm thấy nội dung phù hợp trong kho kiến thức VisionFit.' : null,
         ];
     }
 

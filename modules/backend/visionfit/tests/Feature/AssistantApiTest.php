@@ -6,19 +6,17 @@ use App\Models\Admin;
 use App\Models\Client;
 use App\Models\Trainer;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\UsesIsolatedTestDatabase;
 use Tests\TestCase;
 
 class AssistantApiTest extends TestCase
 {
+    use UsesIsolatedTestDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-        // Use the real relevant migrations, not the entire unrelated app schema.
-        $this->assertSame('sqlite', config('database.default'));
-        $this->assertSame(':memory:', config('database.connections.sqlite.database'));
-        Schema::dropAllTables();
-        foreach ([
+        $this->resetVerifiedTestDatabase([
             '2026_09_11_060235_create_clients_table.php',
             '2026_09_11_081536_create_trainers_table.php',
             '2026_09_11_081651_create_admins_table.php',
@@ -30,9 +28,7 @@ class AssistantApiTest extends TestCase
             '2026_09_11_081119_create_dang_ky_chuong_trinh_table.php',
             '2026_09_11_073144_create_lich_tap_table.php',
             '2026_09_11_072708_create_buoi_tap_table.php',
-        ] as $migration) {
-            (require database_path('migrations/'.$migration))->up();
-        }
+        ]);
     }
 
     private function member(int $id, int $gym = 10): Client

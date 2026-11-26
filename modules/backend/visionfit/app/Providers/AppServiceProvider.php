@@ -8,6 +8,8 @@ use App\Services\Assistant\EmbeddingClientInterface;
 use App\Services\Assistant\FitnessDataService;
 use App\Services\Assistant\GeminiEmbeddingClient;
 use App\Services\Assistant\GeminiFunctionCallingClient;
+use App\Services\Assistant\InternalApiClientInterface;
+use App\Services\Assistant\LaravelInternalApiClient;
 use App\Services\Assistant\LlmClientInterface;
 use App\Services\Assistant\OpenAiCompatibleToolClient;
 use Illuminate\Support\ServiceProvider;
@@ -18,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(LlmClientInterface::class, fn () => new GeminiFunctionCallingClient());
         $this->app->bind(EmbeddingClientInterface::class, fn () => new GeminiEmbeddingClient());
+        $this->app->bind(InternalApiClientInterface::class, fn ($app) => new LaravelInternalApiClient($app));
 
         $this->app->bind(AssistantOrchestrator::class, function ($app) {
             $backupClient = null;

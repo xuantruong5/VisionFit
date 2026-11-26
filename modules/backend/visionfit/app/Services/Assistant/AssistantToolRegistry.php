@@ -5,8 +5,11 @@ namespace App\Services\Assistant;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Declarative registry, strict parameter validator, and role-enforced executor
+ * Declarative registry, strict parameter validator, and real internal HTTP API executor
  * for all Gemini Function Calling tools in VisionFit.
+ *
+ * Every data/knowledge tool executes a verified read-only API endpoint via InternalApiClientInterface
+ * through Laravel's router and AssistantToken middleware (never bypassing middleware).
  */
 class AssistantToolRegistry
 {
@@ -17,14 +20,24 @@ class AssistantToolRegistry
         'NAVIGATE_REGISTER_PACKAGE' => 'WorkoutSelectionScreen',
     ];
 
+    public const MISSING_DATA_PHRASE = 'Tôi chưa có thông tin đó trong dữ liệu hiện có.';
+
+    private const EMPTY_DATA_STATUSES = [
+        'empty',
+        'no_package',
+        'no_registered_program',
+        'missing_body_metrics',
+        'no_session_in_range',
+        'no_registered_program_and_metrics',
+    ];
+
     private const FORBIDDEN_SPOOF_KEYS = [
         'user_id', 'client_id', 'member_id', 'id_hoi_vien', 'id_nguoi_dung',
         'gym_id', 'id_phong_tap', 'role', 'sql', 'query_sql', 'url', 'endpoint',
     ];
 
     public function __construct(
-        private readonly FitnessDataService $dataService,
-        private readonly KnowledgeEmbeddingService $knowledgeService,
+        private readonly InternalApiClientInterface $apiClient,
     ) {
     }
 
@@ -37,11 +50,11 @@ class AssistantToolRegistry
     {
         $tools = [];
 
-        // Member & Guest personal tools (guests get structured unauthenticated result if invoked)
+        // Member & Guest personal tools (guests get genuine HTTP 401/403 from AssistantToken middleware)
         if (!$actor->authenticated || $actor->role === 'member') {
             $tools[] = [
                 'name' => 'get_my_schedule',
-                'description' => 'Lấy lịch tập cá nhân của hội viên đang đăng nhập theo ngày (hôm nay, ngày mai, tuần này, khoảng ngày cụ thể YYYY-MM-DD hoặc sắp tới), kèm thông tin giờ tập và PT phụ trách theo múi giờ Asia/Ho_Chi_Minh.',
+                'description' => 'Gọi API GET /api/assistant/schedule để lấy lịch tập cá nhân của hội viên đang đăng nhập theo ngày (hôm nay, ngày mai, tuần này, khoảng ngày cụ thể YYYY-MM-DD hoặc sắp tới), kèm thông tin giờ tập và PT phụ trách theo múi giờ Asia/Ho_Chi_Minh.',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -60,7 +73,7 @@ class AssistantToolRegistry
                         ],
                         'limit' => [
                             'type' => 'INTEGER',
-                            'description' => 'Số buổi tối đa cần lấy (từ 1 đến 10; mặc định 3 cho lịch chung).',
+                            'description' => 'Số buổi tối đa cần lấy (từ 1 đến 10; mặc định 5).',
                         ],
                     ],
                 ],
@@ -68,7 +81,7 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'get_my_packages',
-                'description' => 'Lấy danh sách gói tập đã đăng ký của hội viên, gồm tên gói, tổng số buổi mua, số buổi còn lại (nếu có) và ngày hết hạn.',
+                'description' => 'Gọi API GET /api/assistant/packages để lấy danh sách gói tập đã đăng ký của hội viên, phân biệt rõ tổng số buổi đăng ký (total_sessions), số buổi đã dùng (used_sessions), số buổi còn lại (remaining_sessions — tính từ buoi_tap_pt cho gói PT, hoặc null kèm lý do thiếu dữ liệu cho gói thường) và ngày hết hạn.',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -82,7 +95,7 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'get_my_progress',
-                'description' => 'Lấy tiến độ chương trình tập đang theo học (% hoàn thành chương trình) và lịch sử số buổi đã hoàn thành trong tuần này.',
+                'description' => 'Gọi API GET /api/assistant/progress để lấy tiến độ chương trình tập đang theo học (% hoàn thành chương trình) và lịch sử số buổi đã hoàn thành trong tuần này.',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -97,7 +110,7 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'get_my_body_metrics',
-                'description' => 'Lấy chỉ số cơ thể và dinh dưỡng cá nhân đã tính bằng NutritionService (cân nặng, chiều cao, BMI và phân loại chuẩn châu Á, BMR, TDEE, calo mục tiêu, Protein/Carb/Fat, lượng nước khuyến nghị, mục tiêu và dị ứng).',
+                'description' => 'Gọi API GET /api/assistant/body-metrics để lấy chỉ số cơ thể và dinh dưỡng cá nhân đã tính bằng NutritionService (cân nặng, chiều cao, BMI và phân loại chuẩn châu Á, BMR, TDEE, calo mục tiêu, Protein/Carb/Fat, lượng nước khuyến nghị, mục tiêu và dị ứng).',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => new \stdClass(),
@@ -106,7 +119,7 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'get_my_meal_plan',
-                'description' => 'Lấy kế hoạch bữa ăn đã đăng ký của hội viên theo ngày (hôm nay, ngày mai, ngày YYYY-MM-DD hoặc sắp tới) và bữa ăn (SANG/TRUA/TOI/PHU_SANG/PHU_CHIEU/ALL), có lọc dị ứng thực phẩm.',
+                'description' => 'Gọi API GET /api/assistant/meal-plan để lấy kế hoạch bữa ăn đã đăng ký của hội viên theo ngày (hôm nay, ngày mai, ngày YYYY-MM-DD hoặc sắp tới) và bữa ăn (SANG/TRUA/TOI/PHU_SANG/PHU_CHIEU/ALL), có lọc dị ứng thực phẩm.',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -151,7 +164,7 @@ class AssistantToolRegistry
             // Trainer & Admin scoped tools
             $tools[] = [
                 'name' => 'get_gym_summary',
-                'description' => 'Lấy số liệu thống kê tổng hợp trong phạm vi được phân công của Huấn luyện viên hoặc phòng tập của Quản trị viên (không trả dữ liệu cá nhân của hội viên).',
+                'description' => 'Gọi API GET /api/assistant/summary để lấy số liệu thống kê tổng hợp trong phạm vi được phân công của Huấn luyện viên hoặc phòng tập của Quản trị viên (không trả dữ liệu cá nhân của hội viên).',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => new \stdClass(),
@@ -161,7 +174,7 @@ class AssistantToolRegistry
             if ($actor->role === 'trainer') {
                 $tools[] = [
                     'name' => 'get_my_schedule',
-                    'description' => 'Lấy lịch dạy của Huấn luyện viên đang đăng nhập theo ngày hoặc khoảng ngày.',
+                    'description' => 'Gọi API GET /api/assistant/schedule để lấy lịch dạy của Huấn luyện viên đang đăng nhập theo ngày hoặc khoảng ngày.',
                     'parameters' => [
                         'type' => 'OBJECT',
                         'properties' => [
@@ -181,7 +194,7 @@ class AssistantToolRegistry
         // Universal tools (knowledge semantic search + water reminder)
         $tools[] = [
             'name' => 'search_fitness_knowledge',
-            'description' => 'Tìm kiếm ngữ nghĩa (embeddings) trong kho kiến thức VisionFit gồm kỹ thuật bài tập, dinh dưỡng món ăn/calo, thực phẩm bổ sung thể thao (Whey, Creatine...) và bách khoa thể hình.',
+            'description' => 'Gọi API GET /api/assistant/knowledge/search để tìm kiếm ngữ nghĩa (embeddings) trong kho kiến thức VisionFit gồm kỹ thuật bài tập, dinh dưỡng món ăn/calo, thực phẩm bổ sung thể thao (Whey, Creatine...) và bách khoa thể hình.',
             'parameters' => [
                 'type' => 'OBJECT',
                 'properties' => [
@@ -226,22 +239,36 @@ class AssistantToolRegistry
     }
 
     /**
-     * Validate tool name, reject spoofed identity/SQL/URL parameters, validate schema, and execute.
+     * Validate tool name, reject spoofed identity/SQL/URL parameters, validate schema,
+     * and execute via verified internal read-only HTTP API endpoints.
      *
-     * @return array{result: array<string, mixed>, side_effect_action: ?array<string, mixed>, intent_hint: ?string}
+     * @return array{
+     *   result: array<string, mixed>,
+     *   side_effect_action: ?array<string, mixed>,
+     *   intent_hint: ?string,
+     *   api_call: ?array{method: string, endpoint: string, http_status: int}
+     * }
      */
     public function execute(string $name, array $args, AssistantAuthContext $actor): array
     {
         $allowedNames = array_map(fn ($t) => $t['name'], $this->declarationsFor($actor));
         if (!in_array($name, $allowedNames, true)) {
+            $isForbiddenRoleTool = in_array($name, [
+                'get_my_schedule', 'get_my_packages', 'get_my_progress',
+                'get_my_body_metrics', 'get_my_meal_plan', 'get_gym_summary',
+            ], true);
+
             return [
                 'result' => [
-                    'status' => 'error',
-                    'error_code' => 'UNKNOWN_OR_FORBIDDEN_TOOL',
-                    'message' => "Công cụ '{$name}' không tồn tại hoặc không được phép cho vai trò hiện tại.",
+                    'status' => $isForbiddenRoleTool ? 'forbidden' : 'error',
+                    'error_code' => $isForbiddenRoleTool ? 'FORBIDDEN_TOOL_FOR_ROLE' : 'UNKNOWN_OR_FORBIDDEN_TOOL',
+                    'message' => $isForbiddenRoleTool
+                        ? "Tài khoản hiện tại không có quyền sử dụng công cụ '{$name}'."
+                        : "Công cụ '{$name}' không tồn tại hoặc không được phép cho vai trò hiện tại.",
                 ],
                 'side_effect_action' => null,
                 'intent_hint' => null,
+                'api_call' => null,
             ];
         }
 
@@ -261,6 +288,7 @@ class AssistantToolRegistry
                     ],
                     'side_effect_action' => null,
                     'intent_hint' => null,
+                    'api_call' => null,
                 ];
             }
         }
@@ -280,6 +308,7 @@ class AssistantToolRegistry
                     'result' => ['status' => 'error', 'error_code' => 'UNKNOWN_TOOL', 'message' => 'Công cụ không được hỗ trợ.'],
                     'side_effect_action' => null,
                     'intent_hint' => null,
+                    'api_call' => null,
                 ],
             };
         } catch (\Throwable $e) {
@@ -289,14 +318,93 @@ class AssistantToolRegistry
             ]);
             return [
                 'result' => [
-                    'status' => 'error',
+                    'status' => 'api_error',
                     'error_code' => 'TOOL_EXECUTION_ERROR',
-                    'message' => 'Không thể truy xuất dữ liệu từ công cụ lúc này. Vui lòng thông báo trung thực cho người dùng.',
+                    'message' => 'Hiện chưa truy xuất được dữ liệu từ hệ thống do lỗi kỹ thuật. Tuyệt đối không kết luận rằng dữ liệu không tồn tại.',
                 ],
                 'side_effect_action' => null,
                 'intent_hint' => null,
+                'api_call' => null,
             ];
         }
+    }
+
+    /**
+     * Dispatch an allowlisted internal GET API call and normalize HTTP 200/401/403/422/5xx into tool results.
+     *
+     * @param array<string, scalar|null> $query
+     * @return array{result: array<string, mixed>, api_call: array{method: string, endpoint: string, http_status: int}, ok: bool}
+     */
+    private function dispatchInternalGet(string $endpoint, array $query, AssistantAuthContext $actor): array
+    {
+        $res = $this->apiClient->get($endpoint, $query, $actor->bearerToken());
+        $apiCall = [
+            'method' => $res['method'],
+            'endpoint' => $res['endpoint'],
+            'http_status' => $res['http_status'],
+        ];
+
+        if ($res['ok'] && is_array($res['body']) && isset($res['body']['data']) && is_array($res['body']['data'])) {
+            $data = $res['body']['data'];
+            $status = (string) ($data['status'] ?? 'ok');
+            if (in_array($status, self::EMPTY_DATA_STATUSES, true)) {
+                $data['missing_data_phrase'] = self::MISSING_DATA_PHRASE;
+            }
+            return [
+                'ok' => true,
+                'result' => $data,
+                'api_call' => $apiCall,
+            ];
+        }
+
+        if ($res['http_status'] === 401) {
+            return [
+                'ok' => false,
+                'result' => [
+                    'status' => 'unauthenticated',
+                    'http_status' => 401,
+                    'message' => $res['error_message'] ?: 'Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn nên chưa thể truy xuất dữ liệu cá nhân.',
+                ],
+                'api_call' => $apiCall,
+            ];
+        }
+
+        if ($res['http_status'] === 403) {
+            return [
+                'ok' => false,
+                'result' => [
+                    'status' => 'forbidden',
+                    'http_status' => 403,
+                    'error_code' => $res['error_code'] ?? 'FORBIDDEN',
+                    'message' => $res['error_message'] ?: 'Tài khoản hiện tại không có quyền truy cập dữ liệu này.',
+                ],
+                'api_call' => $apiCall,
+            ];
+        }
+
+        if ($res['http_status'] === 422) {
+            return [
+                'ok' => false,
+                'result' => [
+                    'status' => 'error',
+                    'http_status' => 422,
+                    'error_code' => 'INVALID_ARGUMENTS',
+                    'message' => $res['error_message'] ?: 'Tham số truy vấn API không hợp lệ.',
+                ],
+                'api_call' => $apiCall,
+            ];
+        }
+
+        return [
+            'ok' => false,
+            'result' => [
+                'status' => 'api_error',
+                'http_status' => $res['http_status'],
+                'error_code' => $res['error_code'] ?? 'INTERNAL_API_ERROR',
+                'message' => 'Hiện chưa truy xuất được dữ liệu từ máy chủ do lỗi kết nối, timeout hoặc lỗi hệ thống. Không được kết luận rằng dữ liệu không tồn tại.',
+            ],
+            'api_call' => $apiCall,
+        ];
     }
 
     private function isValidIsoDate(mixed $v): bool
@@ -312,67 +420,62 @@ class AssistantToolRegistry
     {
         $preset = isset($args['date_preset']) ? (string) $args['date_preset'] : 'upcoming';
         if (!in_array($preset, ['today', 'tomorrow', 'this_week', 'upcoming', 'custom'], true)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'date_preset không hợp lệ.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('date_preset không hợp lệ.');
         }
 
         $dateFrom = isset($args['date_from']) && $args['date_from'] !== '' ? (string) $args['date_from'] : null;
         $dateTo = isset($args['date_to']) && $args['date_to'] !== '' ? (string) $args['date_to'] : null;
 
         if ($dateFrom !== null && !$this->isValidIsoDate($dateFrom)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'date_from phải đúng định dạng YYYY-MM-DD.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('date_from phải đúng định dạng YYYY-MM-DD.');
         }
         if ($dateTo !== null && !$this->isValidIsoDate($dateTo)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'date_to phải đúng định dạng YYYY-MM-DD.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('date_to phải đúng định dạng YYYY-MM-DD.');
         }
 
         $limit = isset($args['limit']) ? (int) $args['limit'] : 5;
         if ($limit < 1 || $limit > 20) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'limit phải nằm trong khoảng 1..20.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('limit phải nằm trong khoảng 1..20.');
         }
 
-        $result = $this->dataService->getMySchedule($actor, $preset, $dateFrom, $dateTo, $limit);
+        $call = $this->dispatchInternalGet('/api/assistant/schedule', [
+            'date_preset' => $preset,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'limit' => $limit,
+        ], $actor);
+
         $action = null;
-        if ($actor->authenticated && $actor->role === 'member') {
-            $action = ($result['status'] ?? '') === 'no_registered_program'
+        if ($call['ok'] && $actor->authenticated && $actor->role === 'member') {
+            $action = ($call['result']['status'] ?? '') === 'no_registered_program'
                 ? ['type' => 'NAVIGATE_REGISTER_PROGRAM', 'screen' => 'WorkoutPlanScreen']
                 : ['type' => 'NAVIGATE_WORKOUT', 'screen' => 'headerPage'];
         }
 
         return [
-            'result' => $result,
+            'result' => $call['result'],
             'side_effect_action' => $action,
             'intent_hint' => 'workout_navigation',
+            'api_call' => $call['api_call'],
         ];
     }
 
     private function execGetMyPackages(array $args, AssistantAuthContext $actor): array
     {
         $includeExpired = array_key_exists('include_expired', $args) ? (bool) $args['include_expired'] : true;
-        $result = $this->dataService->getMyPackages($actor, $includeExpired);
-        $action = (!empty($result['suggested_navigation']) && $actor->authenticated)
+        $call = $this->dispatchInternalGet('/api/assistant/packages', [
+            'include_expired' => $includeExpired ? '1' : '0',
+        ], $actor);
+
+        $action = ($call['ok'] && !empty($call['result']['suggested_navigation']) && $actor->authenticated)
             ? ['type' => 'NAVIGATE_REGISTER_PACKAGE', 'screen' => 'WorkoutSelectionScreen']
             : null;
 
         return [
-            'result' => $result,
+            'result' => $call['result'],
             'side_effect_action' => $action,
             'intent_hint' => 'general_support',
+            'api_call' => $call['api_call'],
         ];
     }
 
@@ -380,39 +483,40 @@ class AssistantToolRegistry
     {
         $period = isset($args['period']) ? (string) $args['period'] : 'all';
         if (!in_array($period, ['this_week', 'program_overall', 'all'], true)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'period không hợp lệ.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('period không hợp lệ.');
         }
 
-        $result = $this->dataService->getMyProgress($actor, $period);
+        $call = $this->dispatchInternalGet('/api/assistant/progress', [
+            'period' => $period,
+        ], $actor);
+
         $action = null;
-        if ($actor->authenticated && $actor->role === 'member') {
-            $action = ($result['status'] ?? '') === 'no_registered_program'
+        if ($call['ok'] && $actor->authenticated && $actor->role === 'member') {
+            $action = ($call['result']['status'] ?? '') === 'no_registered_program'
                 ? ['type' => 'NAVIGATE_REGISTER_PROGRAM', 'screen' => 'WorkoutPlanScreen']
                 : ['type' => 'NAVIGATE_WORKOUT', 'screen' => 'headerPage'];
         }
 
         return [
-            'result' => $result,
+            'result' => $call['result'],
             'side_effect_action' => $action,
             'intent_hint' => 'general_support',
+            'api_call' => $call['api_call'],
         ];
     }
 
     private function execGetMyBodyMetrics(AssistantAuthContext $actor): array
     {
-        $result = $this->dataService->getMyBodyMetrics($actor);
-        $action = (($result['status'] ?? '') === 'missing_body_metrics' && $actor->authenticated)
+        $call = $this->dispatchInternalGet('/api/assistant/body-metrics', [], $actor);
+        $action = ($call['ok'] && ($call['result']['status'] ?? '') === 'missing_body_metrics' && $actor->authenticated)
             ? ['type' => 'NAVIGATE_BODY_METRICS', 'screen' => 'AiConsultationScreen']
             : null;
 
         return [
-            'result' => $result,
+            'result' => $call['result'],
             'side_effect_action' => $action,
             'intent_hint' => 'general_support',
+            'api_call' => $call['api_call'],
         ];
     }
 
@@ -420,50 +524,47 @@ class AssistantToolRegistry
     {
         $preset = isset($args['date_preset']) ? (string) $args['date_preset'] : 'today';
         if (!in_array($preset, ['today', 'tomorrow', 'upcoming', 'custom'], true)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'date_preset không hợp lệ.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('date_preset không hợp lệ.');
         }
 
         $date = isset($args['date']) && $args['date'] !== '' ? (string) $args['date'] : null;
         if ($date !== null && !$this->isValidIsoDate($date)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'date phải đúng định dạng YYYY-MM-DD.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('date phải đúng định dạng YYYY-MM-DD.');
         }
 
         $mealType = isset($args['meal_type']) ? strtoupper((string) $args['meal_type']) : 'ALL';
         if (!in_array($mealType, ['SANG', 'TRUA', 'TOI', 'PHU_SANG', 'PHU_CHIEU', 'ALL'], true)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'meal_type không hợp lệ.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('meal_type không hợp lệ.');
         }
 
         $diet = isset($args['diet_preference']) && is_string($args['diet_preference']) ? trim($args['diet_preference']) : null;
-        $result = $this->dataService->getMyMealPlan($actor, $preset, $date, $mealType, $diet ?: null);
-        $action = (!empty($result['suggested_navigation']) && $actor->authenticated)
+        $call = $this->dispatchInternalGet('/api/assistant/meal-plan', [
+            'date_preset' => $preset,
+            'date' => $date,
+            'meal_type' => $mealType,
+            'diet_preference' => $diet ?: null,
+        ], $actor);
+
+        $action = ($call['ok'] && !empty($call['result']['suggested_navigation']) && $actor->authenticated)
             ? ['type' => 'NAVIGATE_REGISTER_PROGRAM', 'screen' => 'WorkoutPlanScreen']
             : null;
 
         return [
-            'result' => $result,
+            'result' => $call['result'],
             'side_effect_action' => $action,
             'intent_hint' => 'food_detail',
+            'api_call' => $call['api_call'],
         ];
     }
 
     private function execGetGymSummary(AssistantAuthContext $actor): array
     {
+        $call = $this->dispatchInternalGet('/api/assistant/summary', [], $actor);
         return [
-            'result' => $this->dataService->getRoleSummary($actor),
+            'result' => $call['result'],
             'side_effect_action' => null,
             'intent_hint' => 'general_support',
+            'api_call' => $call['api_call'],
         ];
     }
 
@@ -471,32 +572,25 @@ class AssistantToolRegistry
     {
         $query = isset($args['query']) && is_string($args['query']) ? trim($args['query']) : '';
         if ($query === '') {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'Tham số query là bắt buộc và không được để trống.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('Tham số query là bắt buộc và không được để trống.');
         }
 
         $category = isset($args['category']) ? strtolower((string) $args['category']) : 'all';
         if (!in_array($category, ['all', 'exercise', 'food', 'sports_nutrition', 'encyclopedia', 'program'], true)) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'category không hợp lệ.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('category không hợp lệ.');
         }
 
         $limit = isset($args['limit']) ? (int) $args['limit'] : 3;
         if ($limit < 1 || $limit > 6) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'limit phải từ 1 đến 6.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('limit phải từ 1 đến 6.');
         }
 
-        $result = $this->knowledgeService->search($query, $category, $limit, $actor);
+        $call = $this->dispatchInternalGet('/api/assistant/knowledge/search', [
+            'query' => $query,
+            'category' => $category,
+            'limit' => $limit,
+        ], $actor);
+
         $intent = match ($category) {
             'exercise' => 'exercise_detail',
             'food', 'sports_nutrition' => 'food_detail',
@@ -504,29 +598,22 @@ class AssistantToolRegistry
         };
 
         return [
-            'result' => $result,
+            'result' => $call['result'],
             'side_effect_action' => null,
             'intent_hint' => $intent,
+            'api_call' => $call['api_call'],
         ];
     }
 
     private function execSetWaterReminder(array $args): array
     {
         if (!array_key_exists('enabled', $args) || !is_bool($args['enabled'])) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'Tham số enabled (boolean) là bắt buộc.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('Tham số enabled (boolean) là bắt buộc.');
         }
 
         $interval = isset($args['interval_hours']) ? (int) $args['interval_hours'] : 2;
         if ($interval < 1 || $interval > 8) {
-            return [
-                'result' => ['status' => 'error', 'error_code' => 'INVALID_ARGUMENTS', 'message' => 'interval_hours phải từ 1 đến 8 giờ.'],
-                'side_effect_action' => null,
-                'intent_hint' => null,
-            ];
+            return $this->invalidArgs('interval_hours phải từ 1 đến 8 giờ.');
         }
 
         $enabled = (bool) $args['enabled'];
@@ -544,6 +631,7 @@ class AssistantToolRegistry
                 ],
             ],
             'intent_hint' => 'water_reminder',
+            'api_call' => null,
         ];
     }
 
@@ -552,11 +640,12 @@ class AssistantToolRegistry
         if (!$actor->authenticated || $actor->role !== 'member') {
             return [
                 'result' => [
-                    'status' => 'rejected',
+                    'status' => 'unauthenticated',
                     'message' => 'Không thể điều hướng màn hình hội viên khi chưa đăng nhập.',
                 ],
                 'side_effect_action' => null,
                 'intent_hint' => null,
+                'api_call' => null,
             ];
         }
 
@@ -570,13 +659,19 @@ class AssistantToolRegistry
                 ],
                 'side_effect_action' => null,
                 'intent_hint' => null,
+                'api_call' => null,
             ];
         }
 
-        // Xác minh trạng thái thật của tài khoản để không bao giờ dẫn vào tab đã đăng ký khi chưa đăng ký
-        $hasProgram = $this->dataService->getActiveProgram($actor) !== null;
-        if ($target === 'NAVIGATE_WORKOUT' && !$hasProgram) {
-            $target = 'NAVIGATE_REGISTER_PROGRAM';
+        // Xác minh trạng thái thật của tài khoản qua API nội bộ để không bao giờ dẫn vào tab đã đăng ký khi chưa đăng ký
+        $apiCall = null;
+        if ($target === 'NAVIGATE_WORKOUT') {
+            $check = $this->dispatchInternalGet('/api/assistant/progress', ['period' => 'program_overall'], $actor);
+            $apiCall = $check['api_call'];
+            $hasProgram = $check['ok'] && (bool) ($check['result']['has_registered_program'] ?? false);
+            if (!$hasProgram) {
+                $target = 'NAVIGATE_REGISTER_PROGRAM';
+            }
         }
 
         return [
@@ -590,7 +685,21 @@ class AssistantToolRegistry
                 'screen' => self::ALLOWED_NAVIGATION_TARGETS[$target],
             ],
             'intent_hint' => 'workout_navigation',
+            'api_call' => $apiCall,
+        ];
+    }
+
+    private function invalidArgs(string $message): array
+    {
+        return [
+            'result' => [
+                'status' => 'error',
+                'error_code' => 'INVALID_ARGUMENTS',
+                'message' => $message,
+            ],
+            'side_effect_action' => null,
+            'intent_hint' => null,
+            'api_call' => null,
         ];
     }
 }
-

@@ -8,6 +8,7 @@ import { COLORS, SHADOWS } from '../../general/theme';
 import apiFitlife from '../../general/api';
 import QRCode from 'react-native-qrcode-svg';
 import Clipboard from '@react-native-clipboard/clipboard';
+import { triggerAuthSessionChanged } from '../../components/mascot/mascotEvents';
 
 // Dữ liệu mẫu hồ sơ ban đầu (Frontend Mock Data)
 const INITIAL_MEMBER = {
@@ -317,9 +318,10 @@ const MemberProfile = ({ navigation }: any) => {
                                 error.response?.data || error.message
                             );
                         } finally {
-                            // Xóa thông tin đăng nhập
+                            // Xóa thông tin đăng nhập và reset phiên hội thoại chatbot
                             await AsyncStorage.removeItem("token");
                             await AsyncStorage.removeItem("role");
+                            triggerAuthSessionChanged();
 
                             // Quay về màn hình đăng nhập
                             navigation.reset({

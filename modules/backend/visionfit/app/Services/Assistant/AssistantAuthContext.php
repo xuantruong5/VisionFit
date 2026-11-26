@@ -21,16 +21,23 @@ class AssistantAuthContext
         public readonly ?string $role = null,
         public readonly ?string $name = null,
         public readonly ?object $user = null,
+        private readonly ?string $rawBearerToken = null,
     ) {
     }
 
-    public static function guest(): self
+    public function bearerToken(): ?string
     {
-        return new self(false);
+        return $this->rawBearerToken;
+    }
+
+    public static function guest(?string $rawBearerToken = null): self
+    {
+        return new self(false, null, null, null, null, null, $rawBearerToken);
     }
 
     public static function fromRequest(Request $request): self
     {
+        $plainToken = $request->bearerToken();
         $existingUser = $request->attributes->get('assistant_user');
         $existingIdentity = $request->attributes->get('assistant_identity');
         if ($existingUser && is_array($existingIdentity)) {
@@ -41,10 +48,10 @@ class AssistantAuthContext
                 role: (string) ($existingIdentity['role'] ?? 'member'),
                 name: (string) ($existingIdentity['name'] ?? ($existingUser->ho_ten ?? 'Người dùng VisionFit')),
                 user: $existingUser,
+                rawBearerToken: $plainToken,
             );
         }
 
-        $plainToken = $request->bearerToken();
         if (!$plainToken) {
             return self::guest();
         }
@@ -56,7 +63,7 @@ class AssistantAuthContext
             || ($expiration && $token->created_at->lte(now()->subMinutes((int) $expiration)));
 
         if ($isExpired || (!$token->can('*') && !$token->can('assistant:read'))) {
-            return self::guest();
+            return self::guest($plainToken);
         }
 
         $user = $token->tokenable;
@@ -73,7 +80,7 @@ class AssistantAuthContext
             && ($role !== 'trainer' || (int) ($user->is_active ?? 0) === 1);
 
         if (!$isActive) {
-            return self::guest();
+            return self::guest($plainToken);
         }
 
         $rawGymId = $role === 'admin'
@@ -83,7 +90,7 @@ class AssistantAuthContext
         $hasValidGym = is_scalar($rawGymId) && ctype_digit((string) $rawGymId) && (int) $rawGymId > 0;
         if (!$hasValidGym) {
             if ($role !== 'member') {
-                return self::guest();
+                return self::guest($plainToken);
             }
             $gymId = '0';
         } else {
@@ -107,6 +114,7 @@ class AssistantAuthContext
             role: $identity['role'],
             name: $identity['name'],
             user: $user,
+            rawBearerToken: $plainToken,
         );
     }
 

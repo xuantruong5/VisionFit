@@ -20,6 +20,8 @@ import { getAIResponse, clearAssistantCache } from './mascotChatService';
 import { MascotSelectorModal } from './MascotSelectorModal';
 import { MascotVectorRig } from './MascotVectorRig';
 import {
+  mascotEmitter,
+  MASCOT_EVENTS,
   triggerMascotState,
   triggerWorkoutStart,
   triggerWaterReminderSetting,
@@ -70,6 +72,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const isSendingRef = useRef(false);
   const lastTokenRef = useRef<string | null | undefined>(undefined);
   const sessionEpochRef = useRef(0);
+  const activeRequestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const justSentTimerRef = useRef<any>(null);
 
   const clearInput = () => {
@@ -117,6 +121,36 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     createWelcomeMessage(currentSpecies),
   ]);
 
+  const resetConversationSession = (nextToken?: string | null) => {
+    sessionEpochRef.current += 1;
+    activeRequestIdRef.current += 1;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    isSendingRef.current = false;
+    setIsTyping(false);
+    clearInput();
+    clearAssistantCache();
+    setMessages([createWelcomeMessage(currentSpecies)]);
+    if (nextToken !== undefined) {
+      lastTokenRef.current = nextToken;
+    }
+  };
+
+  // Lắng nghe sự kiện đăng xuất / đăng nhập tài khoản khác để xóa ngay hội thoại & hủy request đang chạy
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      AsyncStorage.getItem('token')
+        .then((token) => resetConversationSession(token))
+        .catch(() => resetConversationSession(null));
+    };
+    mascotEmitter.on(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthChanged);
+    return () => {
+      mascotEmitter.off(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthChanged);
+    };
+  }, [currentSpecies]);
+
   // Nếu người dùng đăng xuất / đăng nhập / chuyển sang tài khoản khác, tự động xóa lịch sử chat và cache ngữ cảnh cũ
   useEffect(() => {
     if (!visible) return;
@@ -125,11 +159,10 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       .then((token) => {
         if (!isMounted) return;
         if (lastTokenRef.current !== undefined && lastTokenRef.current !== token) {
-          sessionEpochRef.current += 1;
-          clearAssistantCache();
-          setMessages([createWelcomeMessage(currentSpecies)]);
+          resetConversationSession(token);
+        } else {
+          lastTokenRef.current = token;
         }
-        lastTokenRef.current = token;
       })
       .catch(() => {});
     return () => {
@@ -142,6 +175,11 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       if (justSentTimerRef.current) {
         clearTimeout(justSentTimerRef.current);
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      isSendingRef.current = false;
     };
   }, []);
 
@@ -230,6 +268,20 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     isSendingRef.current = true;
     clearInput();
 
+    // Xác minh lại token ngay trước khi gửi để tuyệt đối không gửi kèm lịch sử của tài khoản trước
+    let sessionWasReset = false;
+    try {
+      const currentToken = await AsyncStorage.getItem('token');
+      if (lastTokenRef.current !== undefined && lastTokenRef.current !== currentToken) {
+        sessionEpochRef.current += 1;
+        clearAssistantCache();
+        lastTokenRef.current = currentToken;
+        sessionWasReset = true;
+      } else if (lastTokenRef.current === undefined) {
+        lastTokenRef.current = currentToken;
+      }
+    } catch (_) {}
+
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -239,15 +291,23 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     };
 
     const requestEpoch = sessionEpochRef.current;
-    const historyPayload = messages
-      .filter((m) => m.id !== 'welcome')
-      .slice(-8)
-      .map((m) => ({
-        sender: m.sender,
-        text: m.text,
-      }));
+    const requestId = ++activeRequestIdRef.current;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    abortControllerRef.current = controller;
 
-    setMessages((prev) => [...prev, userMsg]);
+    const historyPayload = sessionWasReset
+      ? []
+      : messages
+          .filter((m) => m.id !== 'welcome' && m.source !== 'service_error')
+          .slice(-8)
+          .map((m) => ({
+            sender: m.sender,
+            text: m.text,
+          }));
+
+    setMessages((prev) =>
+      sessionWasReset ? [createWelcomeMessage(currentSpecies), userMsg] : [...prev, userMsg]
+    );
     setIsTyping(true);
     triggerMascotState('thinking');
 
@@ -256,9 +316,11 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     }, 100);
 
     try {
-      const res = await getAIResponse(textToSend, currentSpecies, historyPayload);
+      const res = await getAIResponse(textToSend, currentSpecies, historyPayload, controller?.signal);
       // Bỏ qua phản hồi cũ nếu người dùng đã đăng xuất / đổi tài khoản trong lúc chờ API
-      if (sessionEpochRef.current !== requestEpoch) return;
+      if (res.canceled || sessionEpochRef.current !== requestEpoch || activeRequestIdRef.current !== requestId) {
+        return;
+      }
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -301,20 +363,31 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         triggerMascotState('speaking', 3500);
       }
     } catch (e) {
+      if (sessionEpochRef.current !== requestEpoch || activeRequestIdRef.current !== requestId) {
+        return;
+      }
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'assistant',
         text: 'Có chút trục trặc khi kết nối, bạn thử hỏi lại mình nhé!',
-        time: 'Vừa xong',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: 'service_error',
+        retryable: true,
+        retryQuery: textToSend,
       };
       setMessages((prev) => [...prev, errorMsg]);
       triggerMascotState('error', 3500);
     } finally {
-      isSendingRef.current = false;
-      setIsTyping(false);
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (activeRequestIdRef.current === requestId) {
+        isSendingRef.current = false;
+        setIsTyping(false);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
     }
   };
 

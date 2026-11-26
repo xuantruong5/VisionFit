@@ -17,17 +17,6 @@ LogBox.ignoreLogs([
   "Style property 'left' is not supported",
   "Attempting to run JS driven animation",
 ]);
-import Svg, {
-  G,
-  Path,
-  Circle,
-  Ellipse,
-  Polygon,
-  Line,
-  Defs,
-  LinearGradient,
-  Stop,
-} from 'react-native-svg';
 import { MascotSpecies, MascotStage, MascotState } from './types';
 import { MascotVectorRig } from './MascotVectorRig';
 import { MascotChatModal } from './MascotChatModal';
@@ -219,9 +208,18 @@ const MascotInner: React.FC<MascotProps> = ({
       }
     };
 
+    const handleAuthReset = () => {
+      clearTimeout(revertTimer);
+      if (drinkRevertTimerRef.current) {
+        clearTimeout(drinkRevertTimerRef.current);
+      }
+      setCurrentState('idle');
+    };
+
     mascotEmitter.on(MASCOT_EVENTS.SET_STATE, handleSetState);
     mascotEmitter.on(MASCOT_EVENTS.SET_SPECIES, setCurrentSpecies);
     mascotEmitter.on(MASCOT_EVENTS.SET_STAGE, setCurrentStage);
+    mascotEmitter.on(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthReset);
 
     // Lắng nghe sự kiện bài tập
     const workoutTrainSub = DeviceEventEmitter.addListener(
@@ -254,6 +252,7 @@ const MascotInner: React.FC<MascotProps> = ({
       mascotEmitter.off(MASCOT_EVENTS.SET_STATE, handleSetState);
       mascotEmitter.off(MASCOT_EVENTS.SET_SPECIES, setCurrentSpecies);
       mascotEmitter.off(MASCOT_EVENTS.SET_STAGE, setCurrentStage);
+      mascotEmitter.off(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthReset);
       workoutTrainSub.remove();
       workoutFinishSub.remove();
     };

@@ -9,6 +9,8 @@ const ALLOWED_ACTION_TYPES = new Set([
   'SET_WATER_REMINDER',
 ]);
 
+const REQUEST_TIMEOUT_MS = 30000;
+
 export interface AIResponseResult {
   ok: boolean;
   answer: string;
@@ -18,6 +20,7 @@ export interface AIResponseResult {
   source?: string;
   errorCode?: string;
   retryable?: boolean;
+  canceled?: boolean;
 }
 
 const sanitizeAction = (action: any): ChatAction | null => {
@@ -34,32 +37,74 @@ const sanitizeAction = (action: any): ChatAction | null => {
   };
 };
 
-// Giữ export tương thích khi MascotChatModal reset phiên đăng nhập / đổi tài khoản
+// Giữ export tương thích khi MascotChatModal hoặc luồng đăng xuất reset phiên đăng nhập / đổi tài khoản
 export const clearAssistantCache = () => {
-  // Không lưu cache dữ liệu người dùng hay API key ở phía client nữa;
+  // Không lưu cache dữ liệu người dùng hay API key ở phía client;
   // mọi truy vấn đều đi trực tiếp qua Backend Function Calling theo Bearer token phiên hiện tại.
 };
 
 /**
  * Gọi trực tiếp Backend VisionFit (/assistant/chat) sử dụng Gemini Function Calling.
- * Không gọi Gemini trực tiếp từ Mobile, không chứa API key trên client,
- * và không âm thầm rơi về kịch bản regex/từ khóa khi dịch vụ lỗi.
+ * - Không gọi Gemini trực tiếp từ Mobile, không chứa API key trên client.
+ * - Không âm thầm rơi về kịch bản regex/từ khóa khi dịch vụ lỗi.
+ * - Luôn kết thúc loading nhờ timeout cứng kết hợp AbortSignal (hủy sạch khi đăng xuất/đổi tài khoản).
  */
 export const getAIResponse = async (
   question: string,
   species: MascotSpecies = 'bear',
-  history: Array<{ sender: string; text: string }> = []
+  history: Array<{ sender: string; text: string }> = [],
+  externalSignal?: AbortSignal
 ): Promise<AIResponseResult> => {
+  const internalController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  let timedOut = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const onExternalAbort = () => {
+    internalController?.abort();
+  };
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      return {
+        ok: false,
+        canceled: true,
+        answer: '',
+        intent: 'canceled',
+        emotion: 'neutral',
+        action: null,
+        source: 'canceled',
+        errorCode: 'REQUEST_CANCELED',
+        retryable: false,
+      };
+    }
+    externalSignal.addEventListener?.('abort', onExternalAbort);
+  }
+
   try {
-    const res = await apiFitlife.post(
+    const requestPromise = apiFitlife.post(
       '/assistant/chat',
       {
         message: question,
         species,
         history: history.slice(-8),
       },
-      { timeout: 30000 }
+      {
+        timeout: REQUEST_TIMEOUT_MS,
+        signal: internalController?.signal,
+      }
     );
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        timedOut = true;
+        internalController?.abort();
+        const err: any = new Error('REQUEST_TIMEOUT');
+        err.code = 'ECONNABORTED';
+        reject(err);
+      }, REQUEST_TIMEOUT_MS + 1000);
+    });
+
+    const res = await Promise.race([requestPromise, timeoutPromise]);
 
     const data = res.data || {};
     if (data.status === true && typeof data.answer === 'string' && data.answer.trim()) {
@@ -87,6 +132,40 @@ export const getAIResponse = async (
       retryable: data.retryable !== false,
     };
   } catch (err: any) {
+    const isExternalCancel =
+      !timedOut &&
+      (externalSignal?.aborted ||
+        err?.code === 'ERR_CANCELED' ||
+        err?.name === 'CanceledError' ||
+        err?.name === 'AbortError');
+
+    if (isExternalCancel) {
+      return {
+        ok: false,
+        canceled: true,
+        answer: '',
+        intent: 'canceled',
+        emotion: 'neutral',
+        action: null,
+        source: 'canceled',
+        errorCode: 'REQUEST_CANCELED',
+        retryable: false,
+      };
+    }
+
+    if (timedOut || err?.code === 'ECONNABORTED') {
+      return {
+        ok: false,
+        answer: 'Yêu cầu tới trợ lý AI quá thời gian chờ. Bạn vui lòng kiểm tra mạng rồi bấm thử lại nhé!',
+        intent: 'service_error',
+        emotion: 'apologetic',
+        action: null,
+        source: 'service_error',
+        errorCode: 'REQUEST_TIMEOUT',
+        retryable: true,
+      };
+    }
+
     const status = err?.response?.status;
     const serverData = err?.response?.data;
 
@@ -126,5 +205,12 @@ export const getAIResponse = async (
       errorCode: 'NETWORK_ERROR',
       retryable: true,
     };
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    if (externalSignal) {
+      externalSignal.removeEventListener?.('abort', onExternalAbort);
+    }
   }
 };

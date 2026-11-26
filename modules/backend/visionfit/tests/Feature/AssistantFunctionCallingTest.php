@@ -12,8 +12,9 @@ use App\Services\Assistant\FitnessDataService;
 use App\Services\Assistant\LlmClientInterface;
 use App\Services\Assistant\LlmProviderException;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\UsesIsolatedTestDatabase;
 use Tests\TestCase;
 
 /**
@@ -22,16 +23,16 @@ use Tests\TestCase;
  */
 class AssistantFunctionCallingTest extends TestCase
 {
+    use UsesIsolatedTestDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->assertSame('sqlite', config('database.default'));
-        $this->assertSame(':memory:', config('database.connections.sqlite.database'));
 
         config([
             'assistant.gemini_api_key' => 'test-mock-key',
-            'assistant.gemini_model' => 'gemini-2.5-flash',
-            'assistant.gemini_fallback_models' => ['gemini-2.5-flash'],
+            'assistant.gemini_model' => 'gemini-flash-lite-latest',
+            'assistant.gemini_fallback_models' => ['gemini-flash-lite-latest'],
             'assistant.max_tool_rounds' => 5,
             'assistant.max_retries_per_call' => 1,
             'assistant.total_timeout_seconds' => 25,
@@ -40,8 +41,7 @@ class AssistantFunctionCallingTest extends TestCase
             'assistant.backup_model' => '',
         ]);
 
-        Schema::dropAllTables();
-        foreach ([
+        $this->resetVerifiedTestDatabase([
             '2026_09_11_060235_create_clients_table.php',
             '2026_09_11_081536_create_trainers_table.php',
             '2026_09_11_081651_create_admins_table.php',
@@ -49,6 +49,7 @@ class AssistantFunctionCallingTest extends TestCase
             '2026_09_11_062223_create_goi_tap_table.php',
             '2026_09_11_074132_create_dang_ky_goi_table.php',
             '2026_09_11_074714_create_chi_tiet_dang_ky_goi_table.php',
+            '2026_11_22_203956_create_buoi_tap_pt_table.php',
             '2026_09_11_080320_create_chuong_trinh_tap_table.php',
             '2026_09_11_081119_create_dang_ky_chuong_trinh_table.php',
             '2026_09_11_073144_create_lich_tap_table.php',
@@ -62,9 +63,7 @@ class AssistantFunctionCallingTest extends TestCase
             '2026_09_17_170000_create_bach_khoa_toan_thu_table.php',
             '2026_09_18_130000_create_dinh_duong_the_thao_table.php',
             '2026_11_26_000001_create_assistant_knowledge_embeddings_table.php',
-        ] as $migration) {
-            (require database_path('migrations/' . $migration))->up();
-        }
+        ]);
     }
 
     private function createMember(int $id, int $gym = 10, array $overrides = []): Client
@@ -607,5 +606,324 @@ class AssistantFunctionCallingTest extends TestCase
         $res = $orch->handleChat('Xin chào', [], 'bear', \App\Services\Assistant\AssistantAuthContext::guest());
         $this->assertTrue($res['status']);
         $this->assertSame('backup_fc:backup-fc-model', $res['source']);
+    }
+
+    // 11. Kiểm thử thay đổi dữ liệu động (17 -> 9 buổi) & minh chứng gọi thật qua HTTP endpoint + middleware AssistantToken
+    public function test_dynamic_database_mutation_and_real_internal_api_dispatch(): void
+    {
+        $member = $this->createMember(60, 10, ['ho_ten' => 'Dynamic Member']);
+        $g = DB::table('goi_tap')->insertGetId([
+            'id_phong_tap' => 10, 'ma_goi_tap' => 'DYN17', 'ten_goi_tap' => 'Gói PT 1-1 Linh Hoạt',
+            'thoi_han_ngay' => 60, 'gia' => 4500000,
+        ]);
+        $d = DB::table('dang_ky_goi')->insertGetId(['id_hoi_vien' => 60]);
+        $ctId = DB::table('chi_tiet_dang_ky_goi')->insertGetId([
+            'id_dang_ky_goi' => $d, 'id_goi_tap' => $g, 'so_buoi' => 17,
+            'ngay_ket_thuc' => now()->addDays(20)->toDateString(),
+        ]);
+        $headers = $this->headersFor($member);
+
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step % 2 === 0) {
+                return $this->modelToolCallTurn([['get_my_packages', []]]);
+            }
+            $resp = end($contents)['parts'][0]['functionResponse']['response'];
+            $pkg = $resp['packages'][0];
+            $remText = $pkg['remaining_sessions'] === null ? 'chưa có dữ liệu số buổi còn lại' : (string) $pkg['remaining_sessions'];
+            return $this->modelTextTurn("Gói {$pkg['name']}: tổng {$pkg['total_sessions']} buổi, còn lại: {$remText}, hết hạn {$pkg['expires_at_vn']}.");
+        });
+
+        // Lượt 1: DB có so_buoi = 17 -> trả đúng 17 + ghi nhận thật GET /api/assistant/packages (HTTP 200)
+        $r1 = $this->postJson('/api/assistant/chat', [
+            'message' => 'Gói còn mấy buổi, bao giờ hết hạn?',
+            'species' => 'bear',
+        ], $headers)->assertOk();
+        $r1->assertJsonPath('tool_calls.0.name', 'get_my_packages')
+            ->assertJsonPath('tool_calls.0.method', 'GET')
+            ->assertJsonPath('tool_calls.0.endpoint', '/api/assistant/packages')
+            ->assertJsonPath('tool_calls.0.http_status', 200);
+        $this->assertStringContainsString('tổng 17 buổi', (string) $r1->json('answer'));
+        $this->assertStringContainsString('chưa có dữ liệu số buổi còn lại', (string) $r1->json('answer'));
+
+        // Đổi trực tiếp DB: so_buoi 17 -> 9
+        DB::table('chi_tiet_dang_ky_goi')->where('id', $ctId)->update(['so_buoi' => 9]);
+
+        // Lượt 2: Hỏi lại nguyên câu -> phản hồi cập nhật ngay thành 9 (không cache cũ, không kịch bản cứng!)
+        $r2 = $this->postJson('/api/assistant/chat', [
+            'message' => 'Gói còn mấy buổi, bao giờ hết hạn?',
+            'species' => 'bear',
+        ], $headers)->assertOk();
+        $r2->assertJsonPath('tool_calls.0.endpoint', '/api/assistant/packages')
+            ->assertJsonPath('tool_calls.0.http_status', 200);
+        $this->assertStringContainsString('tổng 9 buổi', (string) $r2->json('answer'));
+        $this->assertStringNotContainsString('tổng 17 buổi', (string) $r2->json('answer'));
+    }
+
+    // 12. Quy tắc khi thiếu dữ liệu, dữ liệu một phần, 403 không có quyền, API 500/timeout và chặn endpoint nguy hiểm
+    public function test_missing_data_partial_data_forbidden_api_error_and_unsafe_endpoint_blocking(): void
+    {
+        // 12a. Dữ liệu rỗng trả missing_data_phrase đúng quy chuẩn ("Tôi chưa có thông tin đó trong dữ liệu hiện có.")
+        $emptyMember = $this->createMember(61, 10, ['ho_ten' => 'Empty User']);
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['get_my_packages', []]]);
+            }
+            $resp = $contents[2]['parts'][0]['functionResponse']['response'];
+            $this->assertSame('no_package', $resp['status']);
+            $this->assertSame('Tôi chưa có thông tin đó trong dữ liệu hiện có.', $resp['missing_data_phrase']);
+            return $this->modelTextTurn('Tôi chưa có thông tin đó trong dữ liệu hiện có. Bạn chưa đăng ký gói tập nào.');
+        });
+        $rEmpty = $this->postJson('/api/assistant/chat', ['message' => 'Gói của tôi đâu?'], $this->headersFor($emptyMember))->assertOk();
+        $this->assertStringContainsString('Tôi chưa có thông tin đó trong dữ liệu hiện có.', (string) $rEmpty->json('answer'));
+
+        // 12b. Chỉ có một phần dữ liệu (có cân nặng 68kg nhưng thiếu chiều cao -> status=partial_body_metrics, bmi=null, không thành 0!)
+        $partialMember = $this->createMember(62, 10, [
+            'ho_ten' => 'Partial User', 'can_nang_kg' => 68, 'chieu_cao_cm' => null, 'ngay_cap_nhat_chi_so' => now(),
+        ]);
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['get_my_body_metrics', []]]);
+            }
+            $resp = $contents[2]['parts'][0]['functionResponse']['response'];
+            $this->assertSame('partial_body_metrics', $resp['status']);
+            $this->assertEquals(68.0, $resp['metrics']['weight_kg']);
+            $this->assertNull($resp['metrics']['height_cm']);
+            $this->assertNull($resp['metrics']['bmi']);
+            $this->assertNull($resp['metrics']['tdee_kcal']);
+            return $this->modelTextTurn('Cân nặng hiện tại là 68 kg, nhưng thiếu chiều cao nên chưa tính được BMI và TDEE.');
+        });
+        $this->postJson('/api/assistant/chat', ['message' => 'Xem BMI và cân nặng của tôi'], $this->headersFor($partialMember))
+            ->assertOk()
+            ->assertJsonPath('tool_calls.0.endpoint', '/api/assistant/body-metrics')
+            ->assertJsonPath('tool_calls.0.http_status', 200)
+            ->assertJsonPath('tool_calls.0.status', 'partial_body_metrics');
+
+        // 12c. Không có quyền (HTTP 403): Member gọi trực tiếp GET /api/assistant/summary -> 403; Blocked member qua /chat -> 403 từ middleware!
+        $this->getJson('/api/assistant/summary', $this->headersFor($emptyMember))->assertForbidden();
+        $this->getJson('/api/assistant/packages?user_id=62', $this->headersFor($emptyMember))->assertUnprocessable();
+
+        $blockedMember = $this->createMember(63, 10, ['is_block' => 1]);
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['get_my_packages', []]]);
+            }
+            $resp = $contents[2]['parts'][0]['functionResponse']['response'];
+            $this->assertSame('forbidden', $resp['status']);
+            $this->assertSame(403, $resp['http_status']);
+            return $this->modelTextTurn('Tài khoản của bạn hiện không có quyền truy cập thông tin này.');
+        });
+        $this->postJson('/api/assistant/chat', ['message' => 'Gói tập của tôi'], $this->headersFor($blockedMember))
+            ->assertOk()
+            ->assertJsonPath('tool_calls.0.status', 'forbidden')
+            ->assertJsonPath('tool_calls.0.http_status', 403);
+
+        // 12d. API nội bộ bị lỗi 500 / timeout -> trả status=api_error (TUYỆT ĐỐI không nói "không có dữ liệu"!)
+        $brokenApi = new class implements \App\Services\Assistant\InternalApiClientInterface {
+            public function get(string $uri, array $query = [], ?string $bearerToken = null): array
+            {
+                return [
+                    'ok' => false,
+                    'http_status' => 504,
+                    'method' => 'GET',
+                    'endpoint' => $uri,
+                    'body' => null,
+                    'error_code' => 'API_TIMEOUT',
+                    'error_message' => 'Timeout khi gọi API nội bộ.',
+                ];
+            }
+        };
+        $this->app->instance(\App\Services\Assistant\InternalApiClientInterface::class, $brokenApi);
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['get_my_schedule', ['date_preset' => 'today']]]);
+            }
+            $resp = $contents[2]['parts'][0]['functionResponse']['response'];
+            $this->assertSame('api_error', $resp['status']);
+            $this->assertSame(504, $resp['http_status']);
+            return $this->modelTextTurn('Hiện chưa truy xuất được lịch tập do kết nối máy chủ tạm gián đoạn, bạn thử lại sau nhé.');
+        });
+        $this->postJson('/api/assistant/chat', ['message' => 'Hôm nay tôi tập gì?'], $this->headersFor($emptyMember))
+            ->assertOk()
+            ->assertJsonPath('tool_calls.0.status', 'api_error')
+            ->assertJsonPath('tool_calls.0.http_status', 504)
+            ->assertJsonPath('emotion', 'apologetic');
+
+        // 12e. Chặn tuyệt đối gọi endpoint ngoài allowlist: /api/assistant/chat (đệ quy), auto-thanh-toan-goi (GET gây thanh toán), URL ngoài
+        $realClient = new \App\Services\Assistant\LaravelInternalApiClient($this->app);
+        foreach ([
+            '/api/assistant/chat',
+            '/api/client/auto-thanh-toan-goi/1',
+            'https://evil.example.com/steal',
+            '/api/tong-quan',
+        ] as $disallowed) {
+            $blocked = $realClient->get($disallowed);
+            $this->assertFalse($blocked['ok']);
+            $this->assertSame(403, $blocked['http_status']);
+            $this->assertSame('ENDPOINT_NOT_ALLOWED', $blocked['error_code']);
+        }
+
+        // 12f. Đảm bảo GeminiFunctionCallingClient serialize functionCall.args rỗng thành JSON object {} chứ không phải []
+        $geminiClient = new \App\Services\Assistant\GeminiFunctionCallingClient('test-key');
+        $normalized = $geminiClient->normalizeContentsForJson([
+            [
+                'role' => 'model',
+                'parts' => [
+                    ['functionCall' => ['name' => 'get_my_body_metrics', 'args' => []], 'thoughtSignature' => 'sig'],
+                ],
+            ],
+        ]);
+        $encoded = json_encode($normalized);
+        $this->assertStringContainsString('"args":{}', (string) $encoded);
+        $this->assertStringNotContainsString('"args":[]', (string) $encoded);
+    }
+
+    // 13. Phân biệt rõ tổng số buổi, đã sử dụng, còn lại: gói PT (tính từ buoi_tap_pt) vs gói thường (null + lý do) vs gói kết hợp
+    public function test_package_sessions_distinguish_pt_ledger_regular_null_and_combined(): void
+    {
+        $member = $this->createMember(70, 10, ['ho_ten' => 'PT Package Member']);
+        $trainer = Trainer::forceCreate(['id' => 71, 'id_phong_tap' => 10, 'ho_ten' => 'PT 71', 'tinh_trang' => 1, 'is_active' => 1]);
+        $headers = $this->headersFor($member);
+
+        // 13a. Gói thường (so_buoi=20, so_buoi_pt=0) -> remaining_sessions = null + lý do rõ ràng
+        $gReg = DB::table('goi_tap')->insertGetId([
+            'id_phong_tap' => 10, 'ma_goi_tap' => 'REG20', 'ten_goi_tap' => 'Gói Tập Thường 20 Buổi',
+            'thoi_han_ngay' => 60, 'gia' => 1200000,
+        ]);
+        $dReg = DB::table('dang_ky_goi')->insertGetId(['id_hoi_vien' => 70]);
+        DB::table('chi_tiet_dang_ky_goi')->insert([
+            'id_dang_ky_goi' => $dReg, 'id_goi_tap' => $gReg, 'so_buoi' => 20, 'so_buoi_pt' => 0,
+            'ngay_ket_thuc' => now()->addDays(25)->toDateString(),
+        ]);
+
+        // 13b. Gói PT thuần (so_buoi=0, so_buoi_pt=12) + 3 buổi hợp lệ (tinh_trang 0,2,3) + 1 buổi hủy (tinh_trang=4 KHÔNG trừ!)
+        $gPt = DB::table('goi_tap')->insertGetId([
+            'id_phong_tap' => 10, 'ma_goi_tap' => 'PT12', 'ten_goi_tap' => 'Gói PT 1-1 12 Buổi',
+            'thoi_han_ngay' => 90, 'gia' => 6000000,
+        ]);
+        $dPt = DB::table('dang_ky_goi')->insertGetId(['id_hoi_vien' => 70]);
+        $ctPtId = DB::table('chi_tiet_dang_ky_goi')->insertGetId([
+            'id_dang_ky_goi' => $dPt, 'id_goi_tap' => $gPt, 'so_buoi' => 0, 'so_buoi_pt' => 12,
+            'id_trainer' => $trainer->id, 'ngay_ket_thuc' => now()->addDays(40)->toDateString(),
+        ]);
+        DB::table('buoi_tap_pt')->insert([
+            ['id_chi_tiet_dang_ky_goi' => $ctPtId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 3], // hoàn thành
+            ['id_chi_tiet_dang_ky_goi' => $ctPtId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 2], // đã xác nhận
+            ['id_chi_tiet_dang_ky_goi' => $ctPtId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 0], // chờ đặt
+            ['id_chi_tiet_dang_ky_goi' => $ctPtId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 4], // ĐÃ HỦY -> không trừ!
+        ]);
+
+        // 13c. Gói kết hợp (so_buoi=30, so_buoi_pt=10) + 2 buổi PT đã dùng
+        $gCombo = DB::table('goi_tap')->insertGetId([
+            'id_phong_tap' => 10, 'ma_goi_tap' => 'CMB30', 'ten_goi_tap' => 'Gói Combo 30 Thường + 10 PT',
+            'thoi_han_ngay' => 90, 'gia' => 7500000,
+        ]);
+        $dCombo = DB::table('dang_ky_goi')->insertGetId(['id_hoi_vien' => 70]);
+        $ctComboId = DB::table('chi_tiet_dang_ky_goi')->insertGetId([
+            'id_dang_ky_goi' => $dCombo, 'id_goi_tap' => $gCombo, 'so_buoi' => 30, 'so_buoi_pt' => 10,
+            'id_trainer' => $trainer->id, 'ngay_ket_thuc' => now()->addDays(50)->toDateString(),
+        ]);
+        DB::table('buoi_tap_pt')->insert([
+            ['id_chi_tiet_dang_ky_goi' => $ctComboId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 3],
+            ['id_chi_tiet_dang_ky_goi' => $ctComboId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 2],
+        ]);
+
+        $res = $this->getJson('/api/assistant/packages', $headers)->assertOk();
+        $pkgs = collect($res->json('data.packages'))->keyBy('name');
+
+        // Gói PT thuần: tổng 12, đã dùng 3 (hoàn thành 1), còn lại 9 (không trừ buổi hủy!)
+        $ptPkg = $pkgs['Gói PT 1-1 12 Buổi'];
+        $this->assertSame('pt_package', $ptPkg['package_type']);
+        $this->assertSame(12, $ptPkg['total_sessions']);
+        $this->assertSame(3, $ptPkg['used_sessions']);
+        $this->assertSame(1, $ptPkg['completed_sessions']);
+        $this->assertSame(9, $ptPkg['remaining_sessions']);
+        $this->assertNull($ptPkg['remaining_sessions_unavailable_reason']);
+
+        // Gói thường: tổng 20, đã dùng null, còn lại null + có lý do thiếu dữ liệu
+        $regPkg = $pkgs['Gói Tập Thường 20 Buổi'];
+        $this->assertSame('regular_package', $regPkg['package_type']);
+        $this->assertSame(20, $regPkg['total_sessions']);
+        $this->assertNull($regPkg['used_sessions']);
+        $this->assertNull($regPkg['remaining_sessions']);
+        $this->assertNotEmpty($regPkg['remaining_sessions_unavailable_reason']);
+
+        // Gói kết hợp: phần thường null, phần PT có đủ 10 / 2 / 8
+        $cmbPkg = $pkgs['Gói Combo 30 Thường + 10 PT'];
+        $this->assertSame('combined_package', $cmbPkg['package_type']);
+        $this->assertSame(30, $cmbPkg['total_sessions']);
+        $this->assertNull($cmbPkg['remaining_sessions']);
+        $this->assertSame(10, $cmbPkg['pt_sessions']['total_sessions']);
+        $this->assertSame(2, $cmbPkg['pt_sessions']['used_sessions']);
+        $this->assertSame(8, $cmbPkg['pt_sessions']['remaining_sessions']);
+
+        // Thêm 2 buổi PT mới vào buoi_tap_pt -> remaining_sessions giảm động 9 -> 7!
+        DB::table('buoi_tap_pt')->insert([
+            ['id_chi_tiet_dang_ky_goi' => $ctPtId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 2],
+            ['id_chi_tiet_dang_ky_goi' => $ctPtId, 'id_hoi_vien' => 70, 'id_trainer' => 71, 'tinh_trang' => 3],
+        ]);
+        $res2 = $this->getJson('/api/assistant/packages', $headers)->assertOk();
+        $ptPkg2 = collect($res2->json('data.packages'))->keyBy('name')['Gói PT 1-1 12 Buổi'];
+        $this->assertSame(5, $ptPkg2['used_sessions']);
+        $this->assertSame(7, $ptPkg2['remaining_sessions']);
+    }
+
+    // 14. Cô lập trạng thái giữa nhiều người dùng xen kẽ qua Laravel Kernel sub-requests (Auth guard / Request / Token isolation)
+    public function test_multi_user_interleaved_subrequests_never_leak_auth_guard_or_state(): void
+    {
+        $userA = $this->createMember(80, 10, ['ho_ten' => 'Alice 80', 'can_nang_kg' => 55, 'chieu_cao_cm' => 162, 'ngay_cap_nhat_chi_so' => now()]);
+        $userB = $this->createMember(81, 10, ['ho_ten' => 'Bob 81', 'can_nang_kg' => 88, 'chieu_cao_cm' => 182, 'ngay_cap_nhat_chi_so' => now()]);
+        $trainer = Trainer::forceCreate(['id' => 82, 'id_phong_tap' => 10, 'ho_ten' => 'PT 82', 'tinh_trang' => 1, 'is_active' => 1]);
+        $blocked = $this->createMember(83, 10, ['ho_ten' => 'Blocked 83', 'is_block' => 1]);
+
+        $hA = $this->headersFor($userA);
+        $hB = $this->headersFor($userB);
+        $hPT = $this->headersFor($trainer);
+        $hBlocked = $this->headersFor($blocked);
+
+        // Cố tình đặt Auth guard ở userB trước khi gọi cho userA -> sub-request phải quên guard và xác thực đúng token của userA!
+        Auth::guard('sanctum')->setUser($userB);
+
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step % 2 === 0) {
+                $lastUserText = end($contents)['parts'][0]['text'] ?? '';
+                if (str_contains($lastUserText, 'thống kê')) {
+                    return $this->modelToolCallTurn([['get_gym_summary', []]]);
+                }
+                return $this->modelToolCallTurn([['get_my_body_metrics', []]]);
+            }
+            $resp = end($contents)['parts'][0]['functionResponse']['response'];
+            $w = $resp['metrics']['weight_kg'] ?? ($resp['summary']['assigned_members'] ?? 'NONE');
+            return $this->modelTextTurn("ST={$resp['status']}|VAL={$w}");
+        });
+
+        // 1. User A (dù guard ngoài đang bị gắn userB) -> phải nhận đúng 55kg của Alice, không phải 88kg của Bob!
+        $rA = $this->postJson('/api/assistant/chat', ['message' => 'Chỉ số của tôi'], $hA)->assertOk();
+        $this->assertSame('ST=ok|VAL=55', $rA->json('answer'));
+        // Guard không còn giữ poisoned userB (81); nếu Sanctum lazy-resolve từ header request hiện tại thì phải là Alice (80)
+        $this->assertSame(80, Auth::guard('sanctum')->user()?->getKey());
+
+        // 2. Xen kẽ User B -> nhận đúng 88kg
+        $rB = $this->postJson('/api/assistant/chat', ['message' => 'Chỉ số của tôi'], $hB)->assertOk();
+        $this->assertSame('ST=ok|VAL=88', $rB->json('answer'));
+
+        // 3. Xen kẽ Trainer -> gọi get_gym_summary (200), không bị dính state member
+        $rPT = $this->postJson('/api/assistant/chat', ['message' => 'Xem thống kê'], $hPT)->assertOk();
+        $this->assertSame('ST=ok|VAL=0', $rPT->json('answer'));
+        $this->assertSame('/api/assistant/summary', $rPT->json('tool_calls.0.endpoint'));
+
+        // 4. Xen kẽ Blocked user -> nhận 403 forbidden từ middleware
+        $rBlk = $this->postJson('/api/assistant/chat', ['message' => 'Chỉ số của tôi'], $hBlocked)->assertOk();
+        $this->assertSame('ST=forbidden|VAL=NONE', $rBlk->json('answer'));
+        $this->assertSame(403, $rBlk->json('tool_calls.0.http_status'));
+
+        // 5. Xen kẽ Guest (không token) -> nhận 401 unauthenticated, không kế thừa token hay Auth guard của user trước!
+        $rGuest = $this->postJson('/api/assistant/chat', ['message' => 'Chỉ số của tôi'])->assertOk();
+        $this->assertSame('ST=unauthenticated|VAL=NONE', $rGuest->json('answer'));
+        $this->assertSame(401, $rGuest->json('tool_calls.0.http_status'));
+        $this->assertNull(Auth::guard('sanctum')->user());
+
+        // 6. Quay lại User A -> vẫn nguyên vẹn 55kg
+        $rA2 = $this->postJson('/api/assistant/chat', ['message' => 'Chỉ số của tôi'], $hA)->assertOk();
+        $this->assertSame('ST=ok|VAL=55', $rA2->json('answer'));
     }
 }

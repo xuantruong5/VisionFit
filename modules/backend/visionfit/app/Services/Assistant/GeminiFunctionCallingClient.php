@@ -46,7 +46,7 @@ class GeminiFunctionCallingClient implements LlmClientInterface
                     ['text' => $systemPrompt],
                 ],
             ],
-            'contents' => $contents,
+            'contents' => $this->normalizeContentsForJson($contents),
             'generationConfig' => [
                 'temperature' => 0.2,
                 'maxOutputTokens' => 1024,
@@ -160,6 +160,41 @@ class GeminiFunctionCallingClient implements LlmClientInterface
             'provider' => 'gemini_fc',
             'usage' => $usage,
         ];
+    }
+
+    /**
+     * Ensure protobuf Struct fields (`functionCall.args`, `functionResponse.response`)
+     * serialize as JSON objects `{}` rather than JSON arrays `[]` when empty in PHP.
+     *
+     * @param array<int, array<string, mixed>> $contents
+     * @return array<int, array<string, mixed>>
+     */
+    public function normalizeContentsForJson(array $contents): array
+    {
+        foreach ($contents as &$content) {
+            if (!is_array($content) || empty($content['parts']) || !is_array($content['parts'])) {
+                continue;
+            }
+            foreach ($content['parts'] as &$part) {
+                if (!is_array($part)) {
+                    continue;
+                }
+                if (isset($part['functionCall']) && is_array($part['functionCall'])) {
+                    if (!array_key_exists('args', $part['functionCall']) || $part['functionCall']['args'] === [] || $part['functionCall']['args'] === null) {
+                        $part['functionCall']['args'] = new \stdClass();
+                    }
+                }
+                if (isset($part['functionResponse']) && is_array($part['functionResponse'])) {
+                    if (!array_key_exists('response', $part['functionResponse']) || $part['functionResponse']['response'] === [] || $part['functionResponse']['response'] === null) {
+                        $part['functionResponse']['response'] = new \stdClass();
+                    }
+                }
+            }
+            unset($part);
+        }
+        unset($content);
+
+        return $contents;
     }
 }
 

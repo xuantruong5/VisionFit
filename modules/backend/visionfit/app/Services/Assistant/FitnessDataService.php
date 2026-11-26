@@ -365,7 +365,7 @@ class FitnessDataService
 
         $todayIso = $this->nowVN()->toDateString();
 
-        $rows = DB::table('dang_ky_goi as d')
+        $rawRows = DB::table('dang_ky_goi as d')
             ->join('chi_tiet_dang_ky_goi as ct', 'ct.id_dang_ky_goi', '=', 'd.id')
             ->join('goi_tap as g', 'g.id', '=', 'ct.id_goi_tap')
             ->where('d.id_hoi_vien', $actor->userId)
@@ -374,19 +374,88 @@ class FitnessDataService
             ->whereIn('ct.tinh_trang', [0, 1])
             ->orderByDesc('ct.id')
             ->limit(20)
-            ->get(['g.ten_goi_tap', 'ct.ngay_ket_thuc', 'ct.so_buoi'])
-            ->map(function ($p) use ($todayIso) {
+            ->get(['ct.id as ct_id', 'g.ten_goi_tap', 'ct.ngay_ket_thuc', 'ct.so_buoi', 'ct.so_buoi_pt']);
+
+        // Tái sử dụng đúng quy tắc nghiệp vụ của TrainerController::taoLichPT trên bảng buoi_tap_pt:
+        // số buổi PT đã đặt/sử dụng = COUNT(buoi_tap_pt WHERE id_chi_tiet_dang_ky_goi = ct.id AND tinh_trang != 4).
+        $hasPtLedger = Schema::hasTable('buoi_tap_pt');
+        $ptStatsByDetailId = [];
+        if ($hasPtLedger && $rawRows->isNotEmpty()) {
+            $detailIds = $rawRows->pluck('ct_id')->map(fn ($id) => (int) $id)->all();
+            $stats = DB::table('buoi_tap_pt')
+                ->whereIn('id_chi_tiet_dang_ky_goi', $detailIds)
+                ->where('tinh_trang', '!=', 4)
+                ->groupBy('id_chi_tiet_dang_ky_goi')
+                ->selectRaw('id_chi_tiet_dang_ky_goi, COUNT(*) as used_count, SUM(CASE WHEN tinh_trang = 3 THEN 1 ELSE 0 END) as completed_count')
+                ->get();
+            foreach ($stats as $st) {
+                $ptStatsByDetailId[(int) $st->id_chi_tiet_dang_ky_goi] = [
+                    'used' => (int) $st->used_count,
+                    'completed' => (int) ($st->completed_count ?? 0),
+                ];
+            }
+        }
+
+        $rows = $rawRows
+            ->map(function ($p) use ($todayIso, $hasPtLedger, $ptStatsByDetailId) {
                 $expClean = $p->ngay_ket_thuc ? explode('T', (string) $p->ngay_ket_thuc)[0] : null;
                 $isExpired = $expClean !== null && $expClean !== '' && $expClean < $todayIso;
-                return [
+                $regularTotal = $p->so_buoi !== null ? (int) $p->so_buoi : null;
+                $ptTotal = $p->so_buoi_pt !== null ? (int) $p->so_buoi_pt : 0;
+                $ctId = (int) $p->ct_id;
+
+                $base = [
                     'name' => $p->ten_goi_tap,
                     'expires_at' => $p->ngay_ket_thuc,
                     'expires_at_vn' => $expClean ? CarbonImmutable::parse($expClean, self::TIMEZONE)->format('d/m/Y') : null,
                     'is_expired' => $isExpired,
-                    'total_sessions' => $p->so_buoi !== null ? (int) $p->so_buoi : null,
-                    // Schema hiện chỉ lưu tổng số buổi đã mua, chưa có sổ cái trừ buổi xác thực.
-                    'remaining_sessions' => null,
                 ];
+
+                // Trường hợp 1: Gói PT thuần (có so_buoi_pt > 0 và có bảng sổ cái buoi_tap_pt xác thực)
+                if ($hasPtLedger && $ptTotal > 0 && ($regularTotal === null || $regularTotal === 0 || $regularTotal === $ptTotal)) {
+                    $ptUsed = $ptStatsByDetailId[$ctId]['used'] ?? 0;
+                    $ptCompleted = $ptStatsByDetailId[$ctId]['completed'] ?? 0;
+                    return array_merge($base, [
+                        'package_type' => 'pt_package',
+                        'total_sessions' => $ptTotal,
+                        'used_sessions' => $ptUsed,
+                        'completed_sessions' => $ptCompleted,
+                        'remaining_sessions' => max(0, $ptTotal - $ptUsed),
+                        'remaining_sessions_source' => 'buoi_tap_pt (không tính buổi đã hủy tinh_trang=4, theo quy tắc TrainerController::taoLichPT)',
+                        'remaining_sessions_unavailable_reason' => null,
+                    ]);
+                }
+
+                // Trường hợp 2: Gói kết hợp (có cả buổi thường so_buoi và buổi PT so_buoi_pt khác nhau)
+                if ($hasPtLedger && $ptTotal > 0 && $regularTotal !== null && $regularTotal > 0) {
+                    $ptUsed = $ptStatsByDetailId[$ctId]['used'] ?? 0;
+                    $ptCompleted = $ptStatsByDetailId[$ctId]['completed'] ?? 0;
+                    return array_merge($base, [
+                        'package_type' => 'combined_package',
+                        'total_sessions' => $regularTotal,
+                        'used_sessions' => null,
+                        'remaining_sessions' => null,
+                        'remaining_sessions_source' => null,
+                        'remaining_sessions_unavailable_reason' => 'Phần buổi tập thường (so_buoi) chỉ lưu tổng buổi đăng ký, chưa có sổ cái trừ buổi xác thực; phần buổi PT được tính riêng ở trường pt_sessions.',
+                        'pt_sessions' => [
+                            'total_sessions' => $ptTotal,
+                            'used_sessions' => $ptUsed,
+                            'completed_sessions' => $ptCompleted,
+                            'remaining_sessions' => max(0, $ptTotal - $ptUsed),
+                            'source' => 'buoi_tap_pt (không tính buổi đã hủy tinh_trang=4)',
+                        ],
+                    ]);
+                }
+
+                // Trường hợp 3: Gói thường không có buổi PT -> chưa có sổ cái trừ buổi xác thực, tuyệt đối trả null
+                return array_merge($base, [
+                    'package_type' => 'regular_package',
+                    'total_sessions' => $regularTotal,
+                    'used_sessions' => null,
+                    'remaining_sessions' => null,
+                    'remaining_sessions_source' => null,
+                    'remaining_sessions_unavailable_reason' => 'Hệ thống chỉ lưu tổng số buổi đăng ký (so_buoi) và ngày hết hạn cho gói tập thường; chưa có sổ cái trừ buổi tập thường xác thực nên không thể tính số buổi đã dùng và còn lại.',
+                ]);
             })
             ->values();
 
@@ -404,7 +473,7 @@ class FitnessDataService
             'today' => $todayIso,
             'has_active_package' => $activeCount > 0,
             'packages' => $rows->all(),
-            'note' => 'total_sessions là tổng số buổi đăng ký của gói; remaining_sessions = null nghĩa là hệ thống chưa có dữ liệu số buổi còn lại xác thực (không tự suy đoán hay biến thành 0).',
+            'note' => 'Phân biệt rõ total_sessions (tổng số buổi đăng ký), used_sessions (số buổi đã dùng/đã đặt), và remaining_sessions (số buổi còn lại). Chỉ gói PT có nguồn xác thực từ bảng buoi_tap_pt mới có remaining_sessions; nếu remaining_sessions=null thì phải nêu rõ lý do thiếu dữ liệu và không bao giờ lấy total_sessions thay cho remaining_sessions.',
             'suggested_navigation' => $activeCount === 0 ? 'NAVIGATE_REGISTER_PACKAGE' : null,
         ];
     }
@@ -526,6 +595,43 @@ class FitnessDataService
             : trim((string) ($user->di_ung ?? ''));
 
         if (!$latestNutrition) {
+            if ($hasSubmittedMetrics && ($weight > 0 || $height > 0)) {
+                $missingFields = [];
+                if ($weight <= 0) {
+                    $missingFields[] = 'weight_kg';
+                }
+                if ($height <= 0) {
+                    $missingFields[] = 'height_cm';
+                }
+                array_push($missingFields, 'bmi', 'bmr_kcal', 'tdee_kcal', 'target_calories_kcal');
+
+                return [
+                    'status' => 'partial_body_metrics',
+                    'has_body_metrics' => false,
+                    'metrics' => [
+                        'weight_kg' => $weight > 0 ? $weight : null,
+                        'height_cm' => $height > 0 ? $height : null,
+                        'bmi' => null,
+                        'bmi_status' => null,
+                        'bmr_kcal' => null,
+                        'tdee_kcal' => null,
+                        'target_calories_kcal' => null,
+                        'protein_g' => null,
+                        'carb_g' => null,
+                        'fat_g' => null,
+                        'recommended_water_liters' => $weight > 0 ? round(($weight * 35) / 1000, 2) : null,
+                    ],
+                    'missing_fields' => $missingFields,
+                    'profile' => [
+                        'goal' => $user->muc_tieu_hien_tai ?: null,
+                        'level' => $user->cap_do_hien_tai ?: null,
+                        'allergy' => $allergyText !== '' ? $allergyText : 'Không',
+                    ],
+                    'suggested_navigation' => 'NAVIGATE_BODY_METRICS',
+                    'message' => 'Hội viên mới có một phần chỉ số cơ thể; còn thiếu dữ liệu để tính BMI, BMR và TDEE (không tự suy đoán hay biến thành 0).',
+                ];
+            }
+
             return [
                 'status' => 'missing_body_metrics',
                 'has_body_metrics' => false,
