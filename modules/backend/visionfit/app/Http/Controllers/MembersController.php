@@ -481,6 +481,13 @@ class MembersController extends Controller
         if ($request->has('can_nang_kg') && $request->can_nang_kg !== null) {
             $dataUpdate['can_nang_kg'] = $request->can_nang_kg;
         }
+        if (
+            isset($dataUpdate['chieu_cao_cm'], $dataUpdate['can_nang_kg'])
+            && (float) $dataUpdate['chieu_cao_cm'] > 0
+            && (float) $dataUpdate['can_nang_kg'] > 0
+        ) {
+            $dataUpdate['ngay_cap_nhat_chi_so'] = now();
+        }
         if ($request->has('muc_tieu_hien_tai') && $request->muc_tieu_hien_tai !== null) {
             $dataUpdate['muc_tieu_hien_tai'] = $request->muc_tieu_hien_tai;
         }

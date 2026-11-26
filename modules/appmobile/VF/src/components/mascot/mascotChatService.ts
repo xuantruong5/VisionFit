@@ -273,12 +273,16 @@ const replyFromRealContext = (
         source: 'client_rag_fallback',
       };
     }
-    if (/bắt đầu|bat dau|kế hoạch tập|tập luyện|tập ngay/i.test(lastAssistantMsg)) {
+    if (/bắt đầu|bat dau|kế hoạch tập|tập luyện|tập ngay|đăng ký chương trình/i.test(lastAssistantMsg)) {
       return {
-        answer: `${prefix}Lên dây cót tinh thần nào! Bấm nút bên dưới để mở ngay trang Kế hoạch tập luyện nhé! 🔥💪`,
+        answer: hasRegisteredProgram
+          ? `${prefix}Lên dây cót tinh thần nào! Bấm nút bên dưới để mở ngay trang Kế hoạch tập luyện nhé! 🔥💪`
+          : `${prefix}Tuyệt vời! Bấm nút bên dưới để tới màn hình **Đăng ký chương trình tập** và chọn lộ trình phù hợp nhé! 📋💪`,
         intent: 'workout_navigation',
         emotion: 'encouraging',
-        action: { type: 'NAVIGATE_WORKOUT', screen: 'WorkoutPlan' },
+        action: hasRegisteredProgram
+          ? { type: 'NAVIGATE_WORKOUT', screen: 'headerPage' }
+          : { type: 'NAVIGATE_REGISTER_PROGRAM', screen: 'WorkoutPlanScreen' },
         source: 'client_rag_fallback',
       };
     }
@@ -294,8 +298,8 @@ const replyFromRealContext = (
     };
   }
 
-  // 1. Chấn thương / đau mỏi (không khớp nhầm "bắt đầu", "đậu", "dầu")
-  if (/(?:^|[\s,.;:!?])(đau|bị đau|bi dau|dau lung|dau goi|dau vai|dau khop|dau co|dau chan|dau tay|dau bung|dau nguc|dau qua|chấn thương|chan thuong|chuột rút|chuot rut|chóng mặt|chong mat|buốt|buot|ngất|ngat|đau khớp|sưng khớp|sung khop)(?=$|[\s,.;:!?])/i.test(q)) {
+  // 1. Chấn thương / đau mỏi (không khớp nhầm "bắt đầu", "bat dau co", "chum dau goi", "đậu", "dầu")
+  if (/(?:^|[\s,.;:!?])(đau|bị đau|bi dau|dau lung|dau vai|dau khop|dau chan|dau tay|dau bung|dau nguc|dau qua|chấn thương|chan thuong|chuột rút|chuot rut|chóng mặt|chong mat|buốt|buot|ngất|ngat|đau khớp|sưng khớp|sung khop|trật khớp|trat khop)(?=$|[\s,.;:!?])/i.test(q) && !/bat dau|bắt đầu|chum dau goi|chụm đầu gối/i.test(q)) {
     return {
       answer: `${prefix}Hãy dừng ngay bài tập đang gây đau nhé! Chườm lạnh 15-20 phút nếu sưng và báo cho Huấn luyện viên (PT) hoặc bác sĩ thể thao để kiểm tra an toàn! 🛡️`,
       intent: 'general_support',
@@ -307,7 +311,7 @@ const replyFromRealContext = (
 
   // 2. Nhắc uống nước
   if (/uống nước|uong nuoc|nhắc nước|nhac nuoc|nhắc nhở uống nước|water reminder/i.test(q)) {
-    const isOff = /(?:^|[\s,.;:!?])(tắt|tat|hủy|huy|dừng|dung|off|stop)(?=$|[\s,.;:!?])/i.test(q);
+    const isOff = /(?:^|[\s,.;:!?])(tắt|tat|hủy|huy|dừng|dung|đừng|bỏ|bo|khỏi|khoi|ngưng|ngừng|ngung|không cần|khong can|không nhắc|khong nhac|off|stop|disable)(?=$|[\s,.;:!?])/i.test(q);
     return {
       answer: isOff
         ? `${prefix}Đã tắt tính năng tự động nhắc uống nước cho bạn.`
@@ -319,8 +323,8 @@ const replyFromRealContext = (
     };
   }
 
-  // 3. Tra cứu gói tập
-  if (/gói tập|goi tap|gói của tôi|goi cua toi|thẻ tập|the tap|thẻ của tôi|the cua toi|hạn thẻ|han the|hạn gói|han goi|hạn sử dụng|han su dung|buổi còn|buoi con|bao nhiêu buổi|bao nhieu buoi|còn mấy buổi|con may buoi|đăng ký gói|dang ky goi/i.test(q)) {
+  // 3. Tra cứu gói tập (KHÔNG match `the cua toi` hay bare `bao nhieu buoi`)
+  if (/gói tập|goi tap|gói của tôi|goi cua toi|thẻ tập|the tap|thẻ hội viên|the hoi vien|hạn thẻ|han the|hạn gói|han goi|hạn sử dụng|han su dung|buổi còn|buoi con|còn bao nhiêu buổi|con bao nhieu buoi|còn mấy buổi|con may buoi|đăng ký gói|dang ky goi|mua gói|mua goi|kiểm tra gói|kiem tra goi/i.test(q)) {
     if (!isAuthenticated) {
       return {
         answer: `${prefix}Bạn chưa đăng nhập nên mình chưa thể kiểm tra thông tin gói tập. Hãy đăng nhập trước nhé!`,
@@ -348,15 +352,15 @@ const replyFromRealContext = (
       return { answer: msg.trim(), intent: 'general_support', emotion: 'explaining', action: null, source: 'client_rag_fallback' };
     }
     return {
-      answer: `${prefix}Hiện tại tài khoản của bạn chưa đăng ký gói tập nào trên hệ thống VisionFit. Bạn có thể vào mục **Thêm > Gói tập của tôi** để xem hoặc đăng ký gói tập nhé!`,
+      answer: `${prefix}Hiện tại tài khoản của bạn **chưa đăng ký gói tập nào** trên hệ thống VisionFit. Hãy bấm nút bên dưới để chọn gói tập phù hợp nhé! 🎟`,
       intent: 'general_support',
       emotion: 'explaining',
-      action: null,
+      action: { type: 'NAVIGATE_REGISTER_PACKAGE', screen: 'WorkoutSelectionScreen' },
       source: 'client_rag_fallback',
     };
   }
 
-  // 4. Tra cứu lịch tập
+  // 4. Tra cứu lịch tập (lọc theo hôm nay / ngày mai; chưa đăng ký -> dẫn tới màn hình đăng ký)
   if (/lịch tập|lich tap|xem lịch|xem lich|lịch hôm nay|lich hom nay|lịch ngày mai|lich ngay mai|lịch tuần|lich tuan|lịch trình|lich trinh|có lịch|co lich|buổi tập tiếp theo|buoi tap tiep theo|buổi tập hôm nay|buoi tap hom nay|buổi tập sắp tới|buoi tap sap toi|khi nào tập|khi nao tap|mấy giờ tập|may gio tap|tập mấy giờ|tap may gio|lịch của tôi|lich cua toi/i.test(q)) {
     if (!isAuthenticated) {
       return {
@@ -367,36 +371,86 @@ const replyFromRealContext = (
         source: 'client_rag_fallback',
       };
     }
+    if (!hasRegisteredProgram && (!context?.schedule || context.schedule.length === 0)) {
+      return {
+        answer: `${prefix}Hiện tại bạn **chưa đăng ký chương trình tập nào** trên hệ thống nên chưa có lịch tập.\nHãy bấm nút bên dưới để tới màn hình **Đăng ký chương trình tập** nhé! 📋💪`,
+        intent: 'workout_navigation',
+        emotion: 'explaining',
+        action: { type: 'NAVIGATE_REGISTER_PROGRAM', screen: 'WorkoutPlanScreen' },
+        source: 'client_rag_fallback',
+      };
+    }
     if (context?.schedule && context.schedule.length > 0) {
-      let msg = `${prefix}Bảng lịch tập sắp tới của bạn trên hệ thống:\n\n` +
-        `| Buổi tập | Thời gian | Huấn luyện viên |\n` +
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const todayVN = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+
+      if (/hôm nay|hom nay|today/i.test(q)) {
+        const todayItems = context.schedule.filter((s: any) => s.scheduled_date === todayIso);
+        if (todayItems.length === 0) {
+          const next = context.schedule[0];
+          return {
+            answer: `${prefix}Hôm nay (**${todayVN}**) bạn **không có lịch tập** (ngày nghỉ phục hồi).\n\n- **Buổi tập gần nhất tiếp theo:** ${next.name || 'Buổi tập'} lúc **${formatVNTime(next.starts_at, next.scheduled_date)}** (${next.trainer || 'Tự tập'}).`,
+            intent: 'workout_navigation',
+            emotion: 'reminding',
+            action: { type: 'NAVIGATE_WORKOUT', screen: 'headerPage' },
+            source: 'client_rag_fallback',
+          };
+        }
+      }
+
+      let msg = `${prefix}Lịch tập sắp tới của bạn (3 buổi gần nhất):\n\n` +
+        `| Buổi tập | Thời gian | PT |\n` +
         `| :--- | :--- | :--- |\n`;
-      context.schedule.slice(0, 5).forEach((s: any) => {
+      context.schedule.slice(0, 3).forEach((s: any) => {
         const name = s.name || 'Buổi tập';
         const time = formatVNTime(s.starts_at, s.scheduled_date);
         const trainer = s.trainer || 'Tự tập';
         msg += `| ${name} | ${time} | ${trainer} |\n`;
       });
-      msg += `\nHãy chuẩn bị nước và đồ tập đầy đủ nhé! 💪`;
       return {
         answer: msg.trim(),
         intent: 'workout_navigation',
         emotion: 'reminding',
-        action: { type: 'NAVIGATE_WORKOUT', screen: 'WorkoutPlan' },
+        action: { type: 'NAVIGATE_WORKOUT', screen: 'headerPage' },
         source: 'client_rag_fallback',
       };
     }
     return {
-      answer: `${prefix}Hiện tại bạn **chưa đăng ký chương trình tập hoặc chưa có lịch tập nào** trên hệ thống.\nHãy bấm nút bên dưới để vào **Kế hoạch tập** và chọn lộ trình phù hợp cho mình nhé! 📋💪`,
+      answer: `${prefix}Bạn đang theo chương trình tập nhưng hiện chưa có buổi sắp tới trong lịch.`,
       intent: 'workout_navigation',
       emotion: 'explaining',
-      action: { type: 'NAVIGATE_WORKOUT', screen: 'WorkoutPlan' },
+      action: { type: 'NAVIGATE_WORKOUT', screen: 'headerPage' },
       source: 'client_rag_fallback',
     };
   }
 
-  // 5. Chỉ số thể trạng & dinh dưỡng
-  if (/chỉ số|chi so|thể trạng|the trang|bmi|bmr|tdee|dinh dưỡng calo|dinh duong calo|calo của tôi|calo cua toi/i.test(q)) {
+  // 4.5. Tiến độ / hoàn thành chương trình
+  if (/chương trình của tôi|chuong trinh cua toi|tiến độ|tien do|hoàn thành|hoan thanh|tập được mấy buổi|tap duoc may buoi/i.test(q)) {
+    if (!hasRegisteredProgram) {
+      return {
+        answer: `${prefix}Hiện tại bạn **chưa đăng ký chương trình tập nào** nên chưa có tiến độ hoàn thành.\nHãy bấm nút bên dưới để **Đăng ký chương trình tập** nhé! 📋💪`,
+        intent: 'workout_navigation',
+        emotion: 'explaining',
+        action: { type: 'NAVIGATE_REGISTER_PROGRAM', screen: 'WorkoutPlanScreen' },
+        source: 'client_rag_fallback',
+      };
+    }
+    const progName = context?.active_program?.name || 'Chương trình hiện tại';
+    const progPct = context?.active_program?.completion_percent ?? 0;
+    const weekSessions = context?.progress?.sessions_this_week ?? 0;
+    return {
+      answer: `${prefix}Tiến độ chương trình **${progName}**:\n\n| Chỉ số | Kết quả |\n| :--- | :--- |\n| Hoàn thành chương trình | **${progPct}%** |\n| Số buổi tuần này | **${weekSessions} buổi** |`,
+      intent: 'general_support',
+      emotion: 'explaining',
+      action: { type: 'NAVIGATE_WORKOUT', screen: 'headerPage' },
+      source: 'client_rag_fallback',
+    };
+  }
+
+  // 5. Chỉ số cơ thể, thể trạng & dinh dưỡng
+  if (/chỉ số|chi so|cơ thể của tôi|co the cua toi|thông số cơ thể|thong so co the|số đo cơ thể|so do co the|thể trạng|the trang|bmi|bmr|tdee|dinh dưỡng calo|dinh duong calo|calo của tôi|calo cua toi/i.test(q)) {
     if (hasBodyMetrics && context?.nutrition) {
       const n = context.nutrition;
       return {
@@ -420,22 +474,32 @@ const replyFromRealContext = (
       };
     }
     return {
-      answer: `${prefix}Hiện tại bạn **chưa cập nhật chỉ số cơ thể** (chiều cao, cân nặng, mục tiêu) trên hệ thống nên mình chưa có dữ liệu để tính BMI, BMR, TDEE và nhu cầu calo của bạn.\n\nBạn hãy cập nhật hồ sơ cơ thể trước, sau đó hỏi lại mình nhé! 📊`,
+      answer: `${prefix}Hiện tại bạn **chưa cập nhật chỉ số cơ thể** (chiều cao, cân nặng, mục tiêu) trên hệ thống nên mình chưa có dữ liệu để tính BMI, BMR, TDEE và nhu cầu calo của bạn.\n\nHãy bấm nút bên dưới để cập nhật chỉ số cơ thể nhé! 📊`,
       intent: 'general_support',
       emotion: 'explaining',
-      action: null,
+      action: { type: 'NAVIGATE_BODY_METRICS', screen: 'AiConsultationScreen' },
       source: 'client_rag_fallback',
     };
   }
 
-  // 6. Thực đơn & món ăn
-  if (/ăn gì|an gi|thực đơn|thuc don|chế độ ăn|che do an|eat clean|giảm cân|giam can|giảm mỡ|giam mo|tăng cơ|tang co|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi/i.test(q)) {
-    if (!hasBodyMetrics && !hasGoal && !hasRegisteredProgram) {
+  // 6. Bữa ăn & Thực đơn
+  if (/bữa ăn|bua an|kế hoạch ăn|ke hoach an|khẩu phần|khau phan|lịch ăn|lich an|ăn gì|an gi|thực đơn|thuc don|chế độ ăn|che do an|eat clean|giảm cân|giam can|giảm mỡ|giam mo|tăng cơ|tang co|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi/i.test(q)) {
+    const isPersonalMeal = /bữa ăn|bua an|kế hoạch ăn|ke hoach an|khẩu phần|khau phan|lịch ăn|lich an/i.test(q);
+    if (isPersonalMeal && !hasRegisteredProgram) {
       return {
-        answer: `${prefix}Hiện tại bạn **chưa cập nhật chỉ số thể trạng** và **chưa đăng ký lộ trình tập luyện** nên hệ thống chưa có dữ liệu để lập thực đơn cá nhân hóa cho bạn.\n\nBạn hãy cập nhật hồ sơ cơ thể trước để mình gợi ý thực đơn đúng calo và phù hợp nhất nhé! 🥗`,
+        answer: `${prefix}Hiện tại bạn **chưa đăng ký chương trình tập nào** nên chưa có kế hoạch bữa ăn cá nhân.\nHãy bấm nút bên dưới để **Đăng ký chương trình tập**, hệ thống sẽ tự tạo lịch bữa ăn cho bạn nhé! 🥗📋`,
         intent: 'food_detail',
         emotion: 'explaining',
-        action: null,
+        action: { type: 'NAVIGATE_REGISTER_PROGRAM', screen: 'WorkoutPlanScreen' },
+        source: 'client_rag_fallback',
+      };
+    }
+    if (!hasBodyMetrics && !hasRegisteredProgram) {
+      return {
+        answer: `${prefix}Hiện tại bạn **chưa cập nhật chỉ số thể trạng** và **chưa đăng ký lộ trình tập luyện** nên hệ thống chưa có dữ liệu để lập thực đơn cá nhân hóa cho bạn.\n\nHãy bấm nút bên dưới để cập nhật hồ sơ cơ thể trước nhé! 🥗`,
+        intent: 'food_detail',
+        emotion: 'explaining',
+        action: { type: 'NAVIGATE_BODY_METRICS', screen: 'AiConsultationScreen' },
         source: 'client_rag_fallback',
       };
     }
@@ -488,10 +552,12 @@ const replyFromRealContext = (
     return {
       answer: hasRegisteredProgram && context?.active_program?.name
         ? `${prefix}Bạn đang theo lộ trình **${context.active_program.name}**. Bấm nút bên dưới để mở **Kế hoạch tập** và bắt đầu ngay nhé! 💪🔥`
-        : `${prefix}Hiện bạn chưa đăng ký chương trình tập cố định. Hãy bấm nút bên dưới để mở **Kế hoạch tập** và chọn lộ trình phù hợp nhé! 📋💪`,
+        : `${prefix}Hiện bạn **chưa đăng ký chương trình tập nào**. Hãy bấm nút bên dưới để tới màn hình **Đăng ký chương trình tập** và chọn lộ trình phù hợp nhé! 📋💪`,
       intent: 'workout_navigation',
-      emotion: 'encouraging',
-      action: { type: 'NAVIGATE_WORKOUT', screen: 'WorkoutPlan' },
+      emotion: hasRegisteredProgram ? 'encouraging' : 'explaining',
+      action: hasRegisteredProgram
+        ? { type: 'NAVIGATE_WORKOUT', screen: 'headerPage' }
+        : { type: 'NAVIGATE_REGISTER_PROGRAM', screen: 'WorkoutPlanScreen' },
       source: 'client_rag_fallback',
     };
   }
@@ -641,12 +707,18 @@ export const getAIResponse = async (
     };
   }
 
-  // 4. Backup API Puller: Kéo dữ liệu thật từ các API tri thức của VisionFit (/so-tay/thuc-pham, /dinh-duong-the-thao, /bach-khoa-toan-thu)
+  // 4. Ưu tiên ngữ cảnh cá nhân thật (lịch tập, gói tập, chỉ số, tiến độ, bữa ăn, nhắc nước, chấn thương)
+  const localReply = replyFromRealContext(question, context, species, history);
+  if (!localReply.answer.includes('Mình đã nhận câu hỏi:')) {
+    return localReply;
+  }
+
+  // 5. Backup API Puller: Kéo dữ liệu thật từ các API tri thức của VisionFit (/so-tay/thuc-pham, /dinh-duong-the-thao, /bach-khoa-toan-thu)
   const apiBackupResult = await queryVisionFitBackupAPIs(question, species);
   if (apiBackupResult) {
     return apiBackupResult;
   }
 
-  // 5. Fallback cuối cùng dựa trên ngữ cảnh thật đã đồng bộ của hội viên
-  return replyFromRealContext(question, context, species, history);
+  // 6. Fallback mặc định nếu không tìm thấy tri thức phù hợp
+  return localReply;
 };
