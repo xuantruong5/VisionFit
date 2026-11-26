@@ -926,4 +926,59 @@ class AssistantFunctionCallingTest extends TestCase
         $rA2 = $this->postJson('/api/assistant/chat', ['message' => 'Chỉ số của tôi'], $hA)->assertOk();
         $this->assertSame('ST=ok|VAL=55', $rA2->json('answer'));
     }
+
+    // 15. BUG-03 Regression: Payload trả đúng weekday_vn theo Asia/Ho_Chi_Minh và kiểm tra/sửa sai thứ trong câu trả lời cuối
+    public function test_schedule_includes_verified_weekday_vn_and_detects_mismatched_final_answer_weekday(): void
+    {
+        // Đóng băng tại Thứ Năm 26/11/2026 (VN) -> ngày mốt 28/11/2026 là Thứ Bảy (KHÔNG phải Thứ Sáu!)
+        CarbonImmutable::setTestNow(CarbonImmutable::create(2026, 11, 26, 10, 0, 0, 'Asia/Ho_Chi_Minh'));
+        try {
+            $member = $this->createMember(90, 10, ['ho_ten' => 'Weekday User']);
+            $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Giảm mỡ Toàn thân', 'tinh_trang' => 1]);
+            $dkId = DB::table('dang_ky_chuong_trinh')->insertGetId(['id_hoi_vien' => 90, 'id_chuong_trinh' => $progId, 'tinh_trang' => 1]);
+            DB::table('lich_tap')->insert([
+                'id_dang_ky_chuong_trinh' => $dkId, 'id_chuong_trinh' => $progId,
+                'id_hoi_vien' => 90, 'ngay_tap' => '2026-11-28', 'gio_bat_dau' => '07:00:00', 'tinh_trang' => '0',
+            ]);
+
+            // 15a. Kiểm tra trực tiếp detector bắt đúng lỗi "Thứ Sáu, 28/11/2026" (phải là Thứ Bảy)
+            $mismatches = \App\Services\Assistant\VietnameseDateVerifier::findWeekdayMismatches(
+                'Lịch tập ngày mốt (Thứ Sáu, 28/11/2026) lúc 07:00.'
+            );
+            $this->assertCount(1, $mismatches);
+            $this->assertSame('Thứ Sáu', $mismatches[0]['claimed_weekday']);
+            $this->assertSame('Thứ Bảy', $mismatches[0]['expected_weekday']);
+            $this->assertSame('28/11/2026', $mismatches[0]['date']);
+
+            // 15b. Kiểm tra payload API trả đồng nhất scheduled_date, time_vn, weekday_vn và date_vn_with_weekday
+            $headers = $this->headersFor($member);
+            $this->getJson('/api/assistant/schedule?date_preset=custom&date_from=2026-11-28', $headers)
+                ->assertOk()
+                ->assertJsonPath('data.today_weekday_vn', 'Thứ Năm')
+                ->assertJsonPath('data.tomorrow_weekday_vn', 'Thứ Sáu')
+                ->assertJsonPath('data.sessions.0.scheduled_date', '2026-11-28')
+                ->assertJsonPath('data.sessions.0.weekday_vn', 'Thứ Bảy')
+                ->assertJsonPath('data.sessions.0.date_vn_with_weekday', 'Thứ Bảy, 28/11/2026');
+
+            // 15c. Giả lập LLM viết nhầm "Thứ Sáu, 28/11/2026" -> Orchestrator phát hiện và chuẩn hóa về "Thứ Bảy, 28/11/2026"
+            $this->bindFakeLlm(function (int $step, array $contents) {
+                if ($step === 0) {
+                    return $this->modelToolCallTurn([['get_my_schedule', ['date_preset' => 'custom', 'date_from' => '2026-11-28']]]);
+                }
+                return $this->modelTextTurn('Lịch tập ngày mốt (Thứ Sáu, 28/11/2026) của bạn là Giảm mỡ Toàn thân lúc 07:00.');
+            });
+
+            $res = $this->postJson('/api/assistant/chat', [
+                'message' => 'ngay mot minh co buoi tap nao ko vay',
+                'species' => 'bear',
+            ], $headers)->assertOk();
+
+            $finalAnswer = (string) $res->json('answer');
+            $this->assertStringContainsString('Thứ Bảy, 28/11/2026', $finalAnswer);
+            $this->assertStringNotContainsString('Thứ Sáu, 28/11/2026', $finalAnswer);
+            $this->assertEmpty(\App\Services\Assistant\VietnameseDateVerifier::findWeekdayMismatches($finalAnswer));
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+    }
 }

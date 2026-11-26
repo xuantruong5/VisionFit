@@ -7,12 +7,20 @@ import {
 } from '../src/components/mascot/mascotEvents';
 import apiFitlife from '../src/general/api';
 
-jest.mock('../src/general/api', () => ({
-  __esModule: true,
-  default: {
-    post: jest.fn(),
-  },
-}));
+jest.mock('../src/general/api', () => {
+  const actualConfig = jest.requireActual('../src/general/apiConfig');
+  return {
+    __esModule: true,
+    default: {
+      post: jest.fn(),
+    },
+    API_CONFIG: actualConfig.resolveApiConfig({
+      platformOS: 'android',
+      envTarget: 'emulator',
+    }),
+    formatConnectionErrorMessage: actualConfig.formatConnectionErrorMessage,
+  };
+});
 
 const mockedPost = apiFitlife.post as jest.Mock;
 

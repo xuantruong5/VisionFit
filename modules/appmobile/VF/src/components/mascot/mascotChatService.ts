@@ -1,4 +1,4 @@
-import apiFitlife from '../../general/api';
+import apiFitlife, { API_CONFIG, formatConnectionErrorMessage } from '../../general/api';
 import { MascotSpecies, ChatAction } from './types';
 
 const ALLOWED_ACTION_TYPES = new Set([
@@ -156,7 +156,7 @@ export const getAIResponse = async (
     if (timedOut || err?.code === 'ECONNABORTED') {
       return {
         ok: false,
-        answer: 'Yêu cầu tới trợ lý AI quá thời gian chờ. Bạn vui lòng kiểm tra mạng rồi bấm thử lại nhé!',
+        answer: formatConnectionErrorMessage({ code: 'ECONNABORTED' }, API_CONFIG),
         intent: 'service_error',
         emotion: 'apologetic',
         action: null,
@@ -197,7 +197,7 @@ export const getAIResponse = async (
 
     return {
       ok: false,
-      answer: 'Không thể kết nối tới máy chủ trợ lý AI lúc này. Bạn kiểm tra mạng rồi bấm thử lại nhé!',
+      answer: formatConnectionErrorMessage(err, API_CONFIG),
       intent: 'service_error',
       emotion: 'apologetic',
       action: null,

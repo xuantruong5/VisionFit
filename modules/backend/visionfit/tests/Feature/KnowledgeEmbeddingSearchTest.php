@@ -144,6 +144,29 @@ class KnowledgeEmbeddingSearchTest extends TestCase
         $afterDel = $service->search('Ức gà giàu đạm bao nhiêu protein?', 'food', 3, $actor);
         $titlesAfterDel = array_map(fn ($r) => $r['title'], $afterDel['results']);
         $this->assertNotContains('Ức gà áp chảo giàu đạm', $titlesAfterDel);
+
+        // BUG-01 Regression: LLM đoán hẹp category='exercise' (strict_category=false) cho bài nằm trong 'encyclopedia'
+        // -> tự mở rộng sang 'all' với CÙNG ngưỡng similarity, tìm thấy bài viết và ghi nhận broadened_from_category
+        $broadened = $service->search('Hypertrophy và phì đại cơ bằng progressive overload là gì?', 'exercise', 2, $actor, false);
+        $this->assertSame('ok', $broadened['status']);
+        $this->assertSame('all', $broadened['category']);
+        $this->assertSame('exercise', $broadened['broadened_from_category']);
+        $this->assertSame('Hypertrophy cơ bắp', $broadened['results'][0]['title']);
+
+        // BUG-01 Regression: Khi người dùng yêu cầu rõ strict_category=true -> KHÔNG tự mở rộng, trả 'empty'
+        $strictMiss = $service->search('Hypertrophy và phì đại cơ bằng progressive overload là gì?', 'exercise', 2, $actor, true);
+        $this->assertSame('empty', $strictMiss['status']);
+        $this->assertEmpty($strictMiss['results']);
+
+        // BUG-01 Regression: Mở rộng category vẫn giữ nguyên cảnh báo dị ứng và ngưỡng similarity (câu lệch chủ đề vẫn empty)
+        $broadFood = $service->search('Món salad buổi tối có tôm bao nhiêu calo?', 'exercise', 2, $actor, false);
+        $this->assertSame('ok', $broadFood['status']);
+        $this->assertSame('Salad tôm dầu oliu', $broadFood['results'][0]['title']);
+        $this->assertNotEmpty($broadFood['results'][0]['allergy_warning'] ?? '');
+
+        $broadOffTopic = $service->search('Cách sửa máy giặt bị rò nước', 'exercise', 2, $actor, false);
+        $this->assertSame('empty', $broadOffTopic['status']);
+        $this->assertEmpty($broadOffTopic['results']);
     }
 }
 

@@ -194,7 +194,7 @@ class AssistantToolRegistry
         // Universal tools (knowledge semantic search + water reminder)
         $tools[] = [
             'name' => 'search_fitness_knowledge',
-            'description' => 'Gọi API GET /api/assistant/knowledge/search để tìm kiếm ngữ nghĩa (embeddings) trong kho kiến thức VisionFit gồm kỹ thuật bài tập, dinh dưỡng món ăn/calo, thực phẩm bổ sung thể thao (Whey, Creatine...) và bách khoa thể hình.',
+            'description' => 'Gọi API GET /api/assistant/knowledge/search để tìm kiếm ngữ nghĩa (embeddings) trong kho kiến thức VisionFit gồm kỹ thuật bài tập, dinh dưỡng món ăn/calo, thực phẩm bổ sung thể thao (Whey, Creatine...) và bách khoa thể hình. Mặc định hãy dùng category="all" trừ khi người dùng nêu rõ giới hạn danh mục.',
             'parameters' => [
                 'type' => 'OBJECT',
                 'properties' => [
@@ -204,8 +204,12 @@ class AssistantToolRegistry
                     ],
                     'category' => [
                         'type' => 'STRING',
-                        'description' => 'Danh mục kiến thức: all, exercise, food, sports_nutrition, encyclopedia, hoặc program.',
+                        'description' => 'Danh mục kiến thức (mặc định "all" nếu câu hỏi không giới hạn rõ nguồn): all, exercise, food, sports_nutrition, encyclopedia, hoặc program.',
                         'enum' => ['all', 'exercise', 'food', 'sports_nutrition', 'encyclopedia', 'program'],
+                    ],
+                    'strict_category' => [
+                        'type' => 'BOOLEAN',
+                        'description' => 'Chỉ đặt true khi người dùng yêu cầu rõ ràng chỉ tìm trong đúng một danh mục cụ thể; mặc định false (cho phép tự mở rộng sang "all" nếu category suy đoán không có kết quả).',
                     ],
                     'limit' => [
                         'type' => 'INTEGER',
@@ -585,10 +589,13 @@ class AssistantToolRegistry
             return $this->invalidArgs('limit phải từ 1 đến 6.');
         }
 
+        $strictCategory = array_key_exists('strict_category', $args) ? (bool) $args['strict_category'] : false;
+
         $call = $this->dispatchInternalGet('/api/assistant/knowledge/search', [
             'query' => $query,
             'category' => $category,
             'limit' => $limit,
+            'strict_category' => $strictCategory ? '1' : '0',
         ], $actor);
 
         $intent = match ($category) {

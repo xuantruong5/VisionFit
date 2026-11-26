@@ -229,10 +229,12 @@ class AssistantController extends Controller
             return response()->json(['message' => 'Tham số limit phải từ 1 đến 6.'], 422);
         }
 
+        $strictCategory = filter_var($request->query('strict_category', '0'), FILTER_VALIDATE_BOOLEAN);
+
         $actor = AssistantAuthContext::fromRequest($request);
 
         return response()->json([
-            'data' => $this->knowledgeService->search($query, $category, $limit, $actor),
+            'data' => $this->knowledgeService->search($query, $category, $limit, $actor, $strictCategory),
         ]);
     }
 

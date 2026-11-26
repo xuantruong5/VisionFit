@@ -125,12 +125,18 @@ class KnowledgeEmbeddingService
 
     /**
      * Semantic search over pre-indexed knowledge embeddings using cosine similarity.
+     *
+     * When `$category` is narrowed by the LLM (`$strictCategory === false`) and returns no results
+     * above `knowledge_min_similarity`, automatically broadens retrieval across all authorized
+     * knowledge categories (`all`) using the exact same similarity threshold and allergy checks.
+     * When `$strictCategory === true` (user explicitly restricted category), never broadens.
      */
     public function search(
         string $query,
         ?string $category = 'all',
         int $limit = 4,
-        ?AssistantAuthContext $actor = null
+        ?AssistantAuthContext $actor = null,
+        bool $strictCategory = false
     ): array {
         $cleanQuery = trim($query);
         if ($cleanQuery === '') {
@@ -177,23 +183,67 @@ class KnowledgeEmbeddingService
             ];
         }
 
+        $requestedCat = strtolower(trim((string) $category));
+        if ($requestedCat === '') {
+            $requestedCat = 'all';
+        }
+        $limit = max(1, min(6, $limit));
+        $minSimilarity = (float) config('assistant.knowledge_min_similarity', 0.70);
+
+        $top = $this->rankMatchingRows($model, $requestedCat, $queryVector, $minSimilarity, $limit, $actor);
+        $effectiveCat = $requestedCat;
+        $broadenedFrom = null;
+
+        // Nếu LLM tự suy đoán category hẹp (không phải người dùng giới hạn cứng) mà không có kết quả đạt ngưỡng,
+        // mở rộng tìm trên toàn bộ danh mục kiến thức được phép với CÙNG ngưỡng similarity & cùng lọc dị ứng.
+        if (empty($top) && $requestedCat !== 'all' && !$strictCategory) {
+            $broadenedTop = $this->rankMatchingRows($model, 'all', $queryVector, $minSimilarity, $limit, $actor);
+            if (!empty($broadenedTop)) {
+                $top = $broadenedTop;
+                $effectiveCat = 'all';
+                $broadenedFrom = $requestedCat;
+            }
+        }
+
+        return [
+            'status' => !empty($top) ? 'ok' : 'empty',
+            'retrieval_method' => 'semantic_embeddings',
+            'embedding_model' => $model,
+            'query' => $cleanQuery,
+            'category' => $effectiveCat,
+            'requested_category' => $requestedCat,
+            'strict_category' => $strictCategory,
+            'broadened_from_category' => $broadenedFrom,
+            'results' => $top,
+            'message' => empty($top) ? 'Không tìm thấy nội dung phù hợp trong kho kiến thức VisionFit.' : null,
+        ];
+    }
+
+    /**
+     * Rank indexed documents in a given category (or all) above `$minSimilarity`,
+     * preserving member allergy warnings on food items.
+     *
+     * @param array<int, float> $queryVector
+     * @return array<int, array<string, mixed>>
+     */
+    private function rankMatchingRows(
+        string $model,
+        string $category,
+        array $queryVector,
+        float $minSimilarity,
+        int $limit,
+        ?AssistantAuthContext $actor
+    ): array {
         $q = DB::table(self::INDEX_TABLE)->where('embedding_model', $model);
-        $cat = strtolower(trim((string) $category));
-        if ($cat !== '' && $cat !== 'all') {
-            $q->where('category', $cat);
+        if ($category !== '' && $category !== 'all') {
+            $q->where('category', $category);
         }
 
         $rows = $q->get(['source_table', 'source_id', 'category', 'title', 'content_text', 'metadata_json', 'embedding_json']);
         if ($rows->isEmpty()) {
-            return [
-                'status' => 'empty',
-                'embedding_model' => $model,
-                'results' => [],
-                'message' => 'Không có dữ liệu tri thức phù hợp trong danh mục đã chọn.',
-            ];
+            return [];
         }
 
-        $minSimilarity = (float) config('assistant.knowledge_min_similarity', 0.48);
         $scored = [];
         foreach ($rows as $row) {
             $vec = json_decode((string) $row->embedding_json, true);
@@ -230,18 +280,7 @@ class KnowledgeEmbeddingService
         }
 
         usort($scored, fn ($a, $b) => $b['similarity_score'] <=> $a['similarity_score']);
-        $limit = max(1, min(6, $limit));
-        $top = array_slice($scored, 0, $limit);
-
-        return [
-            'status' => !empty($top) ? 'ok' : 'empty',
-            'retrieval_method' => 'semantic_embeddings',
-            'embedding_model' => $model,
-            'query' => $cleanQuery,
-            'category' => $cat ?: 'all',
-            'results' => $top,
-            'message' => empty($top) ? 'Không tìm thấy nội dung phù hợp trong kho kiến thức VisionFit.' : null,
-        ];
+        return array_slice($scored, 0, $limit);
     }
 
     /**

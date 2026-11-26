@@ -154,11 +154,19 @@ class AssistantOrchestrator
 
             $functionCalls = $turn['function_calls'] ?? [];
 
-            // Không còn yêu cầu gọi hàm -> trả về câu trả lời cuối của LLM
+            // Không còn yêu cầu gọi hàm -> xác minh tính nhất quán thứ/ngày (Asia/Ho_Chi_Minh) rồi trả câu trả lời cuối
             if (empty($functionCalls)) {
                 $answer = trim((string) ($turn['text'] ?? ''));
                 if ($answer === '') {
                     throw new LlmProviderException('AI_MALFORMED_RESPONSE', 'Mô hình AI trả về nội dung rỗng.', 503, true);
+                }
+
+                $verified = VietnameseDateVerifier::repairMismatchedWeekdays($answer);
+                if (!empty($verified['mismatches'])) {
+                    Log::warning('[AssistantOrchestrator] Repaired mismatched Vietnamese weekday in LLM answer', [
+                        'mismatches' => $verified['mismatches'],
+                    ]);
+                    $answer = $verified['text'];
                 }
 
                 $emotion = $this->resolveEmotion($toolTrace, $finalAction);
@@ -315,12 +323,13 @@ class AssistantOrchestrator
     private function buildSystemPrompt(string $species, AssistantAuthContext $actor): string
     {
         $now = $this->dataService->nowVN();
+        $tomorrow = $now->addDay();
         $todayIso = $now->toDateString();
         $todayVN = $now->format('d/m/Y');
         $timeVN = $now->format('H:i');
-        $tomorrowIso = $now->addDay()->toDateString();
-        $weekdayMap = [1 => 'Thứ 2', 2 => 'Thứ 3', 3 => 'Thứ 4', 4 => 'Thứ 5', 5 => 'Thứ 6', 6 => 'Thứ 7', 7 => 'Chủ nhật'];
-        $weekday = $weekdayMap[$now->dayOfWeekIso] ?? '';
+        $tomorrowIso = $tomorrow->toDateString();
+        $weekday = VietnameseDateVerifier::weekdayVn($now);
+        $tomorrowWeekday = VietnameseDateVerifier::weekdayVn($tomorrow);
 
         $persona = $species === 'cat'
             ? 'Bạn là Mèo VIF 🐱 — trợ lý linh vật thể hình VisionFit tinh nghịch, thân thiện, khích lệ người tập.'
@@ -334,7 +343,7 @@ class AssistantOrchestrator
 {$persona}
 Bạn là trợ lý tập luyện & dinh dưỡng VisionFit sử dụng **Function Calling** để truy xuất dữ liệu thật từ hệ thống.
 
-THỜI GIAN HIỆN TẠI (múi giờ Asia/Ho_Chi_Minh): {$weekday}, {$todayVN} ({$todayIso}), lúc {$timeVN}. Ngày mai là {$tomorrowIso}.
+THỜI GIAN HIỆN TẠI (múi giờ Asia/Ho_Chi_Minh): {$weekday}, {$todayVN} ({$todayIso}), lúc {$timeVN}. Ngày mai là {$tomorrowWeekday}, {$tomorrow->format('d/m/Y')} ({$tomorrowIso}).
 {$actorLine}
 
 NGUYÊN TẮC BẮT BUỘC:
@@ -359,7 +368,7 @@ NGUYÊN TẮC BẮT BUỘC:
    - Nếu người dùng báo đau, chấn thương, chóng mặt hoặc chuột rút khi tập: khuyên dừng động tác ngay và trao đổi với PT hoặc nhân viên y tế; không chẩn đoán y khoa.
 4. TRÌNH BÀY GỌN GÀNG CHO ĐIỆN THOẠI:
    - Trả lời tiếng Việt tự nhiên, súc tích (dưới 180 từ), không dùng tiêu đề `#`, `##`, `###` (dùng `- **...**`).
-   - Định dạng ngày giờ Việt Nam (`HH:mm dd/mm/yyyy` hoặc `dd/mm/yyyy`), tên bữa có dấu (Sáng, Phụ sáng, Trưa, Phụ chiều, Tối).
+   - Định dạng ngày giờ Việt Nam (`HH:mm dd/mm/yyyy` hoặc `dd/mm/yyyy`), tên bữa có dấu (Sáng, Phụ sáng, Trưa, Phụ chiều, Tối). Khi nhắc thứ trong tuần của một ngày, BẮT BUỘC dùng đúng trường `weekday_vn` / `date_vn_with_weekday` do công cụ trả về (không tự suy đoán thứ).
    - Khi trình bày bảng lịch tập, dùng tối đa 3 cột ngắn `| Buổi tập | Thời gian | PT |`.
 PROMPT;
     }

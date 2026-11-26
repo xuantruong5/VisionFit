@@ -239,15 +239,24 @@ class FitnessDataService
                 'role' => 'trainer',
                 'timezone' => self::TIMEZONE,
                 'today' => $todayIso,
+                'today_weekday_vn' => VietnameseDateVerifier::weekdayVn($now),
+                'tomorrow' => $tomorrowIso,
+                'tomorrow_weekday_vn' => VietnameseDateVerifier::weekdayVn($now->addDay()),
                 'query_range' => ['preset' => $preset, 'from' => $rangeStart, 'to' => $rangeEnd],
-                'sessions' => $rows->map(fn ($s) => [
-                    'name' => $s->ten_chuong_trinh,
-                    'scheduled_date' => $s->ngay_tap,
-                    'starts_at' => $s->gio_bat_dau
-                        ? CarbonImmutable::parse($s->ngay_tap . ' ' . $s->gio_bat_dau, self::TIMEZONE)->toIso8601String()
-                        : null,
-                    'status' => (string) ($s->tinh_trang ?? '0'),
-                ])->values()->all(),
+                'sessions' => $rows->map(function ($s) {
+                    $dt = $s->gio_bat_dau
+                        ? CarbonImmutable::parse($s->ngay_tap . ' ' . $s->gio_bat_dau, self::TIMEZONE)
+                        : CarbonImmutable::parse($s->ngay_tap, self::TIMEZONE);
+                    return [
+                        'name' => $s->ten_chuong_trinh,
+                        'scheduled_date' => $dt->toDateString(),
+                        'weekday_vn' => VietnameseDateVerifier::weekdayVn($dt),
+                        'date_vn_with_weekday' => VietnameseDateVerifier::formatDateWithWeekday($dt),
+                        'starts_at' => $s->gio_bat_dau ? $dt->toIso8601String() : null,
+                        'time_vn' => $s->gio_bat_dau ? $dt->format('H:i d/m/Y') : $dt->format('d/m/Y'),
+                        'status' => (string) ($s->tinh_trang ?? '0'),
+                    ];
+                })->values()->all(),
             ];
         }
 
@@ -291,18 +300,19 @@ class FitnessDataService
         }
 
         $mapRow = function ($s) use ($now, $todayIso) {
-            $isPastToday = ($s->ngay_tap === $todayIso)
+            $dt = $s->gio_bat_dau
+                ? CarbonImmutable::parse($s->ngay_tap . ' ' . $s->gio_bat_dau, self::TIMEZONE)
+                : CarbonImmutable::parse($s->ngay_tap, self::TIMEZONE);
+            $isPastToday = ($dt->toDateString() === $todayIso)
                 && !empty($s->gio_bat_dau)
                 && ((string) $s->gio_bat_dau < $now->format('H:i:s'));
             return [
                 'name' => $s->ten_chuong_trinh,
-                'scheduled_date' => $s->ngay_tap,
-                'starts_at' => $s->gio_bat_dau
-                    ? CarbonImmutable::parse($s->ngay_tap . ' ' . $s->gio_bat_dau, self::TIMEZONE)->toIso8601String()
-                    : null,
-                'time_vn' => $s->gio_bat_dau
-                    ? CarbonImmutable::parse($s->ngay_tap . ' ' . $s->gio_bat_dau, self::TIMEZONE)->format('H:i d/m/Y')
-                    : CarbonImmutable::parse($s->ngay_tap, self::TIMEZONE)->format('d/m/Y'),
+                'scheduled_date' => $dt->toDateString(),
+                'weekday_vn' => VietnameseDateVerifier::weekdayVn($dt),
+                'date_vn_with_weekday' => VietnameseDateVerifier::formatDateWithWeekday($dt),
+                'starts_at' => $s->gio_bat_dau ? $dt->toIso8601String() : null,
+                'time_vn' => $s->gio_bat_dau ? $dt->format('H:i d/m/Y') : $dt->format('d/m/Y'),
                 'trainer' => $s->ho_ten,
                 'has_pt' => !empty($s->ho_ten),
                 'status' => (string) ($s->tinh_trang ?? '0'),
@@ -338,6 +348,9 @@ class FitnessDataService
             'status' => !empty($sessions) ? 'ok' : 'no_session_in_range',
             'timezone' => self::TIMEZONE,
             'today' => $todayIso,
+            'today_weekday_vn' => VietnameseDateVerifier::weekdayVn($now),
+            'tomorrow' => $tomorrowIso,
+            'tomorrow_weekday_vn' => VietnameseDateVerifier::weekdayVn($now->addDay()),
             'query_range' => ['preset' => $preset, 'from' => $rangeStart, 'to' => $rangeEnd],
             'has_registered_program' => true,
             'active_program' => $activeProgram['name'],
@@ -761,11 +774,14 @@ class FitnessDataService
         }
 
         if (!empty($registeredMeals)) {
+            $reqDt = $targetDate ? CarbonImmutable::parse($targetDate, self::TIMEZONE) : null;
             return [
                 'status' => 'ok',
                 'timezone' => self::TIMEZONE,
                 'today' => $todayIso,
+                'today_weekday_vn' => VietnameseDateVerifier::weekdayVn($now),
                 'requested_date' => $targetDate,
+                'requested_date_weekday_vn' => $reqDt ? VietnameseDateVerifier::weekdayVn($reqDt) : null,
                 'has_registered_program' => true,
                 'has_meal_plan' => true,
                 'active_program' => $activeProgram['name'],
