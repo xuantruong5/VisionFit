@@ -44,8 +44,9 @@ class NutritionService
 
         $base = (10.0 * $weightKg) + (6.25 * $heightCm) - (5.0 * $age);
 
-        // Chuẩn hóa giới tính: 1, 'nu', 'female' là Nữ; còn lại là Nam
-        $isFemale = in_array(strtolower((string)$gender), ['1', 'nu', 'female', 'nữ'], true);
+        // Chuẩn hóa giới tính (UTF-8 safe — tránh lỗi PHP strtolower('Nữ') -> 'nỮ'): 1, 'nu', 'nữ', 'female' là Nữ; còn lại là Nam
+        $genderNorm = mb_strtolower(trim((string) $gender), 'UTF-8');
+        $isFemale = in_array($genderNorm, ['1', 'nu', 'female', 'nữ'], true);
 
         $bmr = $isFemale ? ($base - 161.0) : ($base + 5.0);
 

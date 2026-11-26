@@ -130,19 +130,37 @@ export function basicReply(question, context, user) {
       }).join('\n');
   }
   if (/lịch|lich|hôm nay|hom nay|tiếp theo|tiep theo|khi nào tập|khi nao tap|tập mấy giờ|tap may gio|ngày mai|ngay mai/i.test(q)) {
-    if (!context.schedule.length) return prefix + 'Chưa có lịch tập sắp tới trong dữ liệu được cấp.';
-    return prefix + 'Bảng lịch tập được backend cung cấp (không mặc định là hôm nay):\n\n' +
-      '| Buổi tập | Thời gian | Huấn luyện viên (PT) |\n' +
+    if (!context.schedule?.length) return prefix + 'Hiện tại bạn chưa đăng ký chương trình tập hoặc chưa có lịch tập nào trên hệ thống.';
+    const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const askToday = /hôm nay|hom nay|today|bữa nay|bua nay/i.test(q);
+    if (askToday) {
+      const todayItems = context.schedule.filter(s => String(s.scheduled_date || s.starts_at || '').startsWith(todayIso));
+      if (!todayItems.length) {
+        const nextItem = context.schedule[0];
+        return prefix + `Hôm nay (${formatVNDate(todayIso)}) bạn không có buổi tập nào trên lịch. Buổi tập gần nhất tiếp theo: **${nextItem.name || 'Buổi tập'}** lúc **${formatVNTime(nextItem.starts_at, nextItem.scheduled_date)}** (${nextItem.trainer || 'Tự tập'}).`;
+      }
+      return prefix + `Lịch tập hôm nay (${formatVNDate(todayIso)}) của bạn:\n\n` +
+        '| Buổi tập | Thời gian | PT |\n' +
+        '| :--- | :--- | :--- |\n' +
+        todayItems.map(s => `| ${s.name || 'Buổi tập'} | ${formatVNTime(s.starts_at, s.scheduled_date)} | ${s.trainer || 'Tự tập'} |`).join('\n');
+    }
+    return prefix + 'Bảng lịch tập sắp tới của bạn:\n\n' +
+      '| Buổi tập | Thời gian | PT |\n' +
       '| :--- | :--- | :--- |\n' +
-      context.schedule.map(s => {
+      context.schedule.slice(0, 3).map(s => {
         const time = formatVNTime(s.starts_at, s.scheduled_date);
-        return `| ${s.name || 'Buổi tập'} | ${time} | ${s.trainer || 'Chưa có PT'} |`;
+        return `| ${s.name || 'Buổi tập'} | ${time} | ${s.trainer || 'Tự tập'} |`;
       }).join('\n');
   }
-  if (/tiến độ|tien do|tuần|tuan|hoàn thành|hoan thanh/i.test(q)) return prefix + `Số buổi đã kết thúc trong tuần: ${context.progress.sessions_this_week ?? 'chưa có dữ liệu'}.\nTỷ lệ hoàn thành trung bình các buổi đó: ${context.progress.completion_percent === null ? 'chưa có dữ liệu' : context.progress.completion_percent + '%'}.`;
+  if (/tiến độ|tien do|tuần|tuan|hoàn thành|hoan thanh/i.test(q)) {
+    if (context.account_status?.has_registered_program === false) {
+      return prefix + 'Hiện tại bạn chưa đăng ký chương trình tập nào trên hệ thống nên chưa có dữ liệu tiến độ hoàn thành. Hãy đăng ký chương trình tập để bắt đầu theo dõi nhé.';
+    }
+    return prefix + `Số buổi đã kết thúc trong tuần: ${context.progress?.sessions_this_week ?? 'chưa có dữ liệu'}.\nTỷ lệ hoàn thành trung bình các buổi đó: ${context.progress?.completion_percent === null || context.progress?.completion_percent === undefined ? 'chưa có dữ liệu' : context.progress.completion_percent + '%'}.`;
+  }
   if (/hội viên|học viên|quản lý|hoi vien|hoc vien|quan ly/i.test(q) && context.summary) return prefix + `Số hội viên trong phạm vi ${user.role === 'trainer' ? 'PT được phân công' : 'phòng đã xác minh'}: ${context.summary.assigned_members ?? 'chưa có dữ liệu'}.${context.summary.expiring_members === null ? '' : ` Có ${context.summary.expiring_members} hội viên có gói hết hạn trong 7 ngày tới.`}`;
   if (/mục tiêu|muc tieu|hồ sơ|ho so|cấp độ|cap do/i.test(q)) return prefix + `Mục tiêu: ${context.profile.goal || 'chưa có dữ liệu'}.\nCấp độ: ${context.profile.level || 'chưa có dữ liệu'}.`;
-  if (/dinh dưỡng|dinh duong|chỉ số|chi so|bmi|bmr|tdee|calo|macro|protein|thể trạng|the trang|cân nặng|can nang|chiều cao|chieu cao/i.test(q)) {
+  if (/dinh dưỡng|dinh duong|chỉ số|chi so|bmi|bmr|tdee|calo|macro|protein|thể trạng|the trang|cơ thể của tôi|co the cua toi|thông số cơ thể|thong so co the|cân nặng|can nang|chiều cao|chieu cao/i.test(q)) {
     if (context.nutrition) {
       return prefix + 'Bảng chỉ số thể trạng & dinh dưỡng cá nhân:\n\n' +
         '| Chỉ số dinh dưỡng | Giá trị | Đơn vị / Đánh giá |\n' +
@@ -157,9 +175,15 @@ export function basicReply(question, context, user) {
         `| Nhu cầu Carb (Tinh bột) | ${context.nutrition.carb_g ?? '—'} | g/ngày |\n` +
         `| Nhu cầu Fat (Chất béo) | ${context.nutrition.fat_g ?? '—'} | g/ngày |`;
     }
-    return prefix + 'Hệ thống chưa ghi nhận chỉ số dinh dưỡng gần nhất của bạn. Bạn hãy cập nhật chiều cao, cân nặng và mục tiêu nhé.';
+    return prefix + 'Bạn chưa cập nhật chỉ số cơ thể trên hệ thống VisionFit. Hãy cập nhật chiều cao, cân nặng và mục tiêu trước nhé.';
   }
-  if (/chế độ ăn|che do an|thực đơn|thuc don|món ăn|mon an|ăn gì|an gi|dị ứng|di ung|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi|eat clean|keto|chay/i.test(q)) {
+  if (/bữa ăn|bua an|kế hoạch ăn|ke hoach an|khẩu phần|khau phan|lịch ăn|lich an|chế độ ăn|che do an|thực đơn|thuc don|món ăn|mon an|ăn gì|an gi|dị ứng|di ung|bữa sáng|bua sang|bữa trưa|bua trua|bữa tối|bua toi|eat clean|keto|chay/i.test(q)) {
+    if (context.meal_plan?.items?.length) {
+      return prefix + `Kế hoạch bữa ăn (${context.meal_plan.plan_name || 'Chương trình tập'}):\n\n` +
+        '| Món ăn | Bữa | Calo |\n' +
+        '| :--- | :--- | :--- |\n' +
+        context.meal_plan.items.slice(0, 5).map(m => `| ${m.name} | ${formatMealType(m.meal_type)} | ${m.calories ?? 0} kcal |`).join('\n');
+    }
     if (context.suggestions?.meals?.length) {
       let filtered = context.suggestions.meals;
       if (/sáng|sang/i.test(q)) {
@@ -177,7 +201,7 @@ export function basicReply(question, context, user) {
         '| :--- | :--- | :--- | :--- | :--- |\n' +
         filtered.map(m => `| ${m.name} | ${m.diet_type || 'Đa dạng'} | ${formatMealType(m.meal_type)} | ${m.calories} kcal | ${m.protein}g |`).join('\n');
     }
-    return prefix + 'Chưa có thực đơn món ăn phù hợp với thể trạng trong dữ liệu.';
+    return prefix + 'Hiện tại bạn chưa đăng ký chương trình tập hoặc chưa có kế hoạch bữa ăn nào trên hệ thống. Hãy đăng ký chương trình tập để hệ thống tạo thực đơn cá nhân hóa cho bạn nhé.';
   }
   if (/chương trình|chuong trinh|bài tập|bai tap|tập gì|tap gi|gợi ý tập|goi y tap|động tác|dong tac|ngực|nguc|chân|chan|lưng|lung|bụng|bung|tay|vai|tập luyện|tap luyen|muốn tập|muon tap|luyện tập|luyen tap|kế hoạch tập|ke hoach tap/i.test(q)) {
     let out = prefix;

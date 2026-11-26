@@ -24,7 +24,12 @@ import {
   triggerWorkoutStart,
   triggerWaterReminderSetting,
 } from './mascotEvents';
-import { navigateToWorkoutPlan } from '../../general/rootNavigation';
+import {
+  navigateToWorkoutPlan,
+  navigateToRegisterProgram,
+  navigateToBodyMetrics,
+  navigateToRegisterPackage,
+} from '../../general/rootNavigation';
 import { notify } from '../../general/notification';
 import { COLORS, SHADOWS } from '../../general/theme';
 
@@ -64,6 +69,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const justSentRef = useRef(false);
   const isSendingRef = useRef(false);
   const lastTokenRef = useRef<string | null | undefined>(undefined);
+  const sessionEpochRef = useRef(0);
   const justSentTimerRef = useRef<any>(null);
 
   const clearInput = () => {
@@ -119,6 +125,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       .then((token) => {
         if (!isMounted) return;
         if (lastTokenRef.current !== undefined && lastTokenRef.current !== token) {
+          sessionEpochRef.current += 1;
           clearAssistantCache();
           setMessages([createWelcomeMessage(currentSpecies)]);
         }
@@ -231,8 +238,10 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       time: nowTime,
     };
 
+    const requestEpoch = sessionEpochRef.current;
     const historyPayload = messages
       .filter((m) => m.id !== 'welcome')
+      .slice(-8)
       .map((m) => ({
         sender: m.sender,
         text: m.text,
@@ -248,6 +257,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
     try {
       const res = await getAIResponse(textToSend, currentSpecies, historyPayload);
+      // Bỏ qua phản hồi cũ nếu người dùng đã đăng xuất / đổi tài khoản trong lúc chờ API
+      if (sessionEpochRef.current !== requestEpoch) return;
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -306,9 +317,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
   const headerMascotImg = getMascotImage(currentSpecies, currentStage);
 
-  // Render đoạn text hỗ trợ in đậm **bold** nội tuyến
+  // Render đoạn text hỗ trợ in đậm **bold** và in nghiêng *italic* nội tuyến
   const renderInlineBoldText = (text: string, baseStyle: any) => {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g);
     return (
       <Text style={baseStyle}>
         {parts.map((part, idx) => {
@@ -316,6 +327,13 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
             return (
               <Text key={idx} style={{ fontWeight: '700', color: COLORS.textDark }}>
                 {part.slice(2, -2)}
+              </Text>
+            );
+          }
+          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+            return (
+              <Text key={idx} style={{ fontStyle: 'italic' }}>
+                {part.slice(1, -1)}
               </Text>
             );
           }
@@ -338,15 +356,18 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
       const headerLower = (headers[colIdx] || '').toLowerCase();
       if (colIdx === 0 && (headerLower === 'stt' || headerLower === '#')) {
-        return 46;
+        return 44;
       }
       if (colIdx === 0 && (headerLower.includes('bữa') || headerLower === 'bua')) {
-        return Math.max(70, Math.min(92, longest * 8 + 24));
+        return Math.max(68, Math.min(88, longest * 7.5 + 22));
+      }
+      if (headerLower === 'pt' || headerLower === 'giờ') {
+        return Math.max(66, Math.min(92, longest * 7.2 + 20));
       }
       // Ước lượng hợp lý theo độ dài ký tự, giữ gọn gàng trên màn hình mobile
-      const estimated = Math.round(longest * 7.2 + 24);
-      const minW = colIdx === 0 ? 74 : 78;
-      const maxW = colCount <= 3 ? 165 : 155;
+      const estimated = Math.round(longest * 6.8 + 20);
+      const minW = colIdx === 0 ? 72 : 68;
+      const maxW = colCount <= 3 ? 148 : 145;
       return Math.max(minW, Math.min(maxW, estimated));
     });
 
@@ -626,10 +647,43 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         >
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
-            const showWorkoutButton =
-              !isUser &&
-              msg.id !== 'welcome' &&
-              (msg.action?.type === 'NAVIGATE_WORKOUT' || msg.intent === 'workout_navigation');
+            const actionType = !isUser && msg.id !== 'welcome' ? msg.action?.type : null;
+
+            const actionButtonConfig =
+              actionType === 'NAVIGATE_REGISTER_PROGRAM'
+                ? {
+                    label: '📋 Đăng ký chương trình tập ➔',
+                    onPress: () => {
+                      navigateToRegisterProgram();
+                      onClose();
+                    },
+                  }
+                : actionType === 'NAVIGATE_BODY_METRICS'
+                ? {
+                    label: '📊 Cập nhật chỉ số cơ thể ➔',
+                    onPress: () => {
+                      navigateToBodyMetrics();
+                      onClose();
+                    },
+                  }
+                : actionType === 'NAVIGATE_REGISTER_PACKAGE'
+                ? {
+                    label: '🎟 Đăng ký gói tập ngay ➔',
+                    onPress: () => {
+                      navigateToRegisterPackage();
+                      onClose();
+                    },
+                  }
+                : actionType === 'NAVIGATE_WORKOUT'
+                ? {
+                    label: '🏋️ Mở Kế hoạch tập ngay ➔',
+                    onPress: () => {
+                      triggerWorkoutStart();
+                      navigateToWorkoutPlan();
+                      onClose();
+                    },
+                  }
+                : null;
 
             return (
               <View
@@ -659,17 +713,15 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                   ) : (
                     <>
                       {renderFormattedAiMessage(msg.text)}
-                      {showWorkoutButton && (
+                      {actionButtonConfig && (
                         <TouchableOpacity
                           style={styles.workoutActionBtn}
-                          onPress={() => {
-                            triggerWorkoutStart();
-                            navigateToWorkoutPlan();
-                            onClose();
-                          }}
+                          onPress={actionButtonConfig.onPress}
                           activeOpacity={0.8}
                         >
-                          <Text style={styles.workoutActionBtnText}>🏋️ Mở Kế hoạch tập ngay ➔</Text>
+                          <Text style={styles.workoutActionBtnText}>
+                            {actionButtonConfig.label}
+                          </Text>
                         </TouchableOpacity>
                       )}
                     </>

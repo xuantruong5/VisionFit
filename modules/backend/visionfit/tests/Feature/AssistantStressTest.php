@@ -39,6 +39,8 @@ class AssistantStressTest extends TestCase
             '2026_09_11_062608_create_bai_tap_table.php',
             '2026_10_15_170400_create_chi_tiet_bai_tap_table.php',
             '2026_09_13_122736_create_mon_an_table.php',
+            '2026_09_13_120830_create_ke_hoach_an_table.php',
+            '2026_09_13_122252_create_khau_phan_an_table.php',
             '2026_11_01_000001_create_lich_su_chi_so_dinh_duong_table.php',
             '2026_09_17_170000_create_bach_khoa_toan_thu_table.php',
             '2026_09_18_130000_create_dinh_duong_the_thao_table.php',
@@ -131,7 +133,8 @@ class AssistantStressTest extends TestCase
 
     private function createMember(int $id, array $overrides = []): Client
     {
-        return Client::forceCreate(array_merge([
+        $hasMetrics = !empty($overrides['chieu_cao_cm']) && !empty($overrides['can_nang_kg']);
+        $defaults = [
             'id' => $id,
             'id_phong_tap' => 10,
             'email' => "member{$id}@test.local",
@@ -144,7 +147,9 @@ class AssistantStressTest extends TestCase
             'can_nang_kg' => null,
             'muc_tieu_hien_tai' => null,
             'di_ung' => null,
-        ], $overrides));
+            'ngay_cap_nhat_chi_so' => $hasMetrics ? now() : null,
+        ];
+        return Client::forceCreate(array_merge($defaults, $overrides));
     }
 
     private function headersFor(Client $user): array
@@ -442,7 +447,7 @@ class AssistantStressTest extends TestCase
         $this->assertSame('SET_WATER_REMINDER', $r4->json('action.type'));
         $this->assertFalse((bool) $r4->json('action.params.enabled'));
 
-        // Case 8.5: Follow-up "có" sau câu hỏi bắt đầu tập
+        // Case 8.5: Follow-up "có" sau câu hỏi bắt đầu tập (member 80 chưa đăng ký chương trình -> điều hướng màn đăng ký)
         $r5 = $this->postJson('/api/assistant/chat', [
             'message' => 'có',
             'species' => 'bear',
@@ -451,7 +456,7 @@ class AssistantStressTest extends TestCase
             ],
         ], $h)->assertOk();
         $this->assertSame('workout_navigation', $r5->json('intent'));
-        $this->assertSame('NAVIGATE_WORKOUT', $r5->json('action.type'));
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r5->json('action.type'));
     }
 
     // =========================================================================
@@ -619,5 +624,215 @@ class AssistantStressTest extends TestCase
         ], $h)->assertOk();
         $this->assertSame('visionfit_knowledge_encyclopedia', $rEnc->json('source'));
         $this->assertStringContainsString('Progressive Overload', (string) $rEnc->json('answer'));
+    }
+
+    // =========================================================================
+    // NHÓM 11 (5 cases): Lỗi 1 - Nút điều hướng chính xác (chưa đăng ký -> màn đăng ký, KHÔNG vào tab đã đăng ký)
+    // =========================================================================
+    public function test_group11_navigation_actions_match_registration_state_5_cases(): void
+    {
+        $fresh = $this->createMember(110);
+        $h = $this->headersFor($fresh);
+
+        // 11.1: Chưa đăng ký chương trình hỏi xem lịch tập -> NAVIGATE_REGISTER_PROGRAM
+        $r1 = $this->postJson('/api/assistant/chat', ['message' => 'Cho toi xem lich tap', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r1->json('action.type'));
+
+        // 11.2: Chưa đăng ký chương trình hỏi muốn tập luyện -> NAVIGATE_REGISTER_PROGRAM
+        $r2 = $this->postJson('/api/assistant/chat', ['message' => 'Tôi muốn tập luyện', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r2->json('action.type'));
+
+        // 11.3: Chưa đăng ký chương trình hỏi tiến độ hoàn thành -> NAVIGATE_REGISTER_PROGRAM
+        $r3 = $this->postJson('/api/assistant/chat', ['message' => 'Chuong trinh cua toi hoan thanh bao nhieu roi', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r3->json('action.type'));
+
+        // 11.4: Chưa đăng ký gói tập hỏi gói tập -> NAVIGATE_REGISTER_PACKAGE
+        $r4 = $this->postJson('/api/assistant/chat', ['message' => 'Gói tập của tôi còn bao nhiêu buổi?', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame('NAVIGATE_REGISTER_PACKAGE', $r4->json('action.type'));
+
+        // 11.5: Chưa cập nhật chỉ số hỏi chỉ số cơ thể -> NAVIGATE_BODY_METRICS
+        $r5 = $this->postJson('/api/assistant/chat', ['message' => 'Chi so co the cua toi', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame('NAVIGATE_BODY_METRICS', $r5->json('action.type'));
+    }
+
+    // =========================================================================
+    // NHÓM 12 (5 cases): Lỗi 2 - "Cho toi xem bua an" & "Chi so co the cua toi" không đụng "the cua toi"
+    // =========================================================================
+    public function test_group12_meal_plan_queries_and_co_the_disambiguation_5_cases(): void
+    {
+        $fresh = $this->createMember(120);
+        $hFresh = $this->headersFor($fresh);
+
+        // 12.1: "Cho toi xem bua an" khi chưa đăng ký -> báo rõ chưa đăng ký chương trình, không rơi mặc định
+        $r1 = $this->postJson('/api/assistant/chat', ['message' => 'Cho toi xem bua an', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringNotContainsString('Mình đã nhận câu hỏi', (string) $r1->json('answer'));
+        $this->assertStringContainsString('chưa đăng ký chương trình', mb_strtolower((string) $r1->json('answer'), 'UTF-8'));
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r1->json('action.type'));
+
+        // 12.2: "ke hoach an hom nay" / "lich an uong cua toi" khi chưa đăng ký
+        $r2 = $this->postJson('/api/assistant/chat', ['message' => 'ke hoach an hom nay cua toi', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringContainsString('chưa đăng ký chương trình', mb_strtolower((string) $r2->json('answer'), 'UTF-8'));
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r2->json('action.type'));
+
+        // 12.3: "Chi so co the cua toi" -> KHÔNG BAO GIỜ nhận nhầm "the cua toi" thành gói tập!
+        $r3 = $this->postJson('/api/assistant/chat', ['message' => 'Chi so co the cua toi', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringNotContainsString('gói tập', mb_strtolower((string) $r3->json('answer'), 'UTF-8'));
+        $this->assertStringContainsString('chưa cập nhật chỉ số cơ thể', mb_strtolower((string) $r3->json('answer'), 'UTF-8'));
+
+        // 12.4: "thong so co the cua toi" -> nhận đúng nhánh chỉ số cơ thể
+        $r4 = $this->postJson('/api/assistant/chat', ['message' => 'thong so co the cua toi', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringContainsString('chưa cập nhật chỉ số cơ thể', mb_strtolower((string) $r4->json('answer'), 'UTF-8'));
+
+        // 12.5: User ĐÃ đăng ký chương trình + có kế hoạch ăn thật trong ke_hoach_an / khau_phan_an
+        $regUser = $this->createMember(121, ['chieu_cao_cm' => 170, 'can_nang_kg' => 65]);
+        $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Giảm mỡ 30 ngày']);
+        $dkId = DB::table('dang_ky_chuong_trinh')->insertGetId(['id_hoi_vien' => 121, 'id_chuong_trinh' => $progId, 'tinh_trang' => 1]);
+        $khaId = DB::table('ke_hoach_an')->insertGetId([
+            'id_dang_ky_chuong_trinh' => $dkId, 'id_chuong_trinh' => $progId, 'ten_ke_hoach' => 'Kế hoạch ăn giảm mỡ', 'tinh_trang' => 1,
+        ]);
+        $monId = DB::table('mon_an')->where('loai_bua', 'TRUA')->value('id');
+        DB::table('khau_phan_an')->insert([
+            'id_ke_hoach_an' => $khaId, 'id_mon_an' => $monId, 'id_muc_tieu_dinh_duong' => 1, 'ngay_thu' => 1,
+            'ngay_an' => now()->toDateString(), 'gio_an' => '12:00:00', 'bua_an' => 'TRUA',
+        ]);
+        $r5 = $this->postJson('/api/assistant/chat', ['message' => 'Cho toi xem bua an', 'species' => 'bear'], $this->headersFor($regUser))->assertOk();
+        $this->assertStringContainsString('Kế hoạch bữa ăn', (string) $r5->json('answer'));
+        $this->assertStringContainsString('Cơm gạo lứt ức gà', (string) $r5->json('answer'));
+    }
+
+    // =========================================================================
+    // NHÓM 13 (5 cases): Lỗi 3 - Tài khoản seed (như client2) chưa từng nhập chỉ số (ngay_cap_nhat_chi_so = null)
+    // =========================================================================
+    public function test_group13_seeded_account_without_metrics_submission_5_cases(): void
+    {
+        // Giả lập đúng y hệt client2@gmail.com trong ClientSeeder (52kg, 160cm, ngay_cap_nhat_chi_so = null)
+        $seeded = $this->createMember(130, [
+            'chieu_cao_cm' => 160,
+            'can_nang_kg' => 52,
+            'muc_tieu_hien_tai' => 'Giảm cân',
+            'ngay_cap_nhat_chi_so' => null,
+        ]);
+        $hSeeded = $this->headersFor($seeded);
+
+        // 13.1: /context trả nutrition = null & has_body_metrics = false (đồng bộ checkCapNhatChiSo)
+        $this->getJson('/api/assistant/context', $hSeeded)->assertOk()
+            ->assertJsonPath('data.nutrition', null)
+            ->assertJsonPath('data.account_status.has_body_metrics', false)
+            ->assertJsonCount(0, 'data.suggestions.meals');
+
+        // 13.2: Hỏi chỉ số thể trạng -> báo chưa cập nhật, KHÔNG lộ 52kg/160cm/BMI 20.31
+        $r2 = $this->postJson('/api/assistant/chat', ['message' => 'Cho tôi biết chỉ số thể trạng và dinh dưỡng calo của tôi', 'species' => 'bear'], $hSeeded)->assertOk();
+        $this->assertStringContainsString('chưa cập nhật chỉ số cơ thể', mb_strtolower((string) $r2->json('answer'), 'UTF-8'));
+        $this->assertStringNotContainsString('20.31', (string) $r2->json('answer'));
+        $this->assertSame('NAVIGATE_BODY_METRICS', $r2->json('action.type'));
+
+        // 13.3: Hỏi thực đơn -> báo chưa cập nhật chỉ số, KHÔNG đổ bảng món ăn
+        $r3 = $this->postJson('/api/assistant/chat', ['message' => 'Gợi ý thực đơn ăn giảm mỡ Eat Clean', 'species' => 'bear'], $hSeeded)->assertOk();
+        $this->assertStringContainsString('chưa cập nhật chỉ số cơ thể', mb_strtolower((string) $r3->json('answer'), 'UTF-8'));
+        $this->assertStringNotContainsString('| Bữa |', (string) $r3->json('answer'));
+
+        // 13.4: Khi có bản ghi thật trong lich_su_chi_so_dinh_duong -> hiển thị đúng bảng chỉ số
+        DB::table('lich_su_chi_so_dinh_duong')->insert([
+            'id_user' => 130, 'can_nang' => 52, 'bmi' => 20.31, 'bmr' => 1239,
+            'tdee' => 1703.63, 'kcal_muc_tieu' => 1239, 'protein' => 108.41, 'carb' => 123.9, 'fat' => 34.42,
+        ]);
+        $r4 = $this->postJson('/api/assistant/chat', ['message' => 'Cho tôi biết chỉ số thể trạng của tôi', 'species' => 'bear'], $hSeeded)->assertOk();
+        $this->assertStringContainsString('20.31', (string) $r4->json('answer'));
+
+        // 13.5: User mới cập nhật qua form (ngay_cap_nhat_chi_so = now()) -> tính & hiện đúng BMI
+        $updated = $this->createMember(131, ['chieu_cao_cm' => 160, 'can_nang_kg' => 52, 'ngay_cap_nhat_chi_so' => now()]);
+        $r5 = $this->postJson('/api/assistant/chat', ['message' => 'Cho tôi biết chỉ số thể trạng của tôi', 'species' => 'bear'], $this->headersFor($updated))->assertOk();
+        $this->assertStringContainsString('20.31', (string) $r5->json('answer'));
+    }
+
+    // =========================================================================
+    // NHÓM 14 (5 cases): Lỗi 4 - Lọc lịch tập chính xác theo ngày (Hôm nay / Ngày mai / Tiếp theo / Chung)
+    // =========================================================================
+    public function test_group14_schedule_date_filtering_5_cases(): void
+    {
+        $u = $this->createMember(140, ['chieu_cao_cm' => 175, 'can_nang_kg' => 70]);
+        $h = $this->headersFor($u);
+        $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Phát triển cơ bắp toàn thân']);
+        $dkId = DB::table('dang_ky_chuong_trinh')->insertGetId(['id_hoi_vien' => 140, 'id_chuong_trinh' => $progId, 'tinh_trang' => 1]);
+
+        // Tạo 5 buổi tập tương lai bắt đầu từ NGÀY MAI (HÔM NAY không có buổi nào!)
+        foreach ([1, 3, 5, 7, 10] as $offset) {
+            DB::table('lich_tap')->insert([
+                'id_dang_ky_chuong_trinh' => $dkId, 'id_chuong_trinh' => $progId, 'id_hoi_vien' => 140,
+                'ngay_tap' => now()->addDays($offset)->toDateString(), 'gio_bat_dau' => '06:00:00', 'tinh_trang' => '0',
+            ]);
+        }
+
+        // 14.1: Hỏi "Lich tap hom nay cua toi" khi hôm nay KHÔNG có lịch -> báo hôm nay không có lịch, KHÔNG show bảng 5 dòng
+        $r1 = $this->postJson('/api/assistant/chat', ['message' => 'Lich tap hom nay cua toi', 'species' => 'bear'], $h)->assertOk();
+        $a1 = (string) $r1->json('answer');
+        $this->assertStringContainsString('không có lịch tập', mb_strtolower($a1, 'UTF-8'));
+        $this->assertStringNotContainsString('| Buổi tập |', $a1);
+
+        // 14.2: Hỏi "Lich tap ngay mai cua toi" -> chỉ show đúng 1 buổi ngày mai
+        $r2 = $this->postJson('/api/assistant/chat', ['message' => 'Lich tap ngay mai cua toi', 'species' => 'bear'], $h)->assertOk();
+        $a2 = (string) $r2->json('answer');
+        $this->assertSame(1, substr_count($a2, 'Phát triển cơ bắp toàn thân'));
+
+        // 14.3: Hỏi "Buổi tập tiếp theo của tôi khi nào?" -> chỉ show đúng 1 buổi gần nhất
+        $r3 = $this->postJson('/api/assistant/chat', ['message' => 'Buổi tập tiếp theo của tôi khi nào?', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame(1, substr_count((string) $r3->json('answer'), 'Phát triển cơ bắp toàn thân'));
+
+        // 14.4: Hỏi "Cho toi xem lich tap" chung -> show gọn tối đa 3 buổi (không tràn 5 buổi)
+        $r4 = $this->postJson('/api/assistant/chat', ['message' => 'Cho toi xem lich tap', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame(3, substr_count((string) $r4->json('answer'), 'Phát triển cơ bắp toàn thân'));
+
+        // 14.5: Thêm 1 buổi cho HÔM NAY (23:59) -> hỏi "Lich tap hom nay cua toi" chỉ show đúng 1 buổi hôm nay
+        DB::table('lich_tap')->insert([
+            'id_dang_ky_chuong_trinh' => $dkId, 'id_chuong_trinh' => $progId, 'id_hoi_vien' => 140,
+            'ngay_tap' => now()->toDateString(), 'gio_bat_dau' => '23:59:00', 'tinh_trang' => '0',
+        ]);
+        $r5 = $this->postJson('/api/assistant/chat', ['message' => 'Lich tap hom nay cua toi', 'species' => 'bear'], $h)->assertOk();
+        $this->assertSame(1, substr_count((string) $r5->json('answer'), 'Phát triển cơ bắp toàn thân'));
+        $this->assertStringContainsString('23:59', (string) $r5->json('answer'));
+    }
+
+    // =========================================================================
+    // NHÓM 15 (5 cases): Lỗi 5 - Tiến độ chương trình (chưa đăng ký KHÔNG in bảng 0 buổi; đã đăng ký hiện đúng %)
+    // =========================================================================
+    public function test_group15_program_progress_requires_registered_program_5_cases(): void
+    {
+        $fresh = $this->createMember(150);
+        $hFresh = $this->headersFor($fresh);
+
+        // 15.1: Chưa đăng ký chương trình hỏi "Chuong trinh cua toi hoan thanh bao nhieu roi" -> báo chưa đăng ký, KHÔNG in bảng 0 buổi
+        $r1 = $this->postJson('/api/assistant/chat', ['message' => 'Chuong trinh cua toi hoan thanh bao nhieu roi', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringContainsString('chưa đăng ký chương trình', mb_strtolower((string) $r1->json('answer'), 'UTF-8'));
+        $this->assertStringNotContainsString('0 buổi', (string) $r1->json('answer'));
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r1->json('action.type'));
+
+        // 15.2: Chưa đăng ký hỏi "Tiến độ tập luyện của tôi" -> không in bảng 0 buổi
+        $r2 = $this->postJson('/api/assistant/chat', ['message' => 'Tiến độ tập luyện của tôi thế nào', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringNotContainsString('0 buổi', (string) $r2->json('answer'));
+        $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $r2->json('action.type'));
+
+        // 15.3: Chưa đăng ký hỏi "Tuần này tôi tập được mấy buổi rồi" -> báo chưa đăng ký
+        $r3 = $this->postJson('/api/assistant/chat', ['message' => 'Tuần này tôi tập được mấy buổi rồi', 'species' => 'bear'], $hFresh)->assertOk();
+        $this->assertStringContainsString('chưa đăng ký chương trình', mb_strtolower((string) $r3->json('answer'), 'UTF-8'));
+
+        // 15.4: ĐÃ đăng ký chương trình (45%) hỏi "Chuong trinh cua toi hoan thanh bao nhieu roi" -> hiện đúng tên & 45%
+        $reg = $this->createMember(151);
+        $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Sức bền nâng cao']);
+        DB::table('dang_ky_chuong_trinh')->insert([
+            'id_hoi_vien' => 151, 'id_chuong_trinh' => $progId, 'phan_tram_hoan_thanh' => 45, 'tinh_trang' => 1,
+        ]);
+        $r4 = $this->postJson('/api/assistant/chat', ['message' => 'Chuong trinh cua toi hoan thanh bao nhieu roi', 'species' => 'bear'], $this->headersFor($reg))->assertOk();
+        $this->assertStringContainsString('Sức bền nâng cao', (string) $r4->json('answer'));
+        $this->assertStringContainsString('45%', (string) $r4->json('answer'));
+        $this->assertSame('NAVIGATE_WORKOUT', $r4->json('action.type'));
+
+        // 15.5: ĐÃ đăng ký + có 2 buổi hoàn thành tuần này (80%) -> hiện đúng 2 buổi & 80%
+        DB::table('buoi_tap')->insert([
+            ['id_hoi_vien' => 151, 'thoi_gian_bat_dau' => now(), 'tinh_trang' => '2', 'phan_tram_hoan_thanh' => 70],
+            ['id_hoi_vien' => 151, 'thoi_gian_bat_dau' => now(), 'tinh_trang' => '2', 'phan_tram_hoan_thanh' => 90],
+        ]);
+        $r5 = $this->postJson('/api/assistant/chat', ['message' => 'Tiến độ tập luyện tuần này của tôi', 'species' => 'bear'], $this->headersFor($reg))->assertOk();
+        $this->assertStringContainsString('2 buổi', (string) $r5->json('answer'));
+        $this->assertStringContainsString('80%', (string) $r5->json('answer'));
     }
 }

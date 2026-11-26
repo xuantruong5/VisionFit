@@ -35,6 +35,9 @@ import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
 import { getMascotPeekingImage } from './mascotImages';
 import { getStoredSpecies, subscribeSpeciesChange } from './mascotStorage';
 import { getProgressionData, recordWorkoutSession } from './mascotProgression';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const WATER_REMINDER_STORAGE_KEY = '@visionfit_water_reminder';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {
@@ -270,9 +273,33 @@ const MascotInner: React.FC<MascotProps> = ({
     };
   }, []);
 
-  // NHẮC UỐNG NƯỚC MỖI 2 TIẾNG (7200s) - Có thể bật/tắt động từ AI Chatbot
+  // NHẮC UỐNG NƯỚC MỖI 2 TIẾNG (7200s) - Lưu bền vững vào AsyncStorage và bật/tắt động từ AI Chatbot
   const [waterReminderEnabled, setWaterReminderEnabled] = useState(true);
   const [waterIntervalHours, setWaterIntervalHours] = useState(2);
+  const isChatVisibleRef = useRef(false);
+
+  useEffect(() => {
+    isChatVisibleRef.current = isChatVisible;
+  }, [isChatVisible]);
+
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem(WATER_REMINDER_STORAGE_KEY)
+      .then((raw) => {
+        if (!mounted || !raw) return;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.enabled === 'boolean') {
+          setWaterReminderEnabled(parsed.enabled);
+        }
+        if (typeof parsed?.intervalHours === 'number' && parsed.intervalHours > 0) {
+          setWaterIntervalHours(parsed.intervalHours);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const triggerDrink = () => {
     setCurrentState('drinking');
@@ -291,18 +318,26 @@ const MascotInner: React.FC<MascotProps> = ({
 
   useEffect(() => {
     const handleWaterSetting = (payload?: { enabled?: boolean; intervalHours?: number }) => {
+      let nextEnabled = waterReminderEnabled;
+      let nextHours = waterIntervalHours;
       if (typeof payload?.enabled === 'boolean') {
+        nextEnabled = payload.enabled;
         setWaterReminderEnabled(payload.enabled);
       }
       if (typeof payload?.intervalHours === 'number' && payload.intervalHours > 0) {
+        nextHours = payload.intervalHours;
         setWaterIntervalHours(payload.intervalHours);
       }
+      AsyncStorage.setItem(
+        WATER_REMINDER_STORAGE_KEY,
+        JSON.stringify({ enabled: nextEnabled, intervalHours: nextHours })
+      ).catch(() => {});
     };
     mascotEmitter.on(MASCOT_EVENTS.SET_WATER_REMINDER, handleWaterSetting);
     return () => {
       mascotEmitter.off(MASCOT_EVENTS.SET_WATER_REMINDER, handleWaterSetting);
     };
-  }, []);
+  }, [waterReminderEnabled, waterIntervalHours]);
 
   useEffect(() => {
     let drinkTimer: any = null;
@@ -312,6 +347,10 @@ const MascotInner: React.FC<MascotProps> = ({
     }
 
     const handleKeyDown = (e: any) => {
+      // Không kích hoạt phím tắt demo khi đang mở khung chat hoặc đang gõ trong ô nhập liệu
+      if (isChatVisibleRef.current) return;
+      const tag = String(e?.target?.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e?.target?.isContentEditable) return;
       if (e?.key === 'd' || e?.key === 'D') {
         triggerDrink();
       }
