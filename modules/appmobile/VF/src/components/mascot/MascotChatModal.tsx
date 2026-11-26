@@ -267,6 +267,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         intent: res.intent,
         action: res.action || null,
+        source: res.source,
+        retryable: !res.ok && res.retryable !== false,
+        retryQuery: !res.ok ? textToSend : undefined,
       };
       setMessages((prev) => [...prev, aiMsg]);
 
@@ -721,6 +724,17 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                         >
                           <Text style={styles.workoutActionBtnText}>
                             {actionButtonConfig.label}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {msg.retryable && msg.retryQuery && (
+                        <TouchableOpacity
+                          style={styles.workoutActionBtn}
+                          onPress={() => handleSend(msg.retryQuery)}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={styles.workoutActionBtnText}>
+                            🔄 Thử lại câu hỏi này
                           </Text>
                         </TouchableOpacity>
                       )}

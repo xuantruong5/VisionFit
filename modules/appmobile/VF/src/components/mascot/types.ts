@@ -47,4 +47,7 @@ export interface ChatMessage {
   time: string;
   intent?: string;
   action?: ChatAction | null;
+  source?: string;
+  retryable?: boolean;
+  retryQuery?: string;
 }
