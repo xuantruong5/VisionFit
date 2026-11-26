@@ -115,24 +115,78 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
     }
   };
 
+
   const handlePressDay = async (day: any) => {
-    // Chưa mở khóa thì không cho nhấn
     if (Number(day.tinh_trang) !== 1) return;
-    const idDangKy = Number(day.id_dang_ky_chuong_trinh);
-    const idChuongTrinhBaiTap = Number(day.id_chuong_trinh_bai_tap);
-    if (!idDangKy || !idChuongTrinhBaiTap) {
-      Alert.alert("Thông báo", "Không tìm thấy thông tin đăng ký chương trình.");
-      return;
-    }
+
     try {
-      setCheckingDayId(idChuongTrinhBaiTap);
-      // Gọi API kiểm tra quyền tập
+      setCheckingDayId(Number(day.id_chuong_trinh_bai_tap));
+
+      // 1. Nếu ngày được chọn đã hoàn thành thì tìm ngày chưa hoàn thành tiếp theo
+      let targetDay = day;
+
+      const progressSelected =
+        Number(progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0);
+
+      if (progressSelected >= 100) {
+        const nextDay = apiData.find((item: any) => {
+          const sameRegistration =
+            Number(item.id_dang_ky_chuong_trinh) ===
+            Number(day.id_dang_ky_chuong_trinh);
+
+          const isUnlocked = Number(item.tinh_trang) === 1;
+
+          const progress =
+            Number(progressByDay[Number(item.id_chuong_trinh_bai_tap)] ?? 0);
+
+          return sameRegistration && isUnlocked && progress < 100;
+        });
+
+        if (!nextDay) {
+          Alert.alert(
+            "Thông báo",
+            "Bạn đã hoàn thành tất cả các ngày tập có thể thực hiện trong chương trình này."
+          );
+          return;
+        }
+
+        targetDay = nextDay;
+      }
+
+      // 2. Lấy ID của ngày thực tế sẽ tập
+      const idDangKy = Number(targetDay.id_dang_ky_chuong_trinh);
+      const idChuongTrinhBaiTap = Number(
+        targetDay.id_chuong_trinh_bai_tap
+      );
+
+      if (!idDangKy || !idChuongTrinhBaiTap) {
+        Alert.alert(
+          "Thông báo",
+          "Không tìm thấy thông tin đăng ký chương trình."
+        );
+        return;
+      }
+
+      // 3. Tạo params TRƯỚC khi hiển thị cảnh báo
+      const params = {
+        ngayThu: targetDay.ngay_thu,
+        dayType: targetDay.ten_ngay_tap,
+        thoi_gian_phut: targetDay.thoi_gian_phut,
+        id_chuong_trinh_bai_tap: targetDay.id_chuong_trinh_bai_tap,
+        id_dang_ky_chuong_trinh: targetDay.id_dang_ky_chuong_trinh,
+        id_chuong_trinh: targetDay.id_chuong_trinh,
+        id_lich_tap: targetDay.id_lich_tap,
+      };
+
+      // 4. Kiểm tra quyền tập với đúng ngày sẽ tập
       const res = await apiFitlife.post("/client/check-quyen-tap", {
         id_dang_ky_chuong_trinh: idDangKy,
         id_chuong_trinh_bai_tap: idChuongTrinhBaiTap,
       });
+
       const data = res.data?.data;
-      // Backend không cho phép tập
+
+      // Không được phép tập
       if (!data?.duoc_phep_tap) {
         Alert.alert(
           "Yêu cầu đăng ký gói tập",
@@ -141,9 +195,6 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
             {
               text: "Cancel",
               style: "cancel",
-              onPress: () => {
-                // Đóng thông báo, ở lại màn hình hiện tại
-              },
             },
             {
               text: "OK",
@@ -151,45 +202,34 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
                 navigation.navigate("WorkoutSelectionScreen" as never);
               },
             },
-          ],
-          { cancelable: true }
+          ]
         );
         return;
       }
-      // Đã hoàn thành chương trình khác trong hôm nay
+
+      // Có khuyến cáo tập luyện
       if (data?.can_khuyen_cao) {
-          Alert.alert(
-              "Khuyến cáo tập luyện",
-              data?.noi_dung_khuyen_cao ||
-                  "Bạn đã hoàn thành một chương trình tập luyện khác hôm nay. Hãy dành thời gian cho cơ thể phục hồi.",
-              [
-                  {
-                      text: "Quay lại",
-                      style: "cancel",
-                  },
-                  {
-                      text: "Vẫn tiếp tục",
-                      onPress: () => {
-                          navigation.navigate("ExercisePage", params);
-                      },
-                  },
-              ],
-              { cancelable: true }
-          );
-          return;
+        Alert.alert(
+          "Khuyến cáo tập luyện",
+          data?.noi_dung_khuyen_cao ||
+          "Bạn đã hoàn thành một chương trình tập luyện khác hôm nay. Hãy dành thời gian cho cơ thể phục hồi.",
+          [
+            {
+              text: "Quay lại",
+              style: "cancel",
+            },
+            {
+              text: "Vẫn tiếp tục",
+              onPress: () => {
+                navigation.navigate("ExercisePage", params);
+              },
+            },
+          ]
+        );
+        return;
       }
 
-      // Được phép tập thì chuyển sang ExercisePage
-      const params = {
-        ngayThu: day.ngay_thu,
-        dayType: day.ten_ngay_tap,
-        thoi_gian_phut: day.thoi_gian_phut,
-        id_chuong_trinh_bai_tap: day.id_chuong_trinh_bai_tap,
-        id_dang_ky_chuong_trinh: day.id_dang_ky_chuong_trinh,
-        id_chuong_trinh: day.id_chuong_trinh,
-        id_lich_tap: day.id_lich_tap,
-      };
-
+      // Được phép tập
       navigation.navigate("ExercisePage", params);
 
     } catch (error: any) {
@@ -200,12 +240,14 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
 
       Alert.alert(
         "Thông báo",
-        error.response?.data?.message || "Không thể kiểm tra quyền tập. Vui lòng thử lại."
+        error.response?.data?.message ||
+        "Không thể kiểm tra quyền tập. Vui lòng thử lại."
       );
     } finally {
       setCheckingDayId(null);
     }
   };
+
 
   useFocusEffect(
     useCallback(() => {
@@ -220,8 +262,8 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} >
         {/* Tóm tắt chương trình */}
         <View style={styles.summaryCard}>
-          <Image source={{ uri: program?.anh_dai_dien || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",}}
-            style={styles.summaryImage} resizeMode="cover"/>
+          <Image source={{ uri: program?.anh_dai_dien || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80", }}
+            style={styles.summaryImage} resizeMode="cover" />
           <View style={styles.flex}>
             <Text style={styles.summaryTitle} numberOfLines={2}>
               {program?.ten_chuong_trinh ?? "Chương trình tập"}
@@ -275,8 +317,8 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
               progress >= 100
                 ? { bg: PASTEL.mint, ink: PASTEL.mintInk }
                 : progress > 0
-                ? { bg: PASTEL.butter, ink: PASTEL.butterInk }
-                : { bg: PASTEL.tealSoft, ink: PASTEL.teal };
+                  ? { bg: PASTEL.butter, ink: PASTEL.butterInk }
+                  : { bg: PASTEL.tealSoft, ink: PASTEL.teal };
 
             return (
               <TouchableOpacity key={day.id_chuong_trinh_bai_tap}
