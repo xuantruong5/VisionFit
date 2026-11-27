@@ -32,9 +32,15 @@ const MemberDetail = ({ navigation, route }: any) => {
 
   const height = Number(member.chieu_cao_cm) || 0;
   const weight = Number(member.can_nang_kg) || 0;
-  const bmi = height > 0 && weight > 0 
-    ? (weight / ((height / 100) * (height / 100))).toFixed(1) 
-    : '--';
+  // Lấy trực tiếp chỉ số từ API
+  const bmi = member.bmi ? Number(member.bmi).toFixed(2) : '--';
+  const bmr = member.bmr ? Number(member.bmr).toFixed(0) : '--';
+  const tdee = member.tdee ? Number(member.tdee).toFixed(0) : '--';
+  const kcal = member.kcal ? Number(member.kcal).toFixed(0) : '--';
+
+  const protein = member.protein ? Number(member.protein).toFixed(1) : '--';
+  const carb = member.carb ? Number(member.carb).toFixed(1) : '--';
+  const fat = member.fat ? Number(member.fat).toFixed(1) : '--';
 
   let age: any = '--';
   if (member.ngay_sinh) {
@@ -208,6 +214,101 @@ const MemberDetail = ({ navigation, route }: any) => {
               </View>
             </View>
           </View>
+          {/* 6. CHỈ SỐ DINH DƯỠNG */}
+          <Text style={styles.sectionTitle}>Chỉ số dinh dưỡng</Text>
+          <View style={styles.card}>
+            {/* CALO */}
+            <View style={styles.nutritionHeader}>
+              <View style={styles.nutritionIcon}>
+                <Ionicons name="flame" size={22} color="#F59E0B" />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nutritionTitle}>Năng lượng mục tiêu</Text>
+                <Text style={styles.nutritionSub}>Lượng calo mỗi ngày</Text>
+              </View>
+
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.kcalValue}>{kcal}</Text>
+                <Text style={styles.nutritionUnit}>kcal/ngày</Text>
+              </View>
+            </View>
+
+            <View style={styles.nutritionDivider} />
+
+            {/* BMR VÀ TDEE */}
+            <View style={styles.energyRow}>
+              <View style={styles.energyItem}>
+                <Ionicons name="bed-outline" size={19} color="#8B5CF6" />
+                <Text style={styles.energyLabel}>BMR</Text>
+                <Text style={styles.energyValue}>{bmr}</Text>
+                <Text style={styles.nutritionUnit}>kcal/ngày</Text>
+                <Text style={styles.energyDesc}>Trao đổi chất cơ bản</Text>
+              </View>
+
+              <View style={styles.energyDivider} />
+
+              <View style={styles.energyItem}>
+                <Ionicons name="fitness-outline" size={19} color={COLORS.primary} />
+                <Text style={styles.energyLabel}>TDEE</Text>
+                <Text style={styles.energyValue}>{tdee}</Text>
+                <Text style={styles.nutritionUnit}>kcal/ngày</Text>
+                <Text style={styles.energyDesc}>Tổng năng lượng tiêu hao</Text>
+              </View>
+            </View>
+
+            <View style={styles.nutritionDivider} />
+
+            {/* MACRO */}
+            <Text style={styles.macroTitle}>Phân bổ dinh dưỡng mỗi ngày</Text>
+
+            <View style={styles.macroRow}>
+              {/* PROTEIN */}
+              <View style={styles.macroItem}>
+                <View style={[styles.macroIcon, { backgroundColor: '#EFF6FF' }]}>
+                  <Ionicons name="fish-outline" size={20} color="#3B82F6" />
+                </View>
+                <Text style={styles.macroLabel}>Protein</Text>
+                <Text style={styles.macroValue}>{protein}g</Text>
+                <View style={styles.macroTrack}>
+                  <View style={[styles.macroFill, {
+                    width: '100%',
+                    backgroundColor: '#3B82F6'
+                  }]} />
+                </View>
+              </View>
+
+              {/* CARB */}
+              <View style={styles.macroItem}>
+                <View style={[styles.macroIcon, { backgroundColor: '#FFF7ED' }]}>
+                  <Ionicons name="nutrition-outline" size={20} color="#F97316" />
+                </View>
+                <Text style={styles.macroLabel}>Carb</Text>
+                <Text style={styles.macroValue}>{carb}g</Text>
+                <View style={styles.macroTrack}>
+                  <View style={[styles.macroFill, {
+                    width: '100%',
+                    backgroundColor: '#F97316'
+                  }]} />
+                </View>
+              </View>
+
+              {/* FAT */}
+              <View style={styles.macroItem}>
+                <View style={[styles.macroIcon, { backgroundColor: '#FDF2F8' }]}>
+                  <Ionicons name="water-outline" size={20} color="#EC4899" />
+                </View>
+                <Text style={styles.macroLabel}>Fat</Text>
+                <Text style={styles.macroValue}>{fat}g</Text>
+                <View style={styles.macroTrack}>
+                  <View style={[styles.macroFill, {
+                    width: '100%',
+                    backgroundColor: '#EC4899'
+                  }]} />
+                </View>
+              </View>
+            </View>
+          </View>
 
           {/* 5. MỤC TIÊU */}
           <Text style={styles.sectionTitle}>Mục tiêu: {member.muc_tieu_hien_tai || 'Rèn luyện thể hình'}</Text>
@@ -225,6 +326,7 @@ const MemberDetail = ({ navigation, route }: any) => {
             </View>
           </View>
 
+
           {/* 6. BUỔI TẬP GẦN ĐÂY */}
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Buổi tập gần đây</Text>
@@ -239,20 +341,10 @@ const MemberDetail = ({ navigation, route }: any) => {
       </ScrollView>
 
       {/* 7. ACTION SHEET MODAL - TÙY CHỌN HỌC VIÊN */}
-      <Modal
-        visible={showMenuModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMenuModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.sheetOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMenuModal(false)}
-        >
+      <Modal visible={showMenuModal} transparent animationType="slide" onRequestClose={() => setShowMenuModal(false)}>
+        <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setShowMenuModal(false)} >
           <View style={styles.sheetCard}>
             <View style={styles.sheetHandle} />
-
             {/* Thông tin học viên */}
             <View style={styles.sheetHeader}>
               <Image source={{ uri: avatar }} style={styles.sheetAvatar} />
@@ -270,20 +362,10 @@ const MemberDetail = ({ navigation, route }: any) => {
             <View style={styles.sheetDivider} />
 
             {/* Đổi trạng thái */}
-            <TouchableOpacity
-              style={styles.sheetActionRow}
-              activeOpacity={0.7}
-              onPress={() => {
-                setShowMenuModal(false);
-                handleUpdateStatus(isPaused ? 1 : 3);
-              }}
-            >
+            <TouchableOpacity style={styles.sheetActionRow} activeOpacity={0.7}
+              onPress={() => { setShowMenuModal(false); handleUpdateStatus(isPaused ? 1 : 3); }} >
               <View style={[styles.sheetIconBox, { backgroundColor: isPaused ? '#ECFDF5' : '#FFFBEB' }]}>
-                <Ionicons
-                  name={isPaused ? 'play' : 'pause'}
-                  size={20}
-                  color={isPaused ? COLORS.accentGreen : COLORS.accentGold}
-                />
+                <Ionicons name={isPaused ? 'play' : 'pause'} size={20} color={isPaused ? COLORS.accentGreen : COLORS.accentGold} />
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={styles.sheetActionTitle}>
@@ -297,14 +379,8 @@ const MemberDetail = ({ navigation, route }: any) => {
             </TouchableOpacity>
 
             {/* Gỡ học viên */}
-            <TouchableOpacity
-              style={styles.sheetActionRow}
-              activeOpacity={0.7}
-              onPress={() => {
-                setShowMenuModal(false);
-                setShowDeleteModal(true);
-              }}
-            >
+            <TouchableOpacity style={styles.sheetActionRow} activeOpacity={0.7}
+              onPress={() => { setShowMenuModal(false); setShowDeleteModal(true); }} >
               <View style={[styles.sheetIconBox, { backgroundColor: '#FEE2E2' }]}>
                 <Ionicons name="trash-outline" size={20} color="#EF4444" />
               </View>
@@ -320,11 +396,7 @@ const MemberDetail = ({ navigation, route }: any) => {
             </TouchableOpacity>
 
             {/* Nút Đóng */}
-            <TouchableOpacity
-              style={styles.sheetCancelBtn}
-              activeOpacity={0.8}
-              onPress={() => setShowMenuModal(false)}
-            >
+            <TouchableOpacity style={styles.sheetCancelBtn} activeOpacity={0.8} onPress={() => setShowMenuModal(false)} >
               <Text style={styles.sheetCancelText}>Đóng</Text>
             </TouchableOpacity>
           </View>
@@ -332,12 +404,7 @@ const MemberDetail = ({ navigation, route }: any) => {
       </Modal>
 
       {/* 8. MODAL XÁC NHẬN GỠ HỌC VIÊN */}
-      <Modal
-        visible={showDeleteModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDeleteModal(false)}
-      >
+      <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)} >
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmCard}>
             <View style={styles.confirmIconBox}>
@@ -353,22 +420,12 @@ const MemberDetail = ({ navigation, route }: any) => {
             </Text>
 
             <View style={styles.confirmBtnRow}>
-              <TouchableOpacity
-                style={styles.confirmCancelBtn}
-                activeOpacity={0.8}
-                onPress={() => setShowDeleteModal(false)}
-              >
+              <TouchableOpacity style={styles.confirmCancelBtn} activeOpacity={0.8} onPress={() => setShowDeleteModal(false)} >
                 <Text style={styles.confirmCancelText}>Hủy</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.confirmDeleteBtn}
-                activeOpacity={0.8}
-                onPress={() => {
-                  setShowDeleteModal(false);
-                  handleDeleteMember();
-                }}
-              >
+              <TouchableOpacity style={styles.confirmDeleteBtn} activeOpacity={0.8}
+                onPress={() => { setShowDeleteModal(false); handleDeleteMember(); }} >
                 <Text style={styles.confirmDeleteText}>Gỡ học viên</Text>
               </TouchableOpacity>
             </View>
@@ -883,5 +940,141 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: COLORS.white,
+  },
+  nutritionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  nutritionIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#FFFBEB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  nutritionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+
+  nutritionSub: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 4,
+  },
+
+  kcalValue: {
+    fontSize: 23,
+    fontWeight: '800',
+    color: '#F59E0B',
+  },
+
+  nutritionUnit: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+  },
+
+  nutritionDivider: {
+    height: 1,
+    backgroundColor: '#EEF1F4',
+    marginVertical: 16,
+  },
+
+  energyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  energyItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  energyDivider: {
+    width: 1,
+    height: 100,
+    backgroundColor: '#EEF1F4',
+  },
+
+  energyLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    marginTop: 7,
+  },
+
+  energyValue: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 5,
+  },
+
+  energyDesc: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    marginTop: 5,
+    textAlign: 'center',
+  },
+
+  macroTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+  },
+
+  macroRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+
+  macroItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  macroIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  macroLabel: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    fontWeight: '600',
+  },
+
+  macroValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 5,
+  },
+
+  macroTrack: {
+    height: 5,
+    width: '100%',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 5,
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+
+  macroFill: {
+    height: '100%',
+    borderRadius: 5,
   },
 });

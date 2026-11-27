@@ -303,6 +303,11 @@ Route::group(['prefix' => '/trainer','middleware' => 'TrainerMiddleware'], funct
 
     // tạo lịch pt với member 
     Route::post('/tao-lich-pt', [TrainerController::class, 'taoLichPT']);
+    Route::get('/lich-pt', [TrainerController::class, 'getLichTapPT']);
+    Route::put('/lich-pt/{id}/trang-thai', [TrainerController::class, 'capNhatTrangThai']);
+    Route::get('/lich-pt/{id}/bai-tap',[TrainerController::class, 'getBaiTapBuoiPT']);
+
+    
     
 });
 

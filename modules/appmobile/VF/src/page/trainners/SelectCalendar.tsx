@@ -209,7 +209,7 @@ const SelectCalendar = ({ navigation, route }: any) => {
     // Tổng số buổi
     const tongBuoi = lichTap.length;
     // Số buổi có thể chọn
-    const soBuoiCoTheChon = lichTap.filter( item => Number(item.phan_tram_hoan_thanh || 0) <= 20 && Number(item.da_dat_pt) === 0).length;
+    const soBuoiCoTheChon = lichTap.filter(item => Number(item.phan_tram_hoan_thanh || 0) <= 20 && Number(item.da_dat_pt || 0) === 0 && Number(item.trung_lich_trainer || 0) === 0).length;
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar barStyle="dark-content" />
@@ -283,26 +283,48 @@ const SelectCalendar = ({ navigation, route }: any) => {
 
                         {/* TIÊU ĐỀ NGÀY TẬP */}
                         <View style={styles.sectionHeader}>
-                            <View>
-                                <Text style={styles.sectionTitle}>
-                                    Ngày tập luyện
-                                </Text>
-                                <Text style={styles.sectionSub}>
-                                    Chọn ngày để đặt lịch tập với hội viên
+                            <View style={styles.sectionTop}>
+                                <View>
+                                    <Text style={styles.sectionTitle}>Ngày tập luyện</Text>
+                                    <Text style={styles.sectionSub}>
+                                        Chọn ngày để đặt lịch tập với hội viên
+                                    </Text>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.sortButton}
+                                    activeOpacity={0.8}
+                                    onPress={() => setTangDan(!tangDan)}
+                                >
+                                    <Ionicons
+                                        name="swap-vertical-outline"
+                                        size={17}
+                                        color={COLORS.primary}
+                                    />
+                                    <Text style={styles.sortText}>
+                                        {tangDan ? 'Tăng dần' : 'Giảm dần'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* LƯU Ý */}
+                            <View style={styles.noteBox}>
+                                <Ionicons
+                                    name="information-circle"
+                                    size={20}
+                                    color="#0D7F8D"
+                                />
+                                <Text style={styles.noteText}>
+                                    Bạn có thể thay đổi ngày và giờ tập trước khi xác nhận đặt lịch.
                                 </Text>
                             </View>
-                            <TouchableOpacity style={styles.sortButton} activeOpacity={0.8} onPress={() => setTangDan(!tangDan)} >
-                                <Ionicons name="swap-vertical-outline" size={18} color={COLORS.textPrimary} />
-                                <Text style={styles.sortText}>
-                                    {tangDan ? 'Tăng dần' : 'Giảm dần'}
-                                </Text>
-                            </TouchableOpacity>
                         </View>
 
                         {/* DANH SÁCH LỊCH */}
                         {sortedCalendar.map((item) => {
                             const daDat = Number(item.da_dat_pt) === 1;
-                            const available = Number(item.phan_tram_hoan_thanh || 0) <= 20 && !daDat;
+                            const trungLichTrainer = Number(item.trung_lich_trainer || 0) === 1;
+                            const available = Number(item.phan_tram_hoan_thanh || 0) <= 20 && !daDat && !trungLichTrainer;
                             const thu = THU[item.thu_trong_tuan] || 'Chưa rõ';
 
                             return (
@@ -330,6 +352,12 @@ const SelectCalendar = ({ navigation, route }: any) => {
                                                 {item.gio_bat_dau?.slice(0, 5)} - {item.gio_ket_thuc?.slice(0, 5)}
                                             </Text>
                                         </View>
+                                        {/* Thông báo Trainer bị trùng lịch */}
+                                        {trungLichTrainer && (
+                                            <Text style={{ color: '#E05252', fontSize: 12, marginTop: 4 }}>
+                                                Trainer đã có lịch với PT vào khung giờ này
+                                            </Text>
+                                        )}
                                         <View style={styles.progressRow}>
                                             <View style={styles.progressBackground}>
                                                 <View
@@ -454,7 +482,7 @@ const SelectCalendar = ({ navigation, route }: any) => {
                                 <Text style={styles.cancelButtonText}>Hủy</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity  style={styles.confirmButton}  onPress={confirmBooking} disabled={saving} >
+                            <TouchableOpacity style={styles.confirmButton} onPress={confirmBooking} disabled={saving} >
                                 {saving ? (
                                     <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
@@ -462,7 +490,7 @@ const SelectCalendar = ({ navigation, route }: any) => {
                                         <Text style={styles.confirmButtonText}>
                                             Xác nhận
                                         </Text>
-                                        <Ionicons name="arrow-forward" size={17}  color="#FFFFFF" />
+                                        <Ionicons name="arrow-forward" size={17} color="#FFFFFF" />
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -582,23 +610,25 @@ const styles = StyleSheet.create({
     },
 
     sectionHeader: {
+        marginTop: 30,
+        marginBottom: 20,
+    },
+    sectionTop: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: 28,
-        marginBottom: 18,
     },
 
     sectionTitle: {
-        fontSize: 21,
+        fontSize: 22,
         fontWeight: '800',
         color: '#203C46',
     },
 
     sectionSub: {
-        fontSize: 11,
-        color: COLORS.textLight,
-        marginTop: 4,
+        fontSize: 12,
+        color: '#8BA7AE',
+        marginTop: 5,
     },
 
     sortButton: {
@@ -607,8 +637,8 @@ const styles = StyleSheet.create({
         gap: 6,
         backgroundColor: '#FFFFFF',
         paddingHorizontal: 13,
-        paddingVertical: 12,
-        borderRadius: 25,
+        paddingVertical: 11,
+        borderRadius: 20,
         ...SOFT_SHADOW,
     },
 
@@ -616,6 +646,26 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         color: '#203C46',
+    },
+    noteBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E7F5F5',
+        borderWidth: 1,
+        borderColor: '#D5EEEE',
+        paddingHorizontal: 13,
+        paddingVertical: 11,
+        borderRadius: 13,
+        marginTop: 14,
+        gap: 9,
+    },
+
+    noteText: {
+        flex: 1,
+        fontSize: 12,
+        lineHeight: 18,
+        color: '#26717A',
+        fontWeight: '500',
     },
 
     dayCard: {

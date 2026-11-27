@@ -1,49 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image, Modal, TextInput, Alert, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { TRAINER_COLORS as COLORS, TRAINER_SHADOWS as SHADOWS } from '../../general/theme';
-
-// Dữ liệu mẫu (Frontend Mock Data) - tuần 26/10 → 01/11/2026
-const TODAY = 31;
-const WEEK = [
-  { day: 'T2', date: 26 },
-  { day: 'T3', date: 27 },
-  { day: 'T4', date: 28 },
-  { day: 'T5', date: 29 },
-  { day: 'T6', date: 30 },
-  { day: 'T7', date: 31 },
-  { day: 'CN', date: 1 },
-];
-
-const INITIAL_SCHEDULES = [
-  { id: '1', date: 31, time: '09:00', end: '10:00', member: 'Nguyễn Văn An', type: 'Tập thể lực & Tăng cơ', place: 'Phòng Gym A', status: 'done', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
-  { id: '2', date: 31, time: '14:30', end: '15:15', member: 'Trần Minh Anh', type: 'Cardio & Giảm mỡ', place: 'Khu Cardio', status: 'next', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80' },
-  { id: '3', date: 31, time: '18:00', end: '19:00', member: 'Lê Hoàng Nam', type: 'Full Body Kháng lực', place: 'Phòng Gym B', status: 'cho_duyet', changeReason: 'Học viên bận đột xuất xin dời ca', proposedTime: '02/11 lúc 18:00', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
-  { id: '4', date: 28, time: '10:00', end: '11:00', member: 'Phạm Thu Hà', type: 'Giảm cân chuyên sâu', place: 'Phòng Gym A', status: 'done', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80' },
-  { id: '5', date: 29, time: '07:30', end: '08:20', member: 'Võ Minh Khang', type: 'Upper Body', place: 'Phòng Gym B', status: 'done', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&auto=format&fit=crop&q=80' },
-  { id: '6', date: 1, time: '08:00', end: '09:00', member: 'Nguyễn Văn An', type: 'Leg Day', place: 'Phòng Gym A', status: 'upcoming', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
-];
+import apiFitlife from '../../general/api';
 
 const STATUS = {
-  done: { label: 'Hoàn thành', color: COLORS.accentGreen, bg: '#ECFDF5' },
-  next: { label: 'Sắp diễn ra', color: COLORS.accentOrange, bg: '#FFF1EC' },
-  upcoming: { label: 'Đã lên lịch', color: COLORS.accentBlue, bg: '#EAF3FC' },
-  cho_duyet: { label: 'Đang chờ duyệt đổi lịch', color: '#D97706', bg: '#FEF3C7' },
+  done: { label: 'Hoàn thành', color: COLORS.accentGreen, bg: '#ECFDF5', },
+  next: { label: 'Sắp diễn ra', color: COLORS.accentOrange, bg: '#FFF1EC', },
+  upcoming: { label: 'Đã lên lịch', color: COLORS.accentBlue, bg: '#EAF3FC', },
+  cho_duyet: { label: 'Đang chờ duyệt đổi lịch', color: '#D97706', bg: '#FEF3C7', },
+  cancelled: { label: 'Đã hủy', color: '#DC2626', bg: '#FEE2E2', },
 };
 
 const Schedule = ({ navigation, route }: any) => {
-  const [schedules, setSchedules] = useState(INITIAL_SCHEDULES);
-  const [selectedDate, setSelectedDate] = useState(TODAY);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'));
+
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [showChangeModal, setShowChangeModal] = useState(false);
-  const [newDate, setNewDate] = useState('02/11/2026');
+  const [newDate, setNewDate] = useState('02/12/2026');
   const [newTime, setNewTime] = useState('15:00 - 16:00');
   const [reason, setReason] = useState('');
 
-  const daySchedules = schedules.filter((item) => item.date === selectedDate);
-  const doneCount = daySchedules.filter((item) => item.status === 'done').length;
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [exerciseLoading, setExerciseLoading] = useState(false);
+  const [exerciseData, setExerciseData] = useState<any>(null);
 
   const handlePressSession = (session: any) => {
     if (session.status === 'cho_duyet') {
@@ -71,11 +55,11 @@ const Schedule = ({ navigation, route }: any) => {
       prev.map((s) =>
         s.id === selectedSession.id
           ? {
-              ...s,
-              status: 'cho_duyet',
-              changeReason: reason,
-              proposedTime: `${newDate} lúc ${newTime}`,
-            }
+            ...s,
+            status: 'cho_duyet',
+            changeReason: reason,
+            proposedTime: `${newDate} lúc ${newTime}`,
+          }
           : s
       )
     );
@@ -85,6 +69,152 @@ const Schedule = ({ navigation, route }: any) => {
       `Yêu cầu dời ca tập của học viên ${selectedSession.member} sang ${newDate} (${newTime}) đã được gửi đến Ban quản trị.\n\nCa tập được gắn huy hiệu màu vàng cam: "Đang chờ duyệt đổi lịch".`
     );
   };
+  // Mở modal dời ca
+  const handleOpenChange = (session: any) => {
+    setSelectedSession(session);
+    setReason('');
+    setShowChangeModal(true);
+  };
+
+  // Xác nhận hoàn thành
+  // ID của ca đang cập nhật
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // Cập nhật trạng thái buổi tập PT
+  const updateSessionStatus = async (id: string, tinhTrang: 3 | 4) => {
+    try {
+      setUpdatingId(id);
+      const res = await apiFitlife.put( `/trainer/lich-pt/${id}/trang-thai`,
+        {
+          tinh_trang: tinhTrang,
+        }
+      );
+
+      if (res.data.success) {
+        setSchedules(prev => prev.map(s => s.id === id ? { ...s,  status: tinhTrang === 3 ? 'done' : 'cancelled', } : s )
+        );
+        Alert.alert(
+          'Thành công',
+          tinhTrang === 3
+            ? 'Hoàn thành buổi tập thành công.'
+            : 'Hủy buổi tập thành công.'
+        );
+      } else {
+        Alert.alert('Thông báo', res.data.message || 'Cập nhật thất bại.');
+      }
+    } catch (error: any) {
+      console.log('Lỗi cập nhật trạng thái:', error.response?.data || error.message);
+      Alert.alert( 'Thông báo', error.response?.data?.message || 'Không thể cập nhật trạng thái buổi tập.' );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+  const getExercisesPT = async (id: string) => {
+    try {
+      setExerciseLoading(true);
+      setShowExerciseModal(true);
+      setExerciseData(null);
+      const res = await apiFitlife.get( `/trainer/lich-pt/${id}/bai-tap` );
+      if (res.data.success) {
+        setExerciseData(res.data.data);
+      } else {
+        Alert.alert('Thông báo', res.data.message || 'Không lấy được danh sách bài tập.');
+        setShowExerciseModal(false);
+      }
+    } catch (error: any) {
+      Alert.alert(  'Thông báo', error.response?.data?.message || 'Không thể tải danh sách bài tập.' );
+      setShowExerciseModal(false);
+    } finally {
+      setExerciseLoading(false);
+    }
+  };
+
+  // Xác nhận hoàn thành
+  const handleComplete = (id: string) => { updateSessionStatus(id, 3);};
+  // Hủy ca tập
+  const handleCancel = (id: string) => {
+    Alert.alert('Xác nhận', 'Bạn có chắc muốn hủy ca tập này?', [
+      { text: 'Không', style: 'cancel' },
+      {
+        text: 'Hủy ca',
+        style: 'destructive',
+        onPress: () => updateSessionStatus(id, 4),
+      },
+    ]);
+  };
+
+  const today = new Date().toLocaleDateString('en-CA');
+  const changeWeek = (direction: number) => {
+    const date = new Date(`${selectedDate}T00:00:00`); date.setDate(date.getDate() + direction * 7);
+    const start = new Date(date); start.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d.toLocaleDateString('en-CA');
+    });
+    setSelectedDate(weekDates.find(d => schedules.some(s => s.date === d)) || weekDates[0]);
+  };
+  const weekStart = new Date(`${selectedDate}T00:00:00`);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const WEEK = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    return {
+      day: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][index],
+      date: date.toLocaleDateString('en-CA'),
+      number: date.getDate(),
+    };
+  });
+  const daySchedules = schedules.filter(item => item.date === selectedDate);
+  const doneCount = daySchedules.filter(item => item.status === 'done').length;
+
+  const getSchedules = async () => {
+    try {
+      setLoading(true);
+      const res = await apiFitlife.get('/trainer/lich-pt');
+      if (res.data.success) {
+        const data = res.data.data || [];
+        const formattedData = data.map((item: any) => ({
+          id: String(item.id),
+          date: item.ngay_tap,
+          time: item.gio_bat_dau?.slice(0, 5),
+          end: item.gio_ket_thuc?.slice(0, 5),
+          member: item.ho_ten || 'Học viên',
+          type: item.ten_ngay_tap || 'Buổi tập PT',
+          place: item.noi_tap || 'Phòng Gym',
+          avatar: item.anh_dai_dien,
+          changeReason: item.ghi_chu || '',
+          proposedTime: item.ngay_tap ? `${new Date(item.ngay_tap + 'T00:00:00').toLocaleDateString('vi-VN')} lúc ${item.gio_bat_dau?.slice(0, 5) || ''}` : '',
+          status:
+            Number(item.tinh_trang) === 1 ? 'cho_duyet' :
+              Number(item.tinh_trang) === 2 ? 'upcoming' :
+                Number(item.tinh_trang) === 3 ? 'done' :
+                  Number(item.tinh_trang) === 4 ? 'cancelled' : 'upcoming',
+        }));
+        setSchedules(formattedData);
+        // Nếu hôm nay không có lịch thì chọn ngày tập gần nhất
+        const today = new Date().toLocaleDateString('en-CA');
+        const nearestSchedule = formattedData
+          .filter((item: any) => item.date >= today)
+          .sort((a: any, b: any) => a.date.localeCompare(b.date))[0];
+        setSelectedDate(
+          formattedData.some((item: any) => item.date === today)
+            ? today
+            : nearestSchedule?.date || today
+        );
+      }
+    } catch (error: any) {
+      console.log(
+        'Lỗi lấy lịch PT:',
+        error.response?.data || error.message
+      );
+      Alert.alert('Thông báo', 'Không thể tải danh sách lịch tập.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    getSchedules();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -113,7 +243,12 @@ const Schedule = ({ navigation, route }: any) => {
             ) : null}
             <View style={styles.flex}>
               <Text style={styles.headerSub}>Lịch huấn luyện</Text>
-              <Text style={styles.headerTitle}>Tháng 10, 2026</Text>
+              <Text style={styles.headerTitle}>
+                {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
+                  'vi-VN',
+                  { month: 'long', year: 'numeric' }
+                )}
+              </Text>
             </View>
             <TouchableOpacity style={styles.glassBtn} activeOpacity={0.7}>
               <Ionicons name="calendar-outline" size={20} color={COLORS.white} />
@@ -125,35 +260,57 @@ const Schedule = ({ navigation, route }: any) => {
 
         </LinearGradient>
 
+
         {/* 2. DẢI CHỌN NGÀY TRONG TUẦN */}
-        <LinearGradient colors={[COLORS.primaryLight, COLORS.primarySoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.weekStrip}>
-          {WEEK.map((item) => {
-            const selected = item.date === selectedDate;
-            const isToday = item.date === TODAY;
-            const hasSchedule = schedules.some((s) => s.date === item.date);
-            return (
-              <TouchableOpacity
-                key={item.date}
-                activeOpacity={0.8}
-                onPress={() => setSelectedDate(item.date)}
-                style={styles.dayItem}>
-                <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]} numberOfLines={1}>
-                  {isToday ? 'Hôm nay' : item.day}
-                </Text>
-                {selected ? (
-                  <LinearGradient colors={['#5FD0DA', COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.dayCircle, styles.dayCircleSelected]}>
-                    <Text style={[styles.dayDate, styles.dayDateActive]}>{item.date}</Text>
-                    {hasSchedule && <View style={styles.innerDot} />}
-                  </LinearGradient>
-                ) : (
-                  <View style={[styles.dayCircle, hasSchedule && styles.dayCircleWithDot]}>
-                    <Text style={styles.dayDate}>{item.date}</Text>
-                    {hasSchedule && <View style={[styles.innerDot, styles.innerDotIdle]} />}
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+        <LinearGradient colors={[COLORS.primaryLight, COLORS.primarySoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.weekStrip} >
+          {/* Nút tuần trước */}
+          <TouchableOpacity style={styles.weekArrow} activeOpacity={0.7} onPress={() => changeWeek(-1)} >
+            <Ionicons name="chevron-back" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+          {/* 7 ngày trong tuần */}
+          <View style={styles.weekDays}>
+            {WEEK.map((item) => {
+              const selected = item.date === selectedDate;
+              const isToday = item.date === today;
+              const hasSchedule = schedules.some(s => s.date === item.date);
+              return (
+                <TouchableOpacity key={item.date} activeOpacity={0.8} onPress={() => setSelectedDate(item.date)} style={styles.dayItem} >
+                  <Text style={[styles.dayLabel, isToday && styles.dayLabelToday,]} numberOfLines={1}>
+                    {isToday ? 'Hôm nay' : item.day}
+                  </Text>
+
+                  {selected ? (
+                    <LinearGradient
+                      colors={['#5FD0DA', COLORS.primary]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={[
+                        styles.dayCircle,
+                        styles.dayCircleSelected,
+                      ]}
+                    >
+                      <Text style={[styles.dayDate, styles.dayDateActive]}>
+                        {item.number}
+                      </Text>
+                      {hasSchedule && <View style={styles.innerDot} />}
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.dayCircle, hasSchedule && styles.dayCircleWithDot,]}  >
+                      <Text style={styles.dayDate}>{item.number}</Text>
+                      {hasSchedule && (
+                        <View style={[styles.innerDot, styles.innerDotIdle]} />
+                      )}
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Nút tuần sau */}
+          <TouchableOpacity style={styles.weekArrow} activeOpacity={0.7} onPress={() => changeWeek(1)} >
+            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
         </LinearGradient>
 
         {/* 3. TÓM TẮT NGÀY */}
@@ -163,7 +320,9 @@ const Schedule = ({ navigation, route }: any) => {
           </View>
           <View style={styles.flex}>
             <Text style={styles.summaryTitle}>
-              {selectedDate === TODAY ? 'Hôm nay' : `Ngày ${selectedDate}`} • {daySchedules.length} ca dạy
+              {selectedDate === today
+                ? 'Hôm nay'
+                : new Date(`${selectedDate}T00:00:00`).toLocaleDateString('vi-VN')} • {daySchedules.length} ca dạy
             </Text>
             <Text style={styles.subText}>
               {doneCount} hoàn thành • {daySchedules.length - doneCount} sắp tới
@@ -175,42 +334,47 @@ const Schedule = ({ navigation, route }: any) => {
         <View style={styles.body}>
           {daySchedules.map((item) => {
             const status = STATUS[item.status as keyof typeof STATUS] || STATUS.upcoming;
+
             return (
               <View key={item.id} style={styles.itemRow}>
                 <View style={styles.timeCol}>
-                  <Text style={[styles.timeText, item.status === 'next' && { color: COLORS.primary }]}>{item.time}</Text>
+                  <Text style={styles.timeText}>{item.time}</Text>
                   <Text style={styles.endText}>{item.end}</Text>
                 </View>
 
-                <TouchableOpacity
-                  activeOpacity={0.88}
-                  onPress={() => handlePressSession(item)}
-                  style={[
-                    styles.scheduleCard,
-                    item.status === 'next' && styles.scheduleCardActive,
-                    item.status === 'done' && styles.scheduleCardDone,
-                    item.status === 'cho_duyet' && styles.scheduleCardPending,
-                  ]}>
+                <View style={[
+                  styles.scheduleCard,
+                  item.status === 'done' && styles.scheduleCardDone,
+                  item.status === 'cho_duyet' && styles.scheduleCardPending,
+                ]}>
                   <View style={[styles.accentBar, { backgroundColor: status.color }]} />
+
                   <View style={styles.cardTop}>
                     <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                  
                     <View style={styles.flex}>
                       <Text style={styles.memberName}>{item.member}</Text>
                       <Text style={styles.subText}>{item.type}</Text>
+
+                      <TouchableOpacity style={styles.viewExerciseBtn} activeOpacity={0.8} onPress={() => getExercisesPT(item.id)}>
+                        <Ionicons name="barbell-outline" size={14} color={COLORS.primary} />
+                        <Text style={styles.viewExerciseText}>Xem bài tập</Text>
+                      </TouchableOpacity>
                     </View>
-                    {item.status !== 'done' && item.status !== 'cho_duyet' && (
-                      <View style={styles.changeActionPill}>
+
+
+                    {item.status === 'upcoming' && (
+                      <TouchableOpacity style={styles.changeActionPill} onPress={() => handleOpenChange(item)} >
                         <Ionicons name="swap-horizontal" size={12} color={COLORS.primary} />
                         <Text style={styles.changeActionText}>Dời ca</Text>
-                      </View>
+                      </TouchableOpacity>
                     )}
                   </View>
 
-                  {/* THÔNG BÁO NẾU ĐANG CHỜ DUYỆT ĐỔI LỊCH */}
                   {item.status === 'cho_duyet' && (
                     <View style={styles.pendingChangeNotice}>
                       <Ionicons name="time" size={13} color="#D97706" />
-                      <Text style={styles.pendingChangeText} numberOfLines={1}>
+                      <Text style={styles.pendingChangeText}>
                         Chờ Admin duyệt: Dời sang {item.proposedTime}
                       </Text>
                     </View>
@@ -221,11 +385,33 @@ const Schedule = ({ navigation, route }: any) => {
                       <Ionicons name="location-outline" size={13} color={COLORS.textMuted} />
                       <Text style={styles.metaText}>{item.place}</Text>
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                      <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+
+                    <View style={styles.cardActions}>
+                      {item.status === 'upcoming' ? (
+                        <>
+                          <TouchableOpacity style={[styles.completeBtn, updatingId === item.id && { opacity: 0.5 },]}
+                            disabled={updatingId === item.id} onPress={() => handleComplete(item.id)} >
+                            <Text style={styles.completeBtnText}>
+                              {updatingId === item.id ? 'Đang xử lý...' : 'Hoàn thành'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity style={[styles.cancelScheduleBtn, updatingId === item.id && { opacity: 0.5 },]}
+                            disabled={updatingId === item.id} onPress={() => handleCancel(item.id)} >
+                            <Ionicons name="close" size={15} color="#DC2626" />
+                            <Text style={styles.cancelScheduleText}>Hủy</Text>
+                          </TouchableOpacity>
+                        </>
+                      ) : (
+                        <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                          <Text style={[styles.statusText, { color: status.color }]}>
+                            {status.label}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
-                </TouchableOpacity>
+                </View>
               </View>
             );
           })}
@@ -320,11 +506,108 @@ const Schedule = ({ navigation, route }: any) => {
           </View>
         </View>
       )}
+      <Modal visible={showExerciseModal}  transparent animationType="slide" onRequestClose={() => setShowExerciseModal(false)} >
+        <View style={styles.exerciseOverlay}>
+          <View style={styles.exerciseModal}>
+            {/* Header */}
+            <View style={styles.exerciseHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.exerciseTitle}>Danh sách bài tập</Text>
+                {exerciseData && (
+                  <Text style={styles.exerciseDate}>
+                    Ngày tập: {new Date(
+                      exerciseData.ngay_tap + 'T00:00:00'
+                    ).toLocaleDateString('vi-VN')}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => setShowExerciseModal(false)} >
+                <Ionicons name="close-circle" size={27} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {exerciseLoading ? (
+              <View style={styles.exerciseLoading}>
+                <Text style={styles.subText}>Đang tải danh sách bài tập...</Text>
+              </View>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} >
+                {exerciseData?.danh_sach_bai_tap?.length > 0 ? (
+                  exerciseData.danh_sach_bai_tap.map((exercise: any, index: number) => (
+                    <View key={exercise.id_bai_tap} style={styles.exerciseCard}>
+                      <View style={styles.exerciseImageBox}>
+                        {exercise.anh_dai_dien ? (
+                          <Image source={{ uri: exercise.anh_dai_dien }} style={styles.exerciseImage} resizeMode="cover" />
+                        ) : (
+                          <Ionicons name="barbell-outline" size={30} color={COLORS.primary}/>
+                        )}
+                      </View>
+
+                      <View style={styles.exerciseInfo}>
+                        <Text style={styles.exerciseNumber}>
+                          BÀI TẬP {index + 1}
+                        </Text>
+
+                        <Text style={styles.exerciseName}>
+                          {exercise.ten_bai_tap}
+                        </Text>
+
+                        <View style={styles.exerciseMeta}>
+                          {!!exercise.thoi_gian_phut && (
+                            <View style={styles.exerciseMetaItem}>
+                              <Ionicons name="time-outline" size={14} color={COLORS.primary} />
+                              <Text style={styles.exerciseMetaText}>
+                                {exercise.thoi_gian_phut} phút
+                              </Text>
+                            </View>
+                          )}
+
+                          {!!exercise.rep_yeu_cau && (
+                            <View style={styles.exerciseMetaItem}>
+                              <Ionicons name="repeat-outline" size={14} color={COLORS.primary} />
+                              <Text style={styles.exerciseMetaText}>
+                                {exercise.rep_yeu_cau} rep
+                              </Text>
+                            </View>
+                          )}
+
+                          {!!exercise.set_yeu_cau && (
+                            <View style={styles.exerciseMetaItem}>
+                              <Ionicons name="layers-outline" size={14} color={COLORS.primary} />
+                              <Text style={styles.exerciseMetaText}>
+                                {exercise.set_yeu_cau} set
+                              </Text>
+                            </View>
+                          )}
+
+                          {!!exercise.giay_yeu_cau && (
+                            <View style={styles.exerciseMetaItem}>
+                              <Ionicons name="hourglass-outline" size={14} color={COLORS.primary} />
+                              <Text style={styles.exerciseMetaText}>
+                                {exercise.giay_yeu_cau} giây
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.exerciseEmpty}>
+                    <Ionicons name="barbell-outline" size={36} color={COLORS.textMuted} />
+                    <Text style={styles.subText}>Chưa có bài tập trong buổi này.</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
-export default Schedule;
+
 
 const styles = StyleSheet.create({
   container: {
@@ -786,4 +1069,164 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: '#FFFFFF',
   },
+  weekArrow: {
+    width: 28,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  weekDays: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  completeBtn: {
+    backgroundColor: '#EAF3FC',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+
+  completeBtnText: {
+    color: COLORS.accentBlue,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  cancelScheduleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#FEE2E2',
+  },
+
+  cancelScheduleText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  exerciseOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  exerciseModal: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 18,
+    height: '80%',
+  },
+  exerciseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    marginBottom: 15,
+  },
+  exerciseTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  exerciseDate: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 5,
+  },
+  exerciseLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exerciseCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  exerciseImageBox: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    backgroundColor: '#EAF8F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  exerciseImage: {
+    width: '100%',
+    height: '100%',
+  },
+  exerciseInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  exerciseNumber: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  exerciseName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  exerciseMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    gap: 9,
+  },
+  exerciseMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  exerciseMetaText: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginLeft: 3,
+    fontWeight: '600',
+  },
+  exerciseEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  viewExerciseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#EAF8F8',
+  },
+  viewExerciseText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 5,
+  },
 });
+export default Schedule;
