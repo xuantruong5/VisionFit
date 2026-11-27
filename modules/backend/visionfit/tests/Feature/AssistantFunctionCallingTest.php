@@ -1123,4 +1123,163 @@ class AssistantFunctionCallingTest extends TestCase
             CarbonImmutable::setTestNow();
         }
     }
+
+    // 18. OBS-01 Extended Regression: Kiểm chứng chặn tư vấn không có nguồn cho toàn bộ lỗi timeout (504), 429, 5xx, embedding minute-quota và multi-intent có công cụ 5xx
+    public function test_obs01_blocks_ungrounded_advice_on_tool_timeout_429_and_5xx_and_preserves_multi_intent_partial_5xx(): void
+    {
+        $member = $this->createMember(94, 10, [
+            'ho_ten' => 'Obs01 Error Matrix User',
+            'can_nang_kg' => 65,
+            'chieu_cao_cm' => 170,
+            'ngay_cap_nhat_chi_so' => now(),
+        ]);
+        $headers = $this->headersFor($member);
+
+        // 18a. Kiểm tra trực tiếp từng mã lỗi từ InternalApiClient: timeout (504), rate-limit (429), lỗi máy chủ (500/503)
+        $errorMatrix = [
+            ['http_status' => 504, 'error_code' => 'API_TIMEOUT', 'label' => 'timeout'],
+            ['http_status' => 429, 'error_code' => 'RATE_LIMITED', 'label' => '429'],
+            ['http_status' => 500, 'error_code' => 'INTERNAL_API_ERROR', 'label' => '500'],
+            ['http_status' => 503, 'error_code' => 'SERVICE_UNAVAILABLE', 'label' => '503'],
+        ];
+
+        foreach ($errorMatrix as $case) {
+            $status = $case['http_status'];
+            $errCode = $case['error_code'];
+
+            $this->app->instance(\App\Services\Assistant\InternalApiClientInterface::class, new class($status, $errCode) implements \App\Services\Assistant\InternalApiClientInterface {
+                public function __construct(private int $status, private string $errorCode)
+                {
+                }
+
+                public function get(string $uri, array $query = [], ?string $bearerToken = null): array
+                {
+                    return [
+                        'ok' => false,
+                        'http_status' => $this->status,
+                        'method' => 'GET',
+                        'endpoint' => $uri,
+                        'body' => null,
+                        'error_code' => $this->errorCode,
+                        'error_message' => "Simulated {$this->status} failure",
+                    ];
+                }
+            });
+
+            $this->bindFakeLlm(function (int $step) {
+                if ($step === 0) {
+                    return $this->modelToolCallTurn([['get_my_schedule', ['date_preset' => 'today']]]);
+                }
+                return $this->modelTextTurn('Máy chủ đang bận. Tuy nhiên bạn vẫn nên tự chạy bộ 45 phút và hít đất 100 cái mỗi ngày nhé!');
+            });
+
+            $res = $this->postJson('/api/assistant/chat', [
+                'message' => "Hôm nay tôi có lịch tập nào không? ({$case['label']})",
+            ], $headers)->assertOk();
+
+            $ans = (string) $res->json('answer');
+            $this->assertStringContainsString('chưa thể truy xuất', $ans, "Case {$case['label']} must return operational error");
+            $this->assertStringNotContainsString('hít đất 100 cái', $ans, "Case {$case['label']} must block ungrounded advice");
+            $this->assertSame('apologetic', $res->json('emotion'));
+            $this->assertSame($status, $res->json('tool_calls.0.http_status'));
+            $this->assertSame('api_error', $res->json('tool_calls.0.status'));
+            $this->assertTrue((bool) $res->json('retryable'));
+        }
+
+        // 18b. Multi-intent: get_my_body_metrics thành công (200) + get_my_schedule lỗi 503 -> giữ phần chỉ số đã xác minh và nêu rõ phần lịch tập bị lỗi
+        $this->app->instance(\App\Services\Assistant\InternalApiClientInterface::class, new class implements \App\Services\Assistant\InternalApiClientInterface {
+            public function get(string $uri, array $query = [], ?string $bearerToken = null): array
+            {
+                if ($uri === '/api/assistant/body-metrics') {
+                    return [
+                        'ok' => true,
+                        'http_status' => 200,
+                        'method' => 'GET',
+                        'endpoint' => $uri,
+                        'body' => [
+                            'status' => true,
+                            'data' => [
+                                'status' => 'ok',
+                                'metrics' => ['weight_kg' => 65, 'height_cm' => 170, 'bmi' => 22.49, 'bmi_status' => 'Bình thường'],
+                            ],
+                        ],
+                        'error_code' => null,
+                        'error_message' => null,
+                    ];
+                }
+
+                return [
+                    'ok' => false,
+                    'http_status' => 503,
+                    'method' => 'GET',
+                    'endpoint' => $uri,
+                    'body' => null,
+                    'error_code' => 'SERVICE_UNAVAILABLE',
+                    'error_message' => 'Schedule service down',
+                ];
+            }
+        });
+
+        $this->bindFakeLlm(function (int $step) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([
+                    ['get_my_body_metrics', []],
+                    ['get_my_schedule', ['date_preset' => 'today']],
+                ]);
+            }
+            return $this->modelTextTurn('Cân nặng hiện tại của bạn là 65kg, chiều cao 170cm (BMI 22.49 - Bình thường).');
+        });
+
+        $rPartial = $this->postJson('/api/assistant/chat', [
+            'message' => 'Xem giúp mình chỉ số cơ thể và lịch tập hôm nay',
+        ], $headers)->assertOk();
+
+        $partialAns = (string) $rPartial->json('answer');
+        $this->assertStringContainsString('65kg', $partialAns);
+        $this->assertStringContainsString('chưa thể truy xuất', $partialAns);
+
+        // 18c. Embedding lỗi hạn mức phút (quota_scope=minute, 429) -> chặn kiến thức nền nhưng đánh dấu retryable=true
+        $this->app->instance(
+            \App\Services\Assistant\InternalApiClientInterface::class,
+            new \App\Services\Assistant\LaravelInternalApiClient($this->app)
+        );
+        $this->app->instance(\App\Services\Assistant\EmbeddingClientInterface::class, new class implements \App\Services\Assistant\EmbeddingClientInterface {
+            public function modelName(): string
+            {
+                return 'fake-minute-embed';
+            }
+
+            public function embed(string $text, string $taskType = 'RETRIEVAL_QUERY'): array
+            {
+                throw new \App\Services\Assistant\LlmProviderException(
+                    'AI_QUOTA_EXCEEDED',
+                    'Dịch vụ embedding Gemini tạm chạm giới hạn phút (RPM).',
+                    503,
+                    true,
+                    'minute',
+                    2.0
+                );
+            }
+        });
+        DB::table('assistant_knowledge_embeddings')->insert([
+            'source_table' => 'bai_tap', 'source_id' => 99, 'category' => 'exercise',
+            'title' => 'Deadlift', 'content_text' => 'Deadlift', 'metadata_json' => '{}',
+            'content_hash' => hash('sha256', 'deadlift'), 'embedding_model' => 'fake-minute-embed',
+            'embedding_json' => json_encode([1.0, 0.0]), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->bindFakeLlm(function (int $step) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['search_fitness_knowledge', ['query' => 'Kỹ thuật Deadlift chuẩn']]]);
+            }
+            return $this->modelTextTurn('Hệ thống tìm kiếm tạm lỗi. Nhưng về cơ bản bạn chỉ cần giữ lưng thẳng và kéo tạ lên!');
+        });
+
+        $rMin = $this->postJson('/api/assistant/chat', [
+            'message' => 'Hướng dẫn kỹ thuật Deadlift chuẩn',
+        ], $headers)->assertOk();
+        $this->assertStringContainsString('chưa thể truy xuất', (string) $rMin->json('answer'));
+        $this->assertStringNotContainsString('kéo tạ lên', (string) $rMin->json('answer'));
+        $this->assertTrue((bool) $rMin->json('retryable'));
+    }
 }
