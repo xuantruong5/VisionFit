@@ -29,8 +29,8 @@ class ChiTietBaiTapSeeder extends Seeder
             ],
             [ // Gym, Nhà
                 'id_bai_tap' => 2,
-                'video_huong_dan' => 'https://fujf.net/assets/exercises/videos/0340-7gdLIXa.gif',
-                'video_sai' => 'https://fujf.net/assets/exercises/videos/0343-zGSIWQi.gif',
+                'video_huong_dan' => 'storage/videos/INCLINE DUMBBELL PRESS/tadon_dung.mp4',
+                'video_sai' => 'storage/videos/INCLINE DUMBBELL PRESS/tadon_sai.mp4',
                 'mo_ta' => 'Dumbbell Floor Press là bài tập hiệu quả để rèn luyện cơ ngực và sức mạnh thân trên. Ưu điểm chính là sàn giới hạn biên độ hạ tạ, giúp kiểm soát chuyển động tốt hơn. Tải trọng chủ yếu tác động lên cơ ngực lớn, cơ tam đầu cánh tay và cơ vai trước.',
                 'ghi_chu' => 'Tạ đơn, thảm tập',
                 'huong_dan' => 'Nằm ngửa trên sàn, co gối và cầm hai tạ đơn ở hai bên ngực. Đẩy tạ lên trên đến khi cánh tay gần duỗi thẳng, sau đó từ từ hạ tạ xuống cho đến khi khuỷu tay chạm nhẹ sàn. Giữ cổ tay ổn định và kiểm soát chuyển động trong suốt bài tập.',
