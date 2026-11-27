@@ -2,6 +2,7 @@
 
 namespace App\Services\Assistant;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -166,21 +167,44 @@ class KnowledgeEmbeddingService
                 return [
                     'status' => 'embedding_unavailable',
                     'error_code' => $e->errorCode,
+                    'quota_scope' => $e->quotaScope,
+                    'retryable' => $e->retryable,
                     'results' => [],
                     'message' => $e->getMessage(),
                 ];
             }
         }
 
-        try {
-            $queryVector = $this->embeddingClient->embed($cleanQuery, 'RETRIEVAL_QUERY');
-        } catch (LlmProviderException $e) {
-            return [
-                'status' => 'embedding_unavailable',
-                'error_code' => $e->errorCode,
-                'results' => [],
-                'message' => $e->getMessage(),
-            ];
+        $queryVector = null;
+        $usedQueryCache = false;
+        $cacheTtl = max(0, (int) config('assistant.embedding_query_cache_ttl', 86400));
+        $cacheKey = self::queryVectorCacheKey($model, $cleanQuery);
+
+        if ($cacheTtl > 0) {
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached) && !empty($cached)) {
+                $queryVector = $cached;
+                $usedQueryCache = true;
+            }
+        }
+
+        if ($queryVector === null) {
+            try {
+                $queryVector = $this->embeddingClient->embed($cleanQuery, 'RETRIEVAL_QUERY');
+            } catch (LlmProviderException $e) {
+                return [
+                    'status' => 'embedding_unavailable',
+                    'error_code' => $e->errorCode,
+                    'quota_scope' => $e->quotaScope,
+                    'retryable' => $e->retryable,
+                    'results' => [],
+                    'message' => $e->getMessage(),
+                ];
+            }
+
+            if ($cacheTtl > 0 && !empty($queryVector)) {
+                Cache::put($cacheKey, $queryVector, $cacheTtl);
+            }
         }
 
         $requestedCat = strtolower(trim((string) $category));
@@ -209,6 +233,7 @@ class KnowledgeEmbeddingService
             'status' => !empty($top) ? 'ok' : 'empty',
             'retrieval_method' => 'semantic_embeddings',
             'embedding_model' => $model,
+            'query_embedding_cached' => $usedQueryCache,
             'query' => $cleanQuery,
             'category' => $effectiveCat,
             'requested_category' => $requestedCat,
@@ -217,6 +242,12 @@ class KnowledgeEmbeddingService
             'results' => $top,
             'message' => empty($top) ? 'Không tìm thấy nội dung phù hợp trong kho kiến thức VisionFit.' : null,
         ];
+    }
+
+    public static function queryVectorCacheKey(string $model, string $query): string
+    {
+        $normalized = preg_replace('/\s+/u', ' ', mb_strtolower(trim($query), 'UTF-8'));
+        return 'assistant:emb:q:' . hash('sha256', trim($model) . "\n" . (string) $normalized);
     }
 
     /**

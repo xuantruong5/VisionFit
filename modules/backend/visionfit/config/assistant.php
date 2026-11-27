@@ -27,6 +27,9 @@ return [
     'max_retries_per_call' => (int) env('ASSISTANT_MAX_RETRIES', 1),
     'total_timeout_seconds' => (int) env('ASSISTANT_TOTAL_TIMEOUT', 25),
     'embedding_timeout_seconds' => (int) env('ASSISTANT_EMBEDDING_TIMEOUT', 10),
+    'embedding_max_retries' => (int) env('ASSISTANT_EMBEDDING_MAX_RETRIES', 1),
+    // Cache ONLY query embedding vectors (keyed by model + normalized query) to save quota without caching per-user results
+    'embedding_query_cache_ttl' => (int) env('ASSISTANT_EMBEDDING_QUERY_CACHE_TTL', 86400),
     'ssl_verify' => filter_var(env('ASSISTANT_SSL_VERIFY', false), FILTER_VALIDATE_BOOLEAN),
 
     // Optional Tier-2 Backup Provider (must support structured OpenAI-compatible Tool/Function Calling)

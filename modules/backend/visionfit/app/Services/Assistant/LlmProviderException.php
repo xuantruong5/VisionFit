@@ -11,6 +11,8 @@ class LlmProviderException extends RuntimeException
         string $message,
         public readonly int $httpStatus = 503,
         public readonly bool $retryable = true,
+        public readonly ?string $quotaScope = null,
+        public readonly ?int $retryAfterSeconds = null,
     ) {
         parent::__construct($message, $httpStatus);
     }

@@ -17,6 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { MascotSpecies, MascotStage, ChatMessage } from './types';
 import { getMascotImage } from './mascotImages';
 import { getAIResponse, clearAssistantCache } from './mascotChatService';
+import { parseInlineMarkdown, stripInlineMarkdown } from './mascotMarkdown';
 import { MascotSelectorModal } from './MascotSelectorModal';
 import { MascotVectorRig } from './MascotVectorRig';
 import {
@@ -81,13 +82,19 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     inputRef.current?.clear();
   };
 
-  // Lắng nghe độ cao bàn phím ảo để đẩy ô chatbox lên trên mép bàn phím một khoảng an toàn
+  // Lắng nghe độ cao bàn phím ảo và luôn đặt lại về 0 khi ẩn bàn phím / đóng modal (tránh co chiều cao trên Android)
   useEffect(() => {
+    if (!visible) {
+      setKeyboardHeight(0);
+      return;
+    }
+
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
+      const nextHeight = Math.max(0, e?.endCoordinates?.height || 0);
+      setKeyboardHeight(nextHeight);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 120);
@@ -100,8 +107,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     return () => {
       showSub.remove();
       hideSub.remove();
+      setKeyboardHeight(0);
     };
-  }, []);
+  }, [visible]);
 
   const getWelcomeText = (species: MascotSpecies) => {
     if (species === 'cat') {
@@ -393,27 +401,34 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
   const headerMascotImg = getMascotImage(currentSpecies, currentStage);
 
-  // Render đoạn text hỗ trợ in đậm **bold** và in nghiêng *italic* nội tuyến
-  const renderInlineBoldText = (text: string, baseStyle: any) => {
-    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g);
+  // Render đoạn text hỗ trợ in đậm **bold**, in nghiêng *italic* và mã nội tuyến `code` (dùng cho cả bóng chat và ô bảng)
+  const renderInlineBoldText = (text: string, baseStyle: any, boldColor: string = COLORS.textDark) => {
+    const tokens = parseInlineMarkdown(text);
     return (
       <Text style={baseStyle}>
-        {parts.map((part, idx) => {
-          if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+        {tokens.map((tok, idx) => {
+          if (tok.type === 'bold') {
             return (
-              <Text key={idx} style={{ fontWeight: '700', color: COLORS.textDark }}>
-                {part.slice(2, -2)}
+              <Text key={idx} style={{ fontWeight: '700', color: boldColor }}>
+                {tok.content}
               </Text>
             );
           }
-          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+          if (tok.type === 'italic') {
             return (
               <Text key={idx} style={{ fontStyle: 'italic' }}>
-                {part.slice(1, -1)}
+                {tok.content}
               </Text>
             );
           }
-          return <React.Fragment key={idx}>{part}</React.Fragment>;
+          if (tok.type === 'code') {
+            return (
+              <Text key={idx} style={styles.inlineCode}>
+                {tok.content}
+              </Text>
+            );
+          }
+          return <React.Fragment key={idx}>{tok.content}</React.Fragment>;
         })}
       </Text>
     );
@@ -423,9 +438,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const computeColumnWidths = (headers: string[], rows: string[][]): number[] => {
     const colCount = headers.length;
     const widths = Array.from({ length: colCount }, (_, colIdx) => {
-      const headerLen = (headers[colIdx] || '').length;
+      const headerLen = stripInlineMarkdown(headers[colIdx] || '').length;
       const maxCellLen = rows.reduce((max, row) => {
-        const clean = (row[colIdx] || '').replace(/\*\*/g, '');
+        const clean = stripInlineMarkdown(row[colIdx] || '');
         return Math.max(max, clean.length);
       }, 0);
       const longest = Math.max(headerLen, maxCellLen);
@@ -490,7 +505,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         if (sepIdx !== -1) {
           const rawHeader = trimmed.startsWith('|') ? trimmed.slice(1) : trimmed;
           const cleanHeader = rawHeader.endsWith('|') ? rawHeader.slice(0, -1) : rawHeader;
-          const headers = cleanHeader.split('|').map((c) => c.trim().replace(/\*\*/g, ''));
+          const headers = cleanHeader.split('|').map((c) => stripInlineMarkdown(c.trim()));
 
           i = sepIdx + 1;
           const rows: string[][] = [];
@@ -551,8 +566,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                       ]}
                     >
                       {row.map((cell, cIdx) => {
-                        const cleanCell = cell.replace(/\*\*/g, '');
-                        const isNumericCell = /^(\d+([.,]\d+)?\s*(kcal|g|kg|cm|buổi|hiệp|reps)?|—)$/i.test(cleanCell);
+                        const plainCell = stripInlineMarkdown(cell);
+                        const isNumericCell = /^(\d+([.,]\d+)?\s*(kcal|g|kg|cm|buổi|hiệp|reps)?|—)$/i.test(plainCell);
                         return (
                           <View
                             key={`td-${cIdx}`}
@@ -562,15 +577,15 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                               cIdx === headers.length - 1 && styles.tableLastCol,
                             ]}
                           >
-                            <Text
-                              style={[
+                            {renderInlineBoldText(
+                              cell,
+                              [
                                 styles.tableTdText,
                                 cIdx === 0 && styles.tableTdFirstText,
                                 isNumericCell && styles.tableTdNumText,
-                              ]}
-                            >
-                              {cleanCell}
-                            </Text>
+                              ],
+                              cIdx === 0 ? COLORS.primary : COLORS.textDark
+                            )}
                           </View>
                         );
                       })}
@@ -653,8 +668,13 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   if (!visible) return null;
 
   return (
-    <View style={[styles.overlay, { bottom: keyboardHeight }]}>
-      <View style={styles.modalContainer}>
+    <View style={styles.overlay}>
+      <View
+        style={[
+          styles.modalContainer,
+          keyboardHeight > 0 && { paddingBottom: keyboardHeight },
+        ]}
+      >
         {/* HEADER CHATBOX */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -881,6 +901,12 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                 scrollViewRef.current?.scrollToEnd({ animated: true });
               }, 120);
             }}
+            onBlur={() => {
+              setKeyboardHeight(0);
+            }}
+            onEndEditing={() => {
+              setKeyboardHeight(0);
+            }}
             onSubmitEditing={() => handleSend()}
           />
           <TouchableOpacity
@@ -1049,6 +1075,12 @@ const styles = StyleSheet.create({
   bubbleUser: {
     backgroundColor: COLORS.primary,
     borderBottomRightRadius: 4,
+  },
+  inlineCode: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 12.5,
+    backgroundColor: '#EAF3F5',
+    color: COLORS.primary,
   },
   bubbleAi: {
     backgroundColor: '#FFFFFF',

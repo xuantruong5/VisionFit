@@ -3,6 +3,8 @@ import { MascotState, MascotSpecies, MascotStage } from './types';
 
 export const mascotEmitter = new EventEmitter();
 
+export const WATER_REMINDER_STORAGE_KEY = '@visionfit_water_reminder';
+
 // Tên các sự kiện
 export const MASCOT_EVENTS = {
   SET_STATE: 'mascot:set_state',

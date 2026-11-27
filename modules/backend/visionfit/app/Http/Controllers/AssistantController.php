@@ -282,6 +282,13 @@ class AssistantController extends Controller
         if (!$result['status']) {
             $payload['error_code'] = $result['error_code'] ?? 'AI_PROVIDER_UNAVAILABLE';
             $payload['retryable'] = (bool) ($result['retryable'] ?? true);
+        } else {
+            if (!empty($result['error_code'])) {
+                $payload['error_code'] = $result['error_code'];
+            }
+            if (array_key_exists('retryable', $result) && $result['retryable'] !== null) {
+                $payload['retryable'] = (bool) $result['retryable'];
+            }
         }
 
         return response()->json($payload, $httpStatus);

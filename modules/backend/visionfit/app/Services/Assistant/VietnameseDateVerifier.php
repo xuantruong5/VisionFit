@@ -124,6 +124,84 @@ class VietnameseDateVerifier
         ];
     }
 
+    /**
+     * Detect verified schedule dates (dd/mm/yyyy) that appear in text without a Vietnamese weekday label.
+     * Distinct from `findWeekdayMismatches()` (wrong weekday vs omitted weekday label).
+     *
+     * @param array<string, string> $knownDateToWeekday Map of 'dd/mm/yyyy' => 'Thứ Hai'..'Chủ Nhật'
+     * @return array<int, array{date: string, expected_weekday: string}>
+     */
+    public static function findDatesMissingWeekday(string $text, array $knownDateToWeekday): array
+    {
+        if (empty($knownDateToWeekday)) {
+            return [];
+        }
+
+        $missing = [];
+        foreach ($knownDateToWeekday as $dateVn => $expectedWeekday) {
+            if (!str_contains($text, $dateVn)) {
+                continue;
+            }
+            $escapedDate = preg_quote($dateVn, '/');
+            $withWeekdayPattern = '/(?:(?:Thứ|Thu)\s+(?:Hai|Ba|Tư|Tu|Năm|Nam|Sáu|Sau|Bảy|Bay|[2-7])|Chủ\s+Nhật|Chu\s+Nhat)\s*(?:[,:\-–—]\s*|ngày\s+|\(\s*|\s+)' . $escapedDate . '/iu';
+            $countAll = preg_match_all('/(?<!\d)' . $escapedDate . '(?!\d)/u', $text);
+            $countWithWd = preg_match_all($withWeekdayPattern, $text);
+            if ($countAll > $countWithWd) {
+                $missing[] = [
+                    'date' => $dateVn,
+                    'expected_weekday' => $expectedWeekday,
+                ];
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Enrich verified backend schedule dates (dd/mm/yyyy) in prose and Markdown tables
+     * with their authoritative backend `weekday_vn` when the LLM omitted the weekday label
+     * (e.g., `| 23:55 30/11/2026 |` -> `| 23:55 Thứ Hai, 30/11/2026 |`).
+     *
+     * @param array<string, string> $knownDateToWeekday Map of 'dd/mm/yyyy' => 'Thứ Hai'..'Chủ Nhật'
+     * @return array{text: string, enriched: array<int, array{date: string, weekday: string}>}
+     */
+    public static function ensureVerifiedWeekdaysPresent(string $text, array $knownDateToWeekday): array
+    {
+        if (empty($knownDateToWeekday)) {
+            return ['text' => $text, 'enriched' => []];
+        }
+
+        $enriched = [];
+        $updated = $text;
+
+        foreach ($knownDateToWeekday as $dateVn => $weekdayVn) {
+            if ($weekdayVn === '' || !str_contains($updated, $dateVn)) {
+                continue;
+            }
+            $escapedDate = preg_quote($dateVn, '/');
+            // Khớp mọi vị trí dd/mm/yyyy (có hoặc không có "ngày " ngay trước), bỏ qua nếu ngay trước đã có nhãn Thứ/Chủ Nhật
+            $pattern = '/(?<!\d)(?P<prefix>(?:(?:Thứ|Thu)\s+(?:Hai|Ba|Tư|Tu|Năm|Nam|Sáu|Sau|Bảy|Bay|[2-7])|Chủ\s+Nhật|Chu\s+Nhat)(?:\s*[,:\-–—]\s*|\s+ngày\s+|\s*\(\s*|\s+))?' . $escapedDate . '(?!\d)/iu';
+            $changed = false;
+            $res = preg_replace_callback($pattern, function (array $m) use ($dateVn, $weekdayVn, &$changed): string {
+                if (!empty($m['prefix'])) {
+                    return $m[0];
+                }
+                $changed = true;
+                return $weekdayVn . ', ' . $dateVn;
+            }, $updated);
+
+            if ($changed && is_string($res)) {
+                $updated = $res;
+                $enriched[] = ['date' => $dateVn, 'weekday' => $weekdayVn];
+            }
+        }
+
+        return [
+            'text' => $updated,
+            'enriched' => $enriched,
+        ];
+    }
+
     private static function parseDdMmYyyy(string $dateStr): ?CarbonImmutable
     {
         $parts = explode('/', $dateStr);

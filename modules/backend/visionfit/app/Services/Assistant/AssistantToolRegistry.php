@@ -119,7 +119,7 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'get_my_meal_plan',
-                'description' => 'Gọi API GET /api/assistant/meal-plan để lấy kế hoạch bữa ăn đã đăng ký của hội viên theo ngày (hôm nay, ngày mai, ngày YYYY-MM-DD hoặc sắp tới) và bữa ăn (SANG/TRUA/TOI/PHU_SANG/PHU_CHIEU/ALL), có lọc dị ứng thực phẩm.',
+                'description' => 'Gọi API GET /api/assistant/meal-plan để lấy kế hoạch bữa ăn CÁ NHÂN đã đăng ký của hội viên theo ngày (hôm nay, ngày mai, YYYY-MM-DD hoặc sắp tới) và bữa ăn (SANG/TRUA/TOI/PHU_SANG/PHU_CHIEU/ALL), gồm tên món, giờ ăn, calo, macro (đạm/carb/fat) và lọc dị ứng. BẮT BUỘC dùng công cụ này cho mọi câu hỏi về bữa ăn thuộc thực đơn cá nhân (kể cả câu hỏi tiếp nối như "Thế bữa sáng hôm nay có bao nhiêu calo?").',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -194,7 +194,7 @@ class AssistantToolRegistry
         // Universal tools (knowledge semantic search + water reminder)
         $tools[] = [
             'name' => 'search_fitness_knowledge',
-            'description' => 'Gọi API GET /api/assistant/knowledge/search để tìm kiếm ngữ nghĩa (embeddings) trong kho kiến thức VisionFit gồm kỹ thuật bài tập, dinh dưỡng món ăn/calo, thực phẩm bổ sung thể thao (Whey, Creatine...) và bách khoa thể hình. Mặc định hãy dùng category="all" trừ khi người dùng nêu rõ giới hạn danh mục.',
+            'description' => 'Gọi API GET /api/assistant/knowledge/search để tìm kiếm ngữ nghĩa (embeddings) trong kho kiến thức CHUNG của VisionFit gồm kỹ thuật bài tập, thông tin dinh dưỡng chung của món ăn ngoài kế hoạch cá nhân, thực phẩm bổ sung thể thao (Whey, Creatine...) và bách khoa thể hình. KHÔNG dùng thay cho `get_my_meal_plan` khi người dùng hỏi về bữa ăn trong thực đơn cá nhân (vd: bữa sáng/trưa/tối hôm nay của tôi). Mặc định dùng category="all" trừ khi người dùng nêu rõ giới hạn danh mục.',
             'parameters' => [
                 'type' => 'OBJECT',
                 'properties' => [

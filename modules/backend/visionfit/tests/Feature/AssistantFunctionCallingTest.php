@@ -981,4 +981,146 @@ class AssistantFunctionCallingTest extends TestCase
             CarbonImmutable::setTestNow();
         }
     }
+
+    // 16. OBS-01 Regression: Khi công cụ tri thức lỗi (embedding_unavailable) hoặc rỗng (empty), tầng điều phối chặn model tự bổ sung kiến thức nền; câu đa ý giữ phần đã xác minh
+    public function test_obs01_orchestrator_blocks_ungrounded_advice_on_tool_failure_or_empty_knowledge_and_preserves_multi_intent(): void
+    {
+        $member = $this->createMember(91, 10, [
+            'ho_ten' => 'Grounding User',
+            'can_nang_kg' => 64,
+            'chieu_cao_cm' => 168,
+            'di_ung' => ['Hải sản'],
+            'ngay_cap_nhat_chi_so' => now(),
+        ]);
+        $headers = $this->headersFor($member);
+
+        // Giả lập embedding client lỗi hạn mức ngày (quota_scope=day)
+        $this->app->instance(\App\Services\Assistant\EmbeddingClientInterface::class, new class implements \App\Services\Assistant\EmbeddingClientInterface {
+            public function modelName(): string
+            {
+                return 'fake-quota-embed';
+            }
+
+            public function embed(string $text, string $taskType = 'RETRIEVAL_QUERY'): array
+            {
+                throw new \App\Services\Assistant\LlmProviderException(
+                    'AI_QUOTA_EXCEEDED',
+                    'Dịch vụ embedding Gemini đã hết hạn mức ngày (RPD).',
+                    503,
+                    false,
+                    'day',
+                    null
+                );
+            }
+        });
+        DB::table('assistant_knowledge_embeddings')->insert([
+            'source_table' => 'bai_tap', 'source_id' => 1, 'category' => 'exercise',
+            'title' => 'Squat', 'content_text' => 'Squat', 'metadata_json' => '{}',
+            'content_hash' => hash('sha256', 'squat'), 'embedding_model' => 'fake-quota-embed',
+            'embedding_json' => json_encode([1.0, 0.0]), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        // 16a. Toàn bộ công cụ lỗi (embedding_unavailable) + LLM cố chèn thêm "Tuy nhiên, về cơ bản..." -> Orchestrator PHẢI chặn!
+        $this->bindFakeLlm(function (int $step) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['search_fitness_knowledge', ['query' => 'Nordic Hamstring Curl 888']]]);
+            }
+            return $this->modelTextTurn('Dịch vụ tìm kiếm đang lỗi. Tuy nhiên, về cơ bản bạn quỳ xuống và hạ thân người bằng cơ đùi sau!');
+        });
+
+        $rFail = $this->postJson('/api/assistant/chat', [
+            'message' => 'Hướng dẫn Nordic Hamstring Curl 888',
+        ], $headers)->assertOk();
+        $this->assertStringContainsString('chưa thể truy xuất', (string) $rFail->json('answer'));
+        $this->assertStringNotContainsString('quỳ xuống', (string) $rFail->json('answer'));
+        $this->assertSame('apologetic', $rFail->json('emotion'));
+        $this->assertFalse((bool) $rFail->json('retryable')); // hết hạn mức ngày -> retryable=false
+
+        // 16b. Câu hỏi đa ý: get_my_body_metrics THÀNH CÔNG (dị ứng Hải sản) + search_fitness_knowledge LỖI -> giữ nguyên phần đã xác minh + nêu rõ phần chưa truy xuất được
+        $this->bindFakeLlm(function (int $step) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([
+                    ['get_my_body_metrics', []],
+                    ['search_fitness_knowledge', ['query' => 'Salad tôm sú']],
+                ]);
+            }
+            return $this->modelTextTurn('Hồ sơ của bạn ghi nhận dị ứng Hải sản nên món tôm sú không an toàn.');
+        });
+
+        $rMulti = $this->postJson('/api/assistant/chat', [
+            'message' => 'Món salad tôm sú có hợp với tôi không?',
+        ], $headers)->assertOk();
+        $multiAns = (string) $rMulti->json('answer');
+        $this->assertStringContainsString('dị ứng Hải sản', $multiAns);
+        $this->assertStringContainsString('chưa thể truy xuất', $multiAns);
+
+        // 16c. Chỉ gọi search_fitness_knowledge và trả về empty -> chặn model bịa tư vấn kiến thức nền
+        $this->app->instance(\App\Services\Assistant\EmbeddingClientInterface::class, new class implements \App\Services\Assistant\EmbeddingClientInterface {
+            public function modelName(): string
+            {
+                return 'fake-quota-embed';
+            }
+
+            public function embed(string $text, string $taskType = 'RETRIEVAL_QUERY'): array
+            {
+                return [0.0, 1.0]; // trực giao với [1.0, 0.0] -> similarity = 0.0 < 0.70 -> empty
+            }
+        });
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $this->bindFakeLlm(function (int $step) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['search_fitness_knowledge', ['query' => 'giáo án leo Everest 8848m']]]);
+            }
+            return $this->modelTextTurn('Bạn nên tập chạy bộ 20km mỗi ngày để leo Everest!');
+        });
+
+        $rEmpty = $this->postJson('/api/assistant/chat', [
+            'message' => 'Trong kho có giáo án leo Everest 8848m không?',
+        ], $headers)->assertOk();
+        $this->assertStringContainsString('Tôi chưa có thông tin đó trong dữ liệu hiện có.', (string) $rEmpty->json('answer'));
+        $this->assertStringNotContainsString('chạy bộ 20km', (string) $rEmpty->json('answer'));
+    }
+
+    // 17. DEF-02 Regression: Phân biệt thiếu nhãn thứ với sai thứ; tự bổ sung đủ Thứ + ngày + giờ vào cả bảng lịch từ dữ liệu backend
+    public function test_def02_schedule_table_missing_weekday_is_distinguished_and_enriched_from_backend(): void
+    {
+        CarbonImmutable::setTestNow(CarbonImmutable::create(2026, 11, 27, 0, 5, 0, 'Asia/Ho_Chi_Minh'));
+        try {
+            $member = $this->createMember(92, 10, ['ho_ten' => 'Midnight Table User']);
+            $trainer = Trainer::forceCreate(['id' => 93, 'id_phong_tap' => 10, 'ho_ten' => 'HLV Minh Tuấn', 'tinh_trang' => 1, 'is_active' => 1]);
+            $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Giảm mỡ Toàn thân 30 ngày', 'tinh_trang' => 1]);
+            $dkId = DB::table('dang_ky_chuong_trinh')->insertGetId(['id_hoi_vien' => 92, 'id_chuong_trinh' => $progId, 'tinh_trang' => 1]);
+            DB::table('lich_tap')->insert([
+                ['id_dang_ky_chuong_trinh' => $dkId, 'id_chuong_trinh' => $progId, 'id_hoi_vien' => 92, 'id_trainner' => $trainer->id, 'ngay_tap' => '2026-11-30', 'gio_bat_dau' => '23:55:00', 'tinh_trang' => '0'],
+                ['id_dang_ky_chuong_trinh' => $dkId, 'id_chuong_trinh' => $progId, 'id_hoi_vien' => 92, 'id_trainner' => null, 'ngay_tap' => '2026-12-01', 'gio_bat_dau' => '00:05:00', 'tinh_trang' => '0'],
+            ]);
+
+            // 17a. Kiểm tra phân biệt thiếu nhãn thứ (missing_weekday) với sai thứ (mismatch = 0)
+            $tableText = "| Buổi tập | Thời gian | PT |\n| :--- | :--- | :--- |\n| Giảm mỡ Toàn thân 30 ngày | 23:55 30/11/2026 | HLV Minh Tuấn |";
+            $this->assertEmpty(\App\Services\Assistant\VietnameseDateVerifier::findWeekdayMismatches($tableText));
+            $missing = \App\Services\Assistant\VietnameseDateVerifier::findDatesMissingWeekday($tableText, ['30/11/2026' => 'Thứ Hai']);
+            $this->assertCount(1, $missing);
+            $this->assertSame('Thứ Hai', $missing[0]['expected_weekday']);
+
+            // 17b. Giả lập LLM xuất bảng lịch chỉ có "23:55 30/11/2026" (thiếu "Thứ Hai") -> Orchestrator bổ sung thành "23:55 Thứ Hai, 30/11/2026"
+            $this->bindFakeLlm(function (int $step) use ($tableText) {
+                if ($step === 0) {
+                    return $this->modelToolCallTurn([['get_my_schedule', ['date_preset' => 'custom', 'date_from' => '2026-11-30', 'date_to' => '2026-11-30']]]);
+                }
+                return $this->modelTextTurn($tableText);
+            });
+
+            $res = $this->postJson('/api/assistant/chat', [
+                'message' => 'Ngày 30/11/2026 lúc tối muộn tôi có lịch tập nào không?',
+            ], $this->headersFor($member))->assertOk();
+
+            $ans = (string) $res->json('answer');
+            $this->assertStringContainsString('23:55 Thứ Hai, 30/11/2026', $ans);
+            $this->assertEmpty(\App\Services\Assistant\VietnameseDateVerifier::findWeekdayMismatches($ans));
+            $this->assertEmpty(\App\Services\Assistant\VietnameseDateVerifier::findDatesMissingWeekday($ans, ['30/11/2026' => 'Thứ Hai']));
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+    }
 }

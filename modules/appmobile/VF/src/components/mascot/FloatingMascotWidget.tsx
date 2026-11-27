@@ -20,13 +20,11 @@ LogBox.ignoreLogs([
 import { MascotSpecies, MascotStage, MascotState } from './types';
 import { MascotVectorRig } from './MascotVectorRig';
 import { MascotChatModal } from './MascotChatModal';
-import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
+import { mascotEmitter, MASCOT_EVENTS, WATER_REMINDER_STORAGE_KEY } from './mascotEvents';
 import { getMascotPeekingImage } from './mascotImages';
 import { getStoredSpecies, subscribeSpeciesChange } from './mascotStorage';
 import { getProgressionData, recordWorkoutSession } from './mascotProgression';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const WATER_REMINDER_STORAGE_KEY = '@visionfit_water_reminder';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {

@@ -168,5 +168,81 @@ class KnowledgeEmbeddingSearchTest extends TestCase
         $this->assertSame('empty', $broadOffTopic['status']);
         $this->assertEmpty($broadOffTopic['results']);
     }
+
+    public function test_query_embedding_cache_saves_quota_while_preserving_per_user_allergy_filters_and_classifies_quota_scope(): void
+    {
+        \Illuminate\Support\Facades\Cache::flush();
+        config(['assistant.embedding_query_cache_ttl' => 3600]);
+
+        DB::table('mon_an')->insert([
+            'id' => 301,
+            'ten_mon_an' => 'Tôm hấp sả chanh',
+            'loai_bua' => 'TRUA',
+            'the_loai' => 'Eat Clean',
+            'calo' => 240, 'protein' => 26, 'carb' => 4, 'fat' => 6, 'khoi_luong_gram' => 200,
+            'nguyen_lieu' => 'Tôm sú tươi, sả, chanh',
+            'tinh_trang' => 1,
+        ]);
+
+        $countingEmbedder = new class implements EmbeddingClientInterface {
+            public int $queryEmbedCalls = 0;
+
+            public function modelName(): string
+            {
+                return 'counting-embed-v1';
+            }
+
+            public function embed(string $text, string $taskType = 'RETRIEVAL_QUERY'): array
+            {
+                if ($taskType === 'RETRIEVAL_QUERY') {
+                    $this->queryEmbedCalls++;
+                }
+                return [1.0, 0.0, 0.0];
+            }
+        };
+
+        $service = new KnowledgeEmbeddingService($countingEmbedder, app(FitnessDataService::class));
+        $sync = $service->syncIndex();
+        $this->assertSame(1, $sync['indexed']);
+
+        $allergicMember = Client::forceCreate([
+            'id' => 911, 'id_phong_tap' => 10, 'email' => 'allergic911@test.local', 'password' => bcrypt('secret'),
+            'ho_ten' => 'Allergic Member', 'tinh_trang' => 1, 'is_active' => 1, 'is_block' => 0, 'di_ung' => ['Hải sản'],
+        ]);
+        $safeMember = Client::forceCreate([
+            'id' => 912, 'id_phong_tap' => 10, 'email' => 'safe912@test.local', 'password' => bcrypt('secret'),
+            'ho_ten' => 'No Allergy Member', 'tinh_trang' => 1, 'is_active' => 1, 'is_block' => 0, 'di_ung' => [],
+        ]);
+
+        $actorAllergic = new AssistantAuthContext(true, '911', '10', 'member', 'Allergic Member', $allergicMember);
+        $actorSafe = new AssistantAuthContext(true, '912', '10', 'member', 'No Allergy Member', $safeMember);
+
+        // Lượt 1: gọi API embed 1 lần, nhận cảnh báo dị ứng cho hội viên dị ứng hải sản
+        $r1 = $service->search('Tôm hấp sả chanh bao nhiêu calo?', 'all', 2, $actorAllergic, false);
+        $this->assertSame('ok', $r1['status']);
+        $this->assertFalse($r1['query_embedding_cached']);
+        $this->assertSame(1, $countingEmbedder->queryEmbedCalls);
+        $this->assertNotEmpty($r1['results'][0]['allergy_warning'] ?? '');
+
+        // Lượt 2: cùng truy vấn bởi hội viên KHÁC (không dị ứng) -> dùng cache vector (0 gọi API mới) NHƯNG không bị dính cảnh báo dị ứng của hội viên 1!
+        $r2 = $service->search('  tôm hấp sả chanh bao nhiêu calo? ', 'all', 2, $actorSafe, false);
+        $this->assertSame('ok', $r2['status']);
+        $this->assertTrue($r2['query_embedding_cached']);
+        $this->assertSame(1, $countingEmbedder->queryEmbedCalls);
+        $this->assertArrayNotHasKey('allergy_warning', $r2['results'][0]);
+
+        // Kiểm tra phân loại hạn mức phút (RPM) vs hạn mức ngày (RPD)
+        $dayQuota = \App\Services\Assistant\GeminiEmbeddingClient::parseQuotaFailure(json_encode([
+            'error' => ['message' => 'Quota exceeded for metric: EmbedContentRequestsPerDay', 'details' => [['retryDelay' => '3600s']]],
+        ]));
+        $this->assertSame('day', $dayQuota['scope']);
+        $this->assertSame(3600, $dayQuota['retry_after_seconds']);
+
+        $minQuota = \App\Services\Assistant\GeminiEmbeddingClient::parseQuotaFailure(json_encode([
+            'error' => ['message' => 'Quota exceeded for metric: EmbedContentRequestsPerMinute', 'details' => [['retryDelay' => '2s']]],
+        ]));
+        $this->assertSame('minute', $minQuota['scope']);
+        $this->assertSame(2, $minQuota['retry_after_seconds']);
+    }
 }
 
