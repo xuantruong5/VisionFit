@@ -94,9 +94,9 @@ const state = {
   
   // Rep Counter state
   counters: {
-    squat: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 100, upThresh: 155, angle: 180, minKneeInRep: 180, maxTorsoInRep: 0, lastVerdict: 'STANDBY' },
-    push_up: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 110, upThresh: 150, angle: 180, minElbowInRep: 180, minSpineInRep: 180, maxHipSagInRep: 0, lastVerdict: 'STANDBY' },
-    lunge: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 110, upThresh: 150, angle: 180 },
+    squat: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 120, upThresh: 145, angle: 180, minKneeInRep: 180, maxTorsoInRep: 0, maxDescentInRep: 0, lastVerdict: 'STANDBY' },
+    push_up: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 110, upThresh: 145, angle: 180, minElbowInRep: 180, minSpineInRep: 180, maxHipSagInRep: 0, lastVerdict: 'STANDBY' },
+    lunge: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 115, upThresh: 145, angle: 180 },
     standing: { reps: 0, state: 'up', angle: 180 },
     sitting: { reps: 0, state: 'up', angle: 180 },
     general: { reps: 0, state: 'up', angle: 180 }
@@ -487,26 +487,42 @@ function analyzePoseHeuristic(landmarks) {
       }
     }
   }
-  const isHorizontalBody = (pitch < 45) || (bodyDx >= 0.28 && bodyDy <= 0.35) || (state.targetExercise === 'push_up');
+  // Vertical Hip Descent Calculation (for front-view and side-view squat robustness)
+  let descent = 0;
+  if ((lh || rh) && (la || ra)) {
+    const hpY = (lh && rh) ? (lh.y + rh.y) / 2 : (lh || rh).y;
+    const akY = (la && ra) ? (la.y + ra.y) / 2 : (la || ra).y;
+    const legLen = Math.max(0.12, akY - hpY);
+    if (!state.standingHipY || (state.standingSamples || 0) < 15) {
+      state.standingSamples = (state.standingSamples || 0) + 1;
+      state.standingHipY = (state.standingHipY || hpY) * 0.85 + hpY * 0.15;
+      state.standingLegLen = (state.standingLegLen || legLen) * 0.85 + legLen * 0.15;
+    }
+    const baseH = state.standingHipY || hpY;
+    const baseL = state.standingLegLen || legLen;
+    descent = Math.max(0, (hpY - baseH) / baseL);
+  }
+
+  const isHorizontalBody = (pitch < 45) || (bodyDx >= 0.28 && bodyDy <= 0.35);
 
   // Squat Depth classification according to PT Trương Thái Lưu biomechanics
   let squatDepth = 'STANDING';
-  if (minKnee <= 80) squatDepth = 'DEEP';
-  else if (minKnee <= 100) squatDepth = 'PARALLEL';
-  else if (minKnee <= 135) squatDepth = 'PARTIAL';
+  if (minKnee <= 80 || descent >= 0.35) squatDepth = 'DEEP';
+  else if (minKnee <= 100 || descent >= 0.26) squatDepth = 'PARALLEL';
+  else if (minKnee <= 135 || descent >= 0.15) squatDepth = 'PARTIAL';
   else squatDepth = 'STANDING';
 
   const l_hip_angle = calculateAngle(landmarks[LEFT_SHOULDER], landmarks[LEFT_HIP], landmarks[LEFT_KNEE]);
   const r_hip_angle = calculateAngle(landmarks[RIGHT_SHOULDER], landmarks[RIGHT_HIP], landmarks[RIGHT_KNEE]);
   const avgHip = (l_hip_angle && r_hip_angle) ? (l_hip_angle + r_hip_angle) / 2 : (l_hip_angle || r_hip_angle || 180);
 
-  const isSitting = (avgKnee >= 65 && avgKnee <= 122) && (avgHip >= 65 && avgHip <= 125) && (torsoLean <= 35);
+  const isSitting = (avgKnee >= 65 && avgKnee <= 122) && (avgHip >= 65 && avgHip <= 125) && (torsoLean <= 35) && descent < 0.15;
 
   let probs = { squat: 0.02, push_up: 0.02, lunge: 0.02, standing: 0.02, sitting: 0.02 };
   let detected = 'standing';
   let primaryAngle = avgKnee;
 
-  if (state.targetExercise === 'push_up' || isHorizontalBody) {
+  if (state.targetExercise === 'push_up' || (state.targetExercise === 'auto' && isHorizontalBody)) {
     probs.push_up = 0.96;
     probs.standing = 0.01;
     probs.squat = 0.02;
@@ -535,18 +551,9 @@ function analyzePoseHeuristic(landmarks) {
     probs.sitting = 0.87;
     detected = 'sitting';
     primaryAngle = avgKnee;
-  } else if (pitch >= 50 && avgKnee <= 145 && kneeDiff < 22 && state.counters.squat.state === 'down') {
-    // Currently executing a squat repetition
-    const depthProb = Math.min(0.98, 0.72 + (148 - avgKnee) / 75.0);
-    probs.squat = depthProb;
-    probs.standing = Math.max(0.01, 1 - depthProb);
-    probs.lunge = 0.03;
-    probs.push_up = 0.01;
-    detected = 'squat';
-    primaryAngle = avgKnee;
-  } else if (pitch >= 50 && avgKnee <= 135 && kneeDiff < 22) {
-    // Clear symmetrical knee flex in upright posture -> Squat
-    const depthProb = Math.min(0.98, 0.72 + (148 - avgKnee) / 75.0);
+  } else if (pitch >= 48 && (avgKnee <= 145 || descent >= 0.16) && kneeDiff < 24) {
+    // Squatting down or executing squat repetition (front or side view)
+    const depthProb = Math.min(0.98, 0.75 + (145 - Math.min(145, avgKnee)) / 65.0);
     probs.squat = depthProb;
     probs.standing = Math.max(0.01, 1 - depthProb);
     probs.lunge = 0.03;
@@ -588,7 +595,8 @@ function analyzePoseHeuristic(landmarks) {
       torsoLean,
       squatDepth,
       spineAngle,
-      normHipSag
+      normHipSag,
+      descent
     }
   };
 }
@@ -610,35 +618,54 @@ function updateRepCounter(action, anglesInfo) {
     }
   }
 
+  // 3. If action is 'standing' or 'sitting' but user was previously in squat/push_up, retain active exercise
+  if ((action === 'standing' || action === 'sitting') && state.lastActiveWorkout && state.lastActiveWorkout !== 'standing') {
+    exerciseToTrack = state.lastActiveWorkout;
+  }
+
+  if (exerciseToTrack && exerciseToTrack !== 'standing' && exerciseToTrack !== 'sitting' && exerciseToTrack !== 'general') {
+    state.lastActiveWorkout = exerciseToTrack;
+  }
+
   state.activeWorkoutAction = exerciseToTrack;
 
   if (exerciseToTrack === 'squat') {
     const c = state.counters.squat;
     const kneeAng = anglesInfo.angles.minKnee || primaryAngle;
     const torsoLean = anglesInfo.angles.torsoLean || 0;
+    const descent = anglesInfo.angles.descent || 0;
     c.angle = kneeAng;
 
+    // Both side view (knee angle <= 120°) and front view (descent >= 0.18) trigger down phase
+    const isDescentTriggered = (c.angle <= (c.downThresh || 120)) || (descent >= 0.18);
+    // Ascent completion: knee angle >= 145° OR descent returns to standing
+    const isAscentCompleted = (c.angle >= (c.upThresh || 145)) || (descent <= 0.10);
+
     if (c.state === 'up') {
-      if (c.angle <= c.downThresh) { // <= 100° đạt độ sâu
+      if (isDescentTriggered) {
         c.state = 'down';
         c.minKneeInRep = c.angle;
         c.maxTorsoInRep = torsoLean;
+        c.maxDescentInRep = descent;
         c.repStartTime = performance.now();
         soundFx.playPhaseDown();
       }
     } else if (c.state === 'down') {
       c.minKneeInRep = Math.min(c.minKneeInRep !== undefined ? c.minKneeInRep : 180, c.angle);
       c.maxTorsoInRep = Math.max(c.maxTorsoInRep !== undefined ? c.maxTorsoInRep : 0, torsoLean);
+      c.maxDescentInRep = Math.max(c.maxDescentInRep !== undefined ? c.maxDescentInRep : 0, descent);
 
-      if (c.angle >= c.upThresh) { // >= 155° đứng thẳng hoàn thành rep
+      if (isAscentCompleted) {
         const duration = (performance.now() - (c.repStartTime || 0)) / 1000;
-        if (duration >= 0.50) {
+        if (duration >= 0.40) {
           c.state = 'up';
           c.reps += 1;
           state.totalReps += 1;
 
-          // Đánh giá chuẩn form theo PT Trương Thái Lưu
-          const isGoodDepth = c.minKneeInRep <= 100;
+          // PT Trương Thái Lưu standards:
+          // Deep/Parallel: minKnee <= 95° (side) or maxDescent >= 0.28 (front)
+          // Safe torso lean: torsoLean <= 45°
+          const isGoodDepth = (c.minKneeInRep <= 95) || (c.maxDescentInRep >= 0.28);
           const isGoodTorso = c.maxTorsoInRep <= 45;
 
           if (isGoodDepth && isGoodTorso) {
@@ -1029,6 +1056,11 @@ function updateLiveHUD(analysis) {
   const hudTorsoEvalBadge = document.getElementById('hudTorsoEvalBadge');
 
   const action = analysis.action;
+  // If user is standing between reps, display the active exercise being performed!
+  const displayAction = (action === 'standing' || action === 'sitting') && state.lastActiveWorkout && state.lastActiveWorkout !== 'standing'
+    ? state.lastActiveWorkout
+    : action;
+
   const ACTION_DISPLAY_MAP = {
     squat: '🦵 SQUAT (GẬP ĐÙI CHUẨN PT)',
     push_up: '💪 PUSH-UP (HÍT ĐẤT CHUẨN PT)',
@@ -1038,13 +1070,21 @@ function updateLiveHUD(analysis) {
     general: '🤸 TƯ THẾ TỰ DO (33 KHỚP)'
   };
 
-  if (actionNameElem) actionNameElem.innerText = ACTION_DISPLAY_MAP[action] || action.replace('_', ' ').toUpperCase();
+  let title = ACTION_DISPLAY_MAP[displayAction] || displayAction.replace('_', ' ').toUpperCase();
+  if (action === 'standing' && displayAction !== 'standing') {
+    title = `${ACTION_DISPLAY_MAP[displayAction]} · NGHỈ GIỮA REP`;
+  }
+  if (state.targetExercise === 'auto' && displayAction !== 'standing' && displayAction !== 'general') {
+    title = `⚡ AI: ${title}`;
+  }
+
+  if (actionNameElem) actionNameElem.innerText = title;
   if (actionConfElem) actionConfElem.innerText = `Độ tin cậy: ${(analysis.confidence * 100).toFixed(1)}%`;
 
-  const currentCounter = state.counters[action] || { reps: 0, goodReps: 0, badReps: 0, state: 'ready', downThresh: 100, upThresh: 155 };
+  const currentCounter = state.counters[displayAction] || state.counters[action] || { reps: 0, goodReps: 0, badReps: 0, state: 'ready', downThresh: 120, upThresh: 145 };
   if (repCountElem) repCountElem.innerText = currentCounter.reps;
   const statRepsElem = document.getElementById('statReps');
-  if (statRepsElem) statRepsElem.innerText = state.totalReps;
+  if (statRepsElem) statRepsElem.innerText = currentCounter.reps || state.totalReps;
 
   // Rep quality sub-counter (Good Reps vs Bad Reps)
   if (hudRepQualitySub) {
@@ -1985,12 +2025,12 @@ function predictWithTfjs(frames) {
     const kneeDiff = angles.kneeDiff !== undefined ? angles.kneeDiff : 0;
 
     // Prone body check (Horizontal pushup position or explicit target)
-    if (pitch < 45 || state.targetExercise === 'push_up') {
+    if (state.targetExercise === 'push_up' || (state.targetExercise === 'auto' && pitch < 45)) {
       probsObj.push_up = Math.max(probsObj.push_up, 0.96);
       probsObj.standing = 0.01;
       probsObj.squat = 0.02;
       probsObj.lunge = 0.01;
-    } else if (pitch >= 55) {
+    } else if (pitch >= 48) {
       // Upright body: suppress pushup completely
       probsObj.push_up = Math.min(probsObj.push_up, 0.01);
 
@@ -2000,9 +2040,9 @@ function predictWithTfjs(frames) {
         probsObj.squat = Math.min(probsObj.squat, 0.03);
         probsObj.standing = Math.min(probsObj.standing, 0.02);
       }
-      // Symmetrical knee flexion -> Squat
-      else if (avgKnee <= 148 && kneeDiff < 22) {
-        const depthFactor = Math.min(0.98, 0.72 + (148 - avgKnee) / 75.0);
+      // Symmetrical knee flexion or descent -> Squat
+      else if ((avgKnee <= 145 || angles.descent >= 0.16) && kneeDiff < 24) {
+        const depthFactor = Math.min(0.98, 0.75 + (145 - Math.min(145, avgKnee)) / 65.0);
         probsObj.squat = Math.max(probsObj.squat, depthFactor);
         probsObj.standing = Math.max(0.01, 1.0 - probsObj.squat);
         probsObj.lunge = Math.min(probsObj.lunge, 0.03);
@@ -2138,18 +2178,22 @@ function setupEventListeners() {
       const hudRepQualitySub = document.getElementById('hudRepQualitySub');
       if (hudRepQualitySub) hudRepQualitySub.innerHTML = '<span style="color: #10b981; font-weight: 700;">0 Chuẩn</span> · <span style="color: #ef4444; font-weight: 700;">0 Lỗi</span>';
 
-      // Auto-lock targetExercise according to chosen sample video
+      // In Auto mode, do NOT lock exerciseTargetSelect; keep it automatic!
       const exSelect = document.getElementById('exerciseTargetSelect');
-      if (videoUrl.includes('push_up') || videoUrl.includes('hit') || videoUrl.includes('pushup')) {
-        state.targetExercise = 'push_up';
-        if (exSelect) exSelect.value = 'push_up';
-        const hudAction = document.getElementById('hudActionName');
-        if (hudAction) hudAction.innerText = '💪 PUSH-UP (HÍT ĐẤT CHUẨN PT)';
-      } else if (videoUrl.includes('squat')) {
-        state.targetExercise = 'squat';
-        if (exSelect) exSelect.value = 'squat';
-        const hudAction = document.getElementById('hudActionName');
-        if (hudAction) hudAction.innerText = '🦵 SQUAT (GẬP ĐÙI CHUẨN PT)';
+      const isAuto = !exSelect || exSelect.value === 'auto';
+      if (isAuto) {
+        state.targetExercise = 'auto';
+        if (videoUrl.includes('push_up') || videoUrl.includes('hit') || videoUrl.includes('pushup')) {
+          state.lastActiveWorkout = 'push_up';
+          state.activeWorkoutAction = 'push_up';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 💪 PUSH-UP';
+        } else if (videoUrl.includes('squat') || videoUrl.includes('suqta')) {
+          state.lastActiveWorkout = 'squat';
+          state.activeWorkoutAction = 'squat';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 🦵 SQUAT';
+        }
       }
 
       videoElement.srcObject = null;
@@ -2253,102 +2297,119 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('videoFileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    stopSimulator();
-    if (state.cameraRunning) toggleWebcam();
+  const fileInputEl = document.getElementById('videoFileInput');
+  if (fileInputEl) {
+    fileInputEl.addEventListener('click', () => {
+      fileInputEl.value = ''; // Reset so re-uploading the same file reliably triggers change event
+    });
 
-    // Turn off mirror for uploaded video files so it displays in original orientation
-    toggleMirror(false);
+    fileInputEl.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      stopSimulator();
+      if (state.cameraRunning) toggleWebcam();
 
-    // Auto-detect exercise from uploaded filename or user selection
-    const fname = file.name.toLowerCase();
-    const exSelect = document.getElementById('exerciseTargetSelect');
-    const selectedExercise = exSelect ? exSelect.value : 'auto';
+      // Turn off mirror for uploaded video files so it displays in original orientation
+      toggleMirror(false);
 
-    if (selectedExercise !== 'auto') {
-      state.targetExercise = selectedExercise;
-    } else if (fname.includes('push') || fname.includes('hit') || fname.includes('dat')) {
-      state.targetExercise = 'push_up';
-      if (exSelect) exSelect.value = 'push_up';
-      const hudAction = document.getElementById('hudActionName');
-      if (hudAction) hudAction.innerText = '💪 PUSH-UP (HÍT ĐẤT CHUẨN PT)';
-    } else if (fname.includes('squat') || fname.includes('ganh')) {
-      state.targetExercise = 'squat';
-      if (exSelect) exSelect.value = 'squat';
-      const hudAction = document.getElementById('hudActionName');
-      if (hudAction) hudAction.innerText = '🦵 SQUAT (GẬP ĐÙI CHUẨN PT)';
-    } else {
-      state.targetExercise = 'auto';
-      const hudAction = document.getElementById('hudActionName');
-      if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN TỰ ĐỘNG...';
-    }
+      // Auto-detect exercise from uploaded filename or user selection
+      const fname = file.name.toLowerCase();
+      const exSelect = document.getElementById('exerciseTargetSelect');
+      const selectedExercise = exSelect ? exSelect.value : 'auto';
 
-    // Reset previous frames and rep counters for new video
-    state.recentFrames = [];
-    state.totalReps = 0;
-    for (const k in state.counters) {
-      state.counters[k].reps = 0;
-      state.counters[k].goodReps = 0;
-      state.counters[k].badReps = 0;
-      state.counters[k].state = 'up';
-    }
-    document.getElementById('statReps').innerText = '0';
-    document.getElementById('hudRepCount').innerText = '0';
-
-    const url = URL.createObjectURL(file);
-    videoElement.srcObject = null;
-    videoElement.src = url;
-    videoElement.loop = false;
-    videoElement.onloadedmetadata = () => {
-      const vw = videoElement.videoWidth;
-      const vh = videoElement.videoHeight;
-      const box = document.getElementById('viewportBox');
-      if (vw && vh && box) {
-        box.style.aspectRatio = `${vw} / ${vh}`;
-      }
-    };
-    videoElement.loop = false;
-    videoElement.onended = () => {
-      if (state.loopVideo) {
-        videoElement.currentTime = 0;
-        for (const k in state.counters) {
-          state.counters[k].reps = 0;
-          state.counters[k].goodReps = 0;
-          state.counters[k].badReps = 0;
-          state.counters[k].state = 'up';
+      if (selectedExercise !== 'auto') {
+        state.targetExercise = selectedExercise;
+        state.lastActiveWorkout = selectedExercise;
+        state.activeWorkoutAction = selectedExercise;
+      } else {
+        state.targetExercise = 'auto';
+        if (fname.includes('push') || fname.includes('hit') || fname.includes('dat') || fname.includes('chong')) {
+          state.lastActiveWorkout = 'push_up';
+          state.activeWorkoutAction = 'push_up';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 💪 PUSH-UP';
+        } else if (fname.includes('squat') || fname.includes('suqta') || fname.includes('ganh')) {
+          state.lastActiveWorkout = 'squat';
+          state.activeWorkoutAction = 'squat';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 🦵 SQUAT';
+        } else {
+          state.lastActiveWorkout = null;
+          state.activeWorkoutAction = 'standing';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI TỰ ĐỘNG NHẬN DIỆN...';
         }
-        state.totalReps = 0;
-        document.getElementById('statReps').innerText = '0';
-        document.getElementById('hudRepCount').innerText = '0';
-        videoElement.play();
-        return;
+        // CRITICAL: Keep exSelect.value as 'auto' so system remains in auto mode!
       }
-      state.cameraRunning = false;
-      stopTimer();
-      const totalRepsEl = document.getElementById('aiTotalReps');
-      if (totalRepsEl && totalRepsEl.innerText !== '0') {
-        const exactReps = parseInt(totalRepsEl.innerText, 10);
-        const statRepsEl = document.getElementById('statReps');
-        const hudRepCountEl = document.getElementById('hudRepCount');
-        if (statRepsEl) statRepsEl.innerText = exactReps;
-        if (hudRepCountEl) hudRepCountEl.innerText = exactReps;
-      }
-      const phasePill = document.getElementById('hudPhasePill');
-      if (phasePill) phasePill.innerText = 'HOÀN THÀNH VIDEO';
-      const actionName = document.getElementById('hudActionName');
-      if (actionName) actionName.innerText = 'KẾT THÚC';
-    };
-    videoElement.play();
-    state.cameraRunning = true;
-    document.getElementById('sourceBadge').innerText = 'FILE VIDEO';
-    runVideoPolling();
-    startTimer();
 
-    // Trigger VisionFit AI full video analysis and rep evaluation in the empty space
-    analyzeUploadedVideoWithAI(file);
-  });
+      // Reset previous frames and rep counters for new video
+      state.recentFrames = [];
+      state.totalReps = 0;
+      for (const k in state.counters) {
+        state.counters[k].reps = 0;
+        state.counters[k].goodReps = 0;
+        state.counters[k].badReps = 0;
+        state.counters[k].state = 'up';
+      }
+      document.getElementById('statReps').innerText = '0';
+      document.getElementById('hudRepCount').innerText = '0';
+
+      const url = URL.createObjectURL(file);
+      videoElement.srcObject = null;
+      videoElement.src = url;
+      videoElement.loop = false;
+      videoElement.muted = true; // Ensure browser autoplay policy permits smooth playback
+      videoElement.onloadedmetadata = () => {
+        const vw = videoElement.videoWidth;
+        const vh = videoElement.videoHeight;
+        const box = document.getElementById('viewportBox');
+        if (vw && vh && box) {
+          box.style.aspectRatio = `${vw} / ${vh}`;
+        }
+      };
+      videoElement.loop = false;
+      videoElement.onended = () => {
+        if (state.loopVideo) {
+          videoElement.currentTime = 0;
+          for (const k in state.counters) {
+            state.counters[k].reps = 0;
+            state.counters[k].goodReps = 0;
+            state.counters[k].badReps = 0;
+            state.counters[k].state = 'up';
+          }
+          state.totalReps = 0;
+          document.getElementById('statReps').innerText = '0';
+          document.getElementById('hudRepCount').innerText = '0';
+          const p = videoElement.play();
+          if (p !== undefined) p.catch(() => {});
+          return;
+        }
+        state.cameraRunning = false;
+        stopTimer();
+        const totalRepsEl = document.getElementById('aiTotalReps');
+        if (totalRepsEl && totalRepsEl.innerText !== '0') {
+          const exactReps = parseInt(totalRepsEl.innerText, 10);
+          const statRepsEl = document.getElementById('statReps');
+          const hudRepCountEl = document.getElementById('hudRepCount');
+          if (statRepsEl) statRepsEl.innerText = exactReps;
+          if (hudRepCountEl) hudRepCountEl.innerText = exactReps;
+        }
+        const phasePill = document.getElementById('hudPhasePill');
+        if (phasePill) phasePill.innerText = 'HOÀN THÀNH VIDEO';
+        const actionName = document.getElementById('hudActionName');
+        if (actionName) actionName.innerText = 'KẾT THÚC';
+      };
+      const playP = videoElement.play();
+      if (playP !== undefined) playP.catch(() => {});
+      state.cameraRunning = true;
+      document.getElementById('sourceBadge').innerText = 'FILE VIDEO';
+      runVideoPolling();
+      startTimer();
+
+      // Trigger VisionFit AI full video analysis and rep evaluation in the empty space
+      analyzeUploadedVideoWithAI(file);
+    });
+  }
 
   // Data Collection
   document.getElementById('btnStartRecord').addEventListener('click', startRecordingProcess);
@@ -2559,16 +2620,19 @@ function displayAIAnalysisReport(data, displayName) {
     videoNameEl.innerHTML = `${displayName || data.video || 'Video Phân Tích'} <span class="badge-tag cyan" style="font-size: 0.72rem; margin-left: 8px; vertical-align: middle;">⚡ AI: ${exLabel}</span>`;
   }
 
-  // Synchronize detected exercise to live state and selectors
+  // Synchronize detected exercise to live state without locking selector
   if (data.detected_exercise) {
-    state.targetExercise = data.detected_exercise;
+    state.lastActiveWorkout = data.detected_exercise;
+    state.activeWorkoutAction = data.detected_exercise;
     const exSelect = document.getElementById('exerciseTargetSelect');
-    if (exSelect) exSelect.value = data.detected_exercise;
+    if (exSelect && exSelect.value !== 'auto') {
+      exSelect.value = data.detected_exercise;
+    }
     const hudAction = document.getElementById('hudActionName');
     if (hudAction) {
       hudAction.innerText = data.detected_exercise === 'push_up' 
-        ? '💪 PUSH-UP (HÍT ĐẤT CHUẨN PT)' 
-        : (data.detected_exercise === 'incline_press' ? '🏋️ INCLINE PRESS' : (data.detected_exercise === 'squat' ? '🦵 SQUAT (GẬP ĐÙI CHUẨN PT)' : '🤸 TƯ THẾ TỰ DO (33 KHỚP)'));
+        ? '⚡ AI NHẬN DIỆN: 💪 PUSH-UP' 
+        : (data.detected_exercise === 'incline_press' ? '⚡ AI NHẬN DIỆN: 🏋️ INCLINE PRESS' : (data.detected_exercise === 'squat' ? '⚡ AI NHẬN DIỆN: 🦵 SQUAT' : '🤸 TƯ THẾ TỰ DO (33 KHỚP)'));
     }
   }
 
@@ -2746,8 +2810,11 @@ async function analyzeSampleVideoWithAI(videoUrl, displayName) {
   }
 
   try {
-    const isPushUp = videoUrl.includes('push_up') || videoUrl.includes('pushup');
-    const endpoint = isPushUp ? '/api/analyze_push_up' : '/api/analyze_squat';
+    const isPushUp = videoUrl.includes('push_up') || videoUrl.includes('pushup') || videoUrl.includes('hit');
+    const isSquat = videoUrl.includes('squat') || videoUrl.includes('suqta');
+    let endpoint = '/api/analyze_squat';
+    if (isPushUp) endpoint = '/api/analyze_push_up';
+    else if (!isSquat) endpoint = '/api/analyze_general_pose';
     const resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
