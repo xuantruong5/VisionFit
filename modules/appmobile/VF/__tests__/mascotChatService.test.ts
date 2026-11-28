@@ -114,5 +114,30 @@ describe('mascotChatService & mascotEvents', () => {
     mascotEmitter.off(MASCOT_EVENTS.AUTH_SESSION_CHANGED, authSpy);
     mascotEmitter.off(MASCOT_EVENTS.SET_WATER_REMINDER, waterSpy);
   });
+
+  test('autoNavigate only when backend allows it AND action is an allowlisted NAVIGATE_* target', async () => {
+    const base = { status: true, answer: 'Bạn chưa đăng ký chương trình tập.', source: 'gemini_fc:x' };
+
+    mockedPost.mockResolvedValueOnce({
+      data: { ...base, auto_navigate: true, action: { type: 'NAVIGATE_REGISTER_PROGRAM', screen: 'WorkoutPlanScreen' } },
+    });
+    const allowed = await getAIResponse('tôi muốn tập luyện');
+    expect(allowed.action?.type).toBe('NAVIGATE_REGISTER_PROGRAM');
+    expect(allowed.autoNavigate).toBe(true);
+
+    // Câu hỏi tra cứu (vd: lịch tập) chỉ có nút gợi ý, KHÔNG tự chuyển trang
+    mockedPost.mockResolvedValueOnce({
+      data: { ...base, auto_navigate: false, action: { type: 'NAVIGATE_REGISTER_PROGRAM' } },
+    });
+    expect((await getAIResponse('lịch hôm nay')).autoNavigate).toBe(false);
+
+    // Action ngoài allowlist hoặc không phải điều hướng -> không bao giờ tự chuyển
+    mockedPost.mockResolvedValueOnce({ data: { ...base, auto_navigate: true, action: { type: 'OPEN_URL' } } });
+    expect((await getAIResponse('x')).autoNavigate).toBe(false);
+    mockedPost.mockResolvedValueOnce({
+      data: { ...base, auto_navigate: true, action: { type: 'SET_WATER_REMINDER', params: { enabled: true } } },
+    });
+    expect((await getAIResponse('bật nhắc nước')).autoNavigate).toBe(false);
+  });
 });
 

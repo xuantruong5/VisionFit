@@ -17,6 +17,7 @@ export interface AIResponseResult {
   intent?: string;
   emotion?: string;
   action?: ChatAction | null;
+  autoNavigate?: boolean;
   source?: string;
   errorCode?: string;
   retryable?: boolean;
@@ -114,6 +115,8 @@ export const getAIResponse = async (
         intent: data.intent || 'general_support',
         emotion: data.emotion || 'explaining',
         action: sanitizeAction(data.action),
+        // Chỉ tự chuyển trang với action điều hướng hợp lệ đã qua allowlist
+        autoNavigate: data.auto_navigate === true && !!sanitizeAction(data.action)?.type.startsWith('NAVIGATE_'),
         source: data.source || 'gemini_fc',
       };
     }

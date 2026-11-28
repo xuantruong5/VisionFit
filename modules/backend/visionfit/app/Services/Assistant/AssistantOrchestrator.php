@@ -142,6 +142,7 @@ class AssistantOrchestrator
         $toolTrace = [];
         $executedTools = [];
         $finalAction = null;
+        $finalActionLocked = false;
         $intentHint = 'general_support';
         $rounds = 0;
 
@@ -201,6 +202,9 @@ class AssistantOrchestrator
                     'intent' => $intentHint,
                     'emotion' => $emotion,
                     'action' => $finalAction,
+                    // Chỉ tự chuyển trang khi người dùng thể hiện ý muốn đi tới màn hình (suggest_app_navigation),
+                    // không tự chuyển với nút gợi ý phụ của câu hỏi tra cứu (vd: hỏi lịch tập khi chưa đăng ký).
+                    'auto_navigate' => $finalActionLocked && str_starts_with((string) ($finalAction['type'] ?? ''), 'NAVIGATE_'),
                     'source' => ($turn['provider'] ?? 'gemini_fc') . ':' . ($turn['model'] ?? $model),
                     'tool_calls' => $toolTrace,
                 ];
@@ -243,8 +247,13 @@ class AssistantOrchestrator
                     $intentHint = $exec['intent_hint'];
                 }
                 if (!empty($exec['side_effect_action'])) {
-                    // Ưu tiên action điều hướng hoặc nhắc nước hợp lệ mới nhất
-                    $finalAction = $exec['side_effect_action'];
+                    // Nút do suggest_app_navigation chọn (đã được server xác minh chương trình tập) luôn được ưu tiên
+                    // hơn nút gợi ý phụ của các công cụ dữ liệu (vd: get_my_packages gắn "Đăng ký gói tập").
+                    $isExplicitNav = in_array($fcName, ['suggest_app_navigation', 'set_water_reminder'], true);
+                    if ($isExplicitNav || !$finalActionLocked) {
+                        $finalAction = $exec['side_effect_action'];
+                        $finalActionLocked = $finalActionLocked || $isExplicitNav;
+                    }
                 }
 
                 $fnResp = [
@@ -391,6 +400,7 @@ NGUYÊN TẮC BẮT BUỘC:
    - Với câu hỏi tiếp nối (vd: "Còn hôm sau thì sao?", "Thế ngày mốt?", "Thế bữa sáng hôm nay có bao nhiêu calo?"), hãy tính ngày YYYY-MM-DD từ thời gian hiện tại và lịch sử hội thoại rồi gọi `get_my_schedule` hoặc `get_my_meal_plan` với ngày chính xác.
    - Mọi câu hỏi về bữa ăn trong thực đơn cá nhân của người dùng (kể cả hỏi calo/macro/giờ ăn của bữa sáng, trưa, tối hôm nay dù lượt trước đã nhắc tên món) BẮT BUỘC gọi `get_my_meal_plan`; chỉ dùng `search_fitness_knowledge` cho thông tin dinh dưỡng chung của món ăn ngoài kế hoạch cá nhân, kỹ thuật bài tập, thực phẩm bổ sung (Whey, Creatine...) hoặc kiến thức gym.
    - Chỉ gọi `set_water_reminder` khi người dùng yêu cầu BẬT hoặc TẮT nhắc uống nước. Không gọi khi họ chỉ hỏi lượng nước cần uống mỗi ngày.
+   - MỌI câu thể hiện ý muốn TẬP LUYỆN (vd: "tôi muốn tập", "cho mình tập đi", "toi muon tap gym", "bắt đầu tập", "mở trang tập") BẮT BUỘC gọi `suggest_app_navigation` với `NAVIGATE_WORKOUT` (có thể kèm `get_my_schedule`). Không trả lời suông, không tự liệt kê bài tập từ kho kiến thức thay cho việc điều hướng, không dùng `NAVIGATE_REGISTER_PACKAGE` cho ý muốn tập luyện. Nếu kết quả có `has_registered_program: false` thì phải nói rõ "Bạn chưa đăng ký chương trình tập" và hướng dẫn bấm nút đăng ký chương trình.
 2. TRUNG THỰC TUYỆT ĐỐI & QUY TẮC KHI THIẾU THÔNG TIN (BẮT BUỘC):
    - TUYỆT ĐỐI KHÔNG bịa lịch tập, gói tập, số buổi, cân nặng, chỉ số cơ thể (BMI/BMR/TDEE), thực đơn hay trích dẫn kiến thức.
    - API thành công nhưng KHÔNG CÓ DỮ LIỆU (`status` thuộc `empty`, `no_registered_program`, `missing_body_metrics`, `no_package`, `no_session_in_range`, `no_registered_program_and_metrics`): BẮT BUỘC trả lời rõ nguyên văn câu: "Tôi chưa có thông tin đó trong dữ liệu hiện có." (có thể kèm giải thích ngắn trạng thái thiếu dữ liệu hoặc hướng dẫn cập nhật/đăng ký).
@@ -399,6 +409,7 @@ NGUYÊN TẮC BẮT BUỘC:
    - CHƯA ĐĂNG NHẬP (`status: unauthenticated`): nhắc đăng nhập để xem dữ liệu cá nhân, không bịa số liệu.
    - LỖI API / TIMEOUT / MẤT KẾT NỐI (`status: api_error` hoặc `embedding_unavailable`): CHỈ thông báo rõ hiện chưa thể truy xuất dữ liệu từ máy chủ lúc này và đề nghị thử lại sau; TUYỆT ĐỐI KHÔNG bổ sung lời khuyên hay kiến thức nền thay thế cho công cụ bị lỗi và TUYỆT ĐỐI KHÔNG kết luận rằng dữ liệu không tồn tại.
    - KHO KIẾN THỨC TRỐNG (`search_fitness_knowledge` trả `status: empty`): CHỈ nói rõ "Tôi chưa có thông tin đó trong dữ liệu hiện có." (chưa có bài viết/mục phù hợp trong kho kiến thức VisionFit), TUYỆT ĐỐI KHÔNG bổ sung kiến thức nền hay tự bịa nguồn trích dẫn.
+   - KHO KIẾN THỨC CÓ KẾT QUẢ NHƯNG KHÔNG CHỨA ĐIỀU ĐƯỢC HỎI (vd: chỉ có mô tả công dụng sản phẩm trong khi người dùng hỏi thời điểm uống, liều lượng, cách tập): chỉ trình bày đúng phần `summary` mà công cụ trả về, nói rõ phần được hỏi "chưa có trong dữ liệu hiện có" và gợi ý hỏi PT. TUYỆT ĐỐI KHÔNG viết thêm "tuy nhiên, theo nguyên tắc chung/phổ biến…", không tự đưa liều lượng, thời điểm, con số hay lời khuyên nào không có trong kết quả công cụ.
    - CÂU HỎI NHIỀU Ý (một công cụ thành công, công cụ khác lỗi hoặc rỗng): CHỈ trả lời phần đã có dữ liệu được xác minh từ công cụ thành công và nêu rõ phần còn lại chưa truy xuất được hoặc chưa có dữ liệu; không tự suy diễn phần bị thiếu.
    - Khi công cụ `get_my_body_metrics` trả về `bmi_status` (chuẩn châu Á), dùng đúng nhãn đó.
    - Khi `search_fitness_knowledge` hoặc `get_my_meal_plan` trả về `allergy_warning` cho món nào, BẮT BUỘC cảnh báo dị ứng rõ ràng ngay tại món đó (vd: "⚠️ chứa cá hồi — bạn dị ứng hải sản") và khuyên trao đổi với PT để đổi món; không được bỏ qua cảnh báo.
@@ -409,6 +420,11 @@ NGUYÊN TẮC BẮT BUỘC:
    - Trả lời tiếng Việt tự nhiên, súc tích (dưới 180 từ), không dùng tiêu đề `#`, `##`, `###` (dùng `- **...**`). Không in tên trường kỹ thuật tiếng Anh dạng mã nguồn (như `total_sessions`, `used_sessions`, `remaining_sessions`, `weekday_vn`) trong câu trả lời cuối.
    - Định dạng ngày giờ Việt Nam: khi nhắc lịch tập trong cả câu văn lẫn bảng Markdown, BẮT BUỘC ghi đủ Thứ, ngày và giờ từ trường `weekday_vn` / `date_vn_with_weekday` do công cụ trả về (vd: `23:55 Thứ Hai, 30/11/2026`), không tự suy đoán và không bỏ sót nhãn thứ. Tên bữa dùng tiếng Việt có dấu (Sáng, Phụ sáng, Trưa, Phụ chiều, Tối).
    - Khi trình bày bảng lịch tập, dùng tối đa 3 cột ngắn `| Buổi tập | Thời gian | PT |` và cột Thời gian vẫn phải ghi đủ Thứ + ngày + giờ.
+5. CHI TIẾT BÀI TẬP / MÓN ĂN (khi người dùng hỏi về MỘT bài tập hoặc MỘT món cụ thể và kết quả `search_fitness_knowledge` có `details`):
+   - Ảnh: đặt trên MỘT DÒNG RIÊNG đúng cú pháp `![Tên bài tập hoặc món](image_url)`. Ảnh động minh họa động tác: dòng riêng `![Minh họa động tác đúng](demo_gif_url)`. Nếu có `wrong_form_gif_url` thì thêm link `[⚠️ Xem động tác SAI cần tránh](wrong_form_gif_url)`. Chỉ dùng URL có trong kết quả công cụ, không tự tạo URL.
+   - Bài tập: liệt kê **Nhóm cơ tác động** theo `muscle_groups` kèm % (vd: Ngực 70%, Tay sau 20%), rồi **Hướng dẫn** (`instructions`), **Lưu ý an toàn** (`safety_notes`), **Lỗi thường gặp** (`common_mistakes`) nếu có, và số hiệp × số lần (`sets` × `reps`).
+   - Món ăn: hiển thị Calories, Protein, Carb, Fat (từ `metadata`), **Nguyên liệu**, **Cách nấu** (`cooking_steps`, tóm gọn) và 1–2 câu tư vấn dinh dưỡng dựa trên mục tiêu/chỉ số của người dùng nếu đã có; luôn cảnh báo `allergy_warning` nếu có.
+   - Khi trả về nhiều kết quả (danh sách gợi ý) thì KHÔNG chèn ảnh cho từng mục, chỉ liệt kê ngắn gọn.
 PROMPT;
     }
 
@@ -588,6 +604,7 @@ PROMPT;
             'intent' => 'service_error',
             'emotion' => 'apologetic',
             'action' => null,
+            'auto_navigate' => false,
             'source' => 'service_error',
             'tool_calls' => [],
             'error_code' => $errorCode,

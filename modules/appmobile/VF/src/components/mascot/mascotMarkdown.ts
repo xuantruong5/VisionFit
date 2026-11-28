@@ -2,10 +2,11 @@ export type InlineMarkdownToken =
   | { type: 'text'; content: string }
   | { type: 'bold'; content: string }
   | { type: 'italic'; content: string }
-  | { type: 'code'; content: string };
+  | { type: 'code'; content: string }
+  | { type: 'link'; content: string; url: string };
 
 /**
- * Parse inline Markdown (`**bold**`, `*italic*`, `` `code` ``) into typed tokens
+ * Parse inline Markdown (`**bold**`, `*italic*`, `` `code` ``, `[link](https://...)`) into typed tokens
  * for safe rendering in both chat bubbles and Markdown table cells (no raw asterisks/backticks).
  */
 export function parseInlineMarkdown(text: string): InlineMarkdownToken[] {
@@ -14,7 +15,8 @@ export function parseInlineMarkdown(text: string): InlineMarkdownToken[] {
   }
 
   const tokens: InlineMarkdownToken[] = [];
-  const pattern = /(\*\*[^*\n]+\*\*|`[^`\n]+`|\*[^*\n]+\*)/g;
+  // Link chỉ chấp nhận http(s) để không mở được scheme nguy hiểm (javascript:, file:, intent:...)
+  const pattern = /(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*\n]+\*\*|`[^`\n]+`|\*[^*\n]+\*)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -24,7 +26,10 @@ export function parseInlineMarkdown(text: string): InlineMarkdownToken[] {
     }
 
     const raw = match[0];
-    if (raw.startsWith('**') && raw.endsWith('**') && raw.length > 4) {
+    const linkMatch = raw.match(/^\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (linkMatch) {
+      tokens.push({ type: 'link', content: linkMatch[1], url: linkMatch[2] });
+    } else if (raw.startsWith('**') && raw.endsWith('**') && raw.length > 4) {
       tokens.push({ type: 'bold', content: raw.slice(2, -2) });
     } else if (raw.startsWith('`') && raw.endsWith('`') && raw.length > 2) {
       tokens.push({ type: 'code', content: raw.slice(1, -1) });

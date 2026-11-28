@@ -1393,6 +1393,58 @@ class AssistantFunctionCallingTest extends TestCase
         $this->assertSame('Hải sản', app(FitnessDataService::class)->allergyTextOf(Client::find(72)));
     }
 
+    // Task 2.4: hội viên CHƯA đăng ký mà muốn tập -> báo chưa đăng ký + điều hướng tới ĐĂNG KÝ CHƯƠNG TRÌNH (không phải trang tập/gói tập)
+    public function test_training_intent_without_program_redirects_to_register_program_and_auto_navigates(): void
+    {
+        $member = $this->createMember(74, 10);
+
+        // Model gọi cả get_my_packages (tự gắn nút "đăng ký gói") lẫn suggest_app_navigation -> nút điều hướng phải thắng
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([
+                    ['suggest_app_navigation', ['target' => 'NAVIGATE_WORKOUT']],
+                    ['get_my_packages', []],
+                ]);
+            }
+            $nav = $contents[count($contents) - 1]['parts'][0]['functionResponse']['response'];
+            $this->assertSame('NAVIGATE_WORKOUT', $nav['requested_target']);
+            $this->assertSame('NAVIGATE_REGISTER_PROGRAM', $nav['approved_target']);
+            $this->assertTrue($nav['redirected']);
+            $this->assertFalse($nav['has_registered_program']);
+            $this->assertStringContainsString('CHƯA đăng ký chương trình tập', $nav['message']);
+            return $this->modelTextTurn('Bạn chưa đăng ký chương trình tập.');
+        });
+
+        $this->postJson('/api/assistant/chat', ['message' => 'toi muon tap gym'], $this->headersFor($member))
+            ->assertOk()
+            ->assertJsonPath('action.type', 'NAVIGATE_REGISTER_PROGRAM')
+            ->assertJsonPath('action.screen', 'WorkoutPlanScreen')
+            ->assertJsonPath('auto_navigate', true);
+    }
+
+    // Đã có chương trình -> mở trang tập; câu hỏi tra cứu (chỉ có nút gợi ý phụ) thì KHÔNG tự chuyển trang
+    public function test_training_intent_with_program_opens_workout_and_lookup_questions_do_not_auto_navigate(): void
+    {
+        $member = $this->createMember(75, 10);
+        $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Tăng cơ', 'tinh_trang' => 1]);
+        DB::table('dang_ky_chuong_trinh')->insert(['id_hoi_vien' => 75, 'id_chuong_trinh' => $progId, 'tinh_trang' => 1]);
+        $h = $this->headersFor($member);
+
+        $this->bindFakeLlm(fn (int $step) => $step === 0
+            ? $this->modelToolCallTurn([['suggest_app_navigation', ['target' => 'NAVIGATE_WORKOUT']]])
+            : $this->modelTextTurn('Mở kế hoạch tập cho bạn nhé!'));
+        $this->postJson('/api/assistant/chat', ['message' => 'cho mình tập đi'], $h)
+            ->assertOk()
+            ->assertJsonPath('action.type', 'NAVIGATE_WORKOUT')
+            ->assertJsonPath('auto_navigate', true);
+
+        $this->bindFakeLlm(fn (int $step) => $step === 0
+            ? $this->modelToolCallTurn([['get_my_schedule', ['date_preset' => 'today']]])
+            : $this->modelTextTurn('Hôm nay chưa có buổi tập.'));
+        $res = $this->postJson('/api/assistant/chat', ['message' => 'lịch hôm nay'], $h)->assertOk();
+        $this->assertFalse((bool) $res->json('auto_navigate'));
+    }
+
     public static function allergyStorageShapes(): array
     {
         return ['chuỗi thường (dữ liệu thật)' => ['plain_string'], 'mảng JSON' => ['json_array']];

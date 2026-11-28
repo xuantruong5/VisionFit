@@ -293,6 +293,7 @@ class KnowledgeEmbeddingService
                 'summary' => mb_substr($row->content_text, 0, 320, 'UTF-8'),
                 'metadata' => $meta,
                 'similarity_score' => round($score, 4),
+                '_ref' => ['table' => (string) $row->source_table, 'id' => (int) $row->source_id],
             ];
 
             if ($row->category === 'food' && $actor && $actor->authenticated && $actor->role === 'member' && $actor->user) {
@@ -311,7 +312,121 @@ class KnowledgeEmbeddingService
         }
 
         usort($scored, fn ($a, $b) => $b['similarity_score'] <=> $a['similarity_score']);
-        return array_slice($scored, 0, $limit);
+        $top = array_slice($scored, 0, $limit);
+
+        // Chỉ bổ sung chi tiết cho các kết quả được chọn (ít truy vấn), đọc trực tiếp từ bảng gốc
+        // nên luôn là dữ liệu mới nhất và KHÔNG cần re-embed (không tốn quota Gemini).
+        return array_map(function (array $item) {
+            $ref = $item['_ref'] ?? null;
+            unset($item['_ref']);
+            if (!$ref) {
+                return $item;
+            }
+            $details = match ($ref['table']) {
+                'bai_tap' => $this->exerciseDetails($ref['id']),
+                'mon_an' => $this->foodDetails($ref['id']),
+                default => [],
+            };
+            return empty($details) ? $item : array_merge($item, ['details' => $details]);
+        }, $top);
+    }
+
+    /**
+     * Chi tiết bài tập: ảnh, ảnh động minh họa đúng/sai, nhóm cơ tác động (%), hướng dẫn, lưu ý, lỗi thường gặp.
+     * Mọi cột đều được kiểm tra tồn tại để chạy được cả trên DB cũ của các thành viên.
+     */
+    private function exerciseDetails(int $id): array
+    {
+        if (!Schema::hasTable('bai_tap')) {
+            return [];
+        }
+        $cols = array_values(array_filter(
+            ['ten_bai_tap', 'anh_dai_dien', 'loi_thuong_gap', 'thiet_bi', 'set_yeu_cau', 'rep_yeu_cau', 'thoi_gian_phut', 'muc_ta_toi_thieu'],
+            fn ($c) => Schema::hasColumn('bai_tap', $c)
+        ));
+        $bt = DB::table('bai_tap')->where('id', $id)->first($cols);
+        if (!$bt) {
+            return [];
+        }
+
+        $ct = null;
+        if (Schema::hasTable('chi_tiet_bai_tap')) {
+            $ctCols = array_values(array_filter(
+                ['video_huong_dan', 'video_sai', 'huong_dan', 'canh_bao', 'mo_ta'],
+                fn ($c) => Schema::hasColumn('chi_tiet_bai_tap', $c)
+            ));
+            $ct = $ctCols ? DB::table('chi_tiet_bai_tap')->where('id_bai_tap', $id)->first($ctCols) : null;
+        }
+
+        $muscles = [];
+        if (Schema::hasTable('bai_tap_nhom_co')) {
+            $muscles = DB::table('bai_tap_nhom_co')->where('id_bai_tap', $id)
+                ->orderByDesc('ty_le_tac_dong')->get(['ten_nhom_co', 'ty_le_tac_dong'])
+                ->map(fn ($m) => ['muscle' => $m->ten_nhom_co, 'percent' => (float) $m->ty_le_tac_dong])
+                ->all();
+        }
+
+        return array_filter([
+            'image_url' => $this->absoluteUrl($bt->anh_dai_dien ?? null),
+            'demo_gif_url' => $this->absoluteUrl($ct->video_huong_dan ?? null),
+            'wrong_form_gif_url' => $this->absoluteUrl($ct->video_sai ?? null),
+            'muscle_groups' => $muscles,
+            'instructions' => $this->clip($ct->huong_dan ?? null),
+            'safety_notes' => $this->clip($ct->canh_bao ?? null),
+            'common_mistakes' => $this->clip($bt->loi_thuong_gap ?? null),
+            'equipment' => $bt->thiet_bi ?? null,
+            'sets' => isset($bt->set_yeu_cau) ? (int) $bt->set_yeu_cau : null,
+            'reps' => isset($bt->rep_yeu_cau) ? (int) $bt->rep_yeu_cau : null,
+            'min_weight' => $bt->muc_ta_toi_thieu ?? null,
+        ], fn ($v) => $v !== null && $v !== '' && $v !== []);
+    }
+
+    /** Chi tiết món ăn: ảnh, mô tả, nguyên liệu, gia vị, cách nấu, thời gian nấu, khẩu phần. */
+    private function foodDetails(int $id): array
+    {
+        if (!Schema::hasTable('mon_an')) {
+            return [];
+        }
+        $cols = array_values(array_filter(
+            ['anh_dai_dien', 'mo_ta', 'nguyen_lieu', 'gia_vi', 'huong_dan_nau', 'thoi_gian_nau', 'khoi_luong_gram'],
+            fn ($c) => Schema::hasColumn('mon_an', $c)
+        ));
+        $m = DB::table('mon_an')->where('id', $id)->first($cols);
+        if (!$m) {
+            return [];
+        }
+
+        return array_filter([
+            'image_url' => $this->absoluteUrl($m->anh_dai_dien ?? null),
+            'description' => $this->clip($m->mo_ta ?? null),
+            'ingredients' => $this->clip($m->nguyen_lieu ?? null),
+            'spices' => $this->clip($m->gia_vi ?? null),
+            'cooking_steps' => $this->clip($m->huong_dan_nau ?? null),
+            'cooking_time' => $m->thoi_gian_nau ?? null,
+            'serving_g' => isset($m->khoi_luong_gram) ? (int) $m->khoi_luong_gram : null,
+        ], fn ($v) => $v !== null && $v !== '');
+    }
+
+    /** Ảnh lưu đường dẫn tương đối (upload) -> ghép APP_URL; link http(s) giữ nguyên. */
+    private function absoluteUrl(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+        return rtrim((string) config('app.url'), '/') . '/' . ltrim($path, '/');
+    }
+
+    private function clip(?string $text, int $max = 700): ?string
+    {
+        $text = trim(str_replace(['\\n', "\r"], ["\n", ''], strip_tags((string) $text)));
+        if ($text === '') {
+            return null;
+        }
+        return mb_strlen($text, 'UTF-8') > $max ? mb_substr($text, 0, $max, 'UTF-8') . '…' : $text;
     }
 
     /**

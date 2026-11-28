@@ -30,5 +30,24 @@ describe('mascotMarkdown inline parser (UI-01 & UI-04)', () => {
       { type: 'text', content: 'Lịch tập lúc 07:00' },
     ]);
   });
+
+  test('parses http(s) links (exercise demo GIF / wrong-form video) as clickable tokens', () => {
+    const tokens = parseInlineMarkdown(
+      '[⚠️ Xem động tác SAI cần tránh](https://fujf.net/assets/exercises/videos/0033-GrO65fd.gif) và **chú ý**'
+    );
+    expect(tokens).toEqual([
+      { type: 'link', content: '⚠️ Xem động tác SAI cần tránh', url: 'https://fujf.net/assets/exercises/videos/0033-GrO65fd.gif' },
+      { type: 'text', content: ' và ' },
+      { type: 'bold', content: 'chú ý' },
+    ]);
+    expect(stripInlineMarkdown('Xem [video](https://a.b/c.gif) nhé')).toBe('Xem video nhé');
+  });
+
+  test('never turns non-http schemes into links (javascript:, file:, intent:)', () => {
+    for (const bad of ['[bấm](javascript:alert(1))', '[mở](file:///etc/passwd)', '[app](intent://x)']) {
+      const tokens = parseInlineMarkdown(bad);
+      expect(tokens.some((t) => t.type === 'link')).toBe(false);
+    }
+  });
 });
 

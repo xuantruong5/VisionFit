@@ -275,6 +275,7 @@ class AssistantController extends Controller
             'intent' => $result['intent'],
             'emotion' => $result['emotion'],
             'action' => $result['action'],
+            'auto_navigate' => (bool) ($result['auto_navigate'] ?? false),
             'source' => $result['source'],
             'tool_calls' => $result['tool_calls'] ?? [],
         ];

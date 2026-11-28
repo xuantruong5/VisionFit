@@ -147,7 +147,12 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'suggest_app_navigation',
-                'description' => 'Gắn nút điều hướng an toàn trong ứng dụng VisionFit khi cần mở màn hình phù hợp: NAVIGATE_WORKOUT (chỉ khi ĐÃ đăng ký chương trình), NAVIGATE_REGISTER_PROGRAM (khi CHƯA đăng ký chương trình), NAVIGATE_BODY_METRICS (khi CHƯA cập nhật chỉ số hoặc user muốn sửa chỉ số), NAVIGATE_REGISTER_PACKAGE (khi CHƯA có gói tập/gói hết hạn hoặc user muốn mua thêm gói).',
+                'description' => 'Điều hướng tới màn hình phù hợp trong ứng dụng VisionFit. '
+                    . 'NAVIGATE_WORKOUT: dùng cho MỌI câu thể hiện ý muốn tập luyện/bắt đầu tập/mở trang tập (vd: "tôi muốn tập", "cho mình tập đi", "toi muon tap gym", "mở bài tập") — '
+                    . 'server sẽ TỰ KIỂM TRA chương trình tập: nếu chưa đăng ký sẽ trả has_registered_program=false và chuyển sang trang ĐĂNG KÝ CHƯƠNG TRÌNH. '
+                    . 'NAVIGATE_REGISTER_PROGRAM: khi user muốn đăng ký/chọn chương trình tập. '
+                    . 'NAVIGATE_BODY_METRICS: khi CHƯA cập nhật chỉ số hoặc muốn sửa chỉ số. '
+                    . 'NAVIGATE_REGISTER_PACKAGE: CHỈ khi user hỏi về GÓI TẬP (mua/gia hạn gói, gói hết hạn) — KHÔNG dùng cho ý muốn tập luyện.',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -672,20 +677,33 @@ class AssistantToolRegistry
 
         // Xác minh trạng thái thật của tài khoản qua API nội bộ để không bao giờ dẫn vào tab đã đăng ký khi chưa đăng ký
         $apiCall = null;
+        $requestedTarget = $target;
+        $hasProgram = null;
+        $message = null;
         if ($target === 'NAVIGATE_WORKOUT') {
             $check = $this->dispatchInternalGet('/api/assistant/progress', ['period' => 'program_overall'], $actor);
             $apiCall = $check['api_call'];
             $hasProgram = $check['ok'] && (bool) ($check['result']['has_registered_program'] ?? false);
             if (!$hasProgram) {
                 $target = 'NAVIGATE_REGISTER_PROGRAM';
+                // Chỉ dẫn rõ cho LLM để lời trả lời khớp với nút điều hướng (không được nói "mở trang tập")
+                $message = 'Hội viên CHƯA đăng ký chương trình tập nên KHÔNG thể vào trang tập luyện. '
+                    . 'BẮT BUỘC trả lời rõ: "Bạn chưa đăng ký chương trình tập" và hướng dẫn bấm nút "Đăng ký chương trình tập" để chọn chương trình phù hợp. '
+                    . 'KHÔNG nói là đang mở trang tập luyện/bài tập, KHÔNG liệt kê bài tập thay thế.';
+            } else {
+                $message = 'Hội viên đã có chương trình tập đang hoạt động; mở trang Kế hoạch tập.';
             }
         }
 
         return [
             'result' => [
                 'status' => 'ok',
+                'requested_target' => $requestedTarget,
                 'approved_target' => $target,
+                'redirected' => $requestedTarget !== $target,
+                'has_registered_program' => $hasProgram,
                 'screen' => self::ALLOWED_NAVIGATION_TARGETS[$target],
+                'message' => $message,
             ],
             'side_effect_action' => [
                 'type' => $target,

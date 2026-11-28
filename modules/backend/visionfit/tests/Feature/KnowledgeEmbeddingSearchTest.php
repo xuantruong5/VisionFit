@@ -28,6 +28,7 @@ class KnowledgeEmbeddingSearchTest extends TestCase
             '2026_09_11_060235_create_clients_table.php',
             '2026_09_11_062608_create_bai_tap_table.php',
             '2026_10_15_170400_create_chi_tiet_bai_tap_table.php',
+            '2026_10_15_172001_create_bai_tap_nhom_co_table.php',
             '2026_09_13_122736_create_mon_an_table.php',
             '2026_09_11_080320_create_chuong_trinh_tap_table.php',
             '2026_09_17_170000_create_bach_khoa_toan_thu_table.php',
@@ -243,6 +244,74 @@ class KnowledgeEmbeddingSearchTest extends TestCase
         ]));
         $this->assertSame('minute', $minQuota['scope']);
         $this->assertSame(2, $minQuota['retry_after_seconds']);
+    }
+
+    // Task 3.3 / 4.3 / 4.4 / 4.5: kết quả tra cứu kèm ảnh, ảnh động minh họa, nhóm cơ (%), hướng dẫn, lưu ý, cách nấu
+    public function test_search_results_include_media_muscle_groups_and_full_details_from_source_tables(): void
+    {
+        config(['app.url' => 'http://visionfit.test']);
+        $exId = DB::table('bai_tap')->insertGetId([
+            'ma_bai_tap' => 'BP1', 'ten_bai_tap' => 'Barbell Bench Press',
+            'mo_ta' => 'Bài đẩy ngực với protein... không, với thanh đòn.', 'thoi_gian_phut' => 5,
+            'set_yeu_cau' => 4, 'rep_yeu_cau' => 10, 'anh_dai_dien' => 'https://cdn.test/bench.jpg',
+            'loi_thuong_gap' => 'Nhún vai khi đẩy', 'thiet_bi' => 'Thanh đòn', 'tinh_trang' => 1,
+        ]);
+        DB::table('chi_tiet_bai_tap')->insert([
+            'id_bai_tap' => $exId, 'video_huong_dan' => 'https://cdn.test/bench-ok.gif', 'video_sai' => 'https://cdn.test/bench-wrong.gif',
+            'huong_dan' => 'Nằm ngửa, hạ tạ xuống giữa ngực rồi đẩy lên.', 'canh_bao' => '• Không khóa cứng khuỷu tay\n• Giữ bả vai ổn định',
+        ]);
+        DB::table('bai_tap_nhom_co')->insert([
+            ['id_bai_tap' => $exId, 'ten_nhom_co' => 'Tay sau', 'ty_le_tac_dong' => 20],
+            ['id_bai_tap' => $exId, 'ten_nhom_co' => 'Ngực', 'ty_le_tac_dong' => 70],
+        ]);
+        DB::table('mon_an')->insert([
+            'ten_mon_an' => 'Cơm ức gà', 'loai_bua' => 'TRUA', 'calo' => 500, 'protein' => 42, 'carb' => 55, 'fat' => 10,
+            'nguyen_lieu' => 'Ức gà 150g, gạo lứt', 'huong_dan_nau' => 'Áp chảo ức gà, hấp rau.',
+            'anh_dai_dien' => 'uploads/mon-an/com-uc-ga.jpg', 'tinh_trang' => 1,
+        ]);
+
+        $service = new KnowledgeEmbeddingService($this->makeDeterministicEmbedder(), new FitnessDataService());
+        $service->syncIndex(false);
+
+        $res = $service->search('bài tập protein', 'exercise', 1);
+        $ex = $res['results'][0];
+        $this->assertSame('Barbell Bench Press', $ex['title']);
+        $this->assertArrayNotHasKey('_ref', $ex);
+        $this->assertSame('https://cdn.test/bench.jpg', $ex['details']['image_url']);
+        $this->assertSame('https://cdn.test/bench-ok.gif', $ex['details']['demo_gif_url']);
+        $this->assertSame('https://cdn.test/bench-wrong.gif', $ex['details']['wrong_form_gif_url']);
+        // Nhóm cơ sắp theo % giảm dần
+        $this->assertSame([['muscle' => 'Ngực', 'percent' => 70.0], ['muscle' => 'Tay sau', 'percent' => 20.0]], $ex['details']['muscle_groups']);
+        $this->assertSame('Nhún vai khi đẩy', $ex['details']['common_mistakes']);
+        // Chuỗi "\n" (2 ký tự) lưu trong DB được đổi thành xuống dòng thật để hiển thị gạch đầu dòng gọn gàng
+        $this->assertSame("• Không khóa cứng khuỷu tay\n• Giữ bả vai ổn định", $ex['details']['safety_notes']);
+        $this->assertSame(4, $ex['details']['sets']);
+
+        $food = $service->search('ức gà nhiều đạm', 'food', 1)['results'][0];
+        $this->assertSame('Cơm ức gà', $food['title']);
+        // Ảnh upload lưu đường dẫn tương đối -> ghép APP_URL
+        $this->assertSame('http://visionfit.test/uploads/mon-an/com-uc-ga.jpg', $food['details']['image_url']);
+        $this->assertSame('Áp chảo ức gà, hấp rau.', $food['details']['cooking_steps']);
+    }
+
+    // DB cũ của thành viên có thể thiếu bảng nhóm cơ / chi tiết bài tập -> vẫn trả kết quả, không lỗi SQL
+    public function test_search_details_degrade_gracefully_when_optional_tables_are_missing(): void
+    {
+        DB::table('bai_tap')->insert([
+            'ma_bai_tap' => 'SQ2', 'ten_bai_tap' => 'Goblet Squat', 'mo_ta' => 'Bài chân đùi với tạ đơn.',
+            'thoi_gian_phut' => 5, 'set_yeu_cau' => 3, 'rep_yeu_cau' => 12, 'tinh_trang' => 1,
+        ]);
+        \Illuminate\Support\Facades\Schema::dropIfExists('bai_tap_nhom_co');
+        \Illuminate\Support\Facades\Schema::dropIfExists('chi_tiet_bai_tap');
+
+        $service = new KnowledgeEmbeddingService($this->makeDeterministicEmbedder(), new FitnessDataService());
+        $service->syncIndex(false);
+        $res = $service->search('bài squat cho chân', 'exercise', 1);
+
+        $this->assertSame('ok', $res['status']);
+        $this->assertSame('Goblet Squat', $res['results'][0]['title']);
+        $this->assertArrayNotHasKey('muscle_groups', $res['results'][0]['details'] ?? []);
+        $this->assertArrayNotHasKey('demo_gif_url', $res['results'][0]['details'] ?? []);
     }
 }
 

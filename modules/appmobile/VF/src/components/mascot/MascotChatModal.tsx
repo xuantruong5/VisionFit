@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Keyboard,
   BackHandler,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -54,6 +55,8 @@ const QUICK_SUGGESTIONS = [
   { label: '🎟 Gói tập của tôi', query: 'Gói tập của tôi còn bao nhiêu buổi?' },
 ];
 
+const AUTO_NAVIGATE_SECONDS = 4;
+
 export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   visible,
   currentSpecies,
@@ -81,6 +84,44 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     setInputText('');
     inputRef.current?.clear();
   };
+
+  // ── Tự động điều hướng (Task 2.3): đếm ngược rồi tự mở màn hình, người dùng có thể bấm "Ở lại" để hủy ──
+  const [autoNav, setAutoNav] = useState<{ msgId: string; type: string; secondsLeft: number } | null>(null);
+
+  // Một nơi duy nhất ánh xạ action -> màn hình, dùng chung cho nút bấm và tự chuyển trang
+  const runNavigationAction = (type: string) => {
+    setAutoNav(null);
+    if (type === 'NAVIGATE_REGISTER_PROGRAM') {
+      navigateToRegisterProgram();
+    } else if (type === 'NAVIGATE_BODY_METRICS') {
+      navigateToBodyMetrics();
+    } else if (type === 'NAVIGATE_REGISTER_PACKAGE') {
+      navigateToRegisterPackage();
+    } else if (type === 'NAVIGATE_WORKOUT') {
+      triggerWorkoutStart();
+      navigateToWorkoutPlan();
+    } else {
+      return;
+    }
+    onClose();
+  };
+
+  useEffect(() => {
+    if (!autoNav) return;
+    if (!visible) {
+      setAutoNav(null);
+      return;
+    }
+    if (autoNav.secondsLeft <= 0) {
+      runNavigationAction(autoNav.type);
+      return;
+    }
+    const t = setTimeout(() => {
+      setAutoNav((cur) => (cur && cur.msgId === autoNav.msgId ? { ...cur, secondsLeft: cur.secondsLeft - 1 } : cur));
+    }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNav, visible]);
 
   // Lắng nghe độ cao bàn phím ảo và luôn đặt lại về 0 khi ẩn bàn phím / đóng modal (tránh co chiều cao trên Android)
   useEffect(() => {
@@ -275,6 +316,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
     isSendingRef.current = true;
     clearInput();
+    setAutoNav(null); // Người dùng hỏi tiếp -> hủy tự chuyển trang đang chờ
 
     // Xác minh lại token ngay trước khi gửi để tuyệt đối không gửi kèm lịch sử của tài khoản trước
     let sessionWasReset = false;
@@ -337,11 +379,15 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         intent: res.intent,
         action: res.action || null,
+        autoNavigate: res.autoNavigate === true,
         source: res.source,
         retryable: !res.ok && res.retryable !== false,
         retryQuery: !res.ok ? textToSend : undefined,
       };
       setMessages((prev) => [...prev, aiMsg]);
+      if (aiMsg.autoNavigate && aiMsg.action?.type) {
+        setAutoNav({ msgId: aiMsg.id, type: aiMsg.action.type, secondsLeft: AUTO_NAVIGATE_SECONDS });
+      }
 
       // Biểu cảm linh vật theo ngữ cảnh phân tích từ AI
       const emotion = res.emotion || 'explaining';
@@ -424,6 +470,20 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
           if (tok.type === 'code') {
             return (
               <Text key={idx} style={styles.inlineCode}>
+                {tok.content}
+              </Text>
+            );
+          }
+          if (tok.type === 'link') {
+            return (
+              <Text
+                key={idx}
+                style={styles.inlineLink}
+                accessibilityRole="link"
+                onPress={() => {
+                  Linking.openURL(tok.url).catch(() => {});
+                }}
+              >
                 {tok.content}
               </Text>
             );
@@ -745,41 +805,17 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
             const isUser = msg.sender === 'user';
             const actionType = !isUser && msg.id !== 'welcome' ? msg.action?.type : null;
 
+            const actionLabels: Record<string, string> = {
+              NAVIGATE_REGISTER_PROGRAM: '📋 Đăng ký chương trình tập ➔',
+              NAVIGATE_BODY_METRICS: '📊 Cập nhật chỉ số cơ thể ➔',
+              NAVIGATE_REGISTER_PACKAGE: '🎟 Đăng ký gói tập ngay ➔',
+              NAVIGATE_WORKOUT: '🏋️ Mở Kế hoạch tập ngay ➔',
+            };
             const actionButtonConfig =
-              actionType === 'NAVIGATE_REGISTER_PROGRAM'
-                ? {
-                    label: '📋 Đăng ký chương trình tập ➔',
-                    onPress: () => {
-                      navigateToRegisterProgram();
-                      onClose();
-                    },
-                  }
-                : actionType === 'NAVIGATE_BODY_METRICS'
-                ? {
-                    label: '📊 Cập nhật chỉ số cơ thể ➔',
-                    onPress: () => {
-                      navigateToBodyMetrics();
-                      onClose();
-                    },
-                  }
-                : actionType === 'NAVIGATE_REGISTER_PACKAGE'
-                ? {
-                    label: '🎟 Đăng ký gói tập ngay ➔',
-                    onPress: () => {
-                      navigateToRegisterPackage();
-                      onClose();
-                    },
-                  }
-                : actionType === 'NAVIGATE_WORKOUT'
-                ? {
-                    label: '🏋️ Mở Kế hoạch tập ngay ➔',
-                    onPress: () => {
-                      triggerWorkoutStart();
-                      navigateToWorkoutPlan();
-                      onClose();
-                    },
-                  }
+              actionType && actionLabels[actionType]
+                ? { label: actionLabels[actionType], onPress: () => runNavigationAction(actionType) }
                 : null;
+            const countdown = autoNav && autoNav.msgId === msg.id ? autoNav.secondsLeft : null;
 
             return (
               <View
@@ -819,6 +855,20 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                             {actionButtonConfig.label}
                           </Text>
                         </TouchableOpacity>
+                      )}
+                      {actionButtonConfig && countdown !== null && (
+                        <View style={styles.autoNavRow}>
+                          <Text style={styles.autoNavText}>
+                            Tự chuyển trang sau {countdown}s…
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => setAutoNav(null)}
+                            accessibilityRole="button"
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Text style={styles.autoNavCancel}>Ở lại</Text>
+                          </TouchableOpacity>
+                        </View>
                       )}
                       {msg.retryable && msg.retryQuery && (
                         <TouchableOpacity
@@ -1308,6 +1358,28 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginTop: 4,
     fontStyle: 'italic',
+  },
+  inlineLink: {
+    color: COLORS.accentBlue,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  autoNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    paddingHorizontal: 4,
+  },
+  autoNavText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    fontStyle: 'italic',
+  },
+  autoNavCancel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.accentRed,
   },
 });
 
