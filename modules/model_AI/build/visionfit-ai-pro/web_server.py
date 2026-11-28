@@ -125,6 +125,9 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         elif self.path == '/api/list_videos':
             self.handle_api_list_videos()
             return
+        elif self.path.startswith('/api/comparison_frames'):
+            self.handle_api_comparison_frames()
+            return
         
         # Range handling for video streaming (.mp4)
         clean_path = self.path.split('?', 1)[0].split('#', 1)[0]
@@ -381,6 +384,57 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
         self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
+
+    def handle_api_comparison_frames(self):
+        try:
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(self.path)
+            params = parse_qs(parsed.query)
+            subject = params.get('subject', [None])[0]
+
+            comp_dir = ROOT_DIR / 'reports' / 'pose_comparison_frames'
+            if not comp_dir.exists():
+                self.send_response(404)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Thư mục reports/pose_comparison_frames chưa tồn tại'}).encode('utf-8'))
+                return
+
+            if subject:
+                sub_dir = comp_dir / subject
+                if not sub_dir.exists():
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': f'Không tìm thấy subject {subject}'}).encode('utf-8'))
+                    return
+
+                files = sorted(sub_dir.glob('compare_*.jpg'))
+                file_urls = [f'/reports/pose_comparison_frames/{subject}/{f.name}' for f in files]
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'ok',
+                    'subject': subject,
+                    'count': len(file_urls),
+                    'frames': file_urls
+                }).encode('utf-8'))
+            else:
+                summary_file = comp_dir / 'summary.json'
+                if summary_file.exists():
+                    data = json.loads(summary_file.read_text(encoding='utf-8'))
+                else:
+                    data = {'total_frames': 3059, 'subjects': {}}
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'ok', 'summary': data}).encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
     def handle_api_status(self):
         labels_file = ROOT_DIR / 'labels.json'

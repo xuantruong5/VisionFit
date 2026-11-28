@@ -93,9 +93,9 @@ const state = {
   
   // Rep Counter state
   counters: {
-    squat: { reps: 0, state: 'up', downThresh: 115, upThresh: 155, angle: 180 },
-    push_up: { reps: 0, state: 'up', downThresh: 105, upThresh: 150, angle: 180 },
-    lunge: { reps: 0, state: 'up', downThresh: 115, upThresh: 150, angle: 180 },
+    squat: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 100, upThresh: 155, angle: 180, minKneeInRep: 180, maxTorsoInRep: 0, lastVerdict: 'STANDBY' },
+    push_up: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 100, upThresh: 150, angle: 180 },
+    lunge: { reps: 0, goodReps: 0, badReps: 0, state: 'up', downThresh: 110, upThresh: 150, angle: 180 },
     standing: { reps: 0, state: 'up', angle: 180 }
   },
   totalReps: 0,
@@ -449,6 +449,25 @@ function analyzePoseHeuristic(landmarks) {
   const pitch = calculateTorsoPitch(landmarks); // 0° = horizontal, 90° = vertical
   const isHorizontalBody = pitch < 42;
 
+  // Calculate Torso Lean Angle relative to vertical (0° = upright, >45° = excessive forward lean)
+  let torsoLean = 0;
+  const ls = landmarks[LEFT_SHOULDER], rs = landmarks[RIGHT_SHOULDER];
+  const lh = landmarks[LEFT_HIP], rh = landmarks[RIGHT_HIP];
+  if ((ls || rs) && (lh || rh)) {
+    const sh = (ls && rs) ? { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 } : (ls || rs);
+    const hp = (lh && rh) ? { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 } : (lh || rh);
+    const dx = sh.x - hp.x;
+    const dy = sh.y - hp.y;
+    torsoLean = Math.round((Math.atan2(Math.abs(dx), Math.max(1e-4, -dy)) * 180) / Math.PI);
+  }
+
+  // Squat Depth classification according to PT Trương Thái Lưu biomechanics
+  let squatDepth = 'STANDING';
+  if (minKnee <= 80) squatDepth = 'DEEP';
+  else if (minKnee <= 100) squatDepth = 'PARALLEL';
+  else if (minKnee <= 135) squatDepth = 'PARTIAL';
+  else squatDepth = 'STANDING';
+
   let probs = { squat: 0.02, push_up: 0.02, lunge: 0.02, standing: 0.02 };
   let detected = 'standing';
   let primaryAngle = avgKnee;
@@ -508,7 +527,9 @@ function analyzePoseHeuristic(landmarks) {
       leftElbow: leftElbowAngle,
       rightElbow: rightElbowAngle,
       avgElbow,
-      pitch
+      pitch,
+      torsoLean,
+      squatDepth
     }
   };
 }
@@ -534,15 +555,40 @@ function updateRepCounter(action, anglesInfo) {
 
   if (exerciseToTrack === 'squat') {
     const c = state.counters.squat;
-    c.angle = anglesInfo.angles.avgKnee || primaryAngle;
-    if (c.state === 'up' && c.angle <= c.downThresh) {
-      c.state = 'down';
-      soundFx.playPhaseDown();
-    } else if (c.state === 'down' && c.angle >= c.upThresh) {
-      c.state = 'up';
-      c.reps += 1;
-      state.totalReps += 1;
-      soundFx.playRepComplete();
+    const kneeAng = anglesInfo.angles.minKnee || primaryAngle;
+    const torsoLean = anglesInfo.angles.torsoLean || 0;
+    c.angle = kneeAng;
+
+    if (c.state === 'up') {
+      if (c.angle <= c.downThresh) { // <= 100° đạt độ sâu
+        c.state = 'down';
+        c.minKneeInRep = c.angle;
+        c.maxTorsoInRep = torsoLean;
+        soundFx.playPhaseDown();
+      }
+    } else if (c.state === 'down') {
+      c.minKneeInRep = Math.min(c.minKneeInRep !== undefined ? c.minKneeInRep : 180, c.angle);
+      c.maxTorsoInRep = Math.max(c.maxTorsoInRep !== undefined ? c.maxTorsoInRep : 0, torsoLean);
+
+      if (c.angle >= c.upThresh) { // >= 155° đứng thẳng hoàn thành rep
+        c.state = 'up';
+        c.reps += 1;
+        state.totalReps += 1;
+
+        // Đánh giá chuẩn form theo PT Trương Thái Lưu
+        const isGoodDepth = c.minKneeInRep <= 100;
+        const isGoodTorso = c.maxTorsoInRep <= 45;
+
+        if (isGoodDepth && isGoodTorso) {
+          c.goodReps = (c.goodReps || 0) + 1;
+          c.lastVerdict = 'GOOD_FORM';
+          soundFx.playRepComplete();
+        } else {
+          c.badReps = (c.badReps || 0) + 1;
+          c.lastVerdict = !isGoodDepth ? 'BAD_DEPTH' : 'BAD_TORSO';
+          soundFx.playRepComplete();
+        }
+      }
     }
   } else if (exerciseToTrack === 'push_up') {
     const c = state.counters.push_up;
@@ -796,11 +842,18 @@ function drawCyberSkeleton(landmarks, width, height, analysis) {
       const activeCounter = state.counters[analysis.action];
       const isDown = activeCounter && activeCounter.state === 'down';
       
-      const badgeBg = isDown ? 'rgba(16, 185, 129, 0.90)' : 'rgba(15, 23, 42, 0.85)';
-      const badgeBorder = isDown ? '#10b981' : '#06b6d4';
-      const labelText = isDown ? `✓ ${angleVal}° [CHUẨN FORM]` : `${angleVal}°`;
+      const badgeBg = isDown ? 'rgba(16, 185, 129, 0.90)' : (angleVal <= 135 && analysis.action === 'squat' ? 'rgba(245, 158, 11, 0.85)' : 'rgba(15, 23, 42, 0.85)');
+      const badgeBorder = isDown ? '#10b981' : (angleVal <= 135 && analysis.action === 'squat' ? '#f59e0b' : '#06b6d4');
+      let labelText = `${angleVal}°`;
+      if (analysis.action === 'squat') {
+        if (isDown || angleVal <= 100) labelText = `✓ ${angleVal}° [CHUẨN ĐỘ SÂU]`;
+        else if (angleVal <= 135) labelText = `↓ ${angleVal}° [HẠ THÊM]`;
+        else labelText = `${angleVal}° [ĐỨNG]`;
+      } else {
+        labelText = isDown ? `✓ ${angleVal}° [CHUẨN FORM]` : `${angleVal}°`;
+      }
 
-      canvasCtx.font = 'bold 14px Outfit, sans-serif';
+      canvasCtx.font = 'bold 13px Outfit, sans-serif';
       const textWidth = canvasCtx.measureText(labelText).width;
       const padX = 8;
       const rx = jx + 12;
@@ -819,6 +872,42 @@ function drawCyberSkeleton(landmarks, width, height, analysis) {
       canvasCtx.fillStyle = '#ffffff';
       canvasCtx.fillText(labelText, rx + padX, ry + 16);
     }
+
+    // Spine warning line when excessive forward lean (>45°)
+    const torsoLean = analysis.angles?.torsoLean || 0;
+    if (analysis.action === 'squat' && torsoLean > 45) {
+      const ls = landmarks[LEFT_SHOULDER], rs = landmarks[RIGHT_SHOULDER];
+      const lh = landmarks[LEFT_HIP], rh = landmarks[RIGHT_HIP];
+      if ((ls || rs) && (lh || rh)) {
+        const shX = ((ls ? ls.x : rs.x) + (rs ? rs.x : ls.x)) / 2 * width;
+        const shY = ((ls ? ls.y : rs.y) + (rs ? rs.y : ls.y)) / 2 * height;
+        const hpX = ((lh ? lh.x : rh.x) + (rh ? rh.x : lh.x)) / 2 * width;
+        const hpY = ((lh ? lh.y : rh.y) + (rh ? rh.y : lh.y)) / 2 * height;
+
+        canvasCtx.save();
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(shX, shY);
+        canvasCtx.lineTo(hpX, hpY);
+        canvasCtx.lineWidth = 5;
+        canvasCtx.strokeStyle = '#ef4444';
+        canvasCtx.setLineDash([6, 6]);
+        canvasCtx.stroke();
+        canvasCtx.restore();
+
+        // Spine Warning Tag
+        const tagText = `⚠️ GẬP LƯNG ${torsoLean}° (>45°)`;
+        canvasCtx.font = 'bold 12px Outfit, sans-serif';
+        const tagW = canvasCtx.measureText(tagText).width + 14;
+        const midX = (shX + hpX) / 2 + 10;
+        const midY = (shY + hpY) / 2 - 10;
+        canvasCtx.fillStyle = 'rgba(239, 68, 68, 0.95)';
+        canvasCtx.beginPath();
+        canvasCtx.roundRect(midX, midY, tagW, 22, 4);
+        canvasCtx.fill();
+        canvasCtx.fillStyle = '#ffffff';
+        canvasCtx.fillText(tagText, midX + 7, midY + 15);
+      }
+    }
   }
 }
 
@@ -831,86 +920,165 @@ function updateLiveHUD(analysis) {
   const repCountElem = document.getElementById('hudRepCount');
   const phasePillElem = document.getElementById('hudPhasePill');
   const anglePillElem = document.getElementById('hudAnglePill');
+  const hudRepQualitySub = document.getElementById('hudRepQualitySub');
+  const hudAlertBanner = document.getElementById('hudAlertBanner');
+  const hudAlertIcon = document.getElementById('hudAlertIcon');
+  const hudAlertText = document.getElementById('hudAlertText');
+  const hudKneeAngleVal = document.getElementById('hudKneeAngleVal');
+  const hudSquatDepthBadge = document.getElementById('hudSquatDepthBadge');
+  const hudTorsoAngleVal = document.getElementById('hudTorsoAngleVal');
+  const hudTorsoEvalBadge = document.getElementById('hudTorsoEvalBadge');
 
   const action = analysis.action;
   const ACTION_DISPLAY_MAP = {
-    squat: '🦵 SQUAT (GẬP ĐÙI)',
+    squat: '🦵 SQUAT (GẬP ĐÙI CHUẨN PT)',
     push_up: '💪 PUSH-UP (HÍT ĐẤT)',
     lunge: '🚶 LUNGE (CHÙNG CHÂN)',
     standing: '🧍 STANDING (ĐỨNG NGHỈ)'
   };
 
-  actionNameElem.innerText = ACTION_DISPLAY_MAP[action] || action.replace('_', ' ').toUpperCase();
-  actionConfElem.innerText = `Độ tin cậy: ${(analysis.confidence * 100).toFixed(1)}%`;
+  if (actionNameElem) actionNameElem.innerText = ACTION_DISPLAY_MAP[action] || action.replace('_', ' ').toUpperCase();
+  if (actionConfElem) actionConfElem.innerText = `Độ tin cậy: ${(analysis.confidence * 100).toFixed(1)}%`;
 
-  const currentCounter = state.counters[action] || { reps: 0, state: 'ready', downThresh: 115, upThresh: 155 };
-  repCountElem.innerText = currentCounter.reps;
-  document.getElementById('statReps').innerText = state.totalReps;
+  const currentCounter = state.counters[action] || { reps: 0, goodReps: 0, badReps: 0, state: 'ready', downThresh: 100, upThresh: 155 };
+  if (repCountElem) repCountElem.innerText = currentCounter.reps;
+  const statRepsElem = document.getElementById('statReps');
+  if (statRepsElem) statRepsElem.innerText = state.totalReps;
 
-  // Form Cue & Dynamic Phase Styling
-  let phaseText = 'PHASE: SẴN SÀNG';
+  // Rep quality sub-counter (Good Reps vs Bad Reps)
+  if (hudRepQualitySub) {
+    const good = currentCounter.goodReps || 0;
+    const bad = currentCounter.badReps || 0;
+    hudRepQualitySub.innerHTML = `<span style="color: #10b981; font-weight: 700;">${good} Chuẩn</span> · <span style="color: #ef4444; font-weight: 700;">${bad} Lỗi</span>`;
+  }
+
+  // Biomechanics metrics for Squat
+  const kneeAng = Math.round(analysis.angles?.minKnee || analysis.primaryAngle || 180);
+  const torsoLean = Math.round(analysis.angles?.torsoLean || 0);
+
+  if (hudKneeAngleVal) hudKneeAngleVal.innerText = `${kneeAng}°`;
+  if (hudTorsoAngleVal) hudTorsoAngleVal.innerText = `${torsoLean}°`;
+
+  // Squat Depth classification badge (PT Trương Thái Lưu)
+  if (hudSquatDepthBadge) {
+    hudSquatDepthBadge.className = 'hud-badge-tag';
+    if (kneeAng <= 80) {
+      hudSquatDepthBadge.innerText = 'SQUAT SÂU (DEEP)';
+      hudSquatDepthBadge.classList.add('green');
+    } else if (kneeAng <= 100) {
+      hudSquatDepthBadge.innerText = 'SONG SONG (PARALLEL)';
+      hudSquatDepthBadge.classList.add('cyan');
+    } else if (kneeAng <= 135) {
+      hudSquatDepthBadge.innerText = 'SQUAT NÔNG (PARTIAL)';
+      hudSquatDepthBadge.classList.add('amber');
+    } else {
+      hudSquatDepthBadge.innerText = 'ĐỨNG THẲNG';
+      hudSquatDepthBadge.classList.add('cyan');
+    }
+  }
+
+  // Torso Safety Badge
+  if (hudTorsoEvalBadge) {
+    hudTorsoEvalBadge.className = 'hud-badge-tag';
+    if (torsoLean <= 45) {
+      hudTorsoEvalBadge.innerText = 'CHUẨN AN TOÀN';
+      hudTorsoEvalBadge.classList.add('green');
+    } else {
+      hudTorsoEvalBadge.innerText = 'GẬP LƯNG (>45°)';
+      hudTorsoEvalBadge.classList.add('red');
+    }
+  }
+
+  // Real-time Form Alert Banner & Dynamic Phase Styling
+  let phaseText = 'PHASE: SẴN SÀNG 🟢';
   let pillBorder = 'var(--accent-green)';
-  let formCue = '💡 Đứng thẳng, chuẩn bị thực hiện động tác.';
+  let alertIcon = '💡';
+  let alertText = 'Đứng tự nhiên trong khung hình, sẵn sàng bắt đầu bài tập.';
+  let isWarning = false;
+  let isGood = false;
 
   if (action === 'squat') {
-    if (currentCounter.state === 'down') {
+    if (torsoLean > 45) {
+      isWarning = true;
+      alertIcon = '⚠️';
+      alertText = `Cảnh báo: Lưng gập quá sâu (${torsoLean}°)! Giữ ưỡn ngực, mắt nhìn thẳng, tránh tổn thương thắt lưng.`;
+      phaseText = 'CẢNH BÁO: GẬP LƯNG ⚠️';
+      pillBorder = '#ef4444';
+    } else if (currentCounter.state === 'down') {
+      isGood = true;
+      alertIcon = '✅';
+      alertText = `Độ sâu gối chuẩn (${kneeAng}°)! Giữ căng cơ đùi và đạp gót đứng thẳng dậy.`;
       phaseText = 'PHASE: ĐẠT ĐỘ SÂU ✅';
       pillBorder = 'var(--accent-cyan)';
-      formCue = `✅ Squat đạt độ sâu (${Math.round(analysis.primaryAngle)}°)! Đạp gót đẩy người lên để hoàn thành Rep.`;
-    } else if (analysis.primaryAngle <= 145) {
+    } else if (kneeAng <= 135) {
+      alertIcon = '⬇️';
+      alertText = `Đang hạ hông (${kneeAng}°): Tiếp tục hạ đùi song song sàn (mục tiêu ≤ 100°).`;
       phaseText = 'PHASE: ĐANG XUỐNG ⬇️';
       pillBorder = '#f59e0b';
-      formCue = `⚡ Đang hạ gối (${Math.round(analysis.primaryAngle)}°): Tiếp tục hạ sâu dưới 115°.`;
     } else {
+      alertIcon = '💡';
+      alertText = 'Tư thế đứng thẳng chuẩn. Mở rộng hai chân bằng vai, sẵn sàng hạ hông tập Squat.';
       phaseText = 'PHASE: SẴN SÀNG 🟢';
       pillBorder = 'var(--accent-green)';
-      formCue = '💡 Hai chân rộng bằng vai, hạ hông xuống để thực hiện Squat.';
     }
   } else if (action === 'push_up') {
     if (currentCounter.state === 'down') {
+      isGood = true;
+      alertIcon = '✅';
+      alertText = `Ngực hạ chuẩn (${kneeAng}°)! Siết cơ bụng đẩy thẳng tay lên.`;
       phaseText = 'PHASE: ĐẠT ĐỘ SÂU ✅';
       pillBorder = 'var(--accent-cyan)';
-      formCue = `✅ Ngực hạ chuẩn (${Math.round(analysis.primaryAngle)}°)! Siết cơ bụng đẩy thẳng tay lên.`;
-    } else if (analysis.primaryAngle <= 140) {
+    } else if (kneeAng <= 140) {
+      alertIcon = '⬇️';
+      alertText = `Gập khuỷu tay: Tiếp tục hạ thấp ngực xuống dưới 100°.`;
       phaseText = 'PHASE: ĐANG XUỐNG ⬇️';
       pillBorder = '#f59e0b';
-      formCue = `⚡ Gập khuỷu tay: Tiếp tục hạ thấp ngực xuống dưới 105°.`;
     } else {
+      alertIcon = '💡';
+      alertText = 'Giữ thân mình thẳng hàng, bắt đầu gập khuỷu tay để hít đất.';
       phaseText = 'PHASE: TƯ THẾ PLANK 🟢';
       pillBorder = 'var(--accent-green)';
-      formCue = '💡 Giữ thân mình thẳng hàng, bắt đầu gập khuỷu tay để hít đất.';
     }
   } else if (action === 'lunge') {
     if (currentCounter.state === 'down') {
+      isGood = true;
+      alertIcon = '✅';
+      alertText = `Chùng chân đạt chuẩn (${kneeAng}°)! Đẩy chân trước đứng thẳng lên.`;
       phaseText = 'PHASE: ĐẠT ĐỘ SÂU ✅';
       pillBorder = 'var(--accent-cyan)';
-      formCue = `✅ Chùng chân đạt chuẩn (${Math.round(analysis.primaryAngle)}°)! Đẩy chân trước đứng thẳng lên.`;
-    } else if (analysis.primaryAngle <= 140) {
+    } else if (kneeAng <= 140) {
+      alertIcon = '⬇️';
+      alertText = `Chân trước hạ sâu: Giữ thẳng lưng và hạ đùi trước xuống 90°-110°.`;
       phaseText = 'PHASE: ĐANG HẠ CHÂN ⬇️';
       pillBorder = '#f59e0b';
-      formCue = `⚡ Chân trước hạ sâu: Giữ thẳng lưng và hạ đùi trước xuống 90°-115°.`;
     } else {
+      alertIcon = '💡';
+      alertText = 'Bước một chân về trước, hạ gối vuông góc để tập Lunge.';
       phaseText = 'PHASE: SẴN SÀNG 🟢';
       pillBorder = 'var(--accent-green)';
-      formCue = '💡 Bước một chân về trước, hạ gối vuông góc để tập Lunge.';
     }
-  } else {
-    phaseText = 'PHASE: NGHỈ / SẴN SÀNG';
-    pillBorder = 'var(--accent-green)';
-    formCue = '💡 Đứng tự nhiên trong khung hình, sẵn sàng bắt đầu bài tập.';
   }
 
-  phasePillElem.innerText = phaseText;
-  phasePillElem.style.borderColor = pillBorder;
-  phasePillElem.style.color = pillBorder;
+  if (phasePillElem) {
+    phasePillElem.innerText = phaseText;
+    phasePillElem.style.borderColor = pillBorder;
+    phasePillElem.style.color = pillBorder;
+  }
+
+  if (hudAlertBanner) {
+    hudAlertBanner.classList.toggle('warning', isWarning);
+    hudAlertBanner.classList.toggle('good', isGood);
+    if (hudAlertIcon) hudAlertIcon.innerText = alertIcon;
+    if (hudAlertText) hudAlertText.innerText = alertText;
+  }
 
   const notice = document.getElementById('liveFeedbackNotice');
   if (notice) {
-    notice.innerText = formCue;
+    notice.innerText = alertText;
     notice.style.color = pillBorder;
   }
 
-  anglePillElem.innerText = `Góc khớp: ${Math.round(analysis.primaryAngle)}°`;
+  if (anglePillElem) anglePillElem.innerText = `Góc khớp: ${kneeAng}°`;
 
   for (const lbl of LABELS) {
     const val = (analysis.probabilities[lbl] || 0) * 100;
@@ -2178,12 +2346,184 @@ async function analyzeUploadedVideoWithAI(file) {
   }
 }
 
+// ==========================================
+// 3,059 FRAMES COMPARISON GALLERY ENGINE
+// ==========================================
+let comparisonState = {
+  currentSubject: null,
+  currentFrames: [],
+  currentIndex: 0,
+  isPlaying: false,
+  playTimer: null
+};
+
+async function initComparisonGallery() {
+  const container = document.getElementById('compareSubjectList');
+  if (!container) return;
+
+  try {
+    const resp = await fetch('/api/comparison_frames');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.summary || !data.summary.subjects) return;
+
+    const subjects = data.summary.subjects;
+    container.innerHTML = '';
+
+    const subKeys = Object.keys(subjects);
+    if (subKeys.length === 0) return;
+
+    subKeys.forEach((sub, idx) => {
+      const count = subjects[sub];
+      const btn = document.createElement('button');
+      btn.className = `btn btn-outline ${idx === 0 ? 'active' : ''}`;
+      btn.style.padding = '6px 14px';
+      btn.style.fontSize = '0.82rem';
+      btn.innerHTML = `<span>👤</span> <b>${sub}</b> <span style="opacity: 0.7; font-size: 0.75rem;">(${count} frames)</span>`;
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadComparisonSubject(sub);
+      });
+      container.appendChild(btn);
+    });
+
+    loadComparisonSubject(subKeys[0]);
+    setupComparisonControls();
+  } catch (err) {
+    console.warn('Could not initialize comparison gallery:', err);
+  }
+}
+
+async function loadComparisonSubject(subject) {
+  comparisonState.currentSubject = subject;
+  comparisonState.currentIndex = 0;
+  if (comparisonState.isPlaying) toggleComparisonPlay(false);
+
+  const spinner = document.getElementById('compareViewerSpinner');
+  if (spinner) spinner.style.display = 'block';
+
+  try {
+    const resp = await fetch(`/api/comparison_frames?subject=${encodeURIComponent(subject)}`);
+    if (!resp.ok) throw new Error('Failed to load frames');
+    const data = await resp.json();
+    comparisonState.currentFrames = data.frames || [];
+
+    const slider = document.getElementById('compareFrameSlider');
+    if (slider) {
+      slider.min = 0;
+      slider.max = Math.max(0, comparisonState.currentFrames.length - 1);
+      slider.value = 0;
+    }
+
+    const badge = document.getElementById('compareSubjectBadge');
+    if (badge) badge.innerText = subject;
+
+    updateComparisonView(0);
+  } catch (err) {
+    console.error('Error loading subject frames:', err);
+  } finally {
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+
+function updateComparisonView(index) {
+  if (!comparisonState.currentFrames || comparisonState.currentFrames.length === 0) return;
+  const clamped = Math.max(0, Math.min(index, comparisonState.currentFrames.length - 1));
+  comparisonState.currentIndex = clamped;
+
+  const img = document.getElementById('compareViewerImg');
+  if (img) {
+    img.src = comparisonState.currentFrames[clamped];
+  }
+
+  const slider = document.getElementById('compareFrameSlider');
+  if (slider && Number(slider.value) !== clamped) {
+    slider.value = clamped;
+  }
+
+  const infoText = document.getElementById('compareFrameIndexText');
+  if (infoText) {
+    infoText.innerText = `Frame ${clamped + 1} / ${comparisonState.currentFrames.length}`;
+  }
+
+  if (clamped + 1 < comparisonState.currentFrames.length) {
+    const nextImg = new Image();
+    nextImg.src = comparisonState.currentFrames[clamped + 1];
+  }
+}
+
+function toggleComparisonPlay(forceState) {
+  const shouldPlay = forceState !== undefined ? forceState : !comparisonState.isPlaying;
+  const playBtn = document.getElementById('btnComparePlay');
+
+  if (shouldPlay) {
+    comparisonState.isPlaying = true;
+    if (playBtn) {
+      playBtn.innerText = '⏸️ Tạm dừng (Pause)';
+      playBtn.classList.replace('btn-primary', 'btn-danger');
+    }
+    comparisonState.playTimer = setInterval(() => {
+      if (comparisonState.currentIndex >= comparisonState.currentFrames.length - 1) {
+        updateComparisonView(0);
+      } else {
+        updateComparisonView(comparisonState.currentIndex + 1);
+      }
+    }, 80);
+  } else {
+    comparisonState.isPlaying = false;
+    if (comparisonState.playTimer) clearInterval(comparisonState.playTimer);
+    if (playBtn) {
+      playBtn.innerText = '▶️ Tự động chạy (Play)';
+      playBtn.classList.replace('btn-danger', 'btn-primary');
+    }
+  }
+}
+
+function setupComparisonControls() {
+  const slider = document.getElementById('compareFrameSlider');
+  if (slider) {
+    slider.addEventListener('input', (e) => {
+      if (comparisonState.isPlaying) toggleComparisonPlay(false);
+      updateComparisonView(parseInt(e.target.value, 10));
+    });
+  }
+
+  const btnFirst = document.getElementById('btnCompareFirst');
+  if (btnFirst) btnFirst.addEventListener('click', () => {
+    if (comparisonState.isPlaying) toggleComparisonPlay(false);
+    updateComparisonView(0);
+  });
+
+  const btnPrev = document.getElementById('btnComparePrev');
+  if (btnPrev) btnPrev.addEventListener('click', () => {
+    if (comparisonState.isPlaying) toggleComparisonPlay(false);
+    updateComparisonView(comparisonState.currentIndex - 1);
+  });
+
+  const btnNext = document.getElementById('btnCompareNext');
+  if (btnNext) btnNext.addEventListener('click', () => {
+    if (comparisonState.isPlaying) toggleComparisonPlay(false);
+    updateComparisonView(comparisonState.currentIndex + 1);
+  });
+
+  const btnLast = document.getElementById('btnCompareLast');
+  if (btnLast) btnLast.addEventListener('click', () => {
+    if (comparisonState.isPlaying) toggleComparisonPlay(false);
+    updateComparisonView(comparisonState.currentFrames.length - 1);
+  });
+
+  const btnPlay = document.getElementById('btnComparePlay');
+  if (btnPlay) btnPlay.addEventListener('click', () => toggleComparisonPlay());
+}
+
 // App Entrypoint
 window.addEventListener('DOMContentLoaded', async () => {
   initVisionEngines();
   initCharts();
   setupEventListeners();
   checkBackendStatus();
+  initComparisonGallery();
 
   // Automatically load 120 analyzed exercise samples and train AI model
   await loadAnalysisDatasetAndTrain();
