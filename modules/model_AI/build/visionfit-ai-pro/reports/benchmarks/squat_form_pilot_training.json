@@ -1,0 +1,79 @@
+{
+  "experiment": "Single-subject, training only; no validation/test.",
+  "sources": [
+    "squat_sai",
+    "squat_đúng"
+  ],
+  "training_clips": 113,
+  "labels": [
+    "bad",
+    "good"
+  ],
+  "training_counts": {
+    "bad": 46,
+    "good": 67
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.65372,
+      "training_accuracy": 0.70796
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.36672,
+      "training_accuracy": 0.65487
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.28442,
+      "training_accuracy": 0.69027
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.19459,
+      "training_accuracy": 0.79646
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.10438,
+      "training_accuracy": 0.92035
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.17827,
+      "training_accuracy": 0.9469
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.08806,
+      "training_accuracy": 0.9823
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.06276,
+      "training_accuracy": 1.0
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.08188,
+      "training_accuracy": 1.0
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.06539,
+      "training_accuracy": 0.9646
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.08543,
+      "training_accuracy": 1.0
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.03977,
+      "training_accuracy": 1.0
+    }
+  ],
+  "warning": "Training accuracy is not generalization or form scoring accuracy. Clips overlap and come from one person."
+}

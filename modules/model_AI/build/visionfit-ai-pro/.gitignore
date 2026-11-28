@@ -13,11 +13,7 @@ models/*.pt
 data/frames/
 data/extracted_frames/
 data/action_clips/
-data/action_real.npz
-data/pose_real.npz
-data/pose_multiview_squat.npz
-data/pose_incline_press.npz
-data/pose_multi_exercise.npz
+data/*.npz
 videos/
 
 # Báo cáo kết quả
@@ -30,14 +26,13 @@ reports/**/*.mp4
 !reports/eval/
 !reports/pose_debug/
 !reports/pose_v2/
+!reports/benchmarks/
+!reports/benchmarks/**
 
-# Cho phép các file kết quả đánh giá
-!reports/evaluation.json
-!reports/history.csv
-!reports/pose_multiview_eval.json
-!reports/pose_loso_eval.json
-!reports/pose_loso_5fold_eval.json
-!reports/pose_multiexercise_eval.json
-!reports/incline_press/
-!reports/incline_press/incline_press_1_report.json
+# Cho phép các file kết quả đánh giá json
+!reports/**/*.json
 !reports/.gitkeep
+# Logs
+*.log
+logs/
+
