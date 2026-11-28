@@ -205,7 +205,7 @@ class AssistantToolRegistry
                 'properties' => [
                     'query' => [
                         'type' => 'STRING',
-                        'description' => 'Câu truy vấn hoặc chủ đề thể hình/dinh dưỡng cần tìm kiếm ngữ nghĩa.',
+                        'description' => 'Câu truy vấn tìm kiếm ngữ nghĩa, viết bằng tiếng Việt CÓ DẤU, đúng chính tả (vd: người dùng gõ "bai tap cho dui" thì truy vấn là "bài tập cho cơ đùi"). Giữ nguyên tên riêng bài tập/món ăn/sản phẩm (vd: "Sled Hack Squat", "Creatine"). Không tự rút gọn hay đổi nghĩa câu hỏi.',
                     ],
                     'category' => [
                         'type' => 'STRING',

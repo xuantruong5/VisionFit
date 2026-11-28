@@ -46,6 +46,17 @@ class AssistantOrchestrator
         string $species,
         AssistantAuthContext $actor
     ): array {
+        // Câu hỏi KIẾN THỨC CHUNG đã có người hỏi trước đó (cùng điều kiện) -> trả lời từ cache, không gọi Gemini
+        $answerCacheKey = $this->answerCacheKey($message, $history, $species, $actor);
+        if ($answerCacheKey !== null) {
+            $cached = $this->answerCache()->get($answerCacheKey);
+            if (is_array($cached) && !empty($cached['answer'])) {
+                $cached['source'] = 'answer_cache:' . ($cached['source'] ?? 'gemini_fc');
+                $cached['cached'] = true;
+                return $cached;
+            }
+        }
+
         $maxRounds = max(1, (int) config('assistant.max_tool_rounds', 5));
         $maxRetries = max(0, (int) config('assistant.max_retries_per_call', 1));
         $totalBudgetSec = max(5, (int) config('assistant.total_timeout_seconds', 25));
@@ -79,7 +90,7 @@ class AssistantOrchestrator
             }
 
             try {
-                return $this->runConversationLoop(
+                $result = $this->runConversationLoop(
                     $providerSpec['client'],
                     $providerSpec['model'],
                     $systemPrompt,
@@ -91,6 +102,10 @@ class AssistantOrchestrator
                     $maxRetries,
                     $deadline
                 );
+                if ($answerCacheKey !== null && $this->isCacheableAnswer($result, $actor)) {
+                    $this->answerCache()->put($answerCacheKey, $result, (int) config('assistant.answer_cache_ttl', 21600));
+                }
+                return $result;
             } catch (LlmProviderException $e) {
                 $lastError = $e;
                 Log::warning('[AssistantOrchestrator] Provider attempt failed', [
@@ -593,6 +608,93 @@ PROMPT;
             }
         }
         return $safe;
+    }
+
+    // ───────────────── Cache câu trả lời kiến thức chung (giảm tải Gemini khi nhiều người hỏi giống nhau) ─────────────────
+
+    private function answerCache(): \Illuminate\Contracts\Cache\Repository
+    {
+        // Lưu bằng FILE, không ghi vào database
+        return \Illuminate\Support\Facades\Cache::store((string) config('assistant.answer_cache_store', 'file'));
+    }
+
+    /**
+     * Khóa cache cho câu hỏi CÓ THỂ dùng chung giữa nhiều người; null = không bao giờ cache.
+     * Khóa gồm: nội dung câu hỏi (chuẩn hóa), linh vật, vai trò, hồ sơ DỊ ỨNG (để cảnh báo đúng người)
+     * và phiên bản kho kiến thức (kho đổi -> câu trả lời cũ tự hết hiệu lực).
+     */
+    private function answerCacheKey(string $message, array $history, string $species, AssistantAuthContext $actor): ?string
+    {
+        if ((int) config('assistant.answer_cache_ttl', 21600) <= 0) {
+            return null;
+        }
+        // Câu hỏi nằm giữa hội thoại phụ thuộc ngữ cảnh trước đó ("thế còn bữa tối?") -> không dùng chung
+        foreach ($history as $h) {
+            if (is_array($h) && trim((string) ($h['text'] ?? '')) !== '') {
+                return null;
+            }
+        }
+        $normalized = preg_replace('/\s+/u', ' ', mb_strtolower(trim($message), 'UTF-8'));
+        if ($normalized === '' || mb_strlen($normalized, 'UTF-8') > 300) {
+            return null;
+        }
+
+        try {
+            $kbVersion = app(KnowledgeEmbeddingService::class)->contentVersion();
+        } catch (\Throwable $e) {
+            return null;
+        }
+        if ($kbVersion === '') {
+            return null; // Kho kiến thức chưa sẵn sàng -> chưa cache
+        }
+
+        $role = $actor->authenticated ? (string) $actor->role : 'guest';
+        $allergy = ($actor->authenticated && $actor->user)
+            ? mb_strtolower($this->dataService->allergyTextOf($actor->user), 'UTF-8')
+            : '';
+
+        return 'assistant:ans:' . hash('sha256', implode("\n", [
+            'v1', $species, $role, $allergy, $kbVersion, (string) config('assistant.gemini_model'), $normalized,
+        ]));
+    }
+
+    /**
+     * Chỉ cache câu trả lời THUẦN kiến thức chung: chỉ dùng `search_fitness_knowledge` và có kết quả,
+     * không lỗi, không nút điều hướng, không chứa tên người hỏi (tránh lộ thông tin cá nhân cho người khác).
+     */
+    private function isCacheableAnswer(array $result, AssistantAuthContext $actor): bool
+    {
+        if (empty($result['status']) || !empty($result['error_code']) || !empty($result['action'])) {
+            return false;
+        }
+        $tools = $result['tool_calls'] ?? [];
+        if (empty($tools)) {
+            return false;
+        }
+        foreach ($tools as $t) {
+            if (($t['name'] ?? '') !== 'search_fitness_knowledge' || ($t['status'] ?? '') !== 'ok') {
+                return false;
+            }
+        }
+        $name = trim((string) ($actor->name ?? ''));
+        if ($name !== '' && mb_strlen($name, 'UTF-8') >= 2) {
+            $answer = mb_strtolower((string) ($result['answer'] ?? ''), 'UTF-8');
+            $nameLower = mb_strtolower($name, 'UTF-8');
+            if (str_contains($answer, $nameLower)) {
+                return false;
+            }
+            // Tên gọi tiếng Việt hay trùng từ thường ("An" ~ "an toàn", "Mai" ~ "ngày mai"),
+            // nên chỉ bắt các kiểu GỌI TÊN: "chào An", "An ơi", "An!", "bạn An,"
+            $parts = preg_split('/\s+/u', $nameLower) ?: [];
+            $first = preg_quote((string) end($parts), '/');
+            if ($first !== '' && preg_match(
+                '/(chào|xin chào|hi|hello|bạn)\s+' . $first . '(?![\p{L}])|(?<![\p{L}])' . $first . '\s+ơi|(?<![\p{L}])' . $first . '\s*[!,]/u',
+                $answer
+            )) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private function serviceErrorResponse(string $errorCode, string $message, bool $retryable): array

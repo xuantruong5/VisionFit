@@ -25,9 +25,29 @@ class AssistantFunctionCallingTest extends TestCase
 {
     use UsesIsolatedTestDatabase;
 
+    private string $kbIndexPath = '';
+
+    protected function tearDown(): void
+    {
+        foreach ([$this->kbIndexPath, $this->kbIndexPath . '.lock'] as $f) {
+            if ($f !== '' && is_file($f)) {
+                @unlink($f);
+            }
+        }
+        parent::tearDown();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Chỉ mục kho kiến thức là FILE: mỗi test dùng file tạm riêng, không đụng storage/ thật
+        $this->kbIndexPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'vf_kb_' . uniqid('', true) . '.bin';
+        config([
+            'assistant.knowledge_index_path' => $this->kbIndexPath,
+            'assistant.embedding_query_cache_store' => 'array',
+            'assistant.answer_cache_store' => 'array',
+        ]);
 
         config([
             'assistant.gemini_api_key' => 'test-mock-key',
@@ -62,8 +82,19 @@ class AssistantFunctionCallingTest extends TestCase
             '2026_11_01_000001_create_lich_su_chi_so_dinh_duong_table.php',
             '2026_09_17_170000_create_bach_khoa_toan_thu_table.php',
             '2026_09_18_130000_create_dinh_duong_the_thao_table.php',
-            '2026_11_26_000001_create_assistant_knowledge_embeddings_table.php',
         ]);
+    }
+
+    /** Nạp sẵn chỉ mục kho kiến thức (file) với embedder đang được bind trong container. */
+    private function seedKnowledgeIndex(array $rows): void
+    {
+        $service = new \App\Services\Assistant\KnowledgeEmbeddingService(
+            app(\App\Services\Assistant\EmbeddingClientInterface::class),
+            new FitnessDataService()
+        );
+        $service->writeIndex(array_map(fn ($r) => [
+            'source_table' => $r[0], 'source_id' => $r[1], 'category' => $r[2], 'title' => $r[3], 'vector' => [1.0, 0.0],
+        ], $rows));
     }
 
     private function createMember(int $id, int $gym = 10, array $overrides = []): Client
@@ -1013,12 +1044,7 @@ class AssistantFunctionCallingTest extends TestCase
                 );
             }
         });
-        DB::table('assistant_knowledge_embeddings')->insert([
-            'source_table' => 'bai_tap', 'source_id' => 1, 'category' => 'exercise',
-            'title' => 'Squat', 'content_text' => 'Squat', 'metadata_json' => '{}',
-            'content_hash' => hash('sha256', 'squat'), 'embedding_model' => 'fake-quota-embed',
-            'embedding_json' => json_encode([1.0, 0.0]), 'created_at' => now(), 'updated_at' => now(),
-        ]);
+        $this->seedKnowledgeIndex([['bai_tap', 1, 'exercise', 'Squat']]);
 
         // 16a. Toàn bộ công cụ lỗi (embedding_unavailable) + LLM cố chèn thêm "Tuy nhiên, về cơ bản..." -> Orchestrator PHẢI chặn!
         $this->bindFakeLlm(function (int $step) {
@@ -1261,12 +1287,7 @@ class AssistantFunctionCallingTest extends TestCase
                 );
             }
         });
-        DB::table('assistant_knowledge_embeddings')->insert([
-            'source_table' => 'bai_tap', 'source_id' => 99, 'category' => 'exercise',
-            'title' => 'Deadlift', 'content_text' => 'Deadlift', 'metadata_json' => '{}',
-            'content_hash' => hash('sha256', 'deadlift'), 'embedding_model' => 'fake-minute-embed',
-            'embedding_json' => json_encode([1.0, 0.0]), 'created_at' => now(), 'updated_at' => now(),
-        ]);
+        $this->seedKnowledgeIndex([['bai_tap', 99, 'exercise', 'Deadlift']]);
 
         $this->bindFakeLlm(function (int $step) {
             if ($step === 0) {
@@ -1301,11 +1322,13 @@ class AssistantFunctionCallingTest extends TestCase
         $this->assertSame([], $res->json('tool_calls'));
     }
 
-    // Bảng chỉ mục kho kiến thức chưa được migrate: chặn model tự bổ sung kiến thức nền (OBS-01)
+    // Chỉ mục kho kiến thức đang được request khác khởi tạo (giữ khóa file): chặn model tự bổ sung kiến thức nền (OBS-01)
     public function test_knowledge_index_not_ready_blocks_ungrounded_pretraining_answer(): void
     {
         $member = $this->createMember(71, 10);
-        \Illuminate\Support\Facades\Schema::dropIfExists('assistant_knowledge_embeddings');
+        // Giả lập một request khác đang lập chỉ mục lần đầu: giữ khóa file, chỉ mục còn trống
+        $lock = fopen($this->kbIndexPath . '.lock', 'c');
+        $this->assertTrue(flock($lock, LOCK_EX));
 
         $this->bindFakeLlm(function (int $step, array $contents) {
             if ($step === 0) {
@@ -1329,6 +1352,9 @@ class AssistantFunctionCallingTest extends TestCase
         $this->assertStringContainsString('chưa thể truy xuất kho kiến thức', $answer);
         $this->assertStringNotContainsString('5g', $answer);
         $this->assertTrue((bool) $res->json('retryable'));
+
+        flock($lock, LOCK_UN);
+        fclose($lock);
     }
 
     /** Tạo kế hoạch ăn hôm nay gồm các món [ten, bua_an, nguyen_lieu] cho hội viên. */
@@ -1443,6 +1469,101 @@ class AssistantFunctionCallingTest extends TestCase
             : $this->modelTextTurn('Hôm nay chưa có buổi tập.'));
         $res = $this->postJson('/api/assistant/chat', ['message' => 'lịch hôm nay'], $h)->assertOk();
         $this->assertFalse((bool) $res->json('auto_navigate'));
+    }
+
+    /** Embedder giả: mọi văn bản -> cùng 1 vector, để kho kiến thức luôn trả kết quả 'ok'. */
+    private function bindAlwaysMatchEmbedder(): void
+    {
+        $this->app->instance(\App\Services\Assistant\EmbeddingClientInterface::class, new class implements \App\Services\Assistant\EmbeddingClientInterface {
+            public function modelName(): string { return 'fake-always-match'; }
+            public function embed(string $text, string $taskType = 'RETRIEVAL_QUERY'): array { return [1.0, 0.0]; }
+        });
+        $this->seedKnowledgeIndex([['bai_tap', 1, 'exercise', 'Squat']]);
+    }
+
+    private function knowledgeOnlyLlm(string $answer): object
+    {
+        return $this->bindFakeLlm(fn (int $step) => $step % 2 === 0
+            ? $this->modelToolCallTurn([['search_fitness_knowledge', ['query' => 'kỹ thuật squat']]])
+            : $this->modelTextTurn($answer));
+    }
+
+    // Task tải cao: câu hỏi kiến thức chung giống nhau từ nhiều người -> chỉ gọi Gemini 1 lần
+    public function test_general_knowledge_answer_is_shared_across_users_without_calling_gemini_again(): void
+    {
+        $this->bindAlwaysMatchEmbedder();
+        $a = $this->createMember(80, 10, ['ho_ten' => 'Lê Văn Tèo']);
+        $b = $this->createMember(81, 10, ['ho_ten' => 'Phạm Thị Na']);
+
+        $fake = $this->knowledgeOnlyLlm('Squat: hạ hông ra sau, giữ lưng thẳng, gối theo mũi chân.');
+        $this->postJson('/api/assistant/chat', ['message' => 'Kỹ thuật squat?'], $this->headersFor($a))->assertOk();
+        $this->assertCount(2, $fake->recordedCalls);
+
+        // Người khác, cùng câu hỏi (khác hoa/thường, khoảng trắng) -> lấy từ cache, KHÔNG gọi Gemini
+        $res = $this->postJson('/api/assistant/chat', ['message' => '  kỹ thuật   SQUAT? '], $this->headersFor($b))->assertOk();
+        $this->assertCount(2, $fake->recordedCalls);
+        $this->assertStringStartsWith('answer_cache:', (string) $res->json('source'));
+        $this->assertStringContainsString('giữ lưng thẳng', (string) $res->json('answer'));
+    }
+
+    // Những trường hợp KHÔNG được dùng chung câu trả lời
+    public function test_answer_cache_never_shares_personal_contextual_or_allergy_sensitive_answers(): void
+    {
+        $this->bindAlwaysMatchEmbedder();
+        $a = $this->createMember(82, 10, ['ho_ten' => 'Nguyễn Văn An']);
+        $b = $this->createMember(83, 10);
+        $allergic = $this->createMember(84, 10, ['di_ung' => ['Hải sản']]);
+        $hA = $this->headersFor($a);
+
+        // 1) Câu trả lời gọi tên người hỏi -> không cache (tránh "Chào An" cho người khác)
+        $fake = $this->knowledgeOnlyLlm('Chào An! Squat cần giữ lưng thẳng.');
+        $this->postJson('/api/assistant/chat', ['message' => 'squat tập sao'], $hA)->assertOk();
+        $this->postJson('/api/assistant/chat', ['message' => 'squat tập sao'], $this->headersFor($b))->assertOk();
+        $this->assertCount(4, $fake->recordedCalls);
+
+        // Tên trùng từ thường ("an toàn") KHÔNG bị coi là gọi tên -> vẫn cache được
+        $fake = $this->knowledgeOnlyLlm('Squat an toàn: giữ lưng thẳng.');
+        $this->postJson('/api/assistant/chat', ['message' => 'squat an toàn không'], $hA)->assertOk();
+        $this->postJson('/api/assistant/chat', ['message' => 'squat an toàn không'], $this->headersFor($b))->assertOk();
+        $this->assertCount(2, $fake->recordedCalls);
+
+        // 2) Người có hồ sơ dị ứng khác -> cache riêng (để cảnh báo dị ứng đúng người)
+        $this->postJson('/api/assistant/chat', ['message' => 'squat an toàn không'], $this->headersFor($allergic))->assertOk();
+        $this->assertCount(4, $fake->recordedCalls);
+
+        // 3) Câu hỏi giữa hội thoại (phụ thuộc ngữ cảnh) -> không dùng cache
+        $this->postJson('/api/assistant/chat', [
+            'message' => 'squat an toàn không',
+            'history' => [['sender' => 'user', 'text' => 'tôi bị đau lưng'], ['sender' => 'assistant', 'text' => 'Bạn nên nghỉ ngơi.']],
+        ], $this->headersFor($b))->assertOk();
+        $this->assertCount(6, $fake->recordedCalls);
+
+        // 4) Có dùng dữ liệu cá nhân (tool khác ngoài kho kiến thức) -> không cache
+        $fake = $this->bindFakeLlm(fn (int $step) => $step % 2 === 0
+            ? $this->modelToolCallTurn([['search_fitness_knowledge', ['query' => 'squat']], ['get_my_packages', []]])
+            : $this->modelTextTurn('Squat ổn, bạn chưa có gói tập.'));
+        $this->postJson('/api/assistant/chat', ['message' => 'squat và gói của tôi'], $hA)->assertOk();
+        $this->postJson('/api/assistant/chat', ['message' => 'squat và gói của tôi'], $this->headersFor($b))->assertOk();
+        $this->assertCount(4, $fake->recordedCalls);
+    }
+
+    // Kho kiến thức thay đổi -> câu trả lời đã cache tự hết hiệu lực
+    public function test_answer_cache_is_invalidated_when_knowledge_base_changes(): void
+    {
+        $this->bindAlwaysMatchEmbedder();
+        $h = $this->headersFor($this->createMember(85, 10));
+
+        $fake = $this->knowledgeOnlyLlm('Squat bản cũ.');
+        $this->postJson('/api/assistant/chat', ['message' => 'kỹ thuật squat'], $h)->assertOk();
+        $this->postJson('/api/assistant/chat', ['message' => 'kỹ thuật squat'], $h)->assertOk();
+        $this->assertCount(2, $fake->recordedCalls);
+
+        // Admin sửa nội dung kho kiến thức
+        $this->seedKnowledgeIndex([['bai_tap', 1, 'exercise', 'Squat (đã cập nhật hướng dẫn)']]);
+        $fake = $this->knowledgeOnlyLlm('Squat bản mới.');
+        $res = $this->postJson('/api/assistant/chat', ['message' => 'kỹ thuật squat'], $h)->assertOk();
+        $this->assertCount(2, $fake->recordedCalls);
+        $this->assertStringContainsString('bản mới', (string) $res->json('answer'));
     }
 
     public static function allergyStorageShapes(): array

@@ -7,13 +7,26 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Semantic knowledge search backed by persistent Gemini Embeddings (assistant_knowledge_embeddings).
- * Pre-indexes allowed VisionFit knowledge tables incrementally using SHA-256 content hashes;
- * never re-embeds unchanged records on every query.
+ * Tìm kiếm ngữ nghĩa trên kho kiến thức VisionFit bằng Gemini Embeddings.
+ *
+ * Chỉ mục KHÔNG nằm trong database (tránh làm nặng DB): lưu thành MỘT file nhị phân trong
+ * storage/app/assistant/ (vector float32, mặc định 768 chiều ≈ 0.7 MB cho ~230 tài liệu).
+ *
+ * Tự vận hành, không cần chạy lệnh:
+ *  - Lần hỏi kiến thức đầu tiên: tự lập chỉ mục.
+ *  - Sau đó mỗi `knowledge_auto_refresh_seconds` (mặc định 10 phút): tự phát hiện món ăn / bài tập
+ *    được thêm, sửa, xóa và chỉ embed lại đúng những tài liệu thay đổi (so SHA-256).
+ *  - Lệnh `php artisan assistant:index-knowledge` vẫn dùng được để lập trước (không bắt buộc).
  */
 class KnowledgeEmbeddingService
 {
-    private const INDEX_TABLE = 'assistant_knowledge_embeddings';
+    private const FORMAT_VERSION = 1;
+
+    /** Việc lập chỉ mục còn dang dở thì sau chừng này giây tự làm tiếp. */
+    private const RESUME_AFTER_SECONDS = 60;
+
+    /** Cache trong tiến trình: tránh đọc + giải nén file ở mỗi lượt tìm kiếm. */
+    private static array $memo = [];
 
     public function __construct(
         private readonly EmbeddingClientInterface $embeddingClient,
@@ -21,97 +34,207 @@ class KnowledgeEmbeddingService
     ) {
     }
 
-    /**
-     * Incrementally sync embeddings for all allowed knowledge tables.
-     * Only calls embedding API when a document is new, changed (content_hash differs), or model changed.
-     *
-     * @return array{indexed: int, updated: int, skipped: int, removed: int, total_documents: int, model: string}
-     */
-    public function syncIndex(bool $force = false): array
+    // ───────────────────────────── Lưu trữ chỉ mục (file) ─────────────────────────────
+
+    public function indexPath(): string
     {
-        if (!Schema::hasTable(self::INDEX_TABLE)) {
-            throw new LlmProviderException(
-                'EMBEDDING_INDEX_MISSING',
-                'Bảng chỉ mục assistant_knowledge_embeddings chưa được migrate.',
-                503,
-                false
-            );
+        return (string) config('assistant.knowledge_index_path', storage_path('app/assistant/knowledge_index.bin'));
+    }
+
+    /** Model + số chiều: đổi một trong hai thì vector cũ không còn dùng được -> lập lại. */
+    public function indexSignature(): string
+    {
+        return $this->embeddingClient->modelName() . '#' . (int) config('assistant.embedding_dimensions', 768);
+    }
+
+    /**
+     * @return array{version:int, signature:string, checked_at:int, docs:array<string, array<string, mixed>>}
+     */
+    private function loadIndex(): array
+    {
+        $path = $this->indexPath();
+        $empty = ['version' => self::FORMAT_VERSION, 'signature' => '', 'checked_at' => 0, 'docs' => []];
+
+        clearstatcache(true, $path);
+        if (!is_file($path)) {
+            return $empty;
+        }
+        $stamp = filemtime($path) . ':' . filesize($path);
+        if (isset(self::$memo[$path]) && self::$memo[$path]['stamp'] === $stamp) {
+            return self::$memo[$path]['index'];
         }
 
+        $raw = @file_get_contents($path);
+        $index = $raw === false ? false : @unserialize($raw, ['allowed_classes' => false]);
+        if (!is_array($index) || ($index['version'] ?? null) !== self::FORMAT_VERSION || !is_array($index['docs'] ?? null)) {
+            return $empty; // File hỏng / định dạng cũ -> coi như chưa có, sẽ tự lập lại
+        }
+
+        self::$memo[$path] = ['stamp' => $stamp, 'index' => $index];
+        return $index;
+    }
+
+    private function saveIndex(array $index): void
+    {
+        $path = $this->indexPath();
+        $dir = dirname($path);
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new LlmProviderException('KNOWLEDGE_INDEX_NOT_WRITABLE', "Không ghi được thư mục chỉ mục: {$dir}", 503, false);
+        }
+        // Ghi file tạm rồi đổi tên: request khác không bao giờ đọc phải file ghi dở
+        $tmp = $path . '.' . getmypid() . '.tmp';
+        if (@file_put_contents($tmp, serialize($index)) === false || !@rename($tmp, $path)) {
+            @unlink($tmp);
+            throw new LlmProviderException('KNOWLEDGE_INDEX_NOT_WRITABLE', "Không ghi được file chỉ mục: {$path}", 503, false);
+        }
+        clearstatcache(true, $path);
+        self::$memo[$path] = ['stamp' => filemtime($path) . ':' . filesize($path), 'index' => $index];
+    }
+
+    /**
+     * Ghi trực tiếp tài liệu đã có vector vào chỉ mục (dùng cho kiểm thử / nạp sẵn).
+     *
+     * @param array<int, array{source_table:string, source_id:int, category:string, title:string, content_text?:string, metadata?:array, vector:array<int,float>}> $documents
+     */
+    public function writeIndex(array $documents, ?int $checkedAt = null): void
+    {
+        $docs = [];
+        foreach ($documents as $d) {
+            $docs[$d['source_table'] . ':' . $d['source_id']] = [
+                'source_table' => $d['source_table'],
+                'source_id' => (int) $d['source_id'],
+                'category' => $d['category'],
+                'title' => $d['title'],
+                'content_text' => $d['content_text'] ?? $d['title'],
+                'metadata' => $d['metadata'] ?? [],
+                'hash' => $d['hash'] ?? hash('sha256', $d['title']),
+                'vec' => pack('g*', ...array_map('floatval', $d['vector'])),
+            ];
+        }
+        $this->saveIndex([
+            'version' => self::FORMAT_VERSION,
+            'signature' => $this->indexSignature(),
+            'checked_at' => $checkedAt ?? now()->getTimestamp(),
+            'docs' => $docs,
+        ]);
+    }
+
+    /** @return int Số tài liệu đang có trong chỉ mục (đúng model + số chiều hiện tại). */
+    public function indexedCount(): int
+    {
+        $index = $this->loadIndex();
+        return $index['signature'] === $this->indexSignature() ? count($index['docs']) : 0;
+    }
+
+    /**
+     * Dấu vân tay nội dung kho kiến thức: đổi khi có tài liệu thêm / sửa / xóa.
+     * Dùng làm một phần khóa cache câu trả lời để câu trả lời cũ tự hết hiệu lực khi kho thay đổi.
+     * Trả '' nếu chỉ mục chưa sẵn sàng.
+     */
+    public function contentVersion(): string
+    {
+        $index = $this->loadIndex();
+        if ($index['signature'] !== $this->indexSignature() || empty($index['docs'])) {
+            return '';
+        }
+        $hashes = array_map(fn ($d) => $d['source_table'] . ':' . $d['source_id'] . ':' . $d['hash'], $index['docs']);
+        sort($hashes);
+        return substr(hash('sha256', $index['signature'] . "\n" . implode("\n", $hashes)), 0, 16);
+    }
+
+    // ───────────────────────────── Đồng bộ chỉ mục ─────────────────────────────
+
+    /**
+     * Đồng bộ tăng dần: chỉ gọi embedding cho tài liệu mới / đã sửa / khi đổi model hoặc số chiều.
+     * Nếu Gemini báo lỗi giữa chừng, phần đã embed vẫn được lưu để lần sau làm tiếp.
+     * `$maxEmbeds` giới hạn số tài liệu embed trong một lần (dưới hạn mức/phút của Gemini miễn phí):
+     * phần còn lại được hoãn và tự làm tiếp sau ~1 phút.
+     *
+     * @return array{indexed: int, updated: int, skipped: int, removed: int, deferred: int, total_documents: int, model: string, storage: string}
+     */
+    public function syncIndex(bool $force = false, ?int $maxEmbeds = null): array
+    {
+        $index = $this->loadIndex();
+        $signature = $this->indexSignature();
+        if ($index['signature'] !== $signature) {
+            $index['docs'] = []; // Vector khác model / số chiều -> không so sánh được, lập lại toàn bộ
+        }
+        $index['signature'] = $signature;
+
         $documents = $this->collectKnowledgeDocuments();
-        $model = $this->embeddingClient->modelName();
-
-        $existing = DB::table(self::INDEX_TABLE)
-            ->get(['id', 'source_table', 'source_id', 'content_hash', 'embedding_model'])
-            ->keyBy(fn ($r) => $r->source_table . ':' . $r->source_id);
-
-        $seenKeys = [];
-        $indexed = 0;
-        $updated = 0;
-        $skipped = 0;
-        $now = now();
-
+        $existing = $index['docs'];
+        $nextDocs = [];
         $pending = [];
+        $skipped = 0;
+
         foreach ($documents as $doc) {
             $key = $doc['source_table'] . ':' . $doc['source_id'];
-            $seenKeys[$key] = true;
             $hash = hash('sha256', $doc['title'] . "\n" . $doc['content_text'] . "\n" . json_encode($doc['metadata'], JSON_UNESCAPED_UNICODE));
+            $prev = $existing[$key] ?? null;
 
-            $prev = $existing->get($key);
-            if (!$force && $prev && $prev->content_hash === $hash && $prev->embedding_model === $model) {
+            if (!$force && $prev && $prev['hash'] === $hash) {
+                $nextDocs[$key] = $prev;
                 $skipped++;
                 continue;
             }
-
-            $pending[] = [
-                'doc' => $doc,
-                'hash' => $hash,
-                'prev' => $prev,
-                'embed_text' => $doc['title'] . "\n" . $doc['content_text'],
-            ];
+            $pending[] = ['key' => $key, 'doc' => $doc, 'hash' => $hash, 'is_update' => $prev !== null];
         }
 
+        $removed = count(array_diff_key($existing, array_flip(array_map(
+            fn ($d) => $d['source_table'] . ':' . $d['source_id'],
+            $documents
+        ))));
+
+        // Giới hạn khối lượng mỗi lần: tài liệu bị hoãn nếu là bản cũ thì vẫn giữ để tìm được, lần sau cập nhật
+        $deferred = 0;
+        if ($maxEmbeds !== null && count($pending) > $maxEmbeds) {
+            foreach (array_slice($pending, max(0, $maxEmbeds)) as $p) {
+                $deferred++;
+                if ($p['is_update'] && isset($existing[$p['key']])) {
+                    $nextDocs[$p['key']] = $existing[$p['key']];
+                }
+            }
+            $pending = array_slice($pending, 0, max(0, $maxEmbeds));
+        }
+
+        $indexed = 0;
+        $updated = 0;
+        $completed = false;
         $canBatch = method_exists($this->embeddingClient, 'embedBatch');
         $chunks = $canBatch ? array_chunk($pending, 25) : array_map(fn ($item) => [$item], $pending);
 
-        foreach ($chunks as $chunk) {
-            $vectors = $canBatch
-                ? $this->embeddingClient->embedBatch(array_column($chunk, 'embed_text'), 'RETRIEVAL_DOCUMENT')
-                : [$this->embeddingClient->embed($chunk[0]['embed_text'], 'RETRIEVAL_DOCUMENT')];
+        try {
+            foreach ($chunks as $chunk) {
+                $texts = array_map(fn ($p) => $p['doc']['title'] . "\n" . $p['doc']['content_text'], $chunk);
+                $vectors = $canBatch
+                    ? $this->embeddingClient->embedBatch($texts, 'RETRIEVAL_DOCUMENT')
+                    : [$this->embeddingClient->embed($texts[0], 'RETRIEVAL_DOCUMENT')];
 
-            foreach ($chunk as $idx => $item) {
-                $doc = $item['doc'];
-                $prev = $item['prev'];
-                $row = [
-                    'source_table' => $doc['source_table'],
-                    'source_id' => $doc['source_id'],
-                    'category' => $doc['category'],
-                    'title' => mb_substr($doc['title'], 0, 255, 'UTF-8'),
-                    'content_text' => $doc['content_text'],
-                    'metadata_json' => json_encode($doc['metadata'], JSON_UNESCAPED_UNICODE),
-                    'content_hash' => $item['hash'],
-                    'embedding_model' => $model,
-                    'embedding_json' => json_encode($vectors[$idx]),
-                    'updated_at' => $now,
-                ];
-
-                if ($prev) {
-                    DB::table(self::INDEX_TABLE)->where('id', $prev->id)->update($row);
-                    $updated++;
-                } else {
-                    $row['created_at'] = $now;
-                    DB::table(self::INDEX_TABLE)->insert($row);
-                    $indexed++;
+                foreach ($chunk as $i => $p) {
+                    $doc = $p['doc'];
+                    $nextDocs[$p['key']] = [
+                        'source_table' => $doc['source_table'],
+                        'source_id' => (int) $doc['source_id'],
+                        'category' => $doc['category'],
+                        'title' => $doc['title'],
+                        'content_text' => $doc['content_text'],
+                        'metadata' => $doc['metadata'],
+                        'hash' => $p['hash'],
+                        'vec' => pack('g*', ...array_map('floatval', $vectors[$i])),
+                    ];
+                    $p['is_update'] ? $updated++ : $indexed++;
                 }
             }
-        }
-
-        $removed = 0;
-        foreach ($existing as $key => $prev) {
-            if (!isset($seenKeys[$key])) {
-                DB::table(self::INDEX_TABLE)->where('id', $prev->id)->delete();
-                $removed++;
-            }
+            $completed = true;
+        } finally {
+            // Luôn lưu tiến độ (kể cả khi Gemini lỗi giữa chừng) để lần sau chỉ làm phần còn thiếu
+            $index['docs'] = $nextDocs;
+            $now = now()->getTimestamp();
+            // Còn việc dang dở (bị hoãn / lỗi quota) -> làm tiếp sau ~60 giây thay vì đợi hết chu kỳ làm mới
+            $index['checked_at'] = ($completed && $deferred === 0)
+                ? $now
+                : $now - $this->refreshInterval() + self::RESUME_AFTER_SECONDS;
+            $this->saveIndex($index);
         }
 
         return [
@@ -119,13 +242,111 @@ class KnowledgeEmbeddingService
             'updated' => $updated,
             'skipped' => $skipped,
             'removed' => $removed,
+            'deferred' => $deferred,
             'total_documents' => count($documents),
-            'model' => $model,
+            'model' => $signature,
+            'storage' => $this->indexPath(),
         ];
     }
 
     /**
-     * Semantic search over pre-indexed knowledge embeddings using cosine similarity.
+     * Tự lập / tự làm mới chỉ mục khi cần — thay cho việc phải chạy lệnh artisan.
+     * Có khóa file để nhiều request cùng lúc không embed trùng.
+     *
+     * @return array<string, mixed>|null Mảng lỗi trả cho LLM nếu chưa thể tìm kiếm; null nếu dùng được.
+     */
+    private function ensureIndexReady(): ?array
+    {
+        $index = $this->loadIndex();
+        $isEmpty = $index['signature'] !== $this->indexSignature() || empty($index['docs']);
+        $isStale = (now()->getTimestamp() - (int) $index['checked_at']) >= $this->refreshInterval();
+
+        if (!$isEmpty && !$isStale) {
+            return null;
+        }
+
+        // Đã có chỉ mục (kể cả mới lập một phần): tìm ngay trên bản hiện có, việc lập tiếp / cập nhật
+        // chạy SAU KHI đã gửi câu trả lời (php-fpm) -> người dùng không phải chờ embed.
+        // Chạy dòng lệnh (artisan, kiểm thử) thì làm đồng bộ luôn cho dễ kiểm soát.
+        if (!$isEmpty && !app()->runningInConsole()) {
+            if (!self::$refreshScheduled) {
+                self::$refreshScheduled = true;
+                app()->terminating(function () {
+                    try {
+                        $this->runLockedSync();
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('[KnowledgeEmbedding] Background index refresh failed', ['error' => $e->getMessage()]);
+                    } finally {
+                        self::$refreshScheduled = false;
+                    }
+                });
+            }
+            return null;
+        }
+
+        return $this->runLockedSync($isEmpty);
+    }
+
+    /** Request hiện tại đã hẹn làm mới chỉ mục sau khi trả lời chưa (tránh hẹn trùng khi gọi tool nhiều lần). */
+    private static bool $refreshScheduled = false;
+
+    /**
+     * Lập / cập nhật chỉ mục có khóa file (nhiều request cùng lúc không embed trùng).
+     *
+     * @return array<string, mixed>|null Lỗi trả cho LLM nếu chỉ mục vẫn trống; null nếu tìm được.
+     */
+    private function runLockedSync(bool $isEmpty = false): ?array
+    {
+        $dir = dirname($this->indexPath());
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        $lock = @fopen($this->indexPath() . '.lock', 'c');
+        if ($lock === false) {
+            return $isEmpty ? $this->notReady('Không tạo được file khóa chỉ mục kho kiến thức.') : null;
+        }
+
+        try {
+            if (!flock($lock, LOCK_EX | LOCK_NB)) {
+                // Request khác đang lập chỉ mục: dùng tạm bản hiện có, hoặc báo đang khởi tạo
+                return $isEmpty ? $this->notReady('Kho kiến thức đang được khởi tạo, vui lòng thử lại sau ít giây.') : null;
+            }
+            try {
+                $this->syncIndex(false, max(1, (int) config('assistant.knowledge_max_embeds_per_request', 80)));
+            } catch (LlmProviderException $e) {
+                if ($this->indexedCount() === 0) {
+                    return [
+                        'status' => 'embedding_unavailable',
+                        'error_code' => $e->errorCode,
+                        'quota_scope' => $e->quotaScope,
+                        'retryable' => $e->retryable,
+                        'results' => [],
+                        'message' => $e->getMessage(),
+                    ];
+                }
+                // Làm mới thất bại nhưng đã có chỉ mục cũ -> vẫn tìm được, thử lại ở chu kỳ sau
+            }
+            return null;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    private function refreshInterval(): int
+    {
+        return max(60, (int) config('assistant.knowledge_auto_refresh_seconds', 600));
+    }
+
+    private function notReady(string $message): array
+    {
+        return ['status' => 'index_not_ready', 'results' => [], 'message' => $message];
+    }
+
+    // ───────────────────────────── Tìm kiếm ─────────────────────────────
+
+    /**
+     * Semantic search over the knowledge index using cosine similarity.
      *
      * When `$category` is narrowed by the LLM (`$strictCategory === false`) and returns no results
      * above `knowledge_min_similarity`, automatically broadens retrieval across all authorized
@@ -148,40 +369,21 @@ class KnowledgeEmbeddingService
             ];
         }
 
-        if (!Schema::hasTable(self::INDEX_TABLE)) {
-            return [
-                'status' => 'index_not_ready',
-                'results' => [],
-                'message' => 'Chỉ mục tìm kiếm ngữ nghĩa chưa được khởi tạo.',
-            ];
+        $notReady = $this->ensureIndexReady();
+        if ($notReady !== null) {
+            return $notReady;
         }
 
-        $model = $this->embeddingClient->modelName();
-        $indexedCount = DB::table(self::INDEX_TABLE)->where('embedding_model', $model)->count();
-
-        // Lập chỉ mục lần đầu nếu kho chỉ mục đang rỗng (sau đó chỉ cập nhật theo hash khi nội dung thay đổi)
-        if ($indexedCount === 0) {
-            try {
-                $this->syncIndex(false);
-            } catch (LlmProviderException $e) {
-                return [
-                    'status' => 'embedding_unavailable',
-                    'error_code' => $e->errorCode,
-                    'quota_scope' => $e->quotaScope,
-                    'retryable' => $e->retryable,
-                    'results' => [],
-                    'message' => $e->getMessage(),
-                ];
-            }
-        }
-
+        $signature = $this->indexSignature();
         $queryVector = null;
         $usedQueryCache = false;
         $cacheTtl = max(0, (int) config('assistant.embedding_query_cache_ttl', 86400));
-        $cacheKey = self::queryVectorCacheKey($model, $cleanQuery);
+        $cacheKey = self::queryVectorCacheKey($signature, $cleanQuery);
+        // Cache vector câu hỏi bằng FILE (không ghi vào bảng cache của DB)
+        $cache = Cache::store((string) config('assistant.embedding_query_cache_store', 'file'));
 
         if ($cacheTtl > 0) {
-            $cached = Cache::get($cacheKey);
+            $cached = $cache->get($cacheKey);
             if (is_array($cached) && !empty($cached)) {
                 $queryVector = $cached;
                 $usedQueryCache = true;
@@ -203,7 +405,7 @@ class KnowledgeEmbeddingService
             }
 
             if ($cacheTtl > 0 && !empty($queryVector)) {
-                Cache::put($cacheKey, $queryVector, $cacheTtl);
+                $cache->put($cacheKey, $queryVector, $cacheTtl);
             }
         }
 
@@ -214,14 +416,14 @@ class KnowledgeEmbeddingService
         $limit = max(1, min(6, $limit));
         $minSimilarity = (float) config('assistant.knowledge_min_similarity', 0.70);
 
-        $top = $this->rankMatchingRows($model, $requestedCat, $queryVector, $minSimilarity, $limit, $actor);
+        $top = $this->rankMatchingRows($requestedCat, $queryVector, $minSimilarity, $limit, $actor);
         $effectiveCat = $requestedCat;
         $broadenedFrom = null;
 
         // Nếu LLM tự suy đoán category hẹp (không phải người dùng giới hạn cứng) mà không có kết quả đạt ngưỡng,
         // mở rộng tìm trên toàn bộ danh mục kiến thức được phép với CÙNG ngưỡng similarity & cùng lọc dị ứng.
         if (empty($top) && $requestedCat !== 'all' && !$strictCategory) {
-            $broadenedTop = $this->rankMatchingRows($model, 'all', $queryVector, $minSimilarity, $limit, $actor);
+            $broadenedTop = $this->rankMatchingRows('all', $queryVector, $minSimilarity, $limit, $actor);
             if (!empty($broadenedTop)) {
                 $top = $broadenedTop;
                 $effectiveCat = 'all';
@@ -232,7 +434,7 @@ class KnowledgeEmbeddingService
         return [
             'status' => !empty($top) ? 'ok' : 'empty',
             'retrieval_method' => 'semantic_embeddings',
-            'embedding_model' => $model,
+            'embedding_model' => $signature,
             'query_embedding_cached' => $usedQueryCache,
             'query' => $cleanQuery,
             'category' => $effectiveCat,
@@ -244,10 +446,10 @@ class KnowledgeEmbeddingService
         ];
     }
 
-    public static function queryVectorCacheKey(string $model, string $query): string
+    public static function queryVectorCacheKey(string $signature, string $query): string
     {
         $normalized = preg_replace('/\s+/u', ' ', mb_strtolower(trim($query), 'UTF-8'));
-        return 'assistant:emb:q:' . hash('sha256', trim($model) . "\n" . (string) $normalized);
+        return 'assistant:emb:q:' . hash('sha256', trim($signature) . "\n" . (string) $normalized);
     }
 
     /**
@@ -258,47 +460,44 @@ class KnowledgeEmbeddingService
      * @return array<int, array<string, mixed>>
      */
     private function rankMatchingRows(
-        string $model,
         string $category,
         array $queryVector,
         float $minSimilarity,
         int $limit,
         ?AssistantAuthContext $actor
     ): array {
-        $q = DB::table(self::INDEX_TABLE)->where('embedding_model', $model);
-        if ($category !== '' && $category !== 'all') {
-            $q->where('category', $category);
-        }
-
-        $rows = $q->get(['source_table', 'source_id', 'category', 'title', 'content_text', 'metadata_json', 'embedding_json']);
-        if ($rows->isEmpty()) {
+        $index = $this->loadIndex();
+        if ($index['signature'] !== $this->indexSignature() || empty($index['docs'])) {
             return [];
         }
 
         $scored = [];
-        foreach ($rows as $row) {
-            $vec = json_decode((string) $row->embedding_json, true);
-            if (!is_array($vec) || empty($vec)) {
+        foreach ($index['docs'] as $row) {
+            if ($category !== '' && $category !== 'all' && $row['category'] !== $category) {
+                continue;
+            }
+            $vec = array_values(unpack('g*', (string) $row['vec']) ?: []);
+            if (empty($vec)) {
                 continue;
             }
             $score = $this->cosineSimilarity($queryVector, $vec);
             if ($score < $minSimilarity) {
                 continue;
             }
-            $meta = json_decode((string) $row->metadata_json, true) ?: [];
+            $meta = is_array($row['metadata'] ?? null) ? $row['metadata'] : [];
 
             $item = [
-                'category' => $row->category,
-                'title' => $row->title,
-                'summary' => mb_substr($row->content_text, 0, 320, 'UTF-8'),
+                'category' => $row['category'],
+                'title' => $row['title'],
+                'summary' => mb_substr((string) $row['content_text'], 0, 320, 'UTF-8'),
                 'metadata' => $meta,
                 'similarity_score' => round($score, 4),
-                '_ref' => ['table' => (string) $row->source_table, 'id' => (int) $row->source_id],
+                '_ref' => ['table' => (string) $row['source_table'], 'id' => (int) $row['source_id']],
             ];
 
-            if ($row->category === 'food' && $actor && $actor->authenticated && $actor->role === 'member' && $actor->user) {
+            if ($row['category'] === 'food' && $actor && $actor->authenticated && $actor->role === 'member' && $actor->user) {
                 $allergens = $this->dataService->detectAllergenMatches(
-                    (string) $row->title,
+                    (string) $row['title'],
                     (string) ($meta['ingredients'] ?? ''),
                     $this->dataService->rawAllergyOf($actor->user)
                 );
