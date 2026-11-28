@@ -10,6 +10,7 @@ use App\Models\GioiThieu;
 use GuzzleHttp\Client as HttpClient;
 use App\Jobs\SendMailJob;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -36,7 +37,9 @@ class ThanhToanTuDongCommand extends Command
 
                 // 3. Gọi MB Bank một lần cho tất cả đơn
                 $client = new HttpClient();
-                $res = $client->request( 'POST', 'https://api-mb.onrender.com/api/transactions',
+                // $res = $client->request( 'POST', 'https://api-mb.onrender.com/api/transactions',
+                $res = $client->request( 'POST', 'http://localhost:2603/api/transactions',
+
                     [
                         'json' => [
                             'USERNAME' => env('MB_USERNAME'),
@@ -102,6 +105,8 @@ class ThanhToanTuDongCommand extends Command
                             'ngay_ket_thuc' => $ngayKetThuc->toDateString(),
                             'tinh_trang' => 1,
                         ]);
+                        
+
                         // Đánh dấu khoản thưởng giới thiệu đã sử dụng
                         if ($dangKy->id_gioi_thieu) {
                             GioiThieu::where('id', $dangKy->id_gioi_thieu)
@@ -111,6 +116,20 @@ class ThanhToanTuDongCommand extends Command
 
                         // 8. Gửi email xác nhận
                         $hoiVien = Client::find($dangKy->id_hoi_vien);
+                        // 8.1 Tạo thông báo cho PT khi có học viên mới
+                        if ($chiTiet->id_trainer) {
+                            $tenHoiVien = $hoiVien ? $hoiVien->ho_ten : 'Học viên mới';
+
+                            DB::table('thong_bao')->insert([
+                                'id_nguoi_nhan' => $chiTiet->id_trainer,
+                                'vai_tro' => 'trainer',
+                                'tieu_de' => 'Học viên mới',
+                                'noi_dung' => $tenHoiVien . ' đã đăng ký bạn làm Huấn Luyện Viên.',
+                                'da_doc' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                         if ($hoiVien && $hoiVien->email) {
                             $xxx = [
                                 'ho_ten' => $hoiVien->ho_ten,

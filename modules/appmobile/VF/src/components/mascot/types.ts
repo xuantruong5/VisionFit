@@ -34,9 +34,17 @@ export const ALL_MASCOT_STATES: MascotStateMeta[] = [
   { key: 'idle', label: 'Nghỉ ngơi', icon: '💤', desc: 'Thư giãn, thở nhịp nhàng' },
 ];
 
+export interface ChatAction {
+  type: string;
+  params?: any;
+  screen?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   time: string;
+  intent?: string;
+  action?: ChatAction | null;
 }

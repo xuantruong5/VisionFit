@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import apiFitlife from '../../general/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import AppHeader from '../../components/AppHeader';
 import LinearGradient from 'react-native-linear-gradient';
@@ -61,6 +62,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [birthDate, setBirthDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date(2000, 0, 15));
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [activityLevel, setActivityLevel] = useState(2);
@@ -96,15 +98,42 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const handleDateChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'dismissed') return;
+    if (date) {
+      setSelectedDate(date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      setBirthDate(`${year}-${month}-${day}`);
+    }
+  };
+
 
   const handleSaveProfile = async () => {
     if (!birthDate.trim() || !height.trim() || !weight.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập ngày sinh, chiều cao và cân nặng.');
+      Alert.alert(
+        'Thiếu thông tin',
+        'Vui lòng nhập ngày sinh, chiều cao và cân nặng.'
+      );
       return;
     }
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
       Alert.alert('Thông báo', 'Ngày sinh phải có định dạng YYYY-MM-DD.');
+      return;
+    }
+
+    if (
+      !Number.isFinite(Number(height)) ||
+      !Number.isFinite(Number(weight)) ||
+      Number(height) <= 0 ||
+      Number(weight) <= 0
+    ) {
+      Alert.alert('Thông báo', 'Chiều cao và cân nặng không hợp lệ.');
       return;
     }
 
@@ -118,50 +147,86 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
       muc_tieu_hien_tai: goal,
       noi_tap_uu_tien: location,
 
-      // Gửi trực tiếp dạng mảng
       che_do_an_ua_thich: dietType,
-
       muc_ngan_sach_an_uong: budget,
       note: specialNotes.trim() || null,
-
-      // Gửi trực tiếp dạng mảng, không dùng join()
       di_ung: allergies,
     };
 
     try {
       setIsSaving(true);
 
+      // BƯỚC 1: LƯU HỒ SƠ
       const res = await apiFitlife.post(
         '/client/luu-ho-so-ban-dau',
         payload
       );
 
-      if (res.data?.success) {
+      if (!res.data?.success) {
         Alert.alert(
-          'Thành công',
-          'Hồ sơ thể lực và dinh dưỡng đã được lưu.',
-          [
-            {
-              text: 'Hoàn tất',
-              onPress: () => navigation.goBack(),
+          'Thông báo',
+          res.data?.message || 'Không thể lưu hồ sơ.'
+        );
+        return;
+      }
+
+      // BƯỚC 2: KIỂM TRA CHƯƠNG TRÌNH TẬP
+      const response = await apiFitlife.get('/client/my-programs');
+
+      const chuongTrinh = response.data?.data;
+
+      console.log('MY PROGRAMS =', chuongTrinh);
+
+      // BƯỚC 3: XÁC ĐỊNH MÀN HÌNH ĐÍCH
+      const targetScreen =
+        Array.isArray(chuongTrinh) && chuongTrinh.length > 0
+          ? 'headerPage'
+          : 'WorkoutPlanScreen';
+
+      // BƯỚC 4: ĐIỀU HƯỚNG
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'MemberTabs',
+            params: {
+              screen: 'Kế Hoạch Tập',
+              params: {
+                screen: targetScreen,
+              },
             },
-          ]
-        );
-      }
+          },
+        ],
+      });
+
     } catch (error: any) {
-      console.log('Lỗi lưu hồ sơ:', error.response?.data || error.message);
+      console.log(
+        'Lỗi lưu hồ sơ hoặc kiểm tra chương trình:',
+        error.response?.data || error.message
+      );
 
-      const errors = error.response?.data?.errors;
+      // Lỗi xác thực
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('role');
 
-      if (errors) {
-        const firstError = Object.values(errors)[0] as string[];
-        Alert.alert('Lỗi dữ liệu', firstError?.[0] || 'Vui lòng kiểm tra lại.');
-      } else {
-        Alert.alert(
-          'Lỗi',
-          error.response?.data?.message || 'Không thể lưu hồ sơ.'
-        );
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'OnboardingScreen' }],
+        });
+
+        return;
       }
+
+      Alert.alert(
+        'Lỗi',
+        error.response?.data?.message ||
+          'Không thể lưu hồ sơ hoặc kiểm tra chương trình tập.'
+      );
+
     } finally {
       setIsSaving(false);
     }
@@ -225,37 +290,14 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           <View style={styles.metricsRow}>
             <View style={styles.metricInputBox}>
               <Text style={styles.metricLabel}>Ngày sinh</Text>
-
-              <TouchableOpacity style={styles.metricInput} activeOpacity={0.7} onPress={() => setShowDatePicker(true)} >
+              <TouchableOpacity
+                style={[styles.metricInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },]}
+                onPress={() => setShowDatePicker(true)}  >
                 <Text style={{ color: birthDate ? COLORS.text : COLORS.textLight, fontSize: 13, }}>
-                  {birthDate
-                    ? birthDate.split('-').reverse().join('/')
-                    : 'Chọn ngày sinh'}
+                  {birthDate || 'Chọn ngày sinh'}
                 </Text>
               </TouchableOpacity>
             </View>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={birthDate ? new Date(`${birthDate}T00:00:00`) : new Date(2000, 0, 1)}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                maximumDate={new Date()}
-                onChange={(event, selectedDate) => {
-                  if (Platform.OS === 'android') {
-                    setShowDatePicker(false);
-                  }
-
-                  if (selectedDate) {
-                    const year = selectedDate.getFullYear();
-                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                    const day = String(selectedDate.getDate()).padStart(2, '0');
-
-                    setBirthDate(`${year}-${month}-${day}`);
-                  }
-                }}
-              />
-            )}
             <View style={styles.metricInputBox}>
               <Text style={styles.metricLabel}>Chiều cao (cm)</Text>
               <TextInput
@@ -373,9 +415,9 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
             {DIET_TYPES.map(d => {
               const selected = dietType.includes(d);
               return (
-                <TouchableOpacity key={d} style={[  styles.tagItem,  selected && styles.tagItemActive, ]}
+                <TouchableOpacity key={d} style={[styles.tagItem, selected && styles.tagItemActive,]}
                   onPress={() => toggleDiet(d)} >
-                  <Text style={[ styles.tagText, selected && styles.tagTextActive, ]}  >
+                  <Text style={[styles.tagText, selected && styles.tagTextActive,]}  >
                     {d}
                   </Text>
                 </TouchableOpacity>
@@ -470,6 +512,16 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          maximumDate={new Date()}
+          minimumDate={new Date(1920, 0, 1)}
+          onChange={handleDateChange}
+        />
+      )}
 
       {/* MODAL MÔ PHỎNG QUÁ TRÌNH PHÂN TÍCH VÀ KẾT QUẢ AI */}
 

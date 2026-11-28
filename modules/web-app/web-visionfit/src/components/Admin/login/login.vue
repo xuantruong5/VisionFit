@@ -122,7 +122,7 @@
                             </div>
 
                             <div class="input-box">
-                                <span class="input-icon">⌁</span>
+                                <span class="input-icon"></span>
 
                                 <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
                                     placeholder="Nhập mật khẩu">

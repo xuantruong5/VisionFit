@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Modal,
   View,
   Text,
   StyleSheet,
@@ -8,20 +7,30 @@ import {
   Image,
   TextInput,
   ScrollView,
-  SafeAreaView,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Keyboard,
+  BackHandler,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { MascotSpecies, MascotStage, ChatMessage } from './types';
 import { getMascotImage } from './mascotImages';
-import { getAIResponse } from './mascotChatService';
+import { getAIResponse, clearAssistantCache } from './mascotChatService';
 import { MascotSelectorModal } from './MascotSelectorModal';
 import { MascotVectorRig } from './MascotVectorRig';
-import { triggerMascotState, triggerWorkoutStart } from './mascotEvents';
-import { navigateToWorkoutPlan } from '../../general/rootNavigation';
+import {
+  triggerMascotState,
+  triggerWorkoutStart,
+  triggerWaterReminderSetting,
+} from './mascotEvents';
+import {
+  navigateToWorkoutPlan,
+  navigateToRegisterProgram,
+  navigateToBodyMetrics,
+  navigateToRegisterPackage,
+} from '../../general/rootNavigation';
+import { notify } from '../../general/notification';
 import { COLORS, SHADOWS } from '../../general/theme';
 
 interface MascotChatModalProps {
@@ -55,9 +64,13 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<any>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<any>(null);
   const isShiftRef = useRef(false);
   const justSentRef = useRef(false);
+  const isSendingRef = useRef(false);
+  const lastTokenRef = useRef<string | null | undefined>(undefined);
+  const sessionEpochRef = useRef(0);
+  const justSentTimerRef = useRef<any>(null);
 
   const clearInput = () => {
     setInputText('');
@@ -93,28 +106,65 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     return 'Xin chào bạn! Mình là Gấu VIF khỏe khoắn 🐻, người bạn đồng hành của bạn tại VisionFit. Hôm nay bạn muốn mình hỗ trợ về lịch tập hay dinh dưỡng nào?';
   };
 
+  const createWelcomeMessage = (species: MascotSpecies): ChatMessage => ({
+    id: 'welcome',
+    sender: 'assistant',
+    text: getWelcomeText(species),
+    time: 'Vừa xong',
+  });
+
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'assistant',
-      text: getWelcomeText(currentSpecies),
-      time: 'Vừa xong',
-    },
+    createWelcomeMessage(currentSpecies),
   ]);
 
-  // Cập nhật câu chào khi đổi linh vật
+  // Nếu người dùng đăng xuất / đăng nhập / chuyển sang tài khoản khác, tự động xóa lịch sử chat và cache ngữ cảnh cũ
+  useEffect(() => {
+    if (!visible) return;
+    let isMounted = true;
+    AsyncStorage.getItem('token')
+      .then((token) => {
+        if (!isMounted) return;
+        if (lastTokenRef.current !== undefined && lastTokenRef.current !== token) {
+          sessionEpochRef.current += 1;
+          clearAssistantCache();
+          setMessages([createWelcomeMessage(currentSpecies)]);
+        }
+        lastTokenRef.current = token;
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [visible, currentSpecies]);
+
+  useEffect(() => {
+    return () => {
+      if (justSentTimerRef.current) {
+        clearTimeout(justSentTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Xử lý nút Back vật lý trên Android: đóng khung chat thay vì thoát/lùi màn hình bên dưới
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (selectorVisible) {
+        setSelectorVisible(false);
+        return true;
+      }
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, selectorVisible, onClose]);
+
+  // Cập nhật câu chào khi đổi linh vật (nếu chưa có tin nhắn người dùng)
   useEffect(() => {
     setMessages((prev) => {
       const hasUserMsg = prev.some((m) => m.sender === 'user');
       if (!hasUserMsg) {
-        return [
-          {
-            id: 'welcome',
-            sender: 'assistant',
-            text: getWelcomeText(currentSpecies),
-            time: 'Vừa xong',
-          },
-        ];
+        return [createWelcomeMessage(currentSpecies)];
       }
       return prev;
     });
@@ -130,20 +180,21 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
     if (key === 'Enter') {
       if (!isShift) {
-        // Nhấn Enter thuần túy: Gửi tin nhắn ngay
         const query = inputText.trim();
-        if (query && !isTyping) {
+        if (query && !isSendingRef.current) {
           justSentRef.current = true;
+          if (justSentTimerRef.current) clearTimeout(justSentTimerRef.current);
+          justSentTimerRef.current = setTimeout(() => {
+            justSentRef.current = false;
+          }, 80);
           clearInput();
           handleSend(query);
         }
       }
-      // Nhấn Shift + Enter: Xuống hàng tự nhiên
     }
   };
 
   const handleInputChange = (text: string) => {
-    // Nếu vừa gửi qua Enter, chặn native event append \n sau đó
     if (justSentRef.current) {
       justSentRef.current = false;
       clearInput();
@@ -154,11 +205,10 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       text.length === inputText.length + 1 &&
       (text.endsWith('\n') || text.endsWith('\r\n'));
 
-    // Nếu người dùng nhấn Enter không kèm Shift (từ bàn phím ảo hoặc bàn phím cứng)
     if (!isShiftRef.current && isSingleNewlineAdded) {
       const trimmed = text.replace(/[\r\n]+$/, '').trim();
       clearInput();
-      if (trimmed && !isTyping) {
+      if (trimmed && !isSendingRef.current) {
         handleSend(trimmed);
       }
       return;
@@ -174,47 +224,30 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   };
 
   const handleSend = async (customQuery?: string) => {
-    const textToSend = customQuery || inputText.trim();
-    if (!textToSend || isTyping) return;
+    const textToSend = (customQuery ?? inputText).trim();
+    if (!textToSend || isSendingRef.current || isTyping) return;
 
-    // Luôn luôn dọn dẹp sạch ô nhập liệu trên mọi nền tảng
+    isSendingRef.current = true;
     clearInput();
 
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
       text: textToSend,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: nowTime,
     };
 
+    const requestEpoch = sessionEpochRef.current;
+    const historyPayload = messages
+      .filter((m) => m.id !== 'welcome')
+      .slice(-8)
+      .map((m) => ({
+        sender: m.sender,
+        text: m.text,
+      }));
+
     setMessages((prev) => [...prev, userMsg]);
-<<<<<<< HEAD
-    if (!customQuery) setInputText('');
-
-    // Kiểm tra ý định tập luyện -> tự động chuyển trang Kế hoạch tập
-    const isWorkoutIntent = /tập luyện|muốn tập|bắt đầu tập|vào tập|kế hoạch tập|tập ngay|đi tập|luyện tập|^tập$/i.test(textToSend.trim().toLowerCase());
-    if (isWorkoutIntent) {
-      triggerWorkoutStart();
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'assistant',
-        text: currentSpecies === 'cat'
-          ? 'Meo meo! Tuyệt vời quá! Hãy cùng khởi động và bắt đầu buổi tập nào 🐱💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!'
-          : 'Tuyệt vời! Khởi động kỹ và bùng nổ năng lượng buổi tập hôm nay nào 🐻💪. Mình đang chuyển bạn tới trang Kế hoạch tập luyện nhé!',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-
-      setTimeout(() => {
-        navigateToWorkoutPlan();
-        onClose();
-      }, 700);
-      return;
-    }
-=======
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
-
     setIsTyping(true);
     triggerMascotState('thinking');
 
@@ -223,15 +256,47 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     }, 100);
 
     try {
-      const reply = await getAIResponse(textToSend, currentSpecies);
+      const res = await getAIResponse(textToSend, currentSpecies, historyPayload);
+      // Bỏ qua phản hồi cũ nếu người dùng đã đăng xuất / đổi tài khoản trong lúc chờ API
+      if (sessionEpochRef.current !== requestEpoch) return;
+
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'assistant',
-        text: reply,
+        text: res.answer,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        intent: res.intent,
+        action: res.action || null,
       };
       setMessages((prev) => [...prev, aiMsg]);
-      triggerMascotState('speaking', 4000);
+
+      // Biểu cảm linh vật theo ngữ cảnh phân tích từ AI
+      const emotion = res.emotion || 'explaining';
+      if (emotion === 'encouraging' || emotion === 'celebrating') {
+        triggerMascotState('celebrating', 4500);
+      } else if (emotion === 'caring' || emotion === 'apologetic') {
+        triggerMascotState('error', 3500);
+      } else {
+        triggerMascotState('speaking', 4000);
+      }
+
+      // Nhắc nhở uống nước: Bật / tắt thật sự timer trong FloatingMascotWidget
+      if (res.action?.type === 'SET_WATER_REMINDER') {
+        const isEnabled =
+          res.action.params?.enabled !== false &&
+          (res.action as any).enabled !== false;
+        const intervalHours =
+          Number(res.action.params?.interval_hours || (res.action as any).interval_hours) || 2;
+
+        triggerWaterReminderSetting(isEnabled, intervalHours);
+        notify({
+          type: isEnabled ? 'success' : 'info',
+          message: isEnabled
+            ? `💧 Đã bật nhắc uống nước mỗi ${intervalHours} tiếng một lần!`
+            : '🔕 Đã tắt tính năng nhắc uống nước.',
+        });
+        triggerMascotState('speaking', 3500);
+      }
     } catch (e) {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -242,6 +307,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       setMessages((prev) => [...prev, errorMsg]);
       triggerMascotState('error', 3500);
     } finally {
+      isSendingRef.current = false;
       setIsTyping(false);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -251,14 +317,75 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
   const headerMascotImg = getMascotImage(currentSpecies, currentStage);
 
+  // Render đoạn text hỗ trợ in đậm **bold** và in nghiêng *italic* nội tuyến
+  const renderInlineBoldText = (text: string, baseStyle: any) => {
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g);
+    return (
+      <Text style={baseStyle}>
+        {parts.map((part, idx) => {
+          if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+            return (
+              <Text key={idx} style={{ fontWeight: '700', color: COLORS.textDark }}>
+                {part.slice(2, -2)}
+              </Text>
+            );
+          }
+          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+            return (
+              <Text key={idx} style={{ fontStyle: 'italic' }}>
+                {part.slice(1, -1)}
+              </Text>
+            );
+          }
+          return <React.Fragment key={idx}>{part}</React.Fragment>;
+        })}
+      </Text>
+    );
+  };
+
+  // Tính độ rộng đồng nhất cho từng cột của bảng Markdown để mọi dòng thẳng tắp với tiêu đề
+  const computeColumnWidths = (headers: string[], rows: string[][]): number[] => {
+    const colCount = headers.length;
+    const widths = Array.from({ length: colCount }, (_, colIdx) => {
+      const headerLen = (headers[colIdx] || '').length;
+      const maxCellLen = rows.reduce((max, row) => {
+        const clean = (row[colIdx] || '').replace(/\*\*/g, '');
+        return Math.max(max, clean.length);
+      }, 0);
+      const longest = Math.max(headerLen, maxCellLen);
+
+      const headerLower = (headers[colIdx] || '').toLowerCase();
+      if (colIdx === 0 && (headerLower === 'stt' || headerLower === '#')) {
+        return 44;
+      }
+      if (colIdx === 0 && (headerLower.includes('bữa') || headerLower === 'bua')) {
+        return Math.max(68, Math.min(88, longest * 7.5 + 22));
+      }
+      if (headerLower === 'pt' || headerLower === 'giờ') {
+        return Math.max(66, Math.min(92, longest * 7.2 + 20));
+      }
+      // Ước lượng hợp lý theo độ dài ký tự, giữ gọn gàng trên màn hình mobile
+      const estimated = Math.round(longest * 6.8 + 20);
+      const minW = colIdx === 0 ? 72 : 68;
+      const maxW = colCount <= 3 ? 148 : 145;
+      return Math.max(minW, Math.min(maxW, estimated));
+    });
+
+    // Nếu bảng ít cột (2 cột) hẹp hơn 240px -> phóng tỷ lệ nhẹ để vừa vặn khung, không dư khoảng trắng
+    const sum = widths.reduce((a, b) => a + b, 0);
+    if (sum > 0 && sum < 240) {
+      const ratio = 240 / sum;
+      return widths.map((w) => Math.round(w * ratio));
+    }
+    return widths;
+  };
+
   const renderFormattedAiMessage = (rawText: string) => {
     if (!rawText) return null;
     const lines = rawText.split('\n');
     const elements: React.ReactNode[] = [];
     let i = 0;
 
-<<<<<<< HEAD
-=======
     const isPipeRow = (l: string) => {
       const t = l.trim();
       return t.includes('|') && (t.startsWith('|') || t.endsWith('|') || t.split('|').length >= 3);
@@ -268,63 +395,19 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       return t.includes('|') && /^\|?[\s:\-+|]+\|?$/.test(t) && t.includes('-');
     };
 
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
     while (i < lines.length) {
       const line = lines[i];
       const trimmed = line.trim();
 
-<<<<<<< HEAD
       // Kiểm tra Bảng Markdown
-      const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2;
-      const isNextSep = (i + 1 < lines.length) && /^\|[\s:\-+|]+\|$/.test(lines[i + 1].trim());
-
-      if (isTableRow && isNextSep) {
-        const headers = trimmed.slice(1, -1).split('|').map((c) => c.trim().replace(/\*\*/g, ''));
-        i += 2; // Bỏ qua header và separator
-        const rows: string[][] = [];
-        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
-          const cells = lines[i].trim().slice(1, -1).split('|').map((c) => c.trim());
-          rows.push(cells);
-          i++;
-        }
-
-        elements.push(
-          <View key={`tbl-${i}`} style={styles.tableWrapper}>
-            <ScrollView
-              horizontal
-              nestedScrollEnabled
-              showsHorizontalScrollIndicator={true}
-              contentContainerStyle={styles.tableScrollContent}
-            >
-              <View style={styles.tableBox}>
-                <View style={styles.tableHeaderRow}>
-                  {headers.map((h, hIdx) => (
-                    <View key={`th-${hIdx}`} style={[styles.tableThCell, hIdx === 0 && styles.tableColFirst]}>
-                      <Text style={styles.tableThText} numberOfLines={2}>{h}</Text>
-                    </View>
-                  ))}
-                </View>
-                {rows.map((row, rIdx) => (
-                  <View key={`tr-${rIdx}`} style={[styles.tableTrRow, rIdx % 2 === 1 && styles.tableTrEven]}>
-                    {row.map((cell, cIdx) => (
-                      <View key={`td-${cIdx}`} style={[styles.tableTdCell, cIdx === 0 && styles.tableColFirst]}>
-                        <Text style={styles.tableTdText}>{cell.replace(/\*\*/g, '')}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        );
-        continue;
-=======
-      // Kiểm tra Bảng Markdown đàn hồi (không kẹt khi có dòng trống hoặc dấu pipe thiếu)
       if (isPipeRow(trimmed)) {
         let sepIdx = -1;
         for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
           if (!lines[j].trim()) continue;
-          if (isSepRow(lines[j].trim())) { sepIdx = j; break; }
+          if (isSepRow(lines[j].trim())) {
+            sepIdx = j;
+            break;
+          }
           break;
         }
 
@@ -337,17 +420,25 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
           const rows: string[][] = [];
           while (i < lines.length) {
             const rowTrim = lines[i].trim();
-            if (!rowTrim) { i++; continue; }
+            if (!rowTrim) {
+              i++;
+              continue;
+            }
             if (isPipeRow(rowTrim) && !isSepRow(rowTrim)) {
               const rawRow = rowTrim.startsWith('|') ? rowTrim.slice(1) : rowTrim;
               const cleanRow = rawRow.endsWith('|') ? rawRow.slice(0, -1) : rawRow;
-              const cells = cleanRow.split('|').map((c) => c.trim());
-              rows.push(cells);
+              const rawCells = cleanRow.split('|').map((c) => c.trim());
+              // Chuẩn hóa số cột của từng dòng khớp chính xác với headers
+              const normalizedCells = Array.from({ length: headers.length }, (_, idx) => rawCells[idx] ?? '—');
+              rows.push(normalizedCells);
               i++;
             } else {
               break;
             }
           }
+
+          const colWidths = computeColumnWidths(headers, rows);
+          const totalWidth = colWidths.reduce((sum, w) => sum + w, 0);
 
           elements.push(
             <View key={`tbl-${i}`} style={styles.tableWrapper}>
@@ -357,21 +448,56 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                 showsHorizontalScrollIndicator={true}
                 contentContainerStyle={styles.tableScrollContent}
               >
-                <View style={styles.tableBox}>
+                <View style={[styles.tableBox, { width: totalWidth }]}>
                   <View style={styles.tableHeaderRow}>
                     {headers.map((h, hIdx) => (
-                      <View key={`th-${hIdx}`} style={[styles.tableThCell, hIdx === 0 && styles.tableColFirst]}>
-                        <Text style={styles.tableThText} numberOfLines={2}>{h}</Text>
+                      <View
+                        key={`th-${hIdx}`}
+                        style={[
+                          styles.tableThCell,
+                          { width: colWidths[hIdx] },
+                          hIdx === headers.length - 1 && styles.tableLastCol,
+                        ]}
+                      >
+                        <Text style={styles.tableThText} numberOfLines={2}>
+                          {h}
+                        </Text>
                       </View>
                     ))}
                   </View>
                   {rows.map((row, rIdx) => (
-                    <View key={`tr-${rIdx}`} style={[styles.tableTrRow, rIdx % 2 === 1 && styles.tableTrEven]}>
-                      {row.map((cell, cIdx) => (
-                        <View key={`td-${cIdx}`} style={[styles.tableTdCell, cIdx === 0 && styles.tableColFirst]}>
-                          <Text style={styles.tableTdText}>{cell.replace(/\*\*/g, '')}</Text>
-                        </View>
-                      ))}
+                    <View
+                      key={`tr-${rIdx}`}
+                      style={[
+                        styles.tableTrRow,
+                        rIdx % 2 === 1 && styles.tableTrEven,
+                        rIdx === rows.length - 1 && styles.tableLastRow,
+                      ]}
+                    >
+                      {row.map((cell, cIdx) => {
+                        const cleanCell = cell.replace(/\*\*/g, '');
+                        const isNumericCell = /^(\d+([.,]\d+)?\s*(kcal|g|kg|cm|buổi|hiệp|reps)?|—)$/i.test(cleanCell);
+                        return (
+                          <View
+                            key={`td-${cIdx}`}
+                            style={[
+                              styles.tableTdCell,
+                              { width: colWidths[cIdx] },
+                              cIdx === headers.length - 1 && styles.tableLastCol,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.tableTdText,
+                                cIdx === 0 && styles.tableTdFirstText,
+                                isNumericCell && styles.tableTdNumText,
+                              ]}
+                            >
+                              {cleanCell}
+                            </Text>
+                          </View>
+                        );
+                      })}
                     </View>
                   ))}
                 </View>
@@ -380,7 +506,6 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
           );
           continue;
         }
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
       }
 
       // 1. Phân cách ngang: '---', '***'
@@ -390,7 +515,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         continue;
       }
 
-      // 2. Tiêu đề Markdown: '# ', '## ', '### ', v.v. -> Tự động chuyển dấu ### thành -
+      // 2. Tiêu đề Markdown: '# ', '## ', '### '
       const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
       if (headingMatch) {
         const cleanText = headingMatch[2].replace(/\*\*/g, '');
@@ -414,15 +539,33 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         continue;
       }
 
-      // 4. Dòng thông thường
-      const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1');
+      // 3.5. Hình ảnh Markdown: ![alt](url)
+      const imgMatch = trimmed.match(/^!\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (imgMatch) {
+        const altText = imgMatch[1];
+        const imgUrl = imgMatch[2];
+        elements.push(
+          <View key={`img-${i}`} style={styles.imageWrapper}>
+            <Image
+              source={{ uri: imgUrl }}
+              style={styles.chatInlineImage}
+              resizeMode="cover"
+            />
+            {altText ? <Text style={styles.chatImageCaption}>{altText}</Text> : null}
+          </View>
+        );
+        i++;
+        continue;
+      }
+
+      // 4. Dòng thông thường (hỗ trợ **in đậm** inline)
       if (!trimmed) {
         elements.push(<View key={`sp-${i}`} style={{ height: 4 }} />);
       } else {
         elements.push(
-          <Text key={`txt-${i}`} style={[styles.bubbleText, styles.bubbleTextAi]}>
-            {cleanLine}
-          </Text>
+          <View key={`txt-${i}`}>
+            {renderInlineBoldText(line, [styles.bubbleText, styles.bubbleTextAi])}
+          </View>
         );
       }
       i++;
@@ -438,207 +581,246 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       <View style={styles.modalContainer}>
         {/* HEADER CHATBOX */}
         <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <View style={styles.mascotAvatarBox}>
-                  <MascotVectorRig
-                    species={currentSpecies}
-                    stage={currentStage}
-                    state={isTyping ? 'thinking' : 'speaking'}
-                    width={46}
-                    height={54}
-                  />
-                  <View style={styles.onlineDot} />
-                </View>
-                <View>
-                  <Text style={styles.headerTitle}>
-                    {currentSpecies === 'bear' ? 'Gấu VIF Assistant' : 'Mèo VIF Assistant'}
-                  </Text>
-                  <Text style={styles.headerSubtitle}>
-                    {currentStage === 'champion' ? 'Cấp 4 (Quán quân 🏆)' : currentStage === 'strong' ? 'Cấp 3 (Mạnh mẽ 💪)' : currentStage === 'active' ? 'Cấp 2 (Năng động ⚡)' : 'Cấp 1 (Khởi đầu 🌱)'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* ACTION BUTTONS: NÚT XEM CẤP ĐỘ & NÚT ĐÓNG */}
-              <View style={styles.headerActions}>
-                {/* NÚT HÌNH CON GẤU ĐỂ ĐỔI LINH VẬT & XEM CẤP ĐỘ */}
-                <TouchableOpacity
-                  style={styles.bearBtn}
-                  onPress={() => setSelectorVisible(true)}
-                  activeOpacity={0.8}
-                  accessibilityLabel="Chọn linh vật và xem 4 cấp độ"
-                >
-                  <Image
-                    source={currentSpecies === 'cat' ? require('../../assets/mascot/cat_starter.png') : require('../../assets/mascot/bear_starter.png')}
-                    style={styles.bearBtnImg}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.bearBtnText}>Đổi Mascot</Text>
-                </TouchableOpacity>
-
-                {/* NÚT ĐÓNG */}
-                <TouchableOpacity
-                  style={styles.closeBtn}
-                  onPress={onClose}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="close" size={20} color={COLORS.textDark} />
-                </TouchableOpacity>
-              </View>
+          <View style={styles.headerLeft}>
+            <View style={styles.mascotAvatarBox}>
+              <MascotVectorRig
+                species={currentSpecies}
+                stage={currentStage}
+                state={isTyping ? 'thinking' : 'speaking'}
+                width={46}
+                height={54}
+              />
+              <View style={styles.onlineDot} />
             </View>
+            <View>
+              <Text style={styles.headerTitle}>
+                {currentSpecies === 'bear' ? 'Gấu VIF Assistant' : 'Mèo VIF Assistant'}
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                {currentStage === 'champion'
+                  ? 'Cấp 4 (Quán quân 🏆)'
+                  : currentStage === 'strong'
+                  ? 'Cấp 3 (Mạnh mẽ 💪)'
+                  : currentStage === 'active'
+                  ? 'Cấp 2 (Năng động ⚡)'
+                  : 'Cấp 1 (Khởi đầu 🌱)'}
+              </Text>
+            </View>
+          </View>
 
-            {/* DANH SÁCH TIN NHẮN */}
-            <ScrollView
-              ref={scrollViewRef}
-              style={styles.messagesContainer}
-              contentContainerStyle={styles.messagesContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.bearBtn}
+              onPress={() => setSelectorVisible(true)}
+              activeOpacity={0.8}
+              accessibilityLabel="Chọn linh vật và xem 4 cấp độ"
             >
-              {messages.map((msg) => {
-                const isUser = msg.sender === 'user';
-                return (
-                  <View
-                    key={msg.id}
-                    style={[
-                      styles.messageRow,
-                      isUser ? styles.messageRowUser : styles.messageRowAi,
-                    ]}
-                  >
-                    {!isUser && (
-                      <Image
-                        source={headerMascotImg}
-                        style={styles.smallAvatar}
-                        resizeMode="contain"
-                      />
-                    )}
-                    <View
-                      style={[
-                        styles.bubble,
-                        isUser ? styles.bubbleUser : styles.bubbleAi,
-                      ]}
-                    >
-                      {isUser ? (
-                        <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
-                          {msg.text}
-                        </Text>
-                      ) : (
-<<<<<<< HEAD
-                        renderFormattedAiMessage(msg.text)
-=======
-                        <>
-                          {renderFormattedAiMessage(msg.text)}
-                          {(msg.text.includes('kế hoạch tập') || msg.text.includes('Kế hoạch tập') || msg.text.includes('bài tập')) && msg.id !== 'welcome' && (
-                            <TouchableOpacity
-                              style={styles.workoutActionBtn}
-                              onPress={() => {
-                                triggerWorkoutStart();
-                                navigateToWorkoutPlan();
-                                onClose();
-                              }}
-                              activeOpacity={0.8}
-                            >
-                              <Text style={styles.workoutActionBtnText}>🏋️ Mở Kế hoạch tập ngay ➔</Text>
-                            </TouchableOpacity>
-                          )}
-                        </>
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
-                      )}
-                      <Text
-                        style={[
-                          styles.msgTime,
-                          isUser ? styles.msgTimeUser : styles.msgTimeAi,
-                        ]}
-                      >
-                        {msg.time}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
+              <Image
+                source={
+                  currentSpecies === 'cat'
+                    ? require('../../assets/mascot/cat_starter.png')
+                    : require('../../assets/mascot/bear_starter.png')
+                }
+                style={styles.bearBtnImg}
+                resizeMode="contain"
+              />
+              <Text style={styles.bearBtnText}>Đổi Mascot</Text>
+            </TouchableOpacity>
 
-              {/* HIỆU ỨNG ĐANG SUY NGHĨ */}
-              {isTyping && (
-                <View style={[styles.messageRow, styles.messageRowAi]}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color={COLORS.textDark} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* DANH SÁCH TIN NHẮN */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {messages.map((msg) => {
+            const isUser = msg.sender === 'user';
+            const actionType = !isUser && msg.id !== 'welcome' ? msg.action?.type : null;
+
+            const actionButtonConfig =
+              actionType === 'NAVIGATE_REGISTER_PROGRAM'
+                ? {
+                    label: '📋 Đăng ký chương trình tập ➔',
+                    onPress: () => {
+                      navigateToRegisterProgram();
+                      onClose();
+                    },
+                  }
+                : actionType === 'NAVIGATE_BODY_METRICS'
+                ? {
+                    label: '📊 Cập nhật chỉ số cơ thể ➔',
+                    onPress: () => {
+                      navigateToBodyMetrics();
+                      onClose();
+                    },
+                  }
+                : actionType === 'NAVIGATE_REGISTER_PACKAGE'
+                ? {
+                    label: '🎟 Đăng ký gói tập ngay ➔',
+                    onPress: () => {
+                      navigateToRegisterPackage();
+                      onClose();
+                    },
+                  }
+                : actionType === 'NAVIGATE_WORKOUT'
+                ? {
+                    label: '🏋️ Mở Kế hoạch tập ngay ➔',
+                    onPress: () => {
+                      triggerWorkoutStart();
+                      navigateToWorkoutPlan();
+                      onClose();
+                    },
+                  }
+                : null;
+
+            return (
+              <View
+                key={msg.id}
+                style={[
+                  styles.messageRow,
+                  isUser ? styles.messageRowUser : styles.messageRowAi,
+                ]}
+              >
+                {!isUser && (
                   <Image
                     source={headerMascotImg}
                     style={styles.smallAvatar}
                     resizeMode="contain"
                   />
-                  <View style={[styles.bubble, styles.bubbleAi, styles.typingBubble]}>
-                    <ActivityIndicator size="small" color={COLORS.primary} />
-                    <Text style={styles.typingText}>VIF đang suy nghĩ...</Text>
-                  </View>
-                </View>
-              )}
-            </ScrollView>
-
-            {/* GỢI Ý CÂU HỎI NHANH */}
-            <View style={styles.suggestionsContainer}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.suggestionsScroll}
-              >
-                {QUICK_SUGGESTIONS.map((s, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.suggestPill}
-                    onPress={() => handleSend(s.query)}
-                    activeOpacity={0.7}
+                )}
+                <View
+                  style={[
+                    styles.bubble,
+                    isUser ? styles.bubbleUser : styles.bubbleAi,
+                  ]}
+                >
+                  {isUser ? (
+                    <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
+                      {msg.text}
+                    </Text>
+                  ) : (
+                    <>
+                      {renderFormattedAiMessage(msg.text)}
+                      {actionButtonConfig && (
+                        <TouchableOpacity
+                          style={styles.workoutActionBtn}
+                          onPress={actionButtonConfig.onPress}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={styles.workoutActionBtnText}>
+                            {actionButtonConfig.label}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                  <Text
+                    style={[
+                      styles.msgTime,
+                      isUser ? styles.msgTimeUser : styles.msgTimeAi,
+                    ]}
                   >
-                    <Text style={styles.suggestPillText}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+                    {msg.time}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
 
-            {/* KHUNG NHẬP CÂU HỎI */}
-            <View style={styles.composerContainer}>
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                placeholder="Hỏi VIF điều bạn đang quan tâm..."
-                placeholderTextColor={COLORS.textMuted}
-                value={inputText}
-                onChangeText={handleInputChange}
-                onKeyPress={handleKeyPress}
-                blurOnSubmit={false}
-                multiline
-                maxLength={500}
-                returnKeyType="send"
-                onFocus={() => {
-                  setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                  }, 120);
-                }}
-                onSubmitEditing={() => handleSend()}
+          {isTyping && (
+            <View style={[styles.messageRow, styles.messageRowAi]}>
+              <Image
+                source={headerMascotImg}
+                style={styles.smallAvatar}
+                resizeMode="contain"
               />
-              <TouchableOpacity
-                style={[
-                  styles.sendBtn,
-                  !inputText.trim() && styles.sendBtnDisabled,
-                ]}
-                onPress={() => handleSend()}
-                disabled={!inputText.trim() || isTyping}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
+              <View style={[styles.bubble, styles.bubbleAi, styles.typingBubble]}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.typingText}>VIF đang suy nghĩ...</Text>
+              </View>
             </View>
+          )}
+        </ScrollView>
+
+        {/* GỢI Ý CÂU HỎI NHANH */}
+        <View style={styles.suggestionsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.suggestionsScroll}
+          >
+            {QUICK_SUGGESTIONS.map((s, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={styles.suggestPill}
+                onPress={() => handleSend(s.query)}
+                disabled={isTyping}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.suggestPillText}>{s.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
-        {/* MODAL CHỌN LINH VẬT GẤU HOẶC MÈO & 4 CẤP ĐỘ */}
-        <MascotSelectorModal
-          visible={selectorVisible}
-          currentSpecies={currentSpecies}
-          onClose={() => setSelectorVisible(false)}
-          onSelect={(newSpecies) => {
-            onSpeciesChange(newSpecies);
-          }}
-          onStageChange={onStageChange}
-        />
+        {/* KHUNG NHẬP CÂU HỎI */}
+        <View style={styles.composerContainer}>
+          <TextInput
+            ref={inputRef}
+            style={styles.input}
+            placeholder="Hỏi VIF điều bạn đang quan tâm..."
+            placeholderTextColor={COLORS.textMuted}
+            value={inputText}
+            onChangeText={handleInputChange}
+            onKeyPress={handleKeyPress}
+            blurOnSubmit={false}
+            multiline
+            maxLength={500}
+            returnKeyType="send"
+            onFocus={() => {
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 120);
+            }}
+            onSubmitEditing={() => handleSend()}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendBtn,
+              (!inputText.trim() || isTyping) && styles.sendBtnDisabled,
+            ]}
+            onPress={() => handleSend()}
+            disabled={!inputText.trim() || isTyping}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* MODAL CHỌN LINH VẬT GẤU HOẶC MÈO & 4 CẤP ĐỘ */}
+      <MascotSelectorModal
+        visible={selectorVisible}
+        currentSpecies={currentSpecies}
+        onClose={() => setSelectorVisible(false)}
+        onSelect={(newSpecies) => {
+          onSpeciesChange(newSpecies);
+        }}
+        onStageChange={onStageChange}
+      />
+    </View>
   );
 };
 
@@ -772,7 +954,7 @@ const styles = StyleSheet.create({
     height: 36,
   },
   bubble: {
-    maxWidth: '82%',
+    maxWidth: '84%',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,
@@ -888,10 +1070,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tableScrollContent: {
-    paddingRight: 8,
+    flexGrow: 1,
   },
   tableBox: {
-    minWidth: '100%',
+    alignSelf: 'flex-start',
   },
   tableHeaderRow: {
     flexDirection: 'row',
@@ -900,9 +1082,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#0E6642',
   },
   tableThCell: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 8,
-    minWidth: 80,
     justifyContent: 'center',
     alignItems: 'center',
     borderRightWidth: 0.5,
@@ -923,10 +1104,15 @@ const styles = StyleSheet.create({
   tableTrEven: {
     backgroundColor: '#F8FCFA',
   },
+  tableLastRow: {
+    borderBottomWidth: 0,
+  },
+  tableLastCol: {
+    borderRightWidth: 0,
+  },
   tableTdCell: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 7,
-    minWidth: 80,
     justifyContent: 'center',
     borderRightWidth: 0.5,
     borderRightColor: '#EDF3F1',
@@ -936,12 +1122,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  tableColFirst: {
-    minWidth: 42,
-    maxWidth: 52,
+  tableTdFirstText: {
+    fontWeight: '600',
+    color: COLORS.primary,
   },
-<<<<<<< HEAD
-=======
+  tableTdNumText: {
+    textAlign: 'center',
+    fontWeight: '600',
+  },
   workoutActionBtn: {
     marginTop: 8,
     backgroundColor: COLORS.primary,
@@ -957,7 +1145,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
   input: {
     flex: 1,
     backgroundColor: '#F4F8F9',
@@ -983,6 +1170,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#B5CCD2',
     elevation: 0,
     shadowOpacity: 0,
+  },
+  imageWrapper: {
+    marginVertical: 8,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    width: '100%',
+  },
+  chatInlineImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 14,
+  },
+  chatImageCaption: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
 

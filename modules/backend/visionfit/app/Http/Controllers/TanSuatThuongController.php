@@ -29,7 +29,7 @@ class TanSuatThuongController extends Controller
             ->join('buoi_tap as bt', 'lt.id', '=', 'bt.id_lich_tap')
             ->where('lt.id_dang_ky_chuong_trinh', $idDangKy)
             ->where('bt.id_hoi_vien', $idHoiVien)
-            ->where('bt.tinh_trang', 3)
+            ->whereIn('bt.tinh_trang', [2, 3])
             ->whereNotNull('bt.thoi_gian_ket_thuc')
             ->selectRaw('DATE(bt.thoi_gian_ket_thuc) as ngay_tap')
             ->distinct()
@@ -235,7 +235,7 @@ class TanSuatThuongController extends Controller
             ->join('buoi_tap as bt', 'lt.id', '=', 'bt.id_lich_tap')
             ->where('lt.id_dang_ky_chuong_trinh', $idDangKy)
             ->where('bt.id_hoi_vien', $idHoiVien)
-            ->where('bt.tinh_trang', 3)
+            ->whereIn('bt.tinh_trang', [2, 3])
             ->whereNotNull('bt.thoi_gian_ket_thuc')
             ->whereBetween('bt.thoi_gian_ket_thuc', [
                 $batDauTuan,

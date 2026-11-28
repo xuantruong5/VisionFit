@@ -73,10 +73,10 @@ class ChuongTrinhBaiTapController extends Controller
         // 6. Kiểm tra số buổi đã bỏ qua
         $soBuoiDaBoQua = DangKyChuongTrinhBaiTap::where( 'id_dang_ky_chuong_trinh', $dangKy->id)->where('cho_phep_bo_qua', 1)->count();
         // Chỉ được bỏ qua tối đa 3 buổi
-        if ($soBuoiDaBoQua >= 2) {
+        if ($soBuoiDaBoQua >= 3) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn chỉ được phép bỏ qua tối đa 2 buổi tập trong chương trình.',
+                'message' => 'Bạn chỉ được phép bỏ qua tối đa 3 buổi tập trong chương trình.',
                 'so_buoi_da_bo_qua' => $soBuoiDaBoQua,
             ], 400);
         }

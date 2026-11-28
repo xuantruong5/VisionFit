@@ -82,7 +82,8 @@ function formatSafeHTML(text) {
             i++;
             const rawRow = nextTrim.startsWith('|') ? nextTrim.slice(1) : nextTrim;
             const cleanRow = rawRow.endsWith('|') ? rawRow.slice(0, -1) : rawRow;
-            const rowCells = cleanRow.split('|').map(c => c.trim());
+            const rawCells = cleanRow.split('|').map(c => c.trim());
+            const rowCells = Array.from({ length: headers.length }, (_, idx) => rawCells[idx] ?? '—');
             parts.push('<tr>');
             rowCells.forEach(cell => parts.push(`<td>${formatInline(cell)}</td>`));
             parts.push('</tr>');
@@ -93,21 +94,6 @@ function formatSafeHTML(text) {
         parts.push('</tbody></table></div>');
         continue;
       }
-    }
-    if (/^[-*_]{3,}$/.test(trimmed)) {
-      if (inUl) { parts.push('</ul>'); inUl = false; }
-      if (inOl) { parts.push('</ol>'); inOl = false; }
-      parts.push('<hr class="vif-divider" />');
-      continue;
-    }
-    const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
-    if (headingMatch) {
-      if (inUl) { parts.push('</ul>'); inUl = false; }
-      if (inOl) { parts.push('</ol>'); inOl = false; }
-      const level = headingMatch[1].length;
-      const content = formatInline(headingMatch[2]);
-      parts.push(`<div class="vif-heading vif-h${level}">- ${content}</div>`);
-      continue;
     }
     if (/^[-*_]{3,}$/.test(trimmed)) {
       if (inUl) { parts.push('</ul>'); inUl = false; }
@@ -267,7 +253,14 @@ async function send(message) {
     const r = await api('/api/chat', { method: 'POST', body: JSON.stringify({ message: question }) });
     if (generation !== state.generation) return;
     renderMessages(r.messages);
-  } catch(e) { if (generation === state.generation) { $('chat-error').textContent = e.message; } }
+  } catch(e) {
+    if (generation === state.generation) {
+      userRow.remove();
+      $('message').value = question;
+      $('char-count').textContent = `${question.length} / 2000`;
+      $('chat-error').textContent = e.message;
+    }
+  }
   finally { if (generation === state.generation) { state.busy = false; $('typing').hidden = true; $('typing').style.display = 'none'; updateBusy(); $('message').focus(); } }
 }
 window.addEventListener('vif:session-expired', () => { if (state.user) showLogin('Phiên đã hết hạn. Vui lòng đăng nhập lại.'); });

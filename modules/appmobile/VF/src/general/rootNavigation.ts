@@ -17,16 +17,13 @@ export function navigate(name: string, params?: any) {
 }
 
 /**
- * Tự động chuyển người dùng tới màn hình "Kế hoạch tập luyện"
- * Nhảy trực tiếp vào màn hình Kế hoạch tập (headerPage với tab Kế hoạch tập hoặc WorkoutPlanScreen)
+ * Chuyển tới màn hình "Kế hoạch tập luyện" (dành cho hội viên ĐÃ đăng ký chương trình tập)
  */
 export function navigateToWorkoutPlan() {
-  // Phát tín hiệu chuyển trực tiếp sang tab 'Kế hoạch tập' nếu headerPage đang hiển thị
   DeviceEventEmitter.emit('SWITCH_TO_WORKOUT_PLAN');
 
   if (navigationRef.isReady()) {
     try {
-      // 1. Chuyển vào MemberTabs -> Kế Hoạch Tập -> headerPage với tab 'Kế hoạch tập'
       (navigationRef as any).navigate('MemberTabs', {
         screen: 'Kế Hoạch Tập',
         params: {
@@ -36,22 +33,68 @@ export function navigateToWorkoutPlan() {
       });
     } catch (_) {
       try {
-        // 2. Thử chuyển trực tiếp vào headerPage
         (navigationRef as any).navigate('headerPage', { initialTab: 'Kế hoạch tập' });
-      } catch (__) {
-        try {
-          // 3. Dự phòng mở WorkoutPlanScreen
-          (navigationRef as any).navigate('MemberTabs', {
-            screen: 'Kế Hoạch Tập',
-            params: { screen: 'WorkoutPlanScreen' },
-          });
-        } catch (___) {
-          try {
-            (navigationRef as any).navigate('WorkoutPlanScreen');
-          } catch (e) {
-            console.warn('[RootNavigation] Không tìm thấy màn hình kế hoạch tập:', e);
-          }
-        }
+      } catch (e) {
+        console.warn('[RootNavigation] Không tìm thấy màn hình kế hoạch tập:', e);
+      }
+    }
+  }
+}
+
+/**
+ * Chuyển tới màn hình ĐĂNG KÝ CHƯƠNG TRÌNH TẬP (dành cho hội viên CHƯA đăng ký chương trình)
+ */
+export function navigateToRegisterProgram() {
+  if (navigationRef.isReady()) {
+    try {
+      (navigationRef as any).navigate('MemberTabs', {
+        screen: 'Kế Hoạch Tập',
+        params: {
+          screen: 'WorkoutPlanScreen',
+        },
+      });
+    } catch (_) {
+      try {
+        (navigationRef as any).navigate('WorkoutPlanScreen');
+      } catch (e) {
+        console.warn('[RootNavigation] Không tìm thấy màn hình đăng ký chương trình:', e);
+      }
+    }
+  }
+}
+
+/**
+ * Chuyển tới màn hình CẬP NHẬT CHỈ SỐ CƠ THỂ (AiConsultationScreen)
+ */
+export function navigateToBodyMetrics() {
+  if (navigationRef.isReady()) {
+    try {
+      (navigationRef as any).navigate('AiConsultationScreen');
+    } catch (_) {
+      try {
+        (navigationRef as any).navigate('MemberTabs', {
+          screen: 'Kế Hoạch Tập',
+          params: { screen: 'AiConsultationScreen' },
+        });
+      } catch (e) {
+        console.warn('[RootNavigation] Không tìm thấy màn hình cập nhật chỉ số:', e);
+      }
+    }
+  }
+}
+
+/**
+ * Chuyển tới màn hình ĐĂNG KÝ GÓI TẬP (WorkoutSelectionScreen)
+ */
+export function navigateToRegisterPackage() {
+  if (navigationRef.isReady()) {
+    try {
+      (navigationRef as any).navigate('WorkoutSelectionScreen');
+    } catch (_) {
+      try {
+        (navigationRef as any).navigate('MyPackagesScreen');
+      } catch (e) {
+        console.warn('[RootNavigation] Không tìm thấy màn hình gói tập:', e);
       }
     }
   }

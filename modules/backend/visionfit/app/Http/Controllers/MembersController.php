@@ -11,14 +11,10 @@ use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-<<<<<<< HEAD
-
-=======
 use App\Http\Requests\Client\HoSo\StoreHoSoRequest;
 use App\Services\NutritionService;
 use App\Models\LichSuKhuyenCao;
 use App\Services\RecommendationService;
->>>>>>> 44f0c9fac518bdeb324ebfeae12fa387e01a056e
 
 class MembersController extends Controller
 {
@@ -410,7 +406,7 @@ class MembersController extends Controller
                 'email' => $hoiVien->email,
                 'so_dien_thoai' => $hoiVien->so_dien_thoai,
                 'anh_dai_dien' => $this->formatAvatar($hoiVien->anh_dai_dien),
-                'ngay_sinh' => $hoiVien->ngay_sinh,
+                'ngay_sinh' => $hoiVien->ngay_sinh? Carbon::parse($hoiVien->ngay_sinh)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y'): null,
                 'gioi_tinh' => $hoiVien->gioi_tinh,
                 'chieu_cao_cm' => $hoiVien->chieu_cao_cm,
                 'can_nang_kg' => $hoiVien->can_nang_kg,
@@ -484,6 +480,13 @@ class MembersController extends Controller
         }
         if ($request->has('can_nang_kg') && $request->can_nang_kg !== null) {
             $dataUpdate['can_nang_kg'] = $request->can_nang_kg;
+        }
+        if (
+            isset($dataUpdate['chieu_cao_cm'], $dataUpdate['can_nang_kg'])
+            && (float) $dataUpdate['chieu_cao_cm'] > 0
+            && (float) $dataUpdate['can_nang_kg'] > 0
+        ) {
+            $dataUpdate['ngay_cap_nhat_chi_so'] = now();
         }
         if ($request->has('muc_tieu_hien_tai') && $request->muc_tieu_hien_tai !== null) {
             $dataUpdate['muc_tieu_hien_tai'] = $request->muc_tieu_hien_tai;
@@ -910,20 +913,20 @@ class MembersController extends Controller
 
         // 1. Lưu hồ sơ hội viên
         $hoiVien->update([
-            'ngay_sinh' => $validated['ngay_sinh'],
-            'gioi_tinh' => $validated['gioi_tinh'],
+            'ngay_sinh' => $validated['ngay_sinh'] ?? $hoiVien->ngay_sinh ?? '2000-01-01',
+            'gioi_tinh' => $validated['gioi_tinh'] ?? $hoiVien->gioi_tinh ?? 0,
             'chieu_cao_cm' => $validated['chieu_cao_cm'],
             'can_nang_kg' => $validated['can_nang_kg'],
 
             'muc_tieu_hoat_dong' => $validated['muc_tieu_hoat_dong'],
-            'muc_tieu_hien_tai' => $validated['muc_tieu_hien_tai'],
-            'noi_tap_uu_tien' => $validated['noi_tap_uu_tien'],
+            'muc_tieu_hien_tai' => $validated['muc_tieu_hien_tai'] ?? $hoiVien->muc_tieu_hien_tai ?? 'tang_co',
+            'noi_tap_uu_tien' => $validated['noi_tap_uu_tien'] ?? $hoiVien->noi_tap_uu_tien ?? 'phong_gym',
 
-            'che_do_an_ua_thich' => $validated['che_do_an_ua_thich'] ?? [],
-            'muc_ngan_sach_an_uong' => $validated['muc_ngan_sach_an_uong'],
+            'che_do_an_ua_thich' => $validated['che_do_an_ua_thich'] ?? $hoiVien->che_do_an_ua_thich ?? ['Eat Clean'],
+            'muc_ngan_sach_an_uong' => $validated['muc_ngan_sach_an_uong'] ?? $hoiVien->muc_ngan_sach_an_uong ?? 2,
 
-            'note' => $validated['note'] ?? null,
-            'di_ung' => $validated['di_ung'] ?? [],
+            'note' => $validated['note'] ?? $hoiVien->note,
+            'di_ung' => $validated['di_ung'] ?? $hoiVien->di_ung ?? [],
 
             'ngay_cap_nhat_chi_so' => now(),
         ]);
@@ -1037,6 +1040,48 @@ class MembersController extends Controller
             ],
         ]);
     }
+
+    public function checkCapNhatLanDau()
+    {
+        // 1. Lấy hội viên đăng nhập
+        $hoiVien = Auth::guard('sanctum')->user();
+        if (!$hoiVien) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập.',
+            ], 401);
+        }
+        // 2. Tìm thông tin hội viên
+        $client = Client::find($hoiVien->id);
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông tin hội viên.',
+            ], 404);
+        }
+        // 3. Kiểm tra đã cập nhật chỉ số lần nào chưa
+        if (!$client->ngay_cap_nhat_chi_so) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn chưa cập nhật chỉ số cơ thể. Vui lòng cập nhật ngay.',
+                'data' => [
+                    'da_cap_nhat' => false,
+                    'bat_buoc_cap_nhat' => true,
+                ],
+            ]);
+        }
+        // 4. Đã từng cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Bạn đã cập nhật chỉ số cơ thể.',
+            'data' => [
+                'da_cap_nhat' => true,
+                'bat_buoc_cap_nhat' => false,
+            ],
+        ]);
+    }
+
+
 
     
 

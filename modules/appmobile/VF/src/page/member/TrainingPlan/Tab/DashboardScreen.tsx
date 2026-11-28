@@ -7,6 +7,7 @@ import apiFitlife from "../../../../general/api";
 import { COLORS, PASTEL, RADIUS, SOFT_SHADOW } from "../../../../general/theme";
 import WorkoutStreakCard from "./WorkoutStreakCard";
 import WorkoutFrequencyCard from "./WorkoutFrequencyCard";
+import UpdateMetricsModal from "./UpdateMetricsModal";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { Dimensions } from "react-native";
 
@@ -24,6 +25,49 @@ const DashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [thongKeChuoiTap, setThongKeChuoiTap] = useState<any>(null);
   const [fireworkRound, setFireworkRound] = useState(0);
+
+  // Trạng thái cập nhật thể trạng sau 2 ngày (Model bấm 2 ngày)
+  const [canCapNhat, setCanCapNhat] = useState<boolean>(false);
+  const [loadingCheckMetrics, setLoadingCheckMetrics] = useState(true);
+  const [updateMetricsVisible, setUpdateMetricsVisible] = useState<boolean>(false);
+  const [userMetrics, setUserMetrics] = useState<{ height: number; weight: number; activity: number }>({ height: 170, weight: 65, activity: 2, });
+
+  const checkCapNhatChiSo = async () => {
+    try {
+      setLoadingCheckMetrics(true);
+      const res = await apiFitlife.get("/client/check-cap-nhat-chi-so");
+      console.log("KIỂM TRA CẬP NHẬT CHỈ SỐ:", res.data);
+      if (res.data?.success && res.data?.data) {
+        const duocCapNhat = Boolean(res.data.data.can_cap_nhat);
+        setCanCapNhat(duocCapNhat);
+      } else {
+        setCanCapNhat(false);
+      }
+    } catch (error: any) {
+      console.log(
+        "Lỗi kiểm tra cập nhật chỉ số:",
+        error.response?.data || error.message
+      );
+
+      setCanCapNhat(false);
+    } finally {
+      setLoadingCheckMetrics(false);
+    }
+  };
+
+  const fetchCurrentProfile = async () => {
+    try {
+      const res = await apiFitlife.get("/assistant/context");
+      if (res.data?.data?.nutrition) {
+        const n = res.data.data.nutrition;
+        setUserMetrics({
+          height: Number(n.chieu_cao_cm) || 170,
+          weight: Number(n.can_nang) || 65,
+          activity: Number(res.data.data.profile?.activity_level) || 2,
+        });
+      }
+    } catch (_) { }
+  };
 
   // pháo hoa 
   const [showFireworks, setShowFireworks] = useState(false);
@@ -100,6 +144,8 @@ const DashboardScreen = () => {
   useEffect(() => {
     getListPrograms();
     getHuanLuyenTiepTheo();
+    checkCapNhatChiSo();
+    fetchCurrentProfile();
   }, []);
 
   useEffect(() => {
@@ -137,6 +183,35 @@ const DashboardScreen = () => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
+        {/* DÒNG THÔNG BÁO CẬP NHẬT CHỈ SỐ SAU 2 NGÀY (MODEL BẤM 2 NGÀY) */}
+        {/* BANNER CẬP NHẬT CHỈ SỐ */}
+        {!loadingCheckMetrics && canCapNhat && (
+          <TouchableOpacity  style={styles.metricsBanner} activeOpacity={0.85}
+            onPress={() => { if (canCapNhat) { setUpdateMetricsVisible(true); } }}>
+            <View style={styles.metricsIconWrap}>
+              <Ionicons name="sparkles" size={17} color="#D97706" />
+            </View>
+
+            <View style={styles.metricsTextWrap}>
+              <View style={styles.metricsHeaderRow}>
+                <Text style={styles.metricsBannerTitle}>
+                  Đã đến kỳ cập nhật chỉ số thể trạng!
+                </Text>
+
+                <View style={[ styles.metricsBadge, styles.metricsBadgeAlert]}>
+                  <Text style={[  styles.metricsBadgeText, styles.metricsBadgeTextAlert]}>
+                    Cần cập nhật
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.metricsDesc}>
+                Bấm vào đây để cập nhật lại chiều cao, cân nặng và mức độ vận động
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
 
         {/* 1. CHUỖI NGÀY TẬP LUYỆN */}
         {thongKeChuoiTap && (
@@ -330,32 +405,52 @@ const DashboardScreen = () => {
         </View>
       </ScrollView>
       {fireworkRound > 0 && (
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <ConfettiCannon key={fireworkRound} count={150}
-         origin={{ x: SCREEN_WIDTH / 2, y: 0, }}
-          explosionSpeed={350}
-          fallSpeed={2500}
-          fadeOut={true}
-          autoStart={true}
-          onAnimationEnd={() => {
-            if (fireworkRound < 5) {
-              setTimeout(() => {
-                setFireworkRound((prev) => prev + 1);
-              }, 500);
-            } else {
-              setFireworkRound(0);
-            }
-          }}
-        />
-      </View>
-    )}
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <ConfettiCannon key={fireworkRound} count={150}
+            origin={{ x: SCREEN_WIDTH / 2, y: 0, }}
+            explosionSpeed={350}
+            fallSpeed={2500}
+            fadeOut={true}
+            autoStart={true}
+            onAnimationEnd={() => {
+              if (fireworkRound < 5) {
+                setTimeout(() => {
+                  setFireworkRound((prev) => prev + 1);
+                }, 500);
+              } else {
+                setFireworkRound(0);
+              }
+            }}
+          />
+        </View>
+      )}
 
+      {/* POPUP CẬP NHẬT CHỈ SỐ SAU 2 NGÀY (MODEL BẤM 2 NGÀY) */}
+      <UpdateMetricsModal
+        visible={updateMetricsVisible}
+        onClose={() => setUpdateMetricsVisible(false)}
+        currentHeight={userMetrics.height}
+        currentWeight={userMetrics.weight}
+        currentActivity={userMetrics.activity}
+        onUpdated={async (data) => {
+          // Cập nhật trạng thái banner nhưng không đóng popup
+          await checkCapNhatChiSo();
+
+          // Cập nhật lại thông tin hồ sơ
+          await fetchCurrentProfile();
+
+          // Cập nhật thống kê chuỗi tập
+          if (program?.id) {
+            await getThongKeChuoiTap(program.id);
+          }
+        }}
+      />
 
     </View>
   );
 };
 
-export default DashboardScreen;
+
 
 const styles = StyleSheet.create({
   container: {
@@ -369,6 +464,70 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 24,
+  },
+
+  // THÔNG BÁO CẬP NHẬT CHỈ SỐ 2 NGÀY
+  metricsBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1.2,
+    borderColor: "#FDE68A",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    ...SOFT_SHADOW,
+  },
+  metricsIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FEF3C7",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  metricsTextWrap: {
+    flex: 1,
+  },
+  metricsHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+    paddingRight: 6,
+  },
+  metricsBannerTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#92400E",
+  },
+  metricsBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  metricsBadgeAlert: {
+    backgroundColor: "#FEE2E2",
+  },
+  metricsBadgeInfo: {
+    backgroundColor: "#E0F2FE",
+  },
+  metricsBadgeText: {
+    fontSize: 10.5,
+    fontWeight: "700",
+  },
+  metricsBadgeTextAlert: {
+    color: "#DC2626",
+  },
+  metricsBadgeTextInfo: {
+    color: "#0284C7",
+  },
+  metricsDesc: {
+    fontSize: 11.5,
+    color: "#B45309",
+    marginTop: 1,
   },
 
   // MẸO
@@ -640,3 +799,4 @@ const styles = StyleSheet.create({
     color: PASTEL.mintInk,
   },
 });
+export default DashboardScreen;

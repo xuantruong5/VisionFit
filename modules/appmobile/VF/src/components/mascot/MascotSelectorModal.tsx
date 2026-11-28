@@ -22,7 +22,7 @@ import {
 } from './mascotProgression';
 import { getMascotImage } from './mascotImages';
 import { MascotVectorRig } from './MascotVectorRig';
-import { triggerMascotState, mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
+import { triggerMascotState, triggerDrinkWater, mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
 import { notificationEmitter } from '../../general/notification';
 import { COLORS, SHADOWS } from '../../general/theme';
 
@@ -215,7 +215,7 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
                 Mascot Lab
               </Text>
               <View style={[styles.pillBadge, { backgroundColor: '#EDE9FE' }]}>
-                <Text style={[styles.pillBadgeText, { color: '#7C3AED' }]}>9 States</Text>
+                <Text style={[styles.pillBadgeText, { color: '#7C3AED' }]}>{ALL_MASCOT_STATES.length} States</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -524,7 +524,7 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
                   onPress={() => {
                     onClose();
                     setTimeout(() => {
-                      notificationEmitter.emit('mascot_action', { action: 'water' });
+                      triggerDrinkWater();
                     }, 350);
                   }}
                   activeOpacity={0.8}
@@ -540,7 +540,7 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
                 >
                   <Ionicons name="warning" size={14} color="#EF4444" />
                   <Text style={styles.demoDangerBtnText}>
-                    Mô phỏng nghỉ 7 ngày $\rightarrow$ Thử Phạt Reset về Cấp 1
+                    Mô phỏng nghỉ 7 ngày ➔ Thử Phạt Reset về Cấp 1
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -586,7 +586,8 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
                 {/* NÚT ÁP DỤNG RA LINH VẬT NGOÀI MÀN HÌNH CHÍNH */}
                 <TouchableOpacity
                   style={styles.applyBtn}
-                  onPress={() => {
+                  onPress={async () => {
+                    await setStoredSpecies(selected);
                     triggerMascotState(labState);
                     mascotEmitter.emit(MASCOT_EVENTS.SET_SPECIES, selected);
                     mascotEmitter.emit(MASCOT_EVENTS.SET_STAGE, labStage);
@@ -644,9 +645,9 @@ export const MascotSelectorModal: React.FC<MascotSelectorModalProps> = ({
                 </View>
               </View>
 
-              {/* 3. 9 TRẠNG THÁI CẢM XÚC TỪ MASCOT LAB */}
+              {/* 3. TRẠNG THÁI CẢM XÚC TỪ MASCOT LAB */}
               <View style={styles.labSection}>
-                <Text style={styles.labSectionTitle}>3. 9 Trạng Thái Cảm Xúc (Mascot Lab States)</Text>
+                <Text style={styles.labSectionTitle}>3. {ALL_MASCOT_STATES.length} Trạng Thái Cảm Xúc (Mascot Lab States)</Text>
                 <View style={styles.labGrid2}>
                   {ALL_MASCOT_STATES.map((item) => {
                     const isCurrent = labState === item.key;
