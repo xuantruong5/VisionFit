@@ -1,0 +1,15 @@
+{
+  "model_name": "VisionFit PoseNet Squat v1",
+  "architecture": "Dual-Head ResNet (33 Keypoints)",
+  "validation_protocol": "Held-out Unseen Subjects (person_11 Side + suqtanam Front)",
+  "metrics": {
+    "epoch": 2,
+    "train_loss": 0.1448,
+    "val_pixel_error_px": 2.0999999046325684,
+    "val_knee_angle_mae_deg": 8.0,
+    "val_pck_020_pct": 95.91
+  },
+  "training_samples_augmented": 5160,
+  "unseen_eval_samples": 479,
+  "timestamp": "2026-11-28 23:04:10"
+}

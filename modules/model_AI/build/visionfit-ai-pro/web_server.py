@@ -206,7 +206,7 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
         # Enable CORS and disable aggressive caching for local development
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Range, X-Requested-With')
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
         super().end_headers()
 
@@ -348,21 +348,60 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
             # Avoid file collision / overwrite by appending timestamp if exists
             staging_dir = ROOT_DIR / 'videos' / 'uploads'
             staging_dir.mkdir(parents=True, exist_ok=True)
-            dest_file = staging_dir / raw_safe_name
-            if dest_file.exists():
-                safe_stem = dest_file.stem
-                safe_ext = dest_file.suffix
-                raw_safe_name = f"{safe_stem}_{int(time.time())}{safe_ext}"
-                dest_file = staging_dir / raw_safe_name
 
-            bytes_left = content_length
-            with open(dest_file, 'wb') as f:
-                while bytes_left > 0:
-                    chunk = self.rfile.read(min(bytes_left, 65536))
-                    if not chunk:
+            content_type = self.headers.get('Content-Type', '')
+            if 'multipart/form-data' in content_type:
+                import email
+                from email.policy import default
+                body_bytes = self.rfile.read(content_length)
+                hdr_bytes = f"Content-Type: {content_type}\r\n\r\n".encode('utf-8')
+                msg = email.message_from_bytes(hdr_bytes + body_bytes, policy=default)
+                video_payload = None
+                for part in msg.iter_parts():
+                    fn = part.get_filename()
+                    if fn:
+                        raw_safe_name = Path(fn).name
+                        if not raw_safe_name.lower().endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv')):
+                            raw_safe_name += '.mp4'
+                        video_payload = part.get_payload(decode=True)
                         break
-                    f.write(chunk)
-                    bytes_left -= len(chunk)
+                if video_payload is None:
+                    for part in msg.iter_parts():
+                        payload = part.get_payload(decode=True)
+                        if payload and len(payload) > 100:
+                            video_payload = payload
+                            break
+                if not video_payload:
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'No video data found in multipart request'}).encode('utf-8'))
+                    return
+
+                dest_file = staging_dir / raw_safe_name
+                if dest_file.exists():
+                    safe_stem = dest_file.stem
+                    safe_ext = dest_file.suffix
+                    raw_safe_name = f"{safe_stem}_{int(time.time())}{safe_ext}"
+                    dest_file = staging_dir / raw_safe_name
+                with open(dest_file, 'wb') as f:
+                    f.write(video_payload)
+            else:
+                dest_file = staging_dir / raw_safe_name
+                if dest_file.exists():
+                    safe_stem = dest_file.stem
+                    safe_ext = dest_file.suffix
+                    raw_safe_name = f"{safe_stem}_{int(time.time())}{safe_ext}"
+                    dest_file = staging_dir / raw_safe_name
+
+                bytes_left = content_length
+                with open(dest_file, 'wb') as f:
+                    while bytes_left > 0:
+                        chunk = self.rfile.read(min(bytes_left, 65536))
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        bytes_left -= len(chunk)
 
             # Validate video integrity with OpenCV
             import cv2

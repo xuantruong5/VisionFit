@@ -8,6 +8,7 @@ models/*.pt
 !models/action_demo.pt
 !models/pose_custom.pt
 !models/pose_debug_91.pt
+!models/pose_squat_v1.pt
 
 !reports/.gitkeep
 data/frames/
