@@ -178,8 +178,12 @@ cp .env.example .env            # Windows: copy .env.example .env
 php artisan key:generate
 # Sửa DB_* trong .env sang MySQL, thêm GEMINI_API_KEY để bật trợ lý VIF
 php artisan migrate
-php artisan serve --host=0.0.0.0 --port=8000
+php artisan serve --host=0.0.0.0 --port=8000   # chỉ 1 request mỗi lúc, dùng khi dev một mình
 ```
+
+> [!NOTE]
+> Trợ lý VIF **tự lập chỉ mục kho kiến thức** ở lần hỏi đầu tiên, không cần chạy thêm lệnh nào.
+> Demo hoặc nhiều người dùng cùng lúc thì chạy bằng **XAMPP Apache** (150 request song song) hoặc **Nginx + PHP-FPM**, xem [`deploy/README.md`](modules/backend/visionfit/deploy/README.md).
 
 </details>
 

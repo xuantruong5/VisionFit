@@ -49,6 +49,11 @@ class GeminiEmbeddingClient implements EmbeddingClientInterface
             ],
             'taskType' => $taskType,
         ];
+        $dims = (int) config('assistant.embedding_dimensions', 768);
+        if ($dims > 0) {
+            // Rút gọn vector (Matryoshka) do Gemini hỗ trợ sẵn: 768 chiều nhỏ hơn 4 lần, chất lượng gần như giữ nguyên
+            $payload['outputDimensionality'] = $dims;
+        }
 
         $decoded = $this->executeJsonPostWithBoundedRetry(
             $url,
@@ -99,6 +104,7 @@ class GeminiEmbeddingClient implements EmbeddingClientInterface
         $base = rtrim((string) ($this->baseUrl ?? config('assistant.gemini_base_url', 'https://generativelanguage.googleapis.com/v1beta')), '/');
         $url = "{$base}/models/{$model}:batchEmbedContents";
 
+        $dims = (int) config('assistant.embedding_dimensions', 768);
         $requests = [];
         foreach ($texts as $t) {
             $requests[] = [
@@ -109,7 +115,7 @@ class GeminiEmbeddingClient implements EmbeddingClientInterface
                     ],
                 ],
                 'taskType' => $taskType,
-            ];
+            ] + ($dims > 0 ? ['outputDimensionality' => $dims] : []);
         }
 
         $decoded = $this->executeJsonPostWithBoundedRetry(

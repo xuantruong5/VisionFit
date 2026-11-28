@@ -9,7 +9,7 @@ class IndexAssistantKnowledge extends Command
 {
     protected $signature = 'assistant:index-knowledge {--force : Re-embed toàn bộ kho kiến thức kể cả bản ghi không đổi}';
 
-    protected $description = 'Lập chỉ mục trước và cập nhật incremental embeddings ngữ nghĩa cho kho kiến thức VisionFit';
+    protected $description = '(Không bắt buộc) Lập trước chỉ mục kho kiến thức VisionFit. Chatbot đã tự lập và tự cập nhật chỉ mục khi cần.';
 
     public function handle(KnowledgeEmbeddingService $service): int
     {
@@ -32,6 +32,7 @@ class IndexAssistantKnowledge extends Command
             $stats['skipped'],
             $stats['removed']
         ));
+        $this->line('File chỉ mục: ' . $stats['storage']);
 
         return self::SUCCESS;
     }

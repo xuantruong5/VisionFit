@@ -21,9 +21,28 @@ class KnowledgeEmbeddingSearchTest extends TestCase
 {
     use UsesIsolatedTestDatabase;
 
+    private string $kbIndexPath = '';
+
+    protected function tearDown(): void
+    {
+        foreach ([$this->kbIndexPath, $this->kbIndexPath . '.lock'] as $f) {
+            if ($f !== '' && is_file($f)) {
+                @unlink($f);
+            }
+        }
+        parent::tearDown();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Chỉ mục kho kiến thức là FILE: mỗi test dùng file tạm riêng, không đụng storage/ thật
+        $this->kbIndexPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'vf_kb_' . uniqid('', true) . '.bin';
+        config([
+            'assistant.knowledge_index_path' => $this->kbIndexPath,
+            'assistant.embedding_query_cache_store' => 'array',
+        ]);
         $this->resetVerifiedTestDatabase([
             '2026_09_11_060235_create_clients_table.php',
             '2026_09_11_062608_create_bai_tap_table.php',
@@ -33,7 +52,6 @@ class KnowledgeEmbeddingSearchTest extends TestCase
             '2026_09_11_080320_create_chuong_trinh_tap_table.php',
             '2026_09_17_170000_create_bach_khoa_toan_thu_table.php',
             '2026_09_18_130000_create_dinh_duong_the_thao_table.php',
-            '2026_11_26_000001_create_assistant_knowledge_embeddings_table.php',
         ]);
     }
 
@@ -312,6 +330,161 @@ class KnowledgeEmbeddingSearchTest extends TestCase
         $this->assertSame('Goblet Squat', $res['results'][0]['title']);
         $this->assertArrayNotHasKey('muscle_groups', $res['results'][0]['details'] ?? []);
         $this->assertArrayNotHasKey('demo_gif_url', $res['results'][0]['details'] ?? []);
+    }
+
+    // Không cần chạy `migrate` hay `assistant:index-knowledge`: lần hỏi đầu tự lập chỉ mục, lưu ra FILE (không phải DB)
+    public function test_first_search_auto_builds_file_index_without_any_artisan_command_or_db_table(): void
+    {
+        DB::table('mon_an')->insert([
+            'ten_mon_an' => 'Salad tôm', 'loai_bua' => 'TOI', 'calo' => 290, 'protein' => 28, 'carb' => 12, 'fat' => 10,
+            'nguyen_lieu' => 'Tôm sú, xà lách', 'tinh_trang' => 1,
+        ]);
+        $this->assertFileDoesNotExist($this->kbIndexPath);
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasTable('assistant_knowledge_embeddings'));
+
+        $embedder = $this->makeDeterministicEmbedder();
+        $service = new KnowledgeEmbeddingService($embedder, new FitnessDataService());
+        $res = $service->search('món có tôm', 'food', 2);
+
+        $this->assertSame('ok', $res['status']);
+        $this->assertSame('Salad tôm', $res['results'][0]['title']);
+        $this->assertFileExists($this->kbIndexPath);
+        $this->assertSame(1, $service->indexedCount());
+        // Vẫn không có bảng chỉ mục nào trong database
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasTable('assistant_knowledge_embeddings'));
+
+        // Lần hỏi tiếp theo (trong chu kỳ làm mới) không embed lại kho: chỉ embed đúng câu hỏi mới
+        $calls = $embedder->embedCalls;
+        $service->search('salad tôm bao nhiêu calo', 'food', 1);
+        $this->assertSame($calls + 1, $embedder->embedCalls);
+    }
+
+    // Admin thêm món / sửa bài tập: sau chu kỳ làm mới, chatbot tự cập nhật và chỉ embed phần thay đổi
+    public function test_auto_refresh_picks_up_new_and_edited_items_and_reembeds_only_changes(): void
+    {
+        config(['assistant.knowledge_auto_refresh_seconds' => 600]);
+        $exId = DB::table('bai_tap')->insertGetId([
+            'ma_bai_tap' => 'SQ9', 'ten_bai_tap' => 'Back Squat', 'mo_ta' => 'Bài chân đùi với thanh đòn.',
+            'thoi_gian_phut' => 5, 'set_yeu_cau' => 4, 'rep_yeu_cau' => 8, 'tinh_trang' => 1,
+        ]);
+        $embedder = $this->makeDeterministicEmbedder();
+        $service = new KnowledgeEmbeddingService($embedder, new FitnessDataService());
+        $service->search('bài cho đùi', 'exercise', 1);
+        $this->assertSame(1, $service->indexedCount());
+
+        // Admin thêm món mới + sửa bài tập
+        DB::table('mon_an')->insert([
+            'ten_mon_an' => 'Ức gà áp chảo', 'loai_bua' => 'TOI', 'calo' => 350, 'protein' => 42, 'carb' => 20, 'fat' => 10,
+            'nguyen_lieu' => 'Ức gà', 'tinh_trang' => 1,
+        ]);
+        DB::table('bai_tap')->where('id', $exId)->update(['mo_ta' => 'Bài chân đùi, giữ gối theo mũi chân.']);
+
+        // Chưa hết chu kỳ: chưa thấy món mới (không tốn quota kiểm tra liên tục)
+        $this->travel(5)->minutes();
+        $this->assertSame('empty', $service->search('món ức gà nhiều đạm', 'food', 1, null, true)['status']);
+
+        // Hết chu kỳ 10 phút: tự cập nhật, chỉ embed 2 tài liệu thay đổi (+ câu hỏi)
+        $this->travel(6)->minutes();
+        $before = $embedder->embedCalls;
+        $res = $service->search('món ức gà nhiều đạm', 'food', 1, null, true);
+        $this->assertSame('ok', $res['status']);
+        $this->assertSame('Ức gà áp chảo', $res['results'][0]['title']);
+        $this->assertSame(2, $service->indexedCount());
+        // Chỉ embed 1 món mới + 1 bài vừa sửa; câu hỏi đã hỏi ở phút thứ 5 nên vector câu hỏi lấy từ cache
+        $this->assertSame($before + 2, $embedder->embedCalls);
+    }
+
+    // Gemini lỗi giữa chừng khi lập chỉ mục: phần đã xong vẫn được lưu, lần sau chỉ làm tiếp phần còn thiếu
+    public function test_partial_progress_is_saved_when_embedding_fails_midway(): void
+    {
+        foreach (range(1, 30) as $i) {
+            DB::table('mon_an')->insert([
+                'ten_mon_an' => "Món ức gà số {$i}", 'loai_bua' => 'TRUA', 'calo' => 400, 'protein' => 30, 'carb' => 40, 'fat' => 10,
+                'tinh_trang' => 1,
+            ]);
+        }
+        $flaky = new class implements EmbeddingClientInterface {
+            public int $batches = 0;
+            public bool $fail = true;
+            public function modelName(): string { return 'flaky-embed'; }
+            public function embed(string $text, string $taskType = 'RETRIEVAL_QUERY'): array { return [1.0, 0.0]; }
+            public function embedBatch(array $texts, string $taskType = 'RETRIEVAL_DOCUMENT'): array
+            {
+                $this->batches++;
+                if ($this->fail && $this->batches === 2) {
+                    throw new \App\Services\Assistant\LlmProviderException('AI_QUOTA_EXCEEDED', 'RPM', 503, true, 'minute', 2.0);
+                }
+                return array_map(fn () => [1.0, 0.0], $texts);
+            }
+        };
+        $service = new KnowledgeEmbeddingService($flaky, new FitnessDataService());
+
+        try {
+            $service->syncIndex(false);
+            $this->fail('Phải ném lỗi quota ở lô thứ 2');
+        } catch (\App\Services\Assistant\LlmProviderException $e) {
+            $this->assertSame('AI_QUOTA_EXCEEDED', $e->errorCode);
+        }
+        $this->assertSame(25, $service->indexedCount()); // lô 1 (25 món) đã được lưu
+
+        $flaky->fail = false;
+        $stats = $service->syncIndex(false);
+        $this->assertSame(5, $stats['indexed']);  // chỉ làm tiếp 5 món còn thiếu
+        $this->assertSame(25, $stats['skipped']);
+        $this->assertSame(30, $service->indexedCount());
+    }
+
+    // Kho lớn hơn hạn mức/phút của Gemini: mỗi câu hỏi chỉ embed tối đa N tài liệu, tìm được ngay trên phần đã có,
+    // phần còn lại tự làm tiếp sau ~1 phút (không đợi hết chu kỳ 10 phút, không làm câu hỏi chậm / báo lỗi quota)
+    public function test_large_knowledge_base_is_indexed_progressively_without_blocking_questions(): void
+    {
+        config(['assistant.knowledge_max_embeds_per_request' => 10, 'assistant.knowledge_auto_refresh_seconds' => 600]);
+        foreach (range(1, 25) as $i) {
+            DB::table('mon_an')->insert([
+                'ten_mon_an' => "Món ức gà số {$i}", 'loai_bua' => 'TRUA', 'calo' => 400, 'protein' => 30, 'carb' => 40, 'fat' => 10,
+                'tinh_trang' => 1,
+            ]);
+        }
+        $embedder = $this->makeDeterministicEmbedder();
+        $service = new KnowledgeEmbeddingService($embedder, new FitnessDataService());
+
+        // Câu hỏi đầu: chỉ lập 10 tài liệu nhưng vẫn trả lời được ngay
+        $this->assertSame('ok', $service->search('món ức gà', 'food', 1)['status']);
+        $this->assertSame(10, $service->indexedCount());
+
+        // 30 giây sau: chưa làm tiếp (tránh dồn quota)
+        $this->travel(30)->seconds();
+        $service->search('món ức gà', 'food', 1);
+        $this->assertSame(10, $service->indexedCount());
+
+        // Sau ~1 phút: tự làm tiếp lô kế tiếp, rồi lô cuối
+        $this->travel(31)->seconds();
+        $service->search('món ức gà', 'food', 1);
+        $this->assertSame(20, $service->indexedCount());
+        $this->travel(61)->seconds();
+        $service->search('món ức gà', 'food', 1);
+        $this->assertSame(25, $service->indexedCount());
+
+        // Đã đủ: các câu hỏi sau trong chu kỳ 10 phút không embed thêm tài liệu nào
+        $calls = $embedder->embedCalls;
+        $this->travel(61)->seconds();
+        $service->search('món ức gà', 'food', 1); // câu hỏi đã cache
+        $this->assertSame($calls, $embedder->embedCalls);
+    }
+
+    // 768 chiều + lưu nhị phân float32: file chỉ mục nhỏ (≈3 KB/tài liệu thay vì ≈60 KB JSON 3072 chiều)
+    public function test_index_file_stays_small_with_768_dimension_float32_vectors(): void
+    {
+        $service = new KnowledgeEmbeddingService($this->makeDeterministicEmbedder(), new FitnessDataService());
+        $docs = [];
+        foreach (range(1, 230) as $i) {
+            $docs[] = ['source_table' => 'mon_an', 'source_id' => $i, 'category' => 'food', 'title' => "Món {$i}",
+                'vector' => array_fill(0, 768, 0.0123)];
+        }
+        $service->writeIndex($docs);
+        clearstatcache();
+        $this->assertLessThan(1024 * 1024, filesize($this->kbIndexPath), 'File chỉ mục 230 tài liệu phải < 1 MB');
+        $this->assertSame(230, $service->indexedCount());
     }
 }
 

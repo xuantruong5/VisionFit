@@ -30,6 +30,19 @@ return [
     'embedding_max_retries' => (int) env('ASSISTANT_EMBEDDING_MAX_RETRIES', 1),
     // Cache ONLY query embedding vectors (keyed by model + normalized query) to save quota without caching per-user results
     'embedding_query_cache_ttl' => (int) env('ASSISTANT_EMBEDDING_QUERY_CACHE_TTL', 86400),
+    // Cache vector câu hỏi bằng FILE để không ghi thêm dữ liệu vào bảng `cache` của database
+    'embedding_query_cache_store' => env('ASSISTANT_EMBEDDING_QUERY_CACHE_STORE', 'file'),
+    // Số chiều vector (Gemini hỗ trợ 768 / 1536 / 3072). 768 = file chỉ mục nhỏ hơn 4 lần, chất lượng gần như giữ nguyên
+    'embedding_dimensions' => (int) env('ASSISTANT_EMBEDDING_DIMENSIONS', 768),
+    // Chỉ mục kho kiến thức lưu thành FILE (không phải bảng DB); tự tạo ở lần hỏi kiến thức đầu tiên
+    'knowledge_index_path' => env('ASSISTANT_KNOWLEDGE_INDEX_PATH', storage_path('app/assistant/knowledge_index.bin')),
+    // Chu kỳ tự kiểm tra món ăn / bài tập mới hoặc đã sửa để cập nhật chỉ mục (giây)
+    'knowledge_auto_refresh_seconds' => (int) env('ASSISTANT_KNOWLEDGE_AUTO_REFRESH', 600),
+    // Cache câu trả lời KIẾN THỨC CHUNG (dùng chung giữa nhiều người, tách theo hồ sơ dị ứng). 0 = tắt
+    'answer_cache_ttl' => (int) env('ASSISTANT_ANSWER_CACHE_TTL', 21600),
+    'answer_cache_store' => env('ASSISTANT_ANSWER_CACHE_STORE', 'file'),
+    // Số tài liệu tối đa embed trong MỘT câu hỏi (dưới hạn mức/phút của Gemini miễn phí); phần còn lại làm tiếp sau ~1 phút
+    'knowledge_max_embeds_per_request' => (int) env('ASSISTANT_KNOWLEDGE_MAX_EMBEDS_PER_REQUEST', 80),
     'ssl_verify' => filter_var(env('ASSISTANT_SSL_VERIFY', false), FILTER_VALIDATE_BOOLEAN),
 
     // Optional Tier-2 Backup Provider (must support structured OpenAI-compatible Tool/Function Calling)
