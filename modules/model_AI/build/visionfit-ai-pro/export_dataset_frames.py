@@ -1,13 +1,17 @@
-"""VisionFit Frame Exporter.
-Exports 3,059 annotated frames from data/pose_multiview_squat.npz.
+"""VisionFit Frame Comparison Exporter.
+Exports ALL 3,059 annotated frames from data/pose_multiview_squat.npz
+as side-by-side comparison images:
+  Left Pane  (Green): GROUND TRUTH (MediaPipe Auto-Annotator)
+  Right Pane (Orange): POSENET CUSTOM (100% SELF-TRAINED)
 
-Supports 2 modes:
-  1. 'raw': Exports pure RGB images categorized by subject folder + annotations.json.
-  2. 'compare': Exports side-by-side Ground Truth vs PoseNet Custom skeleton images
-               (matching the evaluation report view).
+Format matches reports/pose_multiview_eval exactly:
+  - 800 x 400 px split image
+  - 'GROUND TRUTH' text in bright green
+  - 'POSENET CUSTOM (100% SELF-TRAINED)' in orange
+  - 'Subject: {subject}' in white
 """
 
-import sys, os, argparse, json
+import sys, os, argparse, json, time
 from pathlib import Path
 import numpy as np
 import cv2
@@ -16,10 +20,11 @@ import torch
 ROOT = Path(__file__).resolve().parent
 sys.path.append(str(ROOT))
 
-from pose_model import load_pose_model, infer_rgb, IMAGE_SIZE
+from pose_model import load_pose_model, IMAGE_SIZE
 
 DATA_PATH = ROOT / 'data' / 'pose_multiview_squat.npz'
 MODEL_PATH = ROOT / 'models' / 'pose_custom.pt'
+DEFAULT_OUT_DIR = ROOT / 'reports' / 'pose_comparison_frames'
 
 EDGES = [
     (11, 12),
@@ -42,105 +47,133 @@ def draw_skeleton(img, pts, color):
     for a, b in EDGES:
         vis_a = pts[a, -1] if pts.shape[-1] >= 3 else 1.0
         vis_b = pts[b, -1] if pts.shape[-1] >= 3 else 1.0
-        if vis_a >= 0.4 and vis_b >= 0.4:
+        if vis_a >= 0.35 and vis_b >= 0.35:
             cv2.line(img, xy(pts[a]), xy(pts[b]), color, 2, cv2.LINE_AA)
     for p in pts:
         vis = p[-1] if len(p) >= 3 else 1.0
-        if vis >= 0.4:
-            cv2.circle(img, xy(p), 4, color, -1)
+        if vis >= 0.35:
+            cv2.circle(img, xy(p), 4, color, -1, cv2.LINE_AA)
     return img
 
 
-def export_frames(mode="raw", out_dir=None, sample_step=1):
-    z = np.load(DATA_PATH, allow_pickle=True)
-    images = z['images']
-    keypoints = z['keypoints']
-    subjects = z['subjects']
-    total = len(images)
-
+def export_all_comparisons(out_dir=None, batch_size=64, sample_step=1):
     if out_dir is None:
-        if mode == "raw":
-            out_dir = ROOT / 'data' / 'extracted_frames'
-        else:
-            out_dir = ROOT / 'reports' / 'pose_comparison_frames'
-    else:
-        out_dir = Path(out_dir)
-
+        out_dir = DEFAULT_OUT_DIR
+    out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[Exporter] Mode: {mode.upper()}")
-    print(f"[Exporter] Source: {DATA_PATH} ({total} frames)")
-    print(f"[Exporter] Destination: {out_dir}")
-    print(f"[Exporter] Step: {sample_step} (Processing {total // sample_step} frames)\n")
 
-    model = None
-    if mode == "compare":
-        print(f"[Exporter] Loading PoseNet model from {MODEL_PATH}...")
-        model = load_pose_model(MODEL_PATH, device="cpu")
+    print("=" * 65)
+    print(f"[VisionFit Exporter] Bat dau xuat anh so sanh song song")
+    print(f"  Source dataset : {DATA_PATH}")
+    print(f"  Model custom   : {MODEL_PATH}")
+    print(f"  Thu muc dich   : {out_dir}")
+    print("=" * 65)
 
-    annotations = {}
-    exported_count = 0
+    # 1. Load Data
+    z = np.load(DATA_PATH, allow_pickle=True)
+    images = z['images']       # (N, 128, 128, 3) uint8 RGB
+    keypoints = z['keypoints'] # (N, 33, 3) or (N, 33, 4)
+    subjects = z['subjects']   # (N,) str
+    N = len(images)
+    print(f"[1/3] Da doc xong dataset: tong cong {N} frames")
 
-    for i in range(0, total, sample_step):
-        rgb = images[i]
-        gt_kp = keypoints[i]
-        sub = str(subjects[i])
+    # 2. Load PoseNet Model
+    print(f"[2/3] Dang nap mo hinh BodyPoseNet tu {MODEL_PATH}...")
+    model = load_pose_model(MODEL_PATH, device="cpu")
+    model.eval()
 
-        sub_dir = out_dir / sub
-        sub_dir.mkdir(parents=True, exist_ok=True)
+    # 3. Batch Inference for Speed
+    print(f"[3/3] Dang chay du doan batch va xuat {N // sample_step} anh so sanh...")
+    t0 = time.time()
 
-        if mode == "raw":
-            filename = f"frame_{i:04d}.jpg"
-            img_path = sub_dir / filename
-            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(str(img_path), bgr, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    indices = list(range(0, N, sample_step))
+    total_to_export = len(indices)
+    exported = 0
 
-            annotations[f"{sub}/{filename}"] = {
-                "frame_idx": i,
-                "subject": sub,
-                "keypoints_33": gt_kp.tolist()
-            }
-        elif mode == "compare":
-            pred = infer_rgb(model, rgb, device="cpu")
-            orig = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-            canvas = cv2.resize(orig, (400, 400), interpolation=cv2.INTER_LINEAR)
+    per_subject_counts = {}
 
-            left = draw_skeleton(canvas.copy(), gt_kp, (0, 255, 0))
+    for b_start in range(0, total_to_export, batch_size):
+        b_indices = indices[b_start : b_start + batch_size]
+        batch_rgb = images[b_indices] # (B, 128, 128, 3)
+
+        # PyTorch batch forward
+        inp = torch.from_numpy(batch_rgb.transpose(0, 3, 1, 2)).to(device='cpu', dtype=torch.float32) / 255.0
+        with torch.no_grad():
+            out = model(inp)
+            if isinstance(out, tuple):
+                coords, vis_logits = out
+                coords = coords.view(-1, 33, 2).cpu().numpy()
+                vis = torch.sigmoid(vis_logits).view(-1, 33, 1).cpu().numpy()
+                preds = np.concatenate([coords, np.zeros_like(vis), vis], axis=-1)
+            else:
+                coords = out.view(-1, 33, 2).cpu().numpy()
+                vis = np.ones((len(b_indices), 33, 1), dtype=np.float32)
+                preds = np.concatenate([coords, np.zeros_like(vis), vis], axis=-1)
+
+        # Render & Save Each Comparison Frame
+        for local_idx, global_idx in enumerate(b_indices):
+            rgb = batch_rgb[local_idx]
+            gt = keypoints[global_idx]
+            pred = preds[local_idx]
+            sub = str(subjects[global_idx])
+
+            # Prepare side-by-side canvas: 400x400 each side -> 800x400
+            orig_bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            canvas = cv2.resize(orig_bgr, (400, 400), interpolation=cv2.INTER_LINEAR)
+
+            left = draw_skeleton(canvas.copy(), gt, (0, 255, 0))
             right = draw_skeleton(canvas.copy(), pred, (0, 165, 255))
             split = np.hstack([left, right])
 
-            # Black header bar
-            header = np.zeros((45, split.shape[1], 3), dtype=np.uint8)
-            cv2.putText(header, "GROUND TRUTH", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.putText(header, "POSENET CUSTOM (100% SELF-TRAINED)", (415, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 165, 255), 2, cv2.LINE_AA)
+            # Overlay Exact Titles
+            cv2.putText(split, "GROUND TRUTH", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(split, "POSENET CUSTOM (100% SELF-TRAINED)", (415, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 165, 255), 2, cv2.LINE_AA)
+            cv2.putText(split, f"Subject: {sub}", (15, 385), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-            final_img = np.vstack([header, split])
-            cv2.putText(final_img, f"Subject: {sub} | Frame: #{i:04d}", (15, final_img.shape[0] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            # Sub-folder per subject
+            sub_dir = out_dir / sub
+            sub_dir.mkdir(parents=True, exist_ok=True)
 
-            filename = f"compare_{i:04d}_{sub}.jpg"
-            img_path = sub_dir / filename
-            cv2.imwrite(str(img_path), final_img, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            out_file = sub_dir / f"compare_{global_idx:04d}_{sub}.jpg"
+            cv2.imwrite(str(out_file), split, [cv2.IMWRITE_JPEG_QUALITY, 90])
 
-        exported_count += 1
-        if exported_count % 250 == 0 or i == total - 1:
-            print(f"  -> Exported {exported_count} frames...")
+            exported += 1
+            per_subject_counts[sub] = per_subject_counts.get(sub, 0) + 1
 
-    if mode == "raw":
-        ann_path = out_dir / "annotations.json"
-        ann_path.write_text(json.dumps(annotations, indent=2), encoding="utf-8")
-        print(f"\n[Success] Saved annotations to: {ann_path}")
+        elapsed = time.time() - t0
+        rate = exported / max(0.1, elapsed)
+        if exported % 250 == 0 or exported == total_to_export:
+            print(f"  -> Da xuat: {exported}/{total_to_export} anh ({rate:.1f} frames/giay)...")
 
-    print(f"[Success] Exported total {exported_count} frames to {out_dir}\n")
+    total_time = time.time() - t0
+    print("\n" + "=" * 65)
+    print(f"[HOAN TAT] Da xuat thanh cong {exported} anh so sanh song song!")
+    print(f"Tong thoi gian: {total_time:.2f} giay ({exported / total_time:.1f} fps)")
+    print(f"Thu muc luu: {out_dir}")
+    print("\nChi tiet theo tung nguoi:")
+    for s, c in sorted(per_subject_counts.items()):
+        print(f"  - {s:12s}: {c:4d} anh so sanh tai {out_dir / s}")
+    print("=" * 65)
+
+    # Save summary metadata
+    summary = {
+        "total_frames": exported,
+        "execution_time_seconds": round(total_time, 2),
+        "fps": round(exported / total_time, 1),
+        "output_directory": str(out_dir),
+        "subjects": per_subject_counts
+    }
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Export frames from pose_multiview_squat.npz")
-    parser.add_argument("--mode", choices=["raw", "compare"], default="raw",
-                        help="'raw': export original RGB images; 'compare': export side-by-side GT vs PoseNet images")
-    parser.add_argument("--out", type=str, default=None, help="Custom output directory")
-    parser.add_argument("--step", type=int, default=1, help="Sampling step (1 = all 3059 frames, 10 = every 10th frame)")
+    parser = argparse.ArgumentParser(description="Export side-by-side comparison images for all frames in pose_multiview_squat.npz")
+    parser.add_argument("--out", type=str, default=None, help="Output directory (default: reports/pose_comparison_frames)")
+    parser.add_argument("--batch", type=int, default=64, help="Batch size for model inference (default: 64)")
+    parser.add_argument("--step", type=int, default=1, help="Sampling step (1 = all 3059 frames)")
     args = parser.parse_args()
 
-    export_frames(mode=args.mode, out_dir=args.out, sample_step=args.step)
+    export_all_comparisons(out_dir=args.out, batch_size=args.batch, sample_step=args.step)
 
 
 if __name__ == '__main__':
