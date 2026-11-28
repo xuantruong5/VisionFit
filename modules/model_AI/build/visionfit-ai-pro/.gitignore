@@ -11,6 +11,7 @@ models/*.pt
 
 !reports/.gitkeep
 data/frames/
+data/extracted_frames/
 data/action_clips/
 data/action_real.npz
 data/pose_real.npz
