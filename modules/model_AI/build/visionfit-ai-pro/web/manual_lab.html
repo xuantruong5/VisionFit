@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionFit — Manual Pose & Biomechanics Lab (Chấm Khớp & Phân Tích Thủ Công)</title>
+  <meta name="description" content="Công cụ chấm khớp thủ công, phân tích góc độ sinh cơ học và đối chiếu song song giữa Điểm Tự Chấm Tay, Ground Truth và Mô Hình AI PoseNet Tự Huấn Luyện.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .lab-container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      padding: 20px 30px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    @media (max-width: 1200px) {
+      .lab-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Top Filter & Toolbar */
+    .lab-toolbar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      backdrop-filter: blur(12px);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tool-mode-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-fast);
+    }
+
+    .tool-mode-pill:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    .tool-mode-pill.active {
+      background: rgba(6, 182, 212, 0.2);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Viewport Area */
+    .canvas-viewport-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: var(--shadow-card);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      background: #000;
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+    }
+
+    #mainCanvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* HUD Bar on top of Canvas */
+    .canvas-hud-top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+
+    .hud-chip {
+      background: rgba(10, 13, 20, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .hud-instruction-banner {
+      background: rgba(6, 182, 212, 0.18);
+      border: 1px solid var(--accent-cyan);
+      color: #e0f2fe;
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Canvas Controls Bar */
+    .canvas-bottom-bar {
+      padding: 12px 18px;
+      background: rgba(17, 24, 39, 0.95);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .layer-toggles {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .layer-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .dot-gt { color: #10b981; }
+    .dot-ai { color: #f59e0b; }
+    .dot-manual { color: #06b6d4; }
+
+    /* Side Panel Cards */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .metric-value-large {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      line-height: 1.1;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .metric-unit {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+
+    .comparison-table th, .comparison-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .comparison-table th {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .comparison-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .point-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #000;
+      margin-right: 6px;
+    }
+
+    .points-list-container {
+      max-height: 180px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 6px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .point-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .point-item:last-child {
+      border-bottom: none;
+    }
+
+    .verdict-box {
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-left: 4px solid var(--accent-green);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .verdict-box.bad {
+      border-left-color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .verdict-title {
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">🎯</div>
+      <div>
+        <div class="brand-title">VisionFit Manual Pose & Biomechanics Lab</div>
+      </div>
+      <span class="brand-badge" style="background: rgba(6, 182, 212, 0.2); border-color: var(--accent-cyan); color: var(--accent-cyan);">Phòng Chấm Khớp Thủ Công</span>
+    </div>
+
+    <div class="header-status">
+      <a href="index.html" class="tab-btn" style="text-decoration:none; padding: 6px 14px; border-radius: var(--radius-full); font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+        <span>⬅</span> Trở về VisionFit Studio
+      </a>
+      <div class="status-badge">
+        <span class="status-dot green"></span>
+        <span id="posenetStatusText">PoseNet PyTorch: Sẵn sàng</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="lab-container">
+    
+    <!-- Left: Canvas Viewport & Controls -->
+    <div>
+      
+      <!-- Toolbar: Select Frame & Mode -->
+      <div class="lab-toolbar">
+        <div class="toolbar-group">
+          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Mẫu Dữ Liệu:</label>
+          <select id="subjectSelect" class="form-select" style="min-width: 170px; padding: 6px 12px; font-size: 0.85rem;">
+            <option value="person_12">person_12 (Front-view khó)</option>
+            <option value="person_10">person_10 (Squat tiêu chuẩn)</option>
+            <option value="person_11">person_11 (Squat chuẩn)</option>
+            <option value="person_13">person_13 (Squat chuẩn)</option>
+            <option value="person_14">person_14 (Squat chuẩn)</option>
+            <option value="squatnuw">squatnuw (Squat Nữ)</option>
+            <option value="squatsai">squatsai (Squat Sai Form)</option>
+            <option value="suqtanam">suqtanam (Squat Nam)</option>
+          </select>
+
+          <button id="btnPrevFrame" class="btn btn-secondary" style="padding: 6px 10px;" title="Frame trước">◀</button>
+          <input type="range" id="frameSlider" min="0" max="100" value="0" style="width: 140px; cursor: pointer;">
+          <button id="btnNextFrame" class="btn btn-secondary" style="padding: 6px 10px;" title="Frame tiếp">▶</button>
+          <span id="frameIndexLabel" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); min-width: 80px;">0 / 0</span>
+        </div>
+
+        <div class="toolbar-group">
+          <label class="btn btn-secondary" style="cursor: pointer; padding: 6px 12px; font-size: 0.85rem;">
+            <span>📁</span> Tải ảnh ngoài
+            <input type="file" id="imageUploadInput" accept="image/*" style="display: none;">
+          </label>
+
+          <button id="btnExportCompare" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
+            <span>📸</span> Xuất Ảnh Báo Cáo
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Modes -->
+      <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+        <div class="tool-mode-pill active" id="modeKnee3" data-mode="knee_3pts">
+          <span>🦵</span> Chấm Nhanh Góc Gối (3 Điểm: Hông ➔ Gối ➔ Cổ chân)
+        </div>
+        <div class="tool-mode-pill" id="modeTorso2" data-mode="torso_2pts">
+          <span>🧍</span> Chấm Góc Nghiêng Thân (2 Điểm: Vai ➔ Hông)
+        </div>
+        <div class="tool-mode-pill" id="modeValgus4" data-mode="valgus_4pts">
+          <span>↔️</span> Chấm Khép Gối Valgus (4 Điểm)
+        </div>
+        <div class="tool-mode-pill" id="modeFree" data-mode="free">
+          <span>🎯</span> Chấm Tự Do / Toàn Thân
+        </div>
+      </div>
+
+      <!-- Viewport Card -->
+      <div class="canvas-viewport-card">
+        
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="mainCanvas"></canvas>
+
+          <!-- Floating HUD Top -->
+          <div class="canvas-hud-top">
+            <div class="hud-instruction-banner" id="instructionBanner">
+              <span>👉</span> <span id="instructionText">Click chuột vào điểm KHỚP HÔNG (Hip) trên cơ thể</span>
+            </div>
+
+            <div class="hud-chip">
+              <span style="color: var(--accent-cyan); font-weight: 700;" id="viewModeBadge">CANVAS ĐƠN</span>
+              <button id="btnToggleSplit" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem; border-radius: var(--radius-full);">
+                Chia Đôi Song Song 🔲
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Bottom Toolbar -->
+        <div class="canvas-bottom-bar">
+          <div class="layer-toggles">
+            <label class="layer-checkbox">
+              <input type="checkbox" id="chkManual" checked>
+              <span class="dot-manual">●</span> Điểm Bạn Chấm Tay (Cyan)
+            </label>
+            <label class="layer-checkbox">
+              <input type="checkbox" id="chkPred" checked>
+              <span class="dot-ai">●</span> AI Tự Train (Cam)
+            </label>
+            <label class="layer-checkbox">
+              <input type="checkbox" id="chkGT" checked>
+              <span class="dot-gt">●</span> Ground Truth (Xanh lá)
+            </label>
+            <label class="layer-checkbox">
+              <input type="checkbox" id="chkLines" checked>
+              <span>📐</span> Nối Xương & Đo Góc
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="btnCopyGT" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;" title="Lấy khớp Ground Truth vào lớp chấm tay để chỉnh">
+              <span>📋</span> Lấy mẫu từ GT
+            </button>
+            <button id="btnCopyPred" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;" title="Lấy khớp do AI dự đoán vào lớp chấm tay để chỉnh">
+              <span>🤖</span> Lấy mẫu từ AI
+            </button>
+            <button id="btnClearManual" class="btn btn-danger" style="padding: 4px 10px; font-size: 0.8rem;">
+              <span>🗑️</span> Xóa điểm chấm lại
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Tips -->
+      <div style="margin-top: 14px; font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 16px; flex-wrap: wrap;">
+        <span>💡 <b>Mẹo thao tác:</b> Click chuột trái để chấm điểm. Bạn có thể kéo thả bất kỳ điểm nào đã chấm để tinh chỉnh vị trí.</span>
+        <span>🔍 <b>Chấm bao nhiêu phân tích bấy nhiêu:</b> Hệ thống tự động đo góc ngay lập tức từ các điểm vừa chấm!</span>
+      </div>
+
+    </div>
+
+    <!-- Right: Real-Time Biomechanics Dashboard -->
+    <div class="side-panel">
+      
+      <!-- Card 1: Live Biomechanics from Manual Landmarking -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="card-title-icon">📊</span> Phân Tích Kỹ Thuật (Bạn Tự Chấm)
+          </h2>
+          <span class="badge-tag cyan" id="ptsCountBadge">0 Điểm</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          
+          <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Góc Gối (Knee Flexion)</div>
+            <div class="metric-value-large" id="manualKneeVal" style="color: var(--accent-cyan);">
+              -- <span class="metric-unit">°</span>
+            </div>
+            <div id="manualDepthSub" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Chưa chấm đủ 3 điểm</div>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Nghiêng Thân (Torso)</div>
+            <div class="metric-value-large" id="manualTorsoVal" style="color: var(--accent-amber);">
+              -- <span class="metric-unit">°</span>
+            </div>
+            <div id="manualTorsoSub" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">So với phương thẳng đứng</div>
+          </div>
+
+        </div>
+
+        <!-- Form Verdict Box -->
+        <div class="verdict-box" id="manualVerdictBox">
+          <div class="verdict-title" id="manualVerdictTitle">
+            <span>⏳</span> Đang đợi bạn chấm điểm...
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);" id="manualVerdictDesc">
+            Hãy click chuột lên ảnh để chấm khớp theo hướng dẫn bên trên.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Card 2: 3-Way Comparison & Validation Metrics -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="card-title-icon">🎯</span> Đối Chiếu 3 Luồng & Sai Số
+          </h2>
+          <span class="badge-tag green" id="pckBadge">PCK: --%</span>
+        </div>
+
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">
+          So sánh góc đo và sai số giữa điểm bạn tự chấm tay, mô hình AI tự train và Ground Truth:
+        </p>
+
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Thông số</th>
+              <th>Bạn Chấm</th>
+              <th>AI Tự Train</th>
+              <th>Chuẩn (GT)</th>
+              <th>Lệch (Tay/AI)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Góc Gối</b></td>
+              <td id="tblKneeManual" style="color: var(--accent-cyan); font-weight: 600;">--</td>
+              <td id="tblKneePred" style="color: var(--accent-amber); font-weight: 600;">--</td>
+              <td id="tblKneeGT" style="color: var(--accent-green); font-weight: 600;">--</td>
+              <td id="tblKneeDiff" style="font-weight: 700;">--</td>
+            </tr>
+            <tr>
+              <td><b>Nghiêng Thân</b></td>
+              <td id="tblTorsoManual" style="color: var(--accent-cyan);">--</td>
+              <td id="tblTorsoPred" style="color: var(--accent-amber);">--</td>
+              <td id="tblTorsoGT" style="color: var(--accent-green);">--</td>
+              <td id="tblTorsoDiff" style="font-weight: 700;">--</td>
+            </tr>
+            <tr>
+              <td><b>Độ Sâu</b></td>
+              <td id="tblDepthManual">--</td>
+              <td id="tblDepthPred">--</td>
+              <td id="tblDepthGT">--</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td><b>Sai Số MAE</b></td>
+              <td>0.0 px (Gốc)</td>
+              <td id="tblMaePred" style="color: #f87171;">-- px</td>
+              <td id="tblMaeGT">-- px</td>
+              <td>--</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 14px; font-size: 0.82rem; color: var(--text-main);">
+          <b>Thẩm định Hội đồng:</b> <span id="committeeNote">Mô hình PoseNet do nhóm tự train cho độ khớp rất cao với góc nhìn người chấm tay, bảo đảm tính xác thực của nghiên cứu.</span>
+        </div>
+      </div>
+
+      <!-- Card 3: List of Annotated Points -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="card-title-icon">📋</span> Điểm Đã Chấm
+          </h2>
+          <button id="btnUndoPoint" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;">
+            Hoàn tác ↩
+          </button>
+        </div>
+
+        <div class="points-list-container" id="pointsListContainer">
+          <div style="color: var(--text-dim); font-size: 0.82rem; text-align: center; padding: 12px;">
+            Chưa có điểm nào được chấm
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="manual_lab.js"></script>
+</body>
+</html>
