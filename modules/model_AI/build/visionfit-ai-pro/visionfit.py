@@ -715,6 +715,46 @@ class BiomechanicalSquatAnalyzer:
             "is_front_view": effective_front,
         }
 
+    def finalize(self, sec=0.0):
+        """Flushes any rep in progress when the video ended prematurely."""
+        if self.state in ["ASCENDING", "BOTTOM"]:
+            start_t = self.current_rep.get("start_time")
+            if start_t is not None and (sec - start_t >= 0.8):
+                self.completed_reps += 1
+                self.current_rep["end_time"] = round(sec, 2)
+                self.current_rep["rep_number"] = self.completed_reps
+                min_k = self.current_rep.get("min_knee_angle", 180.0)
+                max_t = self.current_rep.get("max_torso_lean_vert", 0.0)
+                max_d = self.current_rep.get("max_descent", 0.0)
+                min_v = self.current_rep.get("min_valgus_ratio", 1.0)
+
+                reasons = []
+                tips = []
+                if self.current_rep.get("view_mode") == "front":
+                    if min_v < 0.88:
+                        reasons.append(f"Lỗi chụm đầu gối (Knee Valgus: {min_v*100:.0f}% < 88%)")
+                        tips.append("Mở rộng khớp gối hướng theo mũi chân khi hạ người.")
+                    if max_d < 0.30:
+                        reasons.append(f"Lỗi chưa đủ độ sâu (Hạ hông mới đạt {max_d*100:.0f}%)")
+                        tips.append("Hạ hông sâu hơn sao cho đùi song song với mặt sàn.")
+                    reasons.append("Chưa đứng thẳng hết biên độ / Video kết thúc sớm")
+                    tips.append("Đứng thẳng hoàn toàn để hoàn thành rep trọn vẹn.")
+                else:
+                    if min_k > self.knee_bottom_max:
+                        reasons.append(f"Lỗi chưa đủ độ sâu ({min_k:.1f}° > 95°)")
+                        tips.append("Hạ người sâu hơn để đạt góc gối 65°-90°.")
+                    if max_t > self.torso_lean_max:
+                        reasons.append(f"Lỗi gập lưng quá mức ({max_t:.1f}° > 45°)")
+                        tips.append("Giữ ngực mở, siết cơ lõi bụng để lưng nghiêng 20°-35°.")
+                    reasons.append(f"Chưa đứng thẳng hết biên độ / Video kết thúc sớm (Gối đang ở {min_k:.1f}°)")
+                    tips.append("Đứng thẳng hết biên độ (góc gối > 155°) trước khi kết thúc bài tập.")
+
+                self.current_rep["status"] = "BAD_FORM"
+                self.current_rep["feedback"] = "; ".join(reasons)
+                self.current_rep["correction_tip"] = " | ".join(tips)
+                self.reps_data.append(dict(self.current_rep))
+                self.state = "STANDING"
+
 
 def analyze_squat_video(video_path, out_video_path=None, report_path=None, engine="posenet", model_asset_path=None):
     """Analyzes a squat video using VisionFit AI.
