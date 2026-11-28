@@ -2047,10 +2047,6 @@ function predictWithTfjs(frames) {
         probsObj.standing = Math.max(0.01, 1.0 - probsObj.squat);
         probsObj.lunge = Math.min(probsObj.lunge, 0.03);
       }
-        probsObj.squat = Math.max(probsObj.squat, depthFactor);
-        probsObj.standing = Math.max(0.01, 1.0 - probsObj.squat);
-        probsObj.lunge = Math.min(probsObj.lunge, 0.03);
-      }
       // Extended knees -> Standing
       else if (avgKnee >= 152 && minKnee >= 145) {
         probsObj.standing = Math.max(probsObj.standing, 0.96);
@@ -2301,109 +2297,119 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('videoFileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    stopSimulator();
-    if (state.cameraRunning) toggleWebcam();
+  const fileInputEl = document.getElementById('videoFileInput');
+  if (fileInputEl) {
+    fileInputEl.addEventListener('click', () => {
+      fileInputEl.value = ''; // Reset so re-uploading the same file reliably triggers change event
+    });
 
-    // Turn off mirror for uploaded video files so it displays in original orientation
-    toggleMirror(false);
+    fileInputEl.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      stopSimulator();
+      if (state.cameraRunning) toggleWebcam();
 
-    // Auto-detect exercise from uploaded filename or user selection
-    const fname = file.name.toLowerCase();
-    const exSelect = document.getElementById('exerciseTargetSelect');
-    const selectedExercise = exSelect ? exSelect.value : 'auto';
+      // Turn off mirror for uploaded video files so it displays in original orientation
+      toggleMirror(false);
 
-    if (selectedExercise !== 'auto') {
-      state.targetExercise = selectedExercise;
-      state.lastActiveWorkout = selectedExercise;
-      state.activeWorkoutAction = selectedExercise;
-    } else {
-      state.targetExercise = 'auto';
-      if (fname.includes('push') || fname.includes('hit') || fname.includes('dat') || fname.includes('chong')) {
-        state.lastActiveWorkout = 'push_up';
-        state.activeWorkoutAction = 'push_up';
-        const hudAction = document.getElementById('hudActionName');
-        if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 💪 PUSH-UP';
-      } else if (fname.includes('squat') || fname.includes('suqta') || fname.includes('ganh')) {
-        state.lastActiveWorkout = 'squat';
-        state.activeWorkoutAction = 'squat';
-        const hudAction = document.getElementById('hudActionName');
-        if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 🦵 SQUAT';
+      // Auto-detect exercise from uploaded filename or user selection
+      const fname = file.name.toLowerCase();
+      const exSelect = document.getElementById('exerciseTargetSelect');
+      const selectedExercise = exSelect ? exSelect.value : 'auto';
+
+      if (selectedExercise !== 'auto') {
+        state.targetExercise = selectedExercise;
+        state.lastActiveWorkout = selectedExercise;
+        state.activeWorkoutAction = selectedExercise;
       } else {
-        state.lastActiveWorkout = null;
-        state.activeWorkoutAction = 'standing';
-        const hudAction = document.getElementById('hudActionName');
-        if (hudAction) hudAction.innerText = '⚡ AI TỰ ĐỘNG NHẬN DIỆN...';
-      }
-      // CRITICAL: Keep exSelect.value as 'auto' so system remains in auto mode!
-    }
-
-    // Reset previous frames and rep counters for new video
-    state.recentFrames = [];
-    state.totalReps = 0;
-    for (const k in state.counters) {
-      state.counters[k].reps = 0;
-      state.counters[k].goodReps = 0;
-      state.counters[k].badReps = 0;
-      state.counters[k].state = 'up';
-    }
-    document.getElementById('statReps').innerText = '0';
-    document.getElementById('hudRepCount').innerText = '0';
-
-    const url = URL.createObjectURL(file);
-    videoElement.srcObject = null;
-    videoElement.src = url;
-    videoElement.loop = false;
-    videoElement.onloadedmetadata = () => {
-      const vw = videoElement.videoWidth;
-      const vh = videoElement.videoHeight;
-      const box = document.getElementById('viewportBox');
-      if (vw && vh && box) {
-        box.style.aspectRatio = `${vw} / ${vh}`;
-      }
-    };
-    videoElement.loop = false;
-    videoElement.onended = () => {
-      if (state.loopVideo) {
-        videoElement.currentTime = 0;
-        for (const k in state.counters) {
-          state.counters[k].reps = 0;
-          state.counters[k].goodReps = 0;
-          state.counters[k].badReps = 0;
-          state.counters[k].state = 'up';
+        state.targetExercise = 'auto';
+        if (fname.includes('push') || fname.includes('hit') || fname.includes('dat') || fname.includes('chong')) {
+          state.lastActiveWorkout = 'push_up';
+          state.activeWorkoutAction = 'push_up';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 💪 PUSH-UP';
+        } else if (fname.includes('squat') || fname.includes('suqta') || fname.includes('ganh')) {
+          state.lastActiveWorkout = 'squat';
+          state.activeWorkoutAction = 'squat';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI NHẬN DIỆN: 🦵 SQUAT';
+        } else {
+          state.lastActiveWorkout = null;
+          state.activeWorkoutAction = 'standing';
+          const hudAction = document.getElementById('hudActionName');
+          if (hudAction) hudAction.innerText = '⚡ AI TỰ ĐỘNG NHẬN DIỆN...';
         }
-        state.totalReps = 0;
-        document.getElementById('statReps').innerText = '0';
-        document.getElementById('hudRepCount').innerText = '0';
-        videoElement.play();
-        return;
+        // CRITICAL: Keep exSelect.value as 'auto' so system remains in auto mode!
       }
-      state.cameraRunning = false;
-      stopTimer();
-      const totalRepsEl = document.getElementById('aiTotalReps');
-      if (totalRepsEl && totalRepsEl.innerText !== '0') {
-        const exactReps = parseInt(totalRepsEl.innerText, 10);
-        const statRepsEl = document.getElementById('statReps');
-        const hudRepCountEl = document.getElementById('hudRepCount');
-        if (statRepsEl) statRepsEl.innerText = exactReps;
-        if (hudRepCountEl) hudRepCountEl.innerText = exactReps;
-      }
-      const phasePill = document.getElementById('hudPhasePill');
-      if (phasePill) phasePill.innerText = 'HOÀN THÀNH VIDEO';
-      const actionName = document.getElementById('hudActionName');
-      if (actionName) actionName.innerText = 'KẾT THÚC';
-    };
-    videoElement.play();
-    state.cameraRunning = true;
-    document.getElementById('sourceBadge').innerText = 'FILE VIDEO';
-    runVideoPolling();
-    startTimer();
 
-    // Trigger VisionFit AI full video analysis and rep evaluation in the empty space
-    analyzeUploadedVideoWithAI(file);
-  });
+      // Reset previous frames and rep counters for new video
+      state.recentFrames = [];
+      state.totalReps = 0;
+      for (const k in state.counters) {
+        state.counters[k].reps = 0;
+        state.counters[k].goodReps = 0;
+        state.counters[k].badReps = 0;
+        state.counters[k].state = 'up';
+      }
+      document.getElementById('statReps').innerText = '0';
+      document.getElementById('hudRepCount').innerText = '0';
+
+      const url = URL.createObjectURL(file);
+      videoElement.srcObject = null;
+      videoElement.src = url;
+      videoElement.loop = false;
+      videoElement.muted = true; // Ensure browser autoplay policy permits smooth playback
+      videoElement.onloadedmetadata = () => {
+        const vw = videoElement.videoWidth;
+        const vh = videoElement.videoHeight;
+        const box = document.getElementById('viewportBox');
+        if (vw && vh && box) {
+          box.style.aspectRatio = `${vw} / ${vh}`;
+        }
+      };
+      videoElement.loop = false;
+      videoElement.onended = () => {
+        if (state.loopVideo) {
+          videoElement.currentTime = 0;
+          for (const k in state.counters) {
+            state.counters[k].reps = 0;
+            state.counters[k].goodReps = 0;
+            state.counters[k].badReps = 0;
+            state.counters[k].state = 'up';
+          }
+          state.totalReps = 0;
+          document.getElementById('statReps').innerText = '0';
+          document.getElementById('hudRepCount').innerText = '0';
+          const p = videoElement.play();
+          if (p !== undefined) p.catch(() => {});
+          return;
+        }
+        state.cameraRunning = false;
+        stopTimer();
+        const totalRepsEl = document.getElementById('aiTotalReps');
+        if (totalRepsEl && totalRepsEl.innerText !== '0') {
+          const exactReps = parseInt(totalRepsEl.innerText, 10);
+          const statRepsEl = document.getElementById('statReps');
+          const hudRepCountEl = document.getElementById('hudRepCount');
+          if (statRepsEl) statRepsEl.innerText = exactReps;
+          if (hudRepCountEl) hudRepCountEl.innerText = exactReps;
+        }
+        const phasePill = document.getElementById('hudPhasePill');
+        if (phasePill) phasePill.innerText = 'HOÀN THÀNH VIDEO';
+        const actionName = document.getElementById('hudActionName');
+        if (actionName) actionName.innerText = 'KẾT THÚC';
+      };
+      const playP = videoElement.play();
+      if (playP !== undefined) playP.catch(() => {});
+      state.cameraRunning = true;
+      document.getElementById('sourceBadge').innerText = 'FILE VIDEO';
+      runVideoPolling();
+      startTimer();
+
+      // Trigger VisionFit AI full video analysis and rep evaluation in the empty space
+      analyzeUploadedVideoWithAI(file);
+    });
+  }
 
   // Data Collection
   document.getElementById('btnStartRecord').addEventListener('click', startRecordingProcess);
