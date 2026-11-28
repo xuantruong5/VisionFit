@@ -2,23 +2,37 @@
 __pycache__/
 .pytest_cache/
 *.py[cod]
+
+# Models (chỉ giữ các model tự train của nhóm)
 models/*.pt
 !models/action_demo.pt
+!models/pose_custom.pt
+!models/pose_debug_91.pt
 
 !reports/.gitkeep
 data/frames/
+data/extracted_frames/
 data/action_clips/
-data/action_real.npz
-data/pose_real.npz
+data/*.npz
 videos/
-# Ignore toàn bộ báo cáo
-reports/*
 
-# Cho phép Git theo dõi các thư mục báo cáo cần thiết
+# Báo cáo kết quả
+reports/*
+reports/**/*.mp4
+
+# Cho phép Git theo dõi các thư mục ảnh đánh giá làm minh chứng Capstone
+!reports/pose_letterbox_eval/
+!reports/pose_multiview_eval/
+!reports/eval/
 !reports/pose_debug/
 !reports/pose_v2/
+!reports/benchmarks/
+!reports/benchmarks/**
 
-# Cho phép các file kết quả đánh giá
-!reports/evaluation.json
-!reports/history.csv
+# Cho phép các file kết quả đánh giá json
+!reports/**/*.json
 !reports/.gitkeep
+# Logs
+*.log
+logs/
+

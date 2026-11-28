@@ -1,0 +1,20 @@
+{
+  "dataset": "pose_multi_exercise.npz",
+  "total_samples": 4511,
+  "train_samples": 3827,
+  "val_samples": 684,
+  "exercises": [
+    "squat",
+    "incline_dumbbell_press"
+  ],
+  "val_mean_pixel_error": 1.12,
+  "val_pck05": 71.56,
+  "val_pck10": 93.17,
+  "val_pck20": 99.33,
+  "visibility_classification": {
+    "accuracy": 99.34,
+    "precision": 99.71,
+    "recall": 99.56,
+    "f1_score": 99.63
+  }
+}

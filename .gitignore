@@ -1,0 +1,19 @@
+# OS & Archives
+.DS_Store
+*.zip
+*.tar.gz
+modules.zip
+
+# Python cache & venv
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Large training datasets (>50MB)
+**/data/pose_letterbox_all.npz
+
+# Temporary test outputs
+**/reports/pose_v2/test_*.jpg

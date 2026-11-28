@@ -1,0 +1,49 @@
+{
+  "dataset": "data/pose_letterbox_all.npz",
+  "total_frames": 2543,
+  "subjects": [
+    "person10",
+    "person11",
+    "person12",
+    "person13",
+    "person14"
+  ],
+  "overall": {
+    "val_frames": 507,
+    "pck_05": 99.71,
+    "pck_10": 100.0,
+    "mean_error_pixels": 2.17
+  },
+  "per_subject": {
+    "person10": {
+      "val_frames": 220,
+      "pck_05": 100.0,
+      "pck_10": 100.0,
+      "mean_error_pixels": 2.27
+    },
+    "person11": {
+      "val_frames": 70,
+      "pck_05": 100.0,
+      "pck_10": 100.0,
+      "mean_error_pixels": 2.25
+    },
+    "person12": {
+      "val_frames": 139,
+      "pck_05": 99.98,
+      "pck_10": 100.0,
+      "mean_error_pixels": 1.83
+    },
+    "person13": {
+      "val_frames": 38,
+      "pck_05": 99.36,
+      "pck_10": 100.0,
+      "mean_error_pixels": 2.34
+    },
+    "person14": {
+      "val_frames": 40,
+      "pck_05": 97.25,
+      "pck_10": 100.0,
+      "mean_error_pixels": 2.53
+    }
+  }
+}

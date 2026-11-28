@@ -1,0 +1,47 @@
+[
+  {
+    "source": "datasets/raw/squat/squat_đúng.mp4",
+    "file": "datasets/keypoints/squat_đúng.npz",
+    "action": "squat",
+    "form": "good",
+    "frames": 1101,
+    "detected_frames": 1101,
+    "coverage_percent": 100.0
+  },
+  {
+    "source": "datasets/raw/squat/squat_sai.mp4",
+    "file": "datasets/keypoints/squat_sai.npz",
+    "action": "squat",
+    "form": "bad",
+    "frames": 752,
+    "detected_frames": 752,
+    "coverage_percent": 100.0
+  },
+  {
+    "source": "datasets/raw/push_up/push_up_đúng.mp4",
+    "file": "datasets/keypoints/push_up_đúng.npz",
+    "action": "push_up",
+    "form": "good",
+    "frames": 583,
+    "detected_frames": 582,
+    "coverage_percent": 99.8
+  },
+  {
+    "source": "datasets/raw/push_up/pushup_sai.mp4",
+    "file": "datasets/keypoints/pushup_sai.npz",
+    "action": "push_up",
+    "form": "bad",
+    "frames": 415,
+    "detected_frames": 415,
+    "coverage_percent": 100.0
+  },
+  {
+    "source": "datasets/raw/push_up/pushup_sai1.mp4",
+    "file": "datasets/keypoints/pushup_sai1.npz",
+    "action": "push_up",
+    "form": "bad",
+    "frames": 346,
+    "detected_frames": 346,
+    "coverage_percent": 100.0
+  }
+]

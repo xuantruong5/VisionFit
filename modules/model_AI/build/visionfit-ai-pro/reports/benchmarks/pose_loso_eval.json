@@ -1,0 +1,20 @@
+{
+  "model": "models/pose_custom.pt",
+  "architecture": "DualHead_BodyPoseNet",
+  "protocol": "Leave-One-Subject-Out (LOSO)",
+  "held_out_unseen_subject": "person14_squat",
+  "metrics_on_unseen_subject": {
+    "mean_joint_error_pixels_128": 24.64,
+    "pck_010_torso": 1.47,
+    "pck_020_torso_standard": 7.15,
+    "visibility_precision_pct": 96.2,
+    "visibility_recall_pct": 81.42,
+    "visibility_f1_pct": 88.19
+  },
+  "model_parameters": 5246083,
+  "input_resolution": "128x128x3",
+  "outputs": {
+    "coordinate_head": "33 joints x (x, y) normalized [0, 1]",
+    "visibility_head": "33 joints visibility probability [0, 1]"
+  }
+}
