@@ -33,7 +33,7 @@ HAND_IMG_SIZE = 64
 BODY_JOINTS = 33
 HAND_JOINTS = 21
 
-MODELS_DIR = Path(__file__).resolve().parent / 'models'
+MODELS_DIR = Path(__file__).resolve().parent.parent / 'models'
 
 # Joint indices
 NOSE = 0

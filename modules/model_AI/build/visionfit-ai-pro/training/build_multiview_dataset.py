@@ -17,7 +17,7 @@ import numpy as np
 import mediapipe as mp
 
 IMAGE_SIZE = 128
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 VIDEOS_DIR = ROOT / 'videos' / 'squat'
 MODEL_ASSET = ROOT / 'models' / 'mediapipe' / 'pose_landmarker_full.task'
 OUT_NPZ = ROOT / 'data' / 'pose_multiview_squat.npz'

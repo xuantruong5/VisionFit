@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-_ROOT = Path(__file__).resolve().parent.parent
+_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
@@ -16,7 +16,7 @@ import cv2
 import numpy as np
 import mediapipe as mp
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT))
 
 VIDEO_PATH = ROOT / 'videos' / 'incline_press' / 'incline_press_1.mp4'

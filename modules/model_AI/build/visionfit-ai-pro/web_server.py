@@ -326,18 +326,34 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': 'Empty upload'}).encode('utf-8'))
                 return
 
+            # Max upload limit: 100MB to prevent Denial-of-Service / Memory exhaustion
+            MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+            if content_length > MAX_UPLOAD_BYTES:
+                self.send_response(413)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Video payload exceeds maximum 100MB limit'}).encode('utf-8'))
+                return
+
             from urllib.parse import urlparse, parse_qs
+            import time
             parsed = urlparse(self.path)
             qs = parse_qs(parsed.query)
             filename = qs.get('filename', ['uploaded_video.mp4'])[0]
             exercise = qs.get('exercise', [None])[0]
-            safe_name = Path(filename).name
-            if not safe_name.lower().endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv')):
-                safe_name += '.mp4'
+            raw_safe_name = Path(filename).name
+            if not raw_safe_name.lower().endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv')):
+                raw_safe_name += '.mp4'
 
+            # Avoid file collision / overwrite by appending timestamp if exists
             staging_dir = ROOT_DIR / 'videos' / 'uploads'
             staging_dir.mkdir(parents=True, exist_ok=True)
-            dest_file = staging_dir / safe_name
+            dest_file = staging_dir / raw_safe_name
+            if dest_file.exists():
+                safe_stem = dest_file.stem
+                safe_ext = dest_file.suffix
+                raw_safe_name = f"{safe_stem}_{int(time.time())}{safe_ext}"
+                dest_file = staging_dir / raw_safe_name
 
             bytes_left = content_length
             with open(dest_file, 'wb') as f:
@@ -347,6 +363,21 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
                         break
                     f.write(chunk)
                     bytes_left -= len(chunk)
+
+            # Validate video integrity with OpenCV
+            import cv2
+            cap_val = cv2.VideoCapture(str(dest_file))
+            is_valid_video = cap_val.isOpened() and (int(cap_val.get(cv2.CAP_PROP_FRAME_COUNT)) > 0)
+            cap_val.release()
+            if not is_valid_video:
+                dest_file.unlink(missing_ok=True)
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Invalid or corrupted video file format'}).encode('utf-8'))
+                return
+
+            safe_name = raw_safe_name
 
             # Exercise auto-detection or user explicit choice
             if exercise in ('push_up', 'squat', 'incline_press', 'general'):
