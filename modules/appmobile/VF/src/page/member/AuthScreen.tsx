@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
 import LinearGradient from "react-native-linear-gradient";
 import { COLORS, SHADOWS } from "../../general/theme";
+import { triggerAuthSessionChanged } from "../../components/mascot/mascotEvents";
 
 const AuthScreen = ({ navigation }: any) => {
     const [isRegister, setIsRegister] = useState(true);
@@ -83,6 +84,7 @@ const AuthScreen = ({ navigation }: any) => {
                 if (token) {
                     await AsyncStorage.setItem('token', token);
                     await AsyncStorage.setItem('role', 'member');
+                    triggerAuthSessionChanged();
                 }
                 if (token) {
                     const checkProfile = await apiFitlife.get( '/client/check-cap-nhat-lan-dau');
@@ -257,6 +259,7 @@ const AuthScreen = ({ navigation }: any) => {
                         const trainerToken = trainerRes.data.token;
                         await AsyncStorage.setItem('token', trainerToken);
                         await AsyncStorage.setItem('role', 'trainer');
+                        triggerAuthSessionChanged();
 
                         Alert.alert('Thành công', 'Đăng nhập thành công với vai trò Huấn luyện viên');
                         navigation.reset({
@@ -281,6 +284,7 @@ const AuthScreen = ({ navigation }: any) => {
             const token = response.data.token;
             await AsyncStorage.setItem('token', token);
             await AsyncStorage.setItem('role', 'member');
+            triggerAuthSessionChanged();
             console.log('Đăng nhập thành công, đang kiểm tra chương trình tập...');
 
             const checkProfile = await apiFitlife.get('/client/check-cap-nhat-lan-dau');

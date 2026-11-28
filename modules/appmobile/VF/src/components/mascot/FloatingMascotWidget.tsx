@@ -17,27 +17,16 @@ LogBox.ignoreLogs([
   "Style property 'left' is not supported",
   "Attempting to run JS driven animation",
 ]);
-import Svg, {
-  G,
-  Path,
-  Circle,
-  Ellipse,
-  Polygon,
-  Line,
-  Defs,
-  LinearGradient,
-  Stop,
-} from 'react-native-svg';
 import { MascotSpecies, MascotStage, MascotState } from './types';
 import { MascotVectorRig } from './MascotVectorRig';
 import { MascotChatModal } from './MascotChatModal';
-import { mascotEmitter, MASCOT_EVENTS } from './mascotEvents';
+import { mascotEmitter, MASCOT_EVENTS, WATER_REMINDER_STORAGE_KEY } from './mascotEvents';
 import { getMascotPeekingImage } from './mascotImages';
 import { getStoredSpecies, subscribeSpeciesChange } from './mascotStorage';
 import { getProgressionData, recordWorkoutSession } from './mascotProgression';
+import { getScreenMood, pickWaterReminderMessage } from './mascotScreenMood';
+import { navigationRef } from '../../general/rootNavigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const WATER_REMINDER_STORAGE_KEY = '@visionfit_water_reminder';
 
 // Error Boundary bảo vệ ứng dụng chính (100% không bao giờ crash app)
 interface ErrorBoundaryProps {
@@ -103,7 +92,14 @@ const MascotInner: React.FC<MascotProps> = ({
 
   // Trạng thái hoạt cảnh: Mặc định luôn ở trạng thái 'idle' nhún nhảy thể thao tại chỗ
   const [currentState, setCurrentState] = useState<MascotState>('idle');
+  const currentStateRef = useRef<MascotState>('idle');
+  currentStateRef.current = currentState;
   const [isChatVisible, setIsChatVisible] = useState(false);
+
+  // Bong bóng lời nói: câu nhắc uống nước (luân phiên) hoặc câu theo màn hình đang mở
+  const [drinkMessage, setDrinkMessage] = useState('💧 Uống nước đi!');
+  const [moodMessage, setMoodMessage] = useState<string | null>(null);
+  const moodTimerRef = useRef<any>(null);
 
   // CHẾ ĐỘ NÚP MÉP MÀN HÌNH (EDGE PEEKING / DOCKED MODE)
   const [isPeeking, setIsPeeking] = useState(false);
@@ -202,6 +198,7 @@ const MascotInner: React.FC<MascotProps> = ({
       setCurrentState(newState);
 
       if (newState === 'drinking') {
+        setDrinkMessage(pickWaterReminderMessage());
         bubbleScale.setValue(0.3);
         Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
       }
@@ -219,9 +216,18 @@ const MascotInner: React.FC<MascotProps> = ({
       }
     };
 
+    const handleAuthReset = () => {
+      clearTimeout(revertTimer);
+      if (drinkRevertTimerRef.current) {
+        clearTimeout(drinkRevertTimerRef.current);
+      }
+      setCurrentState('idle');
+    };
+
     mascotEmitter.on(MASCOT_EVENTS.SET_STATE, handleSetState);
     mascotEmitter.on(MASCOT_EVENTS.SET_SPECIES, setCurrentSpecies);
     mascotEmitter.on(MASCOT_EVENTS.SET_STAGE, setCurrentStage);
+    mascotEmitter.on(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthReset);
 
     // Lắng nghe sự kiện bài tập
     const workoutTrainSub = DeviceEventEmitter.addListener(
@@ -254,6 +260,7 @@ const MascotInner: React.FC<MascotProps> = ({
       mascotEmitter.off(MASCOT_EVENTS.SET_STATE, handleSetState);
       mascotEmitter.off(MASCOT_EVENTS.SET_SPECIES, setCurrentSpecies);
       mascotEmitter.off(MASCOT_EVENTS.SET_STAGE, setCurrentStage);
+      mascotEmitter.off(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthReset);
       workoutTrainSub.remove();
       workoutFinishSub.remove();
     };
@@ -301,7 +308,45 @@ const MascotInner: React.FC<MascotProps> = ({
     };
   }, []);
 
+  // BIỂU CẢM THEO MÀN HÌNH (Task 5.2): mỗi khi người dùng chuyển màn hình, linh vật đổi tư thế + nói 1 câu ngắn
+  useEffect(() => {
+    let lastRoute: string | null = null;
+    const onNavState = () => {
+      let routeName: string | null = null;
+      try {
+        routeName = (navigationRef.getCurrentRoute() as any)?.name ?? null;
+      } catch (_) {
+        routeName = null;
+      }
+      if (!routeName || routeName === lastRoute) return;
+      lastRoute = routeName;
+
+      const mood = getScreenMood(routeName);
+      // Không cắt ngang lúc đang nhắc uống nước hoặc đang mở khung chat
+      if (!mood || currentStateRef.current === 'drinking' || isChatVisibleRef.current) return;
+
+      if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
+      mascotEmitter.emit(MASCOT_EVENTS.SET_STATE, mood.state, mood.durationMs);
+      setMoodMessage(mood.message);
+      bubbleScale.setValue(0.3);
+      Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
+      moodTimerRef.current = setTimeout(() => {
+        Animated.timing(bubbleScale, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => {
+          setMoodMessage(null);
+        });
+      }, mood.durationMs);
+    };
+
+    const unsubscribe = (navigationRef as any).addListener?.('state', onNavState);
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+      if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
+    };
+  }, [bubbleScale]);
+
   const triggerDrink = () => {
+    setMoodMessage(null);
+    setDrinkMessage(pickWaterReminderMessage());
     setCurrentState('drinking');
     bubbleScale.setValue(0.3);
     Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: false }).start();
@@ -549,8 +594,8 @@ const MascotInner: React.FC<MascotProps> = ({
         ]}
         {...panResponder.panHandlers}
       >
-        {/* BONG BÓNG UỐNG NƯỚC ĐI (STATE-DRINKING) */}
-        {currentState === 'drinking' && !isPeeking && (
+        {/* BONG BÓNG LỜI NÓI: nhắc uống nước (STATE-DRINKING) hoặc câu theo màn hình đang mở */}
+        {(currentState === 'drinking' || moodMessage) && !isPeeking && (
           <Animated.View
             style={[
               styles.waterBubble,
@@ -559,7 +604,9 @@ const MascotInner: React.FC<MascotProps> = ({
               },
             ]}
           >
-            <Text style={styles.waterBubbleText}>💧 Uống nước đi!</Text>
+            <Text style={styles.waterBubbleText}>
+              {currentState === 'drinking' ? drinkMessage : moodMessage}
+            </Text>
             <View style={styles.waterBubbleArrow} />
           </Animated.View>
         )}
@@ -699,6 +746,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 124,
+    maxWidth: 200,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,

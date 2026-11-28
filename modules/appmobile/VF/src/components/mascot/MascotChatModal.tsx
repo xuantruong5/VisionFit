@@ -11,15 +11,19 @@ import {
   ActivityIndicator,
   Keyboard,
   BackHandler,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { MascotSpecies, MascotStage, ChatMessage } from './types';
 import { getMascotImage } from './mascotImages';
 import { getAIResponse, clearAssistantCache } from './mascotChatService';
+import { parseInlineMarkdown, stripInlineMarkdown } from './mascotMarkdown';
 import { MascotSelectorModal } from './MascotSelectorModal';
 import { MascotVectorRig } from './MascotVectorRig';
 import {
+  mascotEmitter,
+  MASCOT_EVENTS,
   triggerMascotState,
   triggerWorkoutStart,
   triggerWaterReminderSetting,
@@ -51,6 +55,8 @@ const QUICK_SUGGESTIONS = [
   { label: '🎟 Gói tập của tôi', query: 'Gói tập của tôi còn bao nhiêu buổi?' },
 ];
 
+const AUTO_NAVIGATE_SECONDS = 4;
+
 export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   visible,
   currentSpecies,
@@ -70,6 +76,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const isSendingRef = useRef(false);
   const lastTokenRef = useRef<string | null | undefined>(undefined);
   const sessionEpochRef = useRef(0);
+  const activeRequestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const justSentTimerRef = useRef<any>(null);
 
   const clearInput = () => {
@@ -77,13 +85,57 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     inputRef.current?.clear();
   };
 
-  // Lắng nghe độ cao bàn phím ảo để đẩy ô chatbox lên trên mép bàn phím một khoảng an toàn
+  // ── Tự động điều hướng (Task 2.3): đếm ngược rồi tự mở màn hình, người dùng có thể bấm "Ở lại" để hủy ──
+  const [autoNav, setAutoNav] = useState<{ msgId: string; type: string; secondsLeft: number } | null>(null);
+
+  // Một nơi duy nhất ánh xạ action -> màn hình, dùng chung cho nút bấm và tự chuyển trang
+  const runNavigationAction = (type: string) => {
+    setAutoNav(null);
+    if (type === 'NAVIGATE_REGISTER_PROGRAM') {
+      navigateToRegisterProgram();
+    } else if (type === 'NAVIGATE_BODY_METRICS') {
+      navigateToBodyMetrics();
+    } else if (type === 'NAVIGATE_REGISTER_PACKAGE') {
+      navigateToRegisterPackage();
+    } else if (type === 'NAVIGATE_WORKOUT') {
+      triggerWorkoutStart();
+      navigateToWorkoutPlan();
+    } else {
+      return;
+    }
+    onClose();
+  };
+
   useEffect(() => {
+    if (!autoNav) return;
+    if (!visible) {
+      setAutoNav(null);
+      return;
+    }
+    if (autoNav.secondsLeft <= 0) {
+      runNavigationAction(autoNav.type);
+      return;
+    }
+    const t = setTimeout(() => {
+      setAutoNav((cur) => (cur && cur.msgId === autoNav.msgId ? { ...cur, secondsLeft: cur.secondsLeft - 1 } : cur));
+    }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNav, visible]);
+
+  // Lắng nghe độ cao bàn phím ảo và luôn đặt lại về 0 khi ẩn bàn phím / đóng modal (tránh co chiều cao trên Android)
+  useEffect(() => {
+    if (!visible) {
+      setKeyboardHeight(0);
+      return;
+    }
+
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
+      const nextHeight = Math.max(0, e?.endCoordinates?.height || 0);
+      setKeyboardHeight(nextHeight);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 120);
@@ -96,8 +148,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     return () => {
       showSub.remove();
       hideSub.remove();
+      setKeyboardHeight(0);
     };
-  }, []);
+  }, [visible]);
 
   const getWelcomeText = (species: MascotSpecies) => {
     if (species === 'cat') {
@@ -117,6 +170,36 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     createWelcomeMessage(currentSpecies),
   ]);
 
+  const resetConversationSession = (nextToken?: string | null) => {
+    sessionEpochRef.current += 1;
+    activeRequestIdRef.current += 1;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    isSendingRef.current = false;
+    setIsTyping(false);
+    clearInput();
+    clearAssistantCache();
+    setMessages([createWelcomeMessage(currentSpecies)]);
+    if (nextToken !== undefined) {
+      lastTokenRef.current = nextToken;
+    }
+  };
+
+  // Lắng nghe sự kiện đăng xuất / đăng nhập tài khoản khác để xóa ngay hội thoại & hủy request đang chạy
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      AsyncStorage.getItem('token')
+        .then((token) => resetConversationSession(token))
+        .catch(() => resetConversationSession(null));
+    };
+    mascotEmitter.on(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthChanged);
+    return () => {
+      mascotEmitter.off(MASCOT_EVENTS.AUTH_SESSION_CHANGED, handleAuthChanged);
+    };
+  }, [currentSpecies]);
+
   // Nếu người dùng đăng xuất / đăng nhập / chuyển sang tài khoản khác, tự động xóa lịch sử chat và cache ngữ cảnh cũ
   useEffect(() => {
     if (!visible) return;
@@ -125,11 +208,10 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       .then((token) => {
         if (!isMounted) return;
         if (lastTokenRef.current !== undefined && lastTokenRef.current !== token) {
-          sessionEpochRef.current += 1;
-          clearAssistantCache();
-          setMessages([createWelcomeMessage(currentSpecies)]);
+          resetConversationSession(token);
+        } else {
+          lastTokenRef.current = token;
         }
-        lastTokenRef.current = token;
       })
       .catch(() => {});
     return () => {
@@ -142,6 +224,11 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
       if (justSentTimerRef.current) {
         clearTimeout(justSentTimerRef.current);
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      isSendingRef.current = false;
     };
   }, []);
 
@@ -229,6 +316,21 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
 
     isSendingRef.current = true;
     clearInput();
+    setAutoNav(null); // Người dùng hỏi tiếp -> hủy tự chuyển trang đang chờ
+
+    // Xác minh lại token ngay trước khi gửi để tuyệt đối không gửi kèm lịch sử của tài khoản trước
+    let sessionWasReset = false;
+    try {
+      const currentToken = await AsyncStorage.getItem('token');
+      if (lastTokenRef.current !== undefined && lastTokenRef.current !== currentToken) {
+        sessionEpochRef.current += 1;
+        clearAssistantCache();
+        lastTokenRef.current = currentToken;
+        sessionWasReset = true;
+      } else if (lastTokenRef.current === undefined) {
+        lastTokenRef.current = currentToken;
+      }
+    } catch (_) {}
 
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMsg: ChatMessage = {
@@ -239,15 +341,23 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     };
 
     const requestEpoch = sessionEpochRef.current;
-    const historyPayload = messages
-      .filter((m) => m.id !== 'welcome')
-      .slice(-8)
-      .map((m) => ({
-        sender: m.sender,
-        text: m.text,
-      }));
+    const requestId = ++activeRequestIdRef.current;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    abortControllerRef.current = controller;
 
-    setMessages((prev) => [...prev, userMsg]);
+    const historyPayload = sessionWasReset
+      ? []
+      : messages
+          .filter((m) => m.id !== 'welcome' && m.source !== 'service_error')
+          .slice(-8)
+          .map((m) => ({
+            sender: m.sender,
+            text: m.text,
+          }));
+
+    setMessages((prev) =>
+      sessionWasReset ? [createWelcomeMessage(currentSpecies), userMsg] : [...prev, userMsg]
+    );
     setIsTyping(true);
     triggerMascotState('thinking');
 
@@ -256,9 +366,11 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
     }, 100);
 
     try {
-      const res = await getAIResponse(textToSend, currentSpecies, historyPayload);
+      const res = await getAIResponse(textToSend, currentSpecies, historyPayload, controller?.signal);
       // Bỏ qua phản hồi cũ nếu người dùng đã đăng xuất / đổi tài khoản trong lúc chờ API
-      if (sessionEpochRef.current !== requestEpoch) return;
+      if (res.canceled || sessionEpochRef.current !== requestEpoch || activeRequestIdRef.current !== requestId) {
+        return;
+      }
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -267,8 +379,15 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         intent: res.intent,
         action: res.action || null,
+        autoNavigate: res.autoNavigate === true,
+        source: res.source,
+        retryable: !res.ok && res.retryable !== false,
+        retryQuery: !res.ok ? textToSend : undefined,
       };
       setMessages((prev) => [...prev, aiMsg]);
+      if (aiMsg.autoNavigate && aiMsg.action?.type) {
+        setAutoNav({ msgId: aiMsg.id, type: aiMsg.action.type, secondsLeft: AUTO_NAVIGATE_SECONDS });
+      }
 
       // Biểu cảm linh vật theo ngữ cảnh phân tích từ AI
       const emotion = res.emotion || 'explaining';
@@ -298,46 +417,78 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         triggerMascotState('speaking', 3500);
       }
     } catch (e) {
+      if (sessionEpochRef.current !== requestEpoch || activeRequestIdRef.current !== requestId) {
+        return;
+      }
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'assistant',
         text: 'Có chút trục trặc khi kết nối, bạn thử hỏi lại mình nhé!',
-        time: 'Vừa xong',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: 'service_error',
+        retryable: true,
+        retryQuery: textToSend,
       };
       setMessages((prev) => [...prev, errorMsg]);
       triggerMascotState('error', 3500);
     } finally {
-      isSendingRef.current = false;
-      setIsTyping(false);
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (activeRequestIdRef.current === requestId) {
+        isSendingRef.current = false;
+        setIsTyping(false);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
     }
   };
 
   const headerMascotImg = getMascotImage(currentSpecies, currentStage);
 
-  // Render đoạn text hỗ trợ in đậm **bold** và in nghiêng *italic* nội tuyến
-  const renderInlineBoldText = (text: string, baseStyle: any) => {
-    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g);
+  // Render đoạn text hỗ trợ in đậm **bold**, in nghiêng *italic* và mã nội tuyến `code` (dùng cho cả bóng chat và ô bảng)
+  const renderInlineBoldText = (text: string, baseStyle: any, boldColor: string = COLORS.textDark) => {
+    const tokens = parseInlineMarkdown(text);
     return (
       <Text style={baseStyle}>
-        {parts.map((part, idx) => {
-          if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+        {tokens.map((tok, idx) => {
+          if (tok.type === 'bold') {
             return (
-              <Text key={idx} style={{ fontWeight: '700', color: COLORS.textDark }}>
-                {part.slice(2, -2)}
+              <Text key={idx} style={{ fontWeight: '700', color: boldColor }}>
+                {tok.content}
               </Text>
             );
           }
-          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+          if (tok.type === 'italic') {
             return (
               <Text key={idx} style={{ fontStyle: 'italic' }}>
-                {part.slice(1, -1)}
+                {tok.content}
               </Text>
             );
           }
-          return <React.Fragment key={idx}>{part}</React.Fragment>;
+          if (tok.type === 'code') {
+            return (
+              <Text key={idx} style={styles.inlineCode}>
+                {tok.content}
+              </Text>
+            );
+          }
+          if (tok.type === 'link') {
+            return (
+              <Text
+                key={idx}
+                style={styles.inlineLink}
+                accessibilityRole="link"
+                onPress={() => {
+                  Linking.openURL(tok.url).catch(() => {});
+                }}
+              >
+                {tok.content}
+              </Text>
+            );
+          }
+          return <React.Fragment key={idx}>{tok.content}</React.Fragment>;
         })}
       </Text>
     );
@@ -347,9 +498,9 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   const computeColumnWidths = (headers: string[], rows: string[][]): number[] => {
     const colCount = headers.length;
     const widths = Array.from({ length: colCount }, (_, colIdx) => {
-      const headerLen = (headers[colIdx] || '').length;
+      const headerLen = stripInlineMarkdown(headers[colIdx] || '').length;
       const maxCellLen = rows.reduce((max, row) => {
-        const clean = (row[colIdx] || '').replace(/\*\*/g, '');
+        const clean = stripInlineMarkdown(row[colIdx] || '');
         return Math.max(max, clean.length);
       }, 0);
       const longest = Math.max(headerLen, maxCellLen);
@@ -414,7 +565,7 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
         if (sepIdx !== -1) {
           const rawHeader = trimmed.startsWith('|') ? trimmed.slice(1) : trimmed;
           const cleanHeader = rawHeader.endsWith('|') ? rawHeader.slice(0, -1) : rawHeader;
-          const headers = cleanHeader.split('|').map((c) => c.trim().replace(/\*\*/g, ''));
+          const headers = cleanHeader.split('|').map((c) => stripInlineMarkdown(c.trim()));
 
           i = sepIdx + 1;
           const rows: string[][] = [];
@@ -475,8 +626,8 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                       ]}
                     >
                       {row.map((cell, cIdx) => {
-                        const cleanCell = cell.replace(/\*\*/g, '');
-                        const isNumericCell = /^(\d+([.,]\d+)?\s*(kcal|g|kg|cm|buổi|hiệp|reps)?|—)$/i.test(cleanCell);
+                        const plainCell = stripInlineMarkdown(cell);
+                        const isNumericCell = /^(\d+([.,]\d+)?\s*(kcal|g|kg|cm|buổi|hiệp|reps)?|—)$/i.test(plainCell);
                         return (
                           <View
                             key={`td-${cIdx}`}
@@ -486,15 +637,15 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                               cIdx === headers.length - 1 && styles.tableLastCol,
                             ]}
                           >
-                            <Text
-                              style={[
+                            {renderInlineBoldText(
+                              cell,
+                              [
                                 styles.tableTdText,
                                 cIdx === 0 && styles.tableTdFirstText,
                                 isNumericCell && styles.tableTdNumText,
-                              ]}
-                            >
-                              {cleanCell}
-                            </Text>
+                              ],
+                              cIdx === 0 ? COLORS.primary : COLORS.textDark
+                            )}
                           </View>
                         );
                       })}
@@ -577,8 +728,13 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
   if (!visible) return null;
 
   return (
-    <View style={[styles.overlay, { bottom: keyboardHeight }]}>
-      <View style={styles.modalContainer}>
+    <View style={styles.overlay}>
+      <View
+        style={[
+          styles.modalContainer,
+          keyboardHeight > 0 && { paddingBottom: keyboardHeight },
+        ]}
+      >
         {/* HEADER CHATBOX */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -649,41 +805,17 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
             const isUser = msg.sender === 'user';
             const actionType = !isUser && msg.id !== 'welcome' ? msg.action?.type : null;
 
+            const actionLabels: Record<string, string> = {
+              NAVIGATE_REGISTER_PROGRAM: '📋 Đăng ký chương trình tập ➔',
+              NAVIGATE_BODY_METRICS: '📊 Cập nhật chỉ số cơ thể ➔',
+              NAVIGATE_REGISTER_PACKAGE: '🎟 Đăng ký gói tập ngay ➔',
+              NAVIGATE_WORKOUT: '🏋️ Mở Kế hoạch tập ngay ➔',
+            };
             const actionButtonConfig =
-              actionType === 'NAVIGATE_REGISTER_PROGRAM'
-                ? {
-                    label: '📋 Đăng ký chương trình tập ➔',
-                    onPress: () => {
-                      navigateToRegisterProgram();
-                      onClose();
-                    },
-                  }
-                : actionType === 'NAVIGATE_BODY_METRICS'
-                ? {
-                    label: '📊 Cập nhật chỉ số cơ thể ➔',
-                    onPress: () => {
-                      navigateToBodyMetrics();
-                      onClose();
-                    },
-                  }
-                : actionType === 'NAVIGATE_REGISTER_PACKAGE'
-                ? {
-                    label: '🎟 Đăng ký gói tập ngay ➔',
-                    onPress: () => {
-                      navigateToRegisterPackage();
-                      onClose();
-                    },
-                  }
-                : actionType === 'NAVIGATE_WORKOUT'
-                ? {
-                    label: '🏋️ Mở Kế hoạch tập ngay ➔',
-                    onPress: () => {
-                      triggerWorkoutStart();
-                      navigateToWorkoutPlan();
-                      onClose();
-                    },
-                  }
+              actionType && actionLabels[actionType]
+                ? { label: actionLabels[actionType], onPress: () => runNavigationAction(actionType) }
                 : null;
+            const countdown = autoNav && autoNav.msgId === msg.id ? autoNav.secondsLeft : null;
 
             return (
               <View
@@ -721,6 +853,31 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
                         >
                           <Text style={styles.workoutActionBtnText}>
                             {actionButtonConfig.label}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {actionButtonConfig && countdown !== null && (
+                        <View style={styles.autoNavRow}>
+                          <Text style={styles.autoNavText}>
+                            Tự chuyển trang sau {countdown}s…
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => setAutoNav(null)}
+                            accessibilityRole="button"
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Text style={styles.autoNavCancel}>Ở lại</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                      {msg.retryable && msg.retryQuery && (
+                        <TouchableOpacity
+                          style={styles.workoutActionBtn}
+                          onPress={() => handleSend(msg.retryQuery)}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={styles.workoutActionBtnText}>
+                            🔄 Thử lại câu hỏi này
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -793,6 +950,12 @@ export const MascotChatModal: React.FC<MascotChatModalProps> = ({
               setTimeout(() => {
                 scrollViewRef.current?.scrollToEnd({ animated: true });
               }, 120);
+            }}
+            onBlur={() => {
+              setKeyboardHeight(0);
+            }}
+            onEndEditing={() => {
+              setKeyboardHeight(0);
             }}
             onSubmitEditing={() => handleSend()}
           />
@@ -962,6 +1125,12 @@ const styles = StyleSheet.create({
   bubbleUser: {
     backgroundColor: COLORS.primary,
     borderBottomRightRadius: 4,
+  },
+  inlineCode: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 12.5,
+    backgroundColor: '#EAF3F5',
+    color: COLORS.primary,
   },
   bubbleAi: {
     backgroundColor: '#FFFFFF',
@@ -1189,6 +1358,28 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginTop: 4,
     fontStyle: 'italic',
+  },
+  inlineLink: {
+    color: COLORS.accentBlue,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  autoNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    paddingHorizontal: 4,
+  },
+  autoNavText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    fontStyle: 'italic',
+  },
+  autoNavCancel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.accentRed,
   },
 });
 

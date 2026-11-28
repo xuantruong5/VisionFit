@@ -6,19 +6,17 @@ use App\Models\Admin;
 use App\Models\Client;
 use App\Models\Trainer;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\UsesIsolatedTestDatabase;
 use Tests\TestCase;
 
 class AssistantApiTest extends TestCase
 {
+    use UsesIsolatedTestDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-        // Use the real relevant migrations, not the entire unrelated app schema.
-        $this->assertSame('sqlite', config('database.default'));
-        $this->assertSame(':memory:', config('database.connections.sqlite.database'));
-        Schema::dropAllTables();
-        foreach ([
+        $this->resetVerifiedTestDatabase([
             '2026_09_11_060235_create_clients_table.php',
             '2026_09_11_081536_create_trainers_table.php',
             '2026_09_11_081651_create_admins_table.php',
@@ -30,9 +28,7 @@ class AssistantApiTest extends TestCase
             '2026_09_11_081119_create_dang_ky_chuong_trinh_table.php',
             '2026_09_11_073144_create_lich_tap_table.php',
             '2026_09_11_072708_create_buoi_tap_table.php',
-        ] as $migration) {
-            (require database_path('migrations/'.$migration))->up();
-        }
+        ]);
     }
 
     private function member(int $id, int $gym = 10): Client
@@ -171,9 +167,9 @@ class AssistantApiTest extends TestCase
             ->assertJsonPath('data.progress.sessions_this_week', 0)->assertJsonPath('data.progress.completion_percent', null);
     }
 
-    public function test_chat_without_token_never_leaks_first_member_data(): void
+    public function test_chat_without_api_key_returns_structured_error_instead_of_scripted_fallback(): void
     {
-        config(['assistant.gemini_api_key' => '']);
+        config(['assistant.gemini_api_key' => '', 'assistant.backup_api_url' => '', 'assistant.backup_api_key' => '', 'assistant.backup_model' => '']);
         Client::forceCreate([
             'id' => 1, 'id_phong_tap' => 10, 'email' => 'secret@test.local',
             'password' => 'secret', 'ho_ten' => 'Secret Member',
@@ -184,17 +180,20 @@ class AssistantApiTest extends TestCase
         $res = $this->postJson('/api/assistant/chat', [
             'message' => 'Cho tôi biết chỉ số thể trạng và dinh dưỡng calo của tôi',
             'species' => 'bear',
-        ])->assertOk();
+        ])->assertStatus(503);
+
+        $res->assertJsonPath('status', false)
+            ->assertJsonPath('error_code', 'AI_KEY_MISSING')
+            ->assertJsonPath('source', 'service_error')
+            ->assertJsonPath('action', null);
 
         $answer = (string) $res->json('answer');
-        $this->assertStringContainsString('chưa đăng nhập', mb_strtolower($answer, 'UTF-8'));
         $this->assertStringNotContainsString('175', $answer);
         $this->assertStringNotContainsString('Secret Member', $answer);
     }
 
-    public function test_new_member_without_metrics_or_program_gets_honest_responses(): void
+    public function test_new_member_context_reports_honest_missing_states(): void
     {
-        config(['assistant.gemini_api_key' => '']);
         $fresh = Client::forceCreate([
             'id' => 99, 'id_phong_tap' => 10, 'email' => 'fresh@test.local',
             'password' => 'secret', 'ho_ten' => 'Fresh User',
@@ -207,44 +206,9 @@ class AssistantApiTest extends TestCase
             ->assertJsonPath('data.nutrition', null)
             ->assertJsonPath('data.account_status.has_body_metrics', false)
             ->assertJsonPath('data.account_status.has_registered_program', false)
+            ->assertJsonPath('data.account_status.has_active_package', false)
+            ->assertJsonCount(0, 'data.packages')
+            ->assertJsonCount(0, 'data.schedule')
             ->assertJsonCount(0, 'data.suggestions.meals');
-
-        // 1. Lịch tập không dấu -> không bị trôi xuống câu mặc định
-        $schedRes = $this->postJson('/api/assistant/chat', [
-            'message' => 'Cho toi xem lich tap',
-            'species' => 'bear',
-        ], $headers)->assertOk();
-        $this->assertStringNotContainsString('Mình đã nhận câu hỏi', (string) $schedRes->json('answer'));
-        $this->assertStringContainsString('chưa đăng ký', mb_strtolower((string) $schedRes->json('answer'), 'UTF-8'));
-
-        // 2. Chỉ số cơ thể -> báo rõ chưa cập nhật chỉ số
-        $metricsRes = $this->postJson('/api/assistant/chat', [
-            'message' => 'Cho tôi biết chỉ số thể trạng và dinh dưỡng calo của tôi',
-            'species' => 'bear',
-        ], $headers)->assertOk();
-        $this->assertStringContainsString('chưa cập nhật chỉ số cơ thể', mb_strtolower((string) $metricsRes->json('answer'), 'UTF-8'));
-
-        // 3. Thực đơn -> không trả bảng dữ liệu mẫu khi chưa nhập chỉ số & chưa đăng ký
-        $mealRes = $this->postJson('/api/assistant/chat', [
-            'message' => 'Gợi ý thực đơn ăn giảm mỡ Eat Clean',
-            'species' => 'bear',
-        ], $headers)->assertOk();
-        $this->assertStringContainsString('chưa cập nhật chỉ số', mb_strtolower((string) $mealRes->json('answer'), 'UTF-8'));
-        $this->assertStringNotContainsString('| Bữa |', (string) $mealRes->json('answer'));
-
-        // 4. Gói tập -> báo rõ chưa đăng ký gói tập
-        $pkgRes = $this->postJson('/api/assistant/chat', [
-            'message' => 'Gói tập của tôi còn bao nhiêu buổi?',
-            'species' => 'bear',
-        ], $headers)->assertOk();
-        $this->assertStringContainsString('chưa đăng ký gói tập', mb_strtolower((string) $pkgRes->json('answer'), 'UTF-8'));
-
-        // 5. "bat dau tap" không bị nhận nhầm thành đau chấn thương
-        $startRes = $this->postJson('/api/assistant/chat', [
-            'message' => 'toi muon bat dau tap',
-            'species' => 'bear',
-        ], $headers)->assertOk();
-        $this->assertSame('workout_navigation', $startRes->json('intent'));
-        $this->assertStringNotContainsString('chườm lạnh', mb_strtolower((string) $startRes->json('answer'), 'UTF-8'));
     }
 }
