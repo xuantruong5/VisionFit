@@ -90,11 +90,22 @@ def get_action_model():
 
 
 def auto_detect_exercise_type(video_path):
-    """Accurately detect whether video is push-up, squat, or general posture (standing/sitting/free motion)."""
+    """Accurately detect whether video is push-up, squat, incline press, or general posture."""
     try:
         import cv2
         import numpy as np
         import mediapipe as mp
+        import unicodedata
+
+        v_name = Path(video_path).name.lower()
+        norm_name = unicodedata.normalize('NFKD', v_name).encode('ascii', 'ignore').decode('utf-8')
+        if any(w in norm_name for w in ['squat', 'suqta', 'ganh', 'dui']):
+            return "squat"
+        if any(w in norm_name for w in ['push', 'hit', 'dat', 'chong']):
+            return "push_up"
+        if any(w in norm_name for w in ['incline', 'nguc']):
+            return "incline_press"
+
         detector = get_mp_detector()
         if detector is None:
             return "general"
@@ -105,11 +116,12 @@ def auto_detect_exercise_type(video_path):
             cap.release()
             return "general"
 
-        num_samples = min(15, total_frames)
+        num_samples = min(20, total_frames)
         sample_indices = np.linspace(2, total_frames - 2, num_samples, dtype=int)
         horiz_count = 0
         vert_count = 0
         knee_angles = []
+        hip_y_list = []
 
         for idx in sample_indices:
             cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
@@ -125,6 +137,7 @@ def auto_detect_exercise_type(video_path):
                 sh_y = (lm[11].y + lm[12].y) / 2.0
                 ank_x = (lm[27].x + lm[28].x) / 2.0
                 ank_y = (lm[27].y + lm[28].y) / 2.0
+                hip_y = (lm[23].y + lm[24].y) / 2.0
                 dx = abs(sh_x - ank_x)
                 dy = abs(sh_y - ank_y)
 
@@ -132,6 +145,7 @@ def auto_detect_exercise_type(video_path):
                     horiz_count += 1
                 else:
                     vert_count += 1
+                    hip_y_list.append(hip_y)
                     for (h_i, k_i, a_i) in [(23, 25, 27), (24, 26, 28)]:
                         h_pt = np.array([lm[h_i].x, lm[h_i].y])
                         k_pt = np.array([lm[k_i].x, lm[k_i].y])
@@ -151,11 +165,15 @@ def auto_detect_exercise_type(video_path):
         if horiz_count >= 3 and horiz_count / total_valid >= 0.35:
             return "push_up"
 
-        if len(knee_angles) >= 4:
-            min_k = float(np.percentile(knee_angles, 10))
-            max_k = float(np.percentile(knee_angles, 90))
-            rom = max_k - min_k
-            if min_k <= 125.0 and rom >= 25.0:
+        if vert_count >= 3:
+            hip_rom = (max(hip_y_list) - min(hip_y_list)) if hip_y_list else 0.0
+            if len(knee_angles) >= 4:
+                min_k = float(np.percentile(knee_angles, 10))
+                max_k = float(np.percentile(knee_angles, 90))
+                rom = max_k - min_k
+                if (min_k <= 135.0 and rom >= 18.0) or (hip_rom >= 0.08):
+                    return "squat"
+            elif hip_rom >= 0.08:
                 return "squat"
 
         return "general"
@@ -331,17 +349,20 @@ class VisionFitWebHandler(SimpleHTTPRequestHandler):
                     bytes_left -= len(chunk)
 
             # Exercise auto-detection or user explicit choice
-            if exercise == 'push_up':
-                detected_exercise = 'push_up'
-            elif exercise == 'squat':
-                detected_exercise = 'squat'
-            elif exercise == 'incline_press':
-                detected_exercise = 'incline_press'
-            elif exercise == 'general':
-                detected_exercise = 'general'
+            if exercise in ('push_up', 'squat', 'incline_press', 'general'):
+                fname_lower = safe_name.lower()
+                is_explicit_conflict = (
+                    ('squat' in fname_lower or 'suqta' in fname_lower) and exercise == 'push_up'
+                ) or (
+                    ('push' in fname_lower or 'hit' in fname_lower or 'dat' in fname_lower) and exercise == 'squat'
+                )
+                if is_explicit_conflict:
+                    detected_exercise = auto_detect_exercise_type(dest_file)
+                else:
+                    detected_exercise = exercise
             else:
                 detected_exercise = auto_detect_exercise_type(dest_file)
-                print(f"[VisionFit AI] Auto-detected exercise: {detected_exercise} for video {safe_name}", flush=True)
+            print(f"[VisionFit AI] Auto-detected exercise: {detected_exercise} for video {safe_name}", flush=True)
 
             final_dir = ROOT_DIR / 'videos' / detected_exercise
             final_dir.mkdir(parents=True, exist_ok=True)

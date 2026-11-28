@@ -661,7 +661,7 @@ class BiomechanicalSquatAnalyzer:
             elif self.state == "ASCENDING":
                 if torso_vert > self.current_rep["max_torso_lean_vert"]:
                     self.current_rep["max_torso_lean_vert"] = torso_vert
-                if knee_ang > 155.0:
+                if knee_ang >= 145.0:
                     self.completed_reps += 1
                     self.current_rep["end_time"] = round(sec, 2)
                     self.current_rep["rep_number"] = self.completed_reps
