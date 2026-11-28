@@ -117,136 +117,109 @@ const WorkoutExercisePlan = ({ navigation: propNav, route }: any) => {
 
 
   const handlePressDay = async (day: any) => {
-    if (Number(day.tinh_trang) !== 1) return;
+  if (Number(day.tinh_trang) !== 1) return;
 
-    try {
-      setCheckingDayId(Number(day.id_chuong_trinh_bai_tap));
+  try {
+    setCheckingDayId(Number(day.id_chuong_trinh_bai_tap));
 
-      // 1. Nếu ngày được chọn đã hoàn thành thì tìm ngày chưa hoàn thành tiếp theo
-      let targetDay = day;
+    // 1. Luôn lấy đúng ngày người dùng bấm
+    const targetDay = day;
 
-      const progressSelected =
-        Number(progressByDay[Number(day.id_chuong_trinh_bai_tap)] ?? 0);
+    // 2. Lấy ID của ngày được chọn
+    const idDangKy = Number(targetDay.id_dang_ky_chuong_trinh);
 
-      if (progressSelected >= 100) {
-        const nextDay = apiData.find((item: any) => {
-          const sameRegistration =
-            Number(item.id_dang_ky_chuong_trinh) ===
-            Number(day.id_dang_ky_chuong_trinh);
+    const idChuongTrinhBaiTap = Number(
+      targetDay.id_chuong_trinh_bai_tap
+    );
 
-          const isUnlocked = Number(item.tinh_trang) === 1;
-
-          const progress =
-            Number(progressByDay[Number(item.id_chuong_trinh_bai_tap)] ?? 0);
-
-          return sameRegistration && isUnlocked && progress < 100;
-        });
-
-        if (!nextDay) {
-          Alert.alert(
-            "Thông báo",
-            "Bạn đã hoàn thành tất cả các ngày tập có thể thực hiện trong chương trình này."
-          );
-          return;
-        }
-
-        targetDay = nextDay;
-      }
-
-      // 2. Lấy ID của ngày thực tế sẽ tập
-      const idDangKy = Number(targetDay.id_dang_ky_chuong_trinh);
-      const idChuongTrinhBaiTap = Number(
-        targetDay.id_chuong_trinh_bai_tap
-      );
-
-      if (!idDangKy || !idChuongTrinhBaiTap) {
-        Alert.alert(
-          "Thông báo",
-          "Không tìm thấy thông tin đăng ký chương trình."
-        );
-        return;
-      }
-
-      // 3. Tạo params TRƯỚC khi hiển thị cảnh báo
-      const params = {
-        ngayThu: targetDay.ngay_thu,
-        dayType: targetDay.ten_ngay_tap,
-        thoi_gian_phut: targetDay.thoi_gian_phut,
-        id_chuong_trinh_bai_tap: targetDay.id_chuong_trinh_bai_tap,
-        id_dang_ky_chuong_trinh: targetDay.id_dang_ky_chuong_trinh,
-        id_chuong_trinh: targetDay.id_chuong_trinh,
-        id_lich_tap: targetDay.id_lich_tap,
-      };
-
-      // 4. Kiểm tra quyền tập với đúng ngày sẽ tập
-      const res = await apiFitlife.post("/client/check-quyen-tap", {
-        id_dang_ky_chuong_trinh: idDangKy,
-        id_chuong_trinh_bai_tap: idChuongTrinhBaiTap,
-      });
-
-      const data = res.data?.data;
-
-      // Không được phép tập
-      if (!data?.duoc_phep_tap) {
-        Alert.alert(
-          "Yêu cầu đăng ký gói tập",
-          res.data?.message || "Bạn cần đăng ký gói tập để tiếp tục.",
-          [
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-            {
-              text: "OK",
-              onPress: () => {
-                navigation.navigate("WorkoutSelectionScreen" as never);
-              },
-            },
-          ]
-        );
-        return;
-      }
-
-      // Có khuyến cáo tập luyện
-      if (data?.can_khuyen_cao) {
-        Alert.alert(
-          "Khuyến cáo tập luyện",
-          data?.noi_dung_khuyen_cao ||
-          "Bạn đã hoàn thành một chương trình tập luyện khác hôm nay. Hãy dành thời gian cho cơ thể phục hồi.",
-          [
-            {
-              text: "Quay lại",
-              style: "cancel",
-            },
-            {
-              text: "Vẫn tiếp tục",
-              onPress: () => {
-                navigation.navigate("ExercisePage", params);
-              },
-            },
-          ]
-        );
-        return;
-      }
-
-      // Được phép tập
-      navigation.navigate("ExercisePage", params);
-
-    } catch (error: any) {
-      console.log(
-        "Lỗi kiểm tra quyền tập:",
-        error.response?.data ?? error.message
-      );
-
+    if (!idDangKy || !idChuongTrinhBaiTap) {
       Alert.alert(
         "Thông báo",
-        error.response?.data?.message ||
-        "Không thể kiểm tra quyền tập. Vui lòng thử lại."
+        "Không tìm thấy thông tin đăng ký chương trình."
       );
-    } finally {
-      setCheckingDayId(null);
+      return;
     }
-  };
+
+    // 3. Tạo params theo đúng ngày được chọn
+    const params = {
+      ngayThu: targetDay.ngay_thu,
+      dayType: targetDay.ten_ngay_tap,
+      thoi_gian_phut: targetDay.thoi_gian_phut,
+      id_chuong_trinh_bai_tap: targetDay.id_chuong_trinh_bai_tap,
+      id_dang_ky_chuong_trinh: targetDay.id_dang_ky_chuong_trinh,
+      id_chuong_trinh: targetDay.id_chuong_trinh,
+      id_lich_tap: targetDay.id_lich_tap,
+    };
+
+    // 4. Kiểm tra quyền tập với đúng ngày được chọn
+    const res = await apiFitlife.post("/client/check-quyen-tap", {
+      id_dang_ky_chuong_trinh: idDangKy,
+      id_chuong_trinh_bai_tap: idChuongTrinhBaiTap,
+    });
+
+    const data = res.data?.data;
+
+    // Không được phép tập
+    if (!data?.duoc_phep_tap) {
+      Alert.alert(
+        "Yêu cầu đăng ký gói tập",
+        res.data?.message || "Bạn cần đăng ký gói tập để tiếp tục.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "OK",
+            onPress: () => {
+              navigation.navigate("WorkoutSelectionScreen" as never);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Có khuyến cáo tập luyện
+    if (data?.can_khuyen_cao) {
+      Alert.alert(
+        "Khuyến cáo tập luyện",
+        data?.noi_dung_khuyen_cao ||
+          "Bạn đã hoàn thành một chương trình tập luyện khác hôm nay. Hãy dành thời gian cho cơ thể phục hồi.",
+        [
+          {
+            text: "Quay lại",
+            style: "cancel",
+          },
+          {
+            text: "Vẫn tiếp tục",
+            onPress: () => {
+              navigation.navigate("ExercisePage", params);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Được phép tập
+    navigation.navigate("ExercisePage", params);
+
+  } catch (error: any) {
+    console.log(
+      "Lỗi kiểm tra quyền tập:",
+      error.response?.data ?? error.message
+    );
+
+    Alert.alert(
+      "Thông báo",
+      error.response?.data?.message ||
+        "Không thể kiểm tra quyền tập. Vui lòng thử lại."
+    );
+  } finally {
+    setCheckingDayId(null);
+  }
+};
 
 
   useFocusEffect(

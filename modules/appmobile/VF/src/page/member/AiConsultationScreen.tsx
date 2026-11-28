@@ -293,7 +293,7 @@ const AiConsultationScreen = ({ navigation, route }: any) => {
               <TouchableOpacity
                 style={[styles.metricInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },]}
                 onPress={() => setShowDatePicker(true)}  >
-                <Text style={{ color: birthDate ? COLORS.text : COLORS.textLight, fontSize: 13, }}>
+                <Text style={{ color: birthDate ? COLORS.textPrimary : COLORS.textLight, fontSize: 13, }}>
                   {birthDate || 'Chọn ngày sinh'}
                 </Text>
               </TouchableOpacity>

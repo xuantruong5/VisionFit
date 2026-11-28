@@ -8,6 +8,7 @@ import { widthPercentageToDP as wp } from "react-native-responsive-screen";
 import { TRAINER_COLORS as C, SOFT_SHADOW } from "../../general/theme";
 import { pick, types } from "@react-native-documents/picker";
 import apiFitlife from "../../general/api";
+import { triggerAuthSessionChanged } from "../../components/mascot/mascotEvents";
 const TrainerAuthScreen = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState("social");
     const [showPassword, setShowPassword] = useState(false);
@@ -186,9 +187,10 @@ const TrainerAuthScreen = ({ navigation }: any) => {
             );
 
             if (response.data?.status && response.data?.token) {
-                // Lưu token đăng nhập
+                // Lưu token đăng nhập và reset phiên hội thoại chatbot
                 await AsyncStorage.setItem("token", response.data.token);
                 await AsyncStorage.setItem("role", "trainer");
+                triggerAuthSessionChanged();
 
                 navigation.reset({
                     index: 0,

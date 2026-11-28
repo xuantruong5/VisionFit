@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiFitlife from '../../general/api';
 import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
+import { triggerAuthSessionChanged } from '../../components/mascot/mascotEvents';
 
 
 // Dữ liệu mẫu (Frontend Mock Data) - sẽ thay bằng API sau
@@ -100,9 +101,10 @@ const Profile = ({ navigation }: any) => {
                 error.response?.data || error.message
               );
             } finally {
-              // Xóa thông tin đăng nhập ở máy
+              // Xóa thông tin đăng nhập ở máy và reset phiên hội thoại chatbot
               await AsyncStorage.removeItem("token");
               await AsyncStorage.removeItem("role");
+              triggerAuthSessionChanged();
               // Quay về màn hình đăng nhập Trainer
               navigation.reset({
                 index: 0,

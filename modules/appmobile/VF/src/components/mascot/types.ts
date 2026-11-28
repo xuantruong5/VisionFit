@@ -47,4 +47,9 @@ export interface ChatMessage {
   time: string;
   intent?: string;
   action?: ChatAction | null;
+  /** Backend cho phép tự chuyển trang (người dùng thể hiện ý muốn đi tới màn hình, vd "tôi muốn tập") */
+  autoNavigate?: boolean;
+  source?: string;
+  retryable?: boolean;
+  retryQuery?: string;
 }

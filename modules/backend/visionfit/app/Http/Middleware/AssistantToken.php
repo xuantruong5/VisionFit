@@ -12,6 +12,21 @@ use Laravel\Sanctum\PersonalAccessToken;
 /** Bearer-token-only boundary: never invokes the local ClientMiddleware fallback. */
 class AssistantToken
 {
+    /**
+     * Explicit non-identity query parameter whitelist per assistant read route.
+     * Any selector such as user_id, client_id, id_nguoi_dung, gym_id, or role is always rejected (422).
+     */
+    private const ALLOWED_QUERY_KEYS = [
+        'api/assistant/me' => [],
+        'api/assistant/context' => [],
+        'api/assistant/schedule' => ['date_preset', 'date_from', 'date_to', 'limit'],
+        'api/assistant/packages' => ['include_expired'],
+        'api/assistant/progress' => ['period'],
+        'api/assistant/body-metrics' => [],
+        'api/assistant/meal-plan' => ['date_preset', 'date', 'meal_type', 'diet_preference'],
+        'api/assistant/summary' => [],
+    ];
+
     public function handle(Request $request, Closure $next)
     {
         $plainToken = $request->bearerToken();
@@ -45,9 +60,13 @@ class AssistantToken
             return response()->json(['message' => 'Tài khoản chưa được gán phạm vi phòng tập cho trợ lý.'], 403);
         }
 
-        // These routes do not accept user/gym selectors, even if supplied manually.
-        if ($request->query() !== []) {
-            return response()->json(['message' => 'API trợ lý không nhận tham số chọn người dùng hoặc phòng.'], 422);
+        // Enforce strict per-route query whitelist: never accept user/gym/role selectors.
+        $routePath = ltrim($request->path(), '/');
+        $allowedKeys = self::ALLOWED_QUERY_KEYS[$routePath] ?? [];
+        foreach (array_keys($request->query()) as $qKey) {
+            if (!in_array((string) $qKey, $allowedKeys, true)) {
+                return response()->json(['message' => 'API trợ lý không nhận tham số chọn người dùng hoặc phòng.'], 422);
+            }
         }
         $request->attributes->set('assistant_user', $user);
         $request->attributes->set('assistant_identity', [

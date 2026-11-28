@@ -8,6 +8,13 @@ import { COLORS, SHADOWS } from '../../general/theme';
 import apiFitlife from '../../general/api';
 import QRCode from 'react-native-qrcode-svg';
 import Clipboard from '@react-native-clipboard/clipboard';
+import {
+    mascotEmitter,
+    MASCOT_EVENTS,
+    triggerAuthSessionChanged,
+    triggerWaterReminderSetting,
+    WATER_REMINDER_STORAGE_KEY,
+} from '../../components/mascot/mascotEvents';
 
 // Dữ liệu mẫu hồ sơ ban đầu (Frontend Mock Data)
 const INITIAL_MEMBER = {
@@ -62,6 +69,7 @@ const MemberProfile = ({ navigation }: any) => {
     const [remindWorkout, setRemindWorkout] = useState(true);
     const [syncHealthData, setSyncHealthData] = useState(false);
     const [drinkWaterAlert, setDrinkWaterAlert] = useState(true);
+    const [waterIntervalHours, setWaterIntervalHours] = useState(2);
 
     // Modals
     const [showEditModal, setShowEditModal] = useState(false);
@@ -177,6 +185,45 @@ const MemberProfile = ({ navigation }: any) => {
     };
     useEffect(() => {
         fetchProfile();
+    }, []);
+
+    // Đồng bộ cài đặt nhắc uống nước với AsyncStorage & Mascot chatbot (hiển thị đúng chu kỳ người dùng đã chọn)
+    useEffect(() => {
+        let mounted = true;
+        const loadWaterSetting = () => {
+            AsyncStorage.getItem(WATER_REMINDER_STORAGE_KEY)
+                .then((raw) => {
+                    if (!mounted || !raw) return;
+                    const parsed = JSON.parse(raw);
+                    if (typeof parsed?.enabled === 'boolean') {
+                        setDrinkWaterAlert(parsed.enabled);
+                    }
+                    if (typeof parsed?.intervalHours === 'number' && parsed.intervalHours > 0) {
+                        setWaterIntervalHours(parsed.intervalHours);
+                    }
+                })
+                .catch(() => {});
+        };
+
+        loadWaterSetting();
+
+        const handleWaterUpdate = (payload?: { enabled?: boolean; intervalHours?: number }) => {
+            if (!mounted) return;
+            if (typeof payload?.enabled === 'boolean') {
+                setDrinkWaterAlert(payload.enabled);
+            }
+            if (typeof payload?.intervalHours === 'number' && payload.intervalHours > 0) {
+                setWaterIntervalHours(payload.intervalHours);
+            }
+        };
+
+        mascotEmitter.on(MASCOT_EVENTS.SET_WATER_REMINDER, handleWaterUpdate);
+        mascotEmitter.on(MASCOT_EVENTS.AUTH_SESSION_CHANGED, loadWaterSetting);
+        return () => {
+            mounted = false;
+            mascotEmitter.off(MASCOT_EVENTS.SET_WATER_REMINDER, handleWaterUpdate);
+            mascotEmitter.off(MASCOT_EVENTS.AUTH_SESSION_CHANGED, loadWaterSetting);
+        };
     }, []);
 
     // Lưu thông tin chỉnh sửa vào Database
@@ -317,9 +364,10 @@ const MemberProfile = ({ navigation }: any) => {
                                 error.response?.data || error.message
                             );
                         } finally {
-                            // Xóa thông tin đăng nhập
+                            // Xóa thông tin đăng nhập và reset phiên hội thoại chatbot
                             await AsyncStorage.removeItem("token");
                             await AsyncStorage.removeItem("role");
+                            triggerAuthSessionChanged();
 
                             // Quay về màn hình đăng nhập
                             navigation.reset({
@@ -726,13 +774,20 @@ const MemberProfile = ({ navigation }: any) => {
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.settingTitle}>Nhắc nhở bổ sung nước</Text>
-                                    <Text style={styles.settingSubtitle}>Thông báo mỗi 2 giờ một lần</Text>
+                                    <Text style={styles.settingSubtitle}>
+                                        {drinkWaterAlert
+                                            ? `Thông báo mỗi ${waterIntervalHours} giờ một lần`
+                                            : 'Đang tắt nhắc nhở uống nước'}
+                                    </Text>
                                 </View>
                                 <Switch
                                     trackColor={{ false: COLORS.border, true: COLORS.primary }}
                                     thumbColor={drinkWaterAlert ? '#FFFFFF' : '#E6F0F4'}
                                     ios_backgroundColor={COLORS.border}
-                                    onValueChange={() => setDrinkWaterAlert(!drinkWaterAlert)}
+                                    onValueChange={(nextVal) => {
+                                        setDrinkWaterAlert(nextVal);
+                                        triggerWaterReminderSetting(nextVal, waterIntervalHours);
+                                    }}
                                     value={drinkWaterAlert}
                                 />
                             </View>

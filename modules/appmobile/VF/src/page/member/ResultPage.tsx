@@ -4,7 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
-import { Gesture, GestureDetector, } from "react-native-gesture-handler";
+import {
+    Gesture,
+    GestureDetector,
+    GestureUpdateEvent,
+    PinchGestureHandlerEventPayload,
+    RotationGestureHandlerEventPayload,
+} from "react-native-gesture-handler";
 import { PieChart } from "react-native-gifted-charts";
 
 import { widthPercentageToDP as wp, heightPercentageToDP as hp, } from "react-native-responsive-screen";
@@ -88,8 +94,8 @@ const ResultPage = ({ navigation, route }: any) => {
     const [showBodyModal, setShowBodyModal] = useState(false);
     const scale = useSharedValue(1);
     const rotation = useSharedValue(0);
-    const pinch = Gesture.Pinch().onUpdate(e => { scale.value = Math.min(4, Math.max(0.5, scale.value * e.scale)); });
-    const rotate = Gesture.Rotation().onUpdate(e => { rotation.value += e.rotation; });
+    const pinch = Gesture.Pinch().onUpdate((e: GestureUpdateEvent<PinchGestureHandlerEventPayload>) => { scale.value = Math.min(4, Math.max(0.5, scale.value * e.scale)); });
+    const rotate = Gesture.Rotation().onUpdate((e: GestureUpdateEvent<RotationGestureHandlerEventPayload>) => { rotation.value += e.rotation; });
     const gesture = Gesture.Simultaneous(pinch, rotate);
     const animatedBodyStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }, { rotate: `${rotation.value}rad` },], }));
 
