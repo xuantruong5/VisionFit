@@ -119,7 +119,7 @@ class AssistantToolRegistry
 
             $tools[] = [
                 'name' => 'get_my_meal_plan',
-                'description' => 'Gọi API GET /api/assistant/meal-plan để lấy kế hoạch bữa ăn CÁ NHÂN đã đăng ký của hội viên theo ngày (hôm nay, ngày mai, YYYY-MM-DD hoặc sắp tới) và bữa ăn (SANG/TRUA/TOI/PHU_SANG/PHU_CHIEU/ALL), gồm tên món, giờ ăn, calo, macro (đạm/carb/fat) và lọc dị ứng. BẮT BUỘC dùng công cụ này cho mọi câu hỏi về bữa ăn thuộc thực đơn cá nhân (kể cả câu hỏi tiếp nối như "Thế bữa sáng hôm nay có bao nhiêu calo?").',
+                'description' => 'Gọi API GET /api/assistant/meal-plan để lấy kế hoạch bữa ăn CÁ NHÂN đã đăng ký của hội viên theo ngày (hôm nay, ngày mai, YYYY-MM-DD hoặc sắp tới) và bữa ăn (SANG/PHU_SANG/TRUA/PHU_TRUA/TOI/PHU_TOI/ALL), gồm tên món, giờ ăn, calo, macro (đạm/carb/fat) và cảnh báo dị ứng từng món (allergy_warning). BẮT BUỘC dùng công cụ này cho mọi câu hỏi về bữa ăn thuộc thực đơn cá nhân (kể cả câu hỏi tiếp nối như "Thế bữa sáng hôm nay có bao nhiêu calo?").',
                 'parameters' => [
                     'type' => 'OBJECT',
                     'properties' => [
@@ -134,8 +134,8 @@ class AssistantToolRegistry
                         ],
                         'meal_type' => [
                             'type' => 'STRING',
-                            'description' => 'Loại bữa ăn cần lọc: SANG, TRUA, TOI, PHU_SANG, PHU_CHIEU hoặc ALL.',
-                            'enum' => ['SANG', 'TRUA', 'TOI', 'PHU_SANG', 'PHU_CHIEU', 'ALL'],
+                            'description' => 'Loại bữa ăn cần lọc: SANG (sáng), PHU_SANG (phụ sáng), TRUA (trưa), PHU_TRUA (phụ trưa/phụ chiều), TOI (tối), PHU_TOI (phụ tối) hoặc ALL.',
+                            'enum' => array_values(FitnessDataService::MEAL_TYPE_FILTERS),
                         ],
                         'diet_preference' => [
                             'type' => 'STRING',
@@ -536,8 +536,8 @@ class AssistantToolRegistry
             return $this->invalidArgs('date phải đúng định dạng YYYY-MM-DD.');
         }
 
-        $mealType = isset($args['meal_type']) ? strtoupper((string) $args['meal_type']) : 'ALL';
-        if (!in_array($mealType, ['SANG', 'TRUA', 'TOI', 'PHU_SANG', 'PHU_CHIEU', 'ALL'], true)) {
+        $mealType = FitnessDataService::canonicalMealType(isset($args['meal_type']) ? (string) $args['meal_type'] : 'ALL');
+        if ($mealType === null) {
             return $this->invalidArgs('meal_type không hợp lệ.');
         }
 

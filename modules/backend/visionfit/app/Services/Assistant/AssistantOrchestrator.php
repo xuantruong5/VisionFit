@@ -64,8 +64,14 @@ class AssistantOrchestrator
         }
 
         $lastError = null;
+        // Mọi model Gemini (tier primary) dùng chung một GEMINI_API_KEY: khi khóa bị từ chối thì
+        // thử tiếp các model primary khác chỉ làm người dùng chờ vô ích -> chuyển thẳng sang backup.
+        $skipPrimaryTier = false;
 
         foreach ($providers as $providerSpec) {
+            if ($skipPrimaryTier && $providerSpec['tier'] === 'primary') {
+                continue;
+            }
             $remaining = $deadline - microtime(true);
             if ($remaining <= 1.0) {
                 $lastError = new LlmProviderException('AI_TIMEOUT', 'Yêu cầu trợ lý AI vượt quá thời gian xử lý cho phép.', 503, true);
@@ -92,14 +98,17 @@ class AssistantOrchestrator
                     'error_code' => $e->errorCode,
                     'retryable' => $e->retryable,
                 ]);
-                if ($e->errorCode === 'AI_KEY_MISSING' || $e->errorCode === 'AI_AUTH_ERROR' || $e->errorCode === 'AI_MAX_ROUNDS_EXCEEDED') {
-                    // Lỗi khóa API hoặc vượt vòng lặp -> dừng ngay, không lặp vô ích
-                    if ($e->errorCode === 'AI_MAX_ROUNDS_EXCEEDED') {
-                        break;
+                if ($e->errorCode === 'AI_MAX_ROUNDS_EXCEEDED') {
+                    // Vượt vòng lặp công cụ -> đổi model cũng không giúp gì, dừng ngay
+                    break;
+                }
+                if (in_array($e->errorCode, ['AI_KEY_MISSING', 'AI_AUTH_ERROR'], true)) {
+                    if ($providerSpec['tier'] === 'primary') {
+                        $skipPrimaryTier = true;
+                        continue;
                     }
-                    if ($providerSpec['tier'] === 'primary' && count($providers) === 1) {
-                        break;
-                    }
+                    // Khóa của backup cũng bị từ chối -> không còn provider nào dùng được
+                    break;
                 }
             }
         }
@@ -392,7 +401,7 @@ NGUYÊN TẮC BẮT BUỘC:
    - KHO KIẾN THỨC TRỐNG (`search_fitness_knowledge` trả `status: empty`): CHỈ nói rõ "Tôi chưa có thông tin đó trong dữ liệu hiện có." (chưa có bài viết/mục phù hợp trong kho kiến thức VisionFit), TUYỆT ĐỐI KHÔNG bổ sung kiến thức nền hay tự bịa nguồn trích dẫn.
    - CÂU HỎI NHIỀU Ý (một công cụ thành công, công cụ khác lỗi hoặc rỗng): CHỈ trả lời phần đã có dữ liệu được xác minh từ công cụ thành công và nêu rõ phần còn lại chưa truy xuất được hoặc chưa có dữ liệu; không tự suy diễn phần bị thiếu.
    - Khi công cụ `get_my_body_metrics` trả về `bmi_status` (chuẩn châu Á), dùng đúng nhãn đó.
-   - Khi `search_fitness_knowledge` trả về `allergy_warning`, BẮT BUỘC cảnh báo dị ứng rõ ràng cho người dùng.
+   - Khi `search_fitness_knowledge` hoặc `get_my_meal_plan` trả về `allergy_warning` cho món nào, BẮT BUỘC cảnh báo dị ứng rõ ràng ngay tại món đó (vd: "⚠️ chứa cá hồi — bạn dị ứng hải sản") và khuyên trao đổi với PT để đổi món; không được bỏ qua cảnh báo.
 3. AN TOÀN & BẢO MẬT:
    - Không bao giờ tiết lộ dữ liệu của người khác, bỏ qua phân quyền, sinh SQL hay truy cập URL ngoài. Nếu người dùng yêu cầu xem thông tin hội viên khác, lịch sự từ chối.
    - Nếu người dùng báo đau, chấn thương, chóng mặt hoặc chuột rút khi tập: khuyên dừng động tác ngay và trao đổi với PT hoặc nhân viên y tế; không chẩn đoán y khoa.
@@ -429,7 +438,7 @@ PROMPT;
 
         foreach ($dataTools as $t) {
             $st = $t['status'];
-            if (in_array($st, ['embedding_unavailable', 'api_error', 'timeout'], true)) {
+            if (in_array($st, ['embedding_unavailable', 'index_not_ready', 'api_error', 'timeout'], true)) {
                 $failedTools[] = $t;
             } elseif (in_array($st, ['empty', 'no_package', 'no_registered_program', 'missing_body_metrics', 'no_session_in_range', 'no_registered_program_and_metrics'], true)) {
                 $emptyTools[] = $t;
@@ -443,12 +452,18 @@ PROMPT;
         // Trường hợp 1: TẤT CẢ công cụ dữ liệu/tri thức đều lỗi (vd: embedding_unavailable, api_error) -> chặn model thêm kiến thức nền
         if (!empty($failedTools) && empty($verifiedTools) && empty($emptyTools) && empty($authTools)) {
             $firstFail = $failedTools[0];
-            $isEmbedding = $firstFail['status'] === 'embedding_unavailable';
+            // Kho kiến thức lỗi (embedding hết hạn mức hoặc bảng chỉ mục chưa được migrate) -> báo lỗi kho kiến thức
+            $isEmbedding = in_array($firstFail['status'], ['embedding_unavailable', 'index_not_ready'], true);
             $quotaScope = $firstFail['result']['quota_scope'] ?? null;
             $retryable = array_key_exists('retryable', $firstFail['result'])
                 ? (bool) $firstFail['result']['retryable']
                 : ($quotaScope !== 'day');
-            $errCode = (string) ($firstFail['result']['error_code'] ?? ($isEmbedding ? 'EMBEDDING_UNAVAILABLE' : 'API_ERROR'));
+            $defaultCode = match ($firstFail['status']) {
+                'embedding_unavailable' => 'EMBEDDING_UNAVAILABLE',
+                'index_not_ready' => 'KNOWLEDGE_INDEX_NOT_READY',
+                default => 'API_ERROR',
+            };
+            $errCode = (string) ($firstFail['result']['error_code'] ?? $defaultCode);
 
             $safeMessage = $isEmbedding
                 ? ($quotaScope === 'day'
@@ -543,7 +558,7 @@ PROMPT;
             return !empty($action['params']['enabled']) ? 'reminding' : 'neutral';
         }
         foreach ($toolTrace as $t) {
-            if (in_array($t['status'] ?? '', ['error', 'api_error', 'embedding_unavailable', 'forbidden', 'unauthenticated'], true)) {
+            if (in_array($t['status'] ?? '', ['error', 'api_error', 'embedding_unavailable', 'index_not_ready', 'forbidden', 'unauthenticated'], true)) {
                 return 'apologetic';
             }
         }

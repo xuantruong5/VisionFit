@@ -299,7 +299,7 @@ class KnowledgeEmbeddingService
                 $allergens = $this->dataService->detectAllergenMatches(
                     (string) $row->title,
                     (string) ($meta['ingredients'] ?? ''),
-                    $actor->user->di_ung ?? null
+                    $this->dataService->rawAllergyOf($actor->user)
                 );
                 if (!empty($allergens)) {
                     $item['allergy_warning'] = 'Món ăn chứa thành phần nằm trong danh sách dị ứng của hội viên: ' . implode(', ', $allergens);

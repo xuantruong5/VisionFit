@@ -169,8 +169,8 @@ class AssistantController extends Controller
             return response()->json(['message' => 'Tham số date phải đúng định dạng YYYY-MM-DD.'], 422);
         }
 
-        $mealType = strtoupper((string) $request->query('meal_type', 'ALL'));
-        if (!in_array($mealType, ['SANG', 'TRUA', 'TOI', 'PHU_SANG', 'PHU_CHIEU', 'ALL'], true)) {
+        $mealType = FitnessDataService::canonicalMealType((string) $request->query('meal_type', 'ALL'));
+        if ($mealType === null) {
             return response()->json(['message' => 'Tham số meal_type không hợp lệ.'], 422);
         }
 

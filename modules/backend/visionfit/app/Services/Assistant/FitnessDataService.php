@@ -42,6 +42,33 @@ class FitnessDataService
         return strtr($str, $map);
     }
 
+    /** Mã bữa ăn thật trong DB (khau_phan_an.bua_an, mon_an.loai_bua) + ALL. */
+    public const MEAL_TYPE_FILTERS = ['SANG', 'PHU_SANG', 'TRUA', 'PHU_TRUA', 'TOI', 'PHU_TOI', 'ALL'];
+
+    /**
+     * Chuẩn hóa mã bữa ăn về đúng mã trong DB. PHU_CHIEU (tên cũ trong khai báo tool) = PHU_TRUA (bữa phụ 15:00).
+     * Trả null nếu mã không hợp lệ.
+     */
+    public static function canonicalMealType(?string $code): ?string
+    {
+        $normalized = strtoupper(trim((string) $code));
+        $normalized = match ($normalized) {
+            '' => 'ALL',
+            'PHU_CHIEU', 'PHU_XE' => 'PHU_TRUA',
+            'BUA_SANG' => 'SANG',
+            'BUA_TRUA' => 'TRUA',
+            'BUA_TOI' => 'TOI',
+            default => $normalized,
+        };
+        return in_array($normalized, self::MEAL_TYPE_FILTERS, true) ? $normalized : null;
+    }
+
+    /** So khớp chính xác: hỏi "TRUA" không được lẫn "PHU_TRUA". */
+    private function mealTypeMatches(?string $code, string $filter): bool
+    {
+        return $filter === 'ALL' || self::canonicalMealType($code) === $filter;
+    }
+
     public function formatMealType(?string $code): string
     {
         $normalized = strtoupper(trim((string) $code));
@@ -104,7 +131,12 @@ class FitnessDataService
                 }
                 $keywords[] = $trimmed;
                 if (str_contains($lower, 'hải sản') || str_contains($lower, 'hai san')) {
-                    array_push($keywords, 'tôm', 'cua', 'mực', 'ghẹ', 'sò', 'nghêu', 'ốc');
+                    array_push(
+                        $keywords,
+                        'tôm', 'cua', 'mực', 'ghẹ', 'sò', 'nghêu', 'ốc', 'hàu', 'sò điệp', 'bạch tuộc', 'tôm hùm',
+                        // Cá biển (cá nước ngọt như cá rô, cá lóc không thuộc nhóm hải sản)
+                        'cá hồi', 'cá ngừ', 'cá thu', 'cá biển', 'cá trích', 'cá mòi', 'cá cơm', 'salmon', 'tuna'
+                    );
                 } elseif (str_contains($lower, 'trứng') || str_contains($lower, 'trung')) {
                     $keywords[] = 'trứng';
                 } elseif (str_contains($lower, 'sữa') || str_contains($lower, 'sua') || str_contains($lower, 'lactose')) {
@@ -116,6 +148,42 @@ class FitnessDataService
         }
 
         return array_values(array_unique($keywords));
+    }
+
+    /**
+     * Đọc dị ứng của hội viên một cách an toàn.
+     * Client cast `di_ung` => 'array', nhưng dữ liệu thật thường lưu chữ thường ("Hải sản", "Sữa bò / Lactose")
+     * -> json_decode thất bại và Eloquent trả NULL, làm chatbot tưởng hội viên không dị ứng gì.
+     * Khi cast rỗng thì lấy giá trị gốc trong DB (expandAllergyKeywords xử lý được cả chuỗi lẫn JSON).
+     */
+    public function rawAllergyOf($user)
+    {
+        if (!$user) {
+            return null;
+        }
+        $cast = $user->di_ung ?? null;
+        if (!empty($cast)) {
+            return $cast;
+        }
+        if (is_object($user) && method_exists($user, 'getRawOriginal')) {
+            $raw = $user->getRawOriginal('di_ung');
+            return is_string($raw) && trim($raw) !== '' ? $raw : null;
+        }
+        return null;
+    }
+
+    /** Chuỗi dị ứng để hiển thị (vd: "Hải sản, Sữa bò / Lactose"); rỗng nếu không có. */
+    public function allergyTextOf($user): string
+    {
+        $raw = $this->rawAllergyOf($user);
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : $raw;
+        }
+        $text = is_array($raw)
+            ? implode(', ', array_filter(array_map(fn ($v) => trim((string) $v), $raw), fn ($v) => $v !== ''))
+            : trim((string) $raw);
+        return in_array(mb_strtolower($text, 'UTF-8'), ['không', 'khong', 'none'], true) ? '' : $text;
     }
 
     public function detectAllergenMatches(string $dishName, string $ingredients, $rawAllergy): array
@@ -603,9 +671,7 @@ class FitnessDataService
             $latestNutrition = (object) array_merge($calc, ['created_at' => $now->toDateTimeString()]);
         }
 
-        $allergyText = is_array($user->di_ung ?? null)
-            ? implode(', ', array_filter($user->di_ung, fn ($v) => trim((string) $v) !== ''))
-            : trim((string) ($user->di_ung ?? ''));
+        $allergyText = $this->allergyTextOf($user);
 
         if (!$latestNutrition) {
             if ($hasSubmittedMetrics && ($weight > 0 || $height > 0)) {
@@ -751,15 +817,18 @@ class FitnessDataService
             }
 
             $rows = $q->orderBy('kpa.ngay_an')->orderBy('kpa.gio_an')->limit(24)
-                ->get(['kpa.ngay_an', 'kpa.gio_an', 'kpa.bua_an', 'ma.ten_mon_an', 'ma.calo', 'ma.protein', 'ma.carb', 'ma.fat', 'ma.loai_bua']);
+                ->get(['kpa.ngay_an', 'kpa.gio_an', 'kpa.bua_an', 'ma.ten_mon_an', 'ma.nguyen_lieu', 'ma.calo', 'ma.protein', 'ma.carb', 'ma.fat', 'ma.loai_bua']);
 
-            $normalizedMealType = strtoupper(trim((string) $mealType));
+            $mealFilter = self::canonicalMealType($mealType) ?? 'ALL';
+            $rawAllergy = $this->rawAllergyOf($actor->user);
             foreach ($rows as $mp) {
                 $code = strtoupper(trim((string) ($mp->bua_an ?: $mp->loai_bua)));
-                if ($normalizedMealType !== '' && $normalizedMealType !== 'ALL' && !str_contains($code, $normalizedMealType)) {
+                if (!$this->mealTypeMatches($code, $mealFilter)) {
                     continue;
                 }
-                $registeredMeals[] = [
+                // Món trong kế hoạch cá nhân vẫn phải được kiểm tra dị ứng theo hồ sơ hội viên
+                $allergens = $this->detectAllergenMatches((string) $mp->ten_mon_an, (string) ($mp->nguyen_lieu ?? ''), $rawAllergy);
+                $meal = [
                     'date' => $mp->ngay_an,
                     'time' => $mp->gio_an ? substr((string) $mp->gio_an, 0, 5) : null,
                     'meal_type_code' => $code,
@@ -770,6 +839,11 @@ class FitnessDataService
                     'carb_g' => (float) ($mp->carb ?? 0),
                     'fat_g' => (float) ($mp->fat ?? 0),
                 ];
+                if (!empty($allergens)) {
+                    $meal['allergy_warning'] = 'Món ăn chứa thành phần nằm trong danh sách dị ứng của hội viên: ' . implode(', ', $allergens);
+                    $meal['matched_allergens'] = $allergens;
+                }
+                $registeredMeals[] = $meal;
             }
         }
 
@@ -786,6 +860,7 @@ class FitnessDataService
                 'has_meal_plan' => true,
                 'active_program' => $activeProgram['name'],
                 'allergy' => $metrics['profile']['allergy'] ?? 'Không',
+                'allergy_warnings_count' => count(array_filter($registeredMeals, fn (array $m) => isset($m['allergy_warning']))),
                 'meals' => $registeredMeals,
             ];
         }
@@ -833,8 +908,9 @@ class FitnessDataService
 
         $baseQuery = DB::table('mon_an')->where('tinh_trang', 1);
         $normalizedAllergyTokens = [];
-        if ($user && !empty($user->di_ung)) {
-            foreach ($this->expandAllergyKeywords($user->di_ung) as $kw) {
+        $rawAllergy = $this->rawAllergyOf($user);
+        if (!empty($rawAllergy)) {
+            foreach ($this->expandAllergyKeywords($rawAllergy) as $kw) {
                 $norm = trim($this->normalizeVietnamese($kw));
                 if ($norm !== '') {
                     $normalizedAllergyTokens[] = $norm;
@@ -896,15 +972,15 @@ class FitnessDataService
             $candidates = $candidates->concat($fallback)->unique('ten_mon_an')->values();
         }
 
-        $normalizedMealType = strtoupper(trim((string) $mealType));
-        if ($normalizedMealType !== '' && $normalizedMealType !== 'ALL') {
-            $bySlot = $candidates->filter(fn ($m) => str_contains(strtoupper((string) ($m->loai_bua ?? '')), $normalizedMealType))->values();
+        $mealFilter = self::canonicalMealType($mealType) ?? 'ALL';
+        if ($mealFilter !== 'ALL') {
+            $bySlot = $candidates->filter(fn ($m) => $this->mealTypeMatches($m->loai_bua ?? null, $mealFilter))->values();
             if ($bySlot->isNotEmpty()) {
                 $candidates = $bySlot;
             }
         }
 
-        $preferredOrder = ['SANG', 'TRUA', 'PHU_CHIEU', 'TOI', 'PHU_SANG'];
+        $preferredOrder = ['SANG', 'TRUA', 'PHU_TRUA', 'TOI', 'PHU_SANG', 'PHU_TOI'];
         $picked = collect();
         $used = [];
         foreach ($preferredOrder as $slot) {
@@ -1081,9 +1157,7 @@ class FitnessDataService
             ];
         }
 
-        $allergyText = is_array($user->di_ung ?? null)
-            ? implode(', ', array_filter($user->di_ung, fn ($v) => trim((string) $v) !== ''))
-            : trim((string) ($user->di_ung ?? ''));
+        $allergyText = $this->allergyTextOf($user);
 
         $hasBodyMetrics = $nutrition !== null;
         $hasRegisteredProgram = $activeProgram !== null;

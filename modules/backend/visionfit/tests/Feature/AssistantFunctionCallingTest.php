@@ -1282,4 +1282,158 @@ class AssistantFunctionCallingTest extends TestCase
         $this->assertStringNotContainsString('kéo tạ lên', (string) $rMin->json('answer'));
         $this->assertTrue((bool) $rMin->json('retryable'));
     }
+
+    // Khóa GEMINI_API_KEY bị từ chối: mọi model Gemini dùng chung khóa nên chỉ gọi 1 lần, không thử lần lượt từng model
+    public function test_auth_error_stops_after_first_primary_model_instead_of_trying_every_model(): void
+    {
+        config(['assistant.gemini_fallback_models' => ['gemini-3.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']]);
+        $member = $this->createMember(70, 10);
+
+        $fake = $this->bindFakeLlm(fn () => throw new LlmProviderException('AI_AUTH_ERROR', 'API key not valid', 503, false));
+        $res = $this->postJson('/api/assistant/chat', ['message' => 'Lịch tập hôm nay của tôi?'], $this->headersFor($member))
+            ->assertStatus(503)
+            ->assertJsonPath('status', false)
+            ->assertJsonPath('error_code', 'AI_AUTH_ERROR')
+            ->assertJsonPath('source', 'service_error')
+            ->assertJsonPath('retryable', false);
+
+        $this->assertCount(1, $fake->recordedCalls, 'Không được thử lại các model Gemini khác khi khóa API bị từ chối.');
+        $this->assertSame([], $res->json('tool_calls'));
+    }
+
+    // Bảng chỉ mục kho kiến thức chưa được migrate: chặn model tự bổ sung kiến thức nền (OBS-01)
+    public function test_knowledge_index_not_ready_blocks_ungrounded_pretraining_answer(): void
+    {
+        $member = $this->createMember(71, 10);
+        \Illuminate\Support\Facades\Schema::dropIfExists('assistant_knowledge_embeddings');
+
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['search_fitness_knowledge', ['query' => 'creatine uống lúc nào']]]);
+            }
+            $resp = end($contents)['parts'][0]['functionResponse']['response'];
+            $this->assertSame('index_not_ready', $resp['status']);
+            // Model cố "chữa cháy" bằng kiến thức nền -> orchestrator phải chặn
+            return $this->modelTextTurn('Theo kiến thức chung, bạn nên uống creatine 5g mỗi ngày sau buổi tập.');
+        });
+
+        $res = $this->postJson('/api/assistant/chat', ['message' => 'Creatine nên uống lúc nào?'], $this->headersFor($member))
+            ->assertOk()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('error_code', 'KNOWLEDGE_INDEX_NOT_READY')
+            ->assertJsonPath('emotion', 'apologetic')
+            ->assertJsonPath('tool_calls.0.name', 'search_fitness_knowledge')
+            ->assertJsonPath('tool_calls.0.status', 'index_not_ready');
+
+        $answer = (string) $res->json('answer');
+        $this->assertStringContainsString('chưa thể truy xuất kho kiến thức', $answer);
+        $this->assertStringNotContainsString('5g', $answer);
+        $this->assertTrue((bool) $res->json('retryable'));
+    }
+
+    /** Tạo kế hoạch ăn hôm nay gồm các món [ten, bua_an, nguyen_lieu] cho hội viên. */
+    private function seedTodayMealPlan(int $memberId, array $dishes): void
+    {
+        $progId = DB::table('chuong_trinh_tap')->insertGetId(['id_cap_do' => 1, 'ten_chuong_trinh' => 'Tăng cơ', 'tinh_trang' => 1]);
+        $dkId = DB::table('dang_ky_chuong_trinh')->insertGetId(['id_hoi_vien' => $memberId, 'id_chuong_trinh' => $progId, 'tinh_trang' => 1]);
+        $khaId = DB::table('ke_hoach_an')->insertGetId([
+            'id_chuong_trinh' => $progId, 'id_dang_ky_chuong_trinh' => $dkId, 'ten_ke_hoach' => 'KH tăng cơ', 'tinh_trang' => 1,
+        ]);
+        $today = CarbonImmutable::now('Asia/Ho_Chi_Minh')->toDateString();
+        foreach ($dishes as $i => [$name, $bua, $ingredients]) {
+            $monId = DB::table('mon_an')->insertGetId([
+                'ten_mon_an' => $name, 'loai_bua' => $bua, 'nguyen_lieu' => $ingredients,
+                'calo' => 400, 'protein' => 30, 'carb' => 40, 'fat' => 10, 'tinh_trang' => 1,
+            ]);
+            DB::table('khau_phan_an')->insert([
+                'id_ke_hoach_an' => $khaId, 'id_muc_tieu_dinh_duong' => 1, 'id_mon_an' => $monId,
+                'bua_an' => $bua, 'ngay_an' => $today, 'gio_an' => sprintf('%02d:00:00', 7 + $i * 2),
+            ]);
+        }
+    }
+
+    // Món trong thực đơn CÁ NHÂN chứa chất gây dị ứng phải được gắn allergy_warning (trước đây chỉ kho kiến thức mới cảnh báo)
+    /**
+     * @dataProvider allergyStorageShapes
+     */
+    public function test_personal_meal_plan_flags_allergens_including_marine_fish_for_seafood_allergy(string $shape): void
+    {
+        $member = $this->createMember(72, 10, $shape === 'json_array' ? ['di_ung' => ['Hải sản']] : []);
+        if ($shape === 'plain_string') {
+            // Dạng dữ liệu thật trong DB: chuỗi thường (không phải JSON) -> cast 'array' của Client trả NULL
+            DB::table('clients')->where('id', 72)->update(['di_ung' => 'Hải sản']);
+            $member = Client::find(72);
+            $this->assertNull($member->di_ung, 'Tiền đề: cast array trả NULL với chuỗi thường');
+        }
+        $this->seedTodayMealPlan(72, [
+            ['Cơm cá hồi và rau củ', 'TRUA', 'Cá hồi phi lê 150g, gạo lứt, bông cải'],
+            ['Cơm gạo lứt ức gà', 'TRUA', 'Ức gà 150g, gạo lứt'],
+            ['Cá lóc kho tộ', 'TOI', 'Cá lóc 200g, nước mắm'],
+        ]);
+
+        $this->bindFakeLlm(function (int $step, array $contents) {
+            if ($step === 0) {
+                return $this->modelToolCallTurn([['get_my_meal_plan', ['date_preset' => 'today', 'meal_type' => 'ALL']]]);
+            }
+            $resp = end($contents)['parts'][0]['functionResponse']['response'];
+            $byName = collect($resp['meals'])->keyBy('name');
+            $this->assertSame(1, $resp['allergy_warnings_count']);
+            $this->assertContains('cá hồi', $byName['Cơm cá hồi và rau củ']['matched_allergens']);
+            $this->assertArrayNotHasKey('allergy_warning', $byName['Cơm gạo lứt ức gà']);
+            // Cá nước ngọt không bị gắn nhầm là hải sản
+            $this->assertArrayNotHasKey('allergy_warning', $byName['Cá lóc kho tộ']);
+            return $this->modelTextTurn('⚠️ Cơm cá hồi chứa cá hồi — bạn dị ứng hải sản.');
+        });
+
+        $this->postJson('/api/assistant/chat', ['message' => 'Thực đơn hôm nay của tôi?'], $this->headersFor($member))
+            ->assertOk()
+            ->assertJsonPath('tool_calls.0.status', 'ok');
+
+        // Hồ sơ chỉ số cũng phải hiện đúng dị ứng thay vì "Không"
+        $this->assertSame('Hải sản', app(FitnessDataService::class)->allergyTextOf(Client::find(72)));
+    }
+
+    public static function allergyStorageShapes(): array
+    {
+        return ['chuỗi thường (dữ liệu thật)' => ['plain_string'], 'mảng JSON' => ['json_array']];
+    }
+
+    // Lọc bữa ăn phải khớp chính xác mã trong DB: hỏi TRUA không lẫn PHU_TRUA; PHU_CHIEU (tên cũ) = PHU_TRUA; PHU_TOI hợp lệ
+    public function test_meal_type_filter_matches_exact_db_codes_and_accepts_legacy_phu_chieu(): void
+    {
+        $member = $this->createMember(73, 10);
+        $this->seedTodayMealPlan(73, [
+            ['Cơm gà trưa', 'TRUA', 'Ức gà'],
+            ['Sữa chua phụ trưa', 'PHU_TRUA', 'Sữa chua'],
+            ['Đậu nành phụ tối', 'PHU_TOI', 'Đậu nành'],
+        ]);
+        $h = $this->headersFor($member);
+
+        $cases = [
+            'TRUA' => ['Cơm gà trưa'],
+            'PHU_TRUA' => ['Sữa chua phụ trưa'],
+            'PHU_CHIEU' => ['Sữa chua phụ trưa'],
+            'PHU_TOI' => ['Đậu nành phụ tối'],
+        ];
+        $fake = null;
+        foreach ($cases as $mealType => $expected) {
+            $fake = $this->bindFakeLlm(function (int $step, array $contents) use ($mealType, $expected) {
+                if ($step === 0) {
+                    return $this->modelToolCallTurn([['get_my_meal_plan', ['date_preset' => 'today', 'meal_type' => $mealType]]]);
+                }
+                $resp = end($contents)['parts'][0]['functionResponse']['response'];
+                $this->assertSame('ok', $resp['status'], "meal_type={$mealType}");
+                $this->assertSame($expected, array_column($resp['meals'], 'name'), "meal_type={$mealType}");
+                return $this->modelTextTurn('ok');
+            });
+            $this->postJson('/api/assistant/chat', ['message' => "Bữa {$mealType} hôm nay?"], $h)
+                ->assertOk()
+                ->assertJsonPath('tool_calls.0.status', 'ok');
+        }
+
+        // Gemini nhận đúng enum theo mã DB (không còn PHU_CHIEU, có PHU_TRUA/PHU_TOI)
+        $decl = collect($fake->recordedCalls[0]['tool_declarations'])->firstWhere('name', 'get_my_meal_plan');
+        $this->assertNotNull($decl);
+        $this->assertSame(FitnessDataService::MEAL_TYPE_FILTERS, $decl['parameters']['properties']['meal_type']['enum']);
+    }
 }
